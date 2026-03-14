@@ -1,0 +1,654 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum MasterDataStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum DataCreationMode {
+  MANUAL
+  AUTO_CREATED
+}
+
+enum DocumentLifecycleStatus {
+  EFFECTIVE
+  VOIDED
+}
+
+enum AuditStatusSnapshot {
+  NOT_REQUIRED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum InventoryEffectStatus {
+  POSTED
+  REVERSED
+}
+
+enum StockDirection {
+  IN
+  OUT
+}
+
+enum InventoryOperationType {
+  ACCEPTANCE_IN
+  PRODUCTION_RECEIPT_IN
+  OUTBOUND_OUT
+  SALES_RETURN_IN
+  PICK_OUT
+  RETURN_IN
+  SCRAP_OUT
+  PROJECT_CONSUMPTION_OUT
+  REVERSAL_IN
+  REVERSAL_OUT
+}
+
+enum SourceUsageStatus {
+  ALLOCATED
+  PARTIALLY_RELEASED
+  RELEASED
+}
+
+enum FactoryNumberReservationStatus {
+  RESERVED
+  RELEASED
+  REVERSED
+}
+
+enum DocumentFamily {
+  STOCK_IN
+  CUSTOMER_STOCK
+  WORKSHOP_MATERIAL
+  PROJECT
+}
+
+enum StockInOrderType {
+  ACCEPTANCE
+  PRODUCTION_RECEIPT
+}
+
+enum CustomerStockOrderType {
+  OUTBOUND
+  SALES_RETURN
+}
+
+enum WorkshopMaterialOrderType {
+  PICK
+  RETURN
+  SCRAP
+}
+
+enum DocumentRelationType {
+  SALES_RETURN_FROM_OUTBOUND
+  WORKSHOP_RETURN_FROM_PICK
+  REVERSAL_REFERENCE
+  TRACEABILITY_REFERENCE
+}
+
+model MaterialCategory {
+  id           Int                @id @default(autoincrement())
+  categoryCode String             @unique @db.VarChar(64)
+  categoryName String             @db.VarChar(128)
+  parentId     Int?
+  sortOrder    Int                @default(0)
+  status       MasterDataStatus   @default(ACTIVE)
+  createdBy    String?            @db.VarChar(64)
+  createdAt    DateTime           @default(now())
+  updatedBy    String?            @db.VarChar(64)
+  updatedAt    DateTime           @updatedAt
+  parent       MaterialCategory?  @relation("MaterialCategoryTree", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  children     MaterialCategory[] @relation("MaterialCategoryTree")
+  materials    Material[]
+
+  @@index([parentId])
+  @@map("material_category")
+}
+
+model Material {
+  id                         Int                         @id @default(autoincrement())
+  materialCode               String                      @unique @db.VarChar(64)
+  materialName               String                      @db.VarChar(128)
+  specModel                  String?                     @db.VarChar(128)
+  categoryId                 Int?
+  unitCode                   String                      @db.VarChar(32)
+  warningMinQty              Decimal?                    @db.Decimal(18, 6)
+  warningMaxQty              Decimal?                    @db.Decimal(18, 6)
+  status                     MasterDataStatus            @default(ACTIVE)
+  creationMode               DataCreationMode            @default(MANUAL)
+  sourceDocumentType         String?                     @db.VarChar(64)
+  sourceDocumentId           Int?
+  createdBy                  String?                     @db.VarChar(64)
+  createdAt                  DateTime                    @default(now())
+  updatedBy                  String?                     @db.VarChar(64)
+  updatedAt                  DateTime                    @updatedAt
+  category                   MaterialCategory?           @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  inventoryBalances          InventoryBalance[]
+  inventoryLogs              InventoryLog[]
+  inventorySourceUsages      InventorySourceUsage[]
+  factoryNumberReservations  FactoryNumberReservation[]
+  stockInOrderLines          StockInOrderLine[]
+  customerStockOrderLines    CustomerStockOrderLine[]
+  workshopMaterialOrderLines WorkshopMaterialOrderLine[]
+  projectMaterialLines       ProjectMaterialLine[]
+
+  @@index([categoryId])
+  @@map("material")
+}
+
+model Customer {
+  id                  Int                  @id @default(autoincrement())
+  customerCode        String               @unique @db.VarChar(64)
+  customerName        String               @db.VarChar(128)
+  parentId            Int?
+  status              MasterDataStatus     @default(ACTIVE)
+  creationMode        DataCreationMode     @default(MANUAL)
+  sourceDocumentType  String?              @db.VarChar(64)
+  sourceDocumentId    Int?
+  createdBy           String?              @db.VarChar(64)
+  createdAt           DateTime             @default(now())
+  updatedBy           String?              @db.VarChar(64)
+  updatedAt           DateTime             @updatedAt
+  parent              Customer?            @relation("CustomerTree", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  children            Customer[]           @relation("CustomerTree")
+  customerStockOrders CustomerStockOrder[]
+  projects            Project[]
+
+  @@index([parentId])
+  @@map("customer")
+}
+
+model Supplier {
+  id                 Int              @id @default(autoincrement())
+  supplierCode       String           @unique @db.VarChar(64)
+  supplierName       String           @db.VarChar(128)
+  status             MasterDataStatus @default(ACTIVE)
+  creationMode       DataCreationMode @default(MANUAL)
+  sourceDocumentType String?          @db.VarChar(64)
+  sourceDocumentId   Int?
+  createdBy          String?          @db.VarChar(64)
+  createdAt          DateTime         @default(now())
+  updatedBy          String?          @db.VarChar(64)
+  updatedAt          DateTime         @updatedAt
+  stockInOrders      StockInOrder[]
+  projects           Project[]
+
+  @@map("supplier")
+}
+
+model Personnel {
+  id                     Int                     @id @default(autoincrement())
+  personnelCode          String                  @unique @db.VarChar(64)
+  personnelName          String                  @db.VarChar(128)
+  status                 MasterDataStatus        @default(ACTIVE)
+  creationMode           DataCreationMode        @default(MANUAL)
+  sourceDocumentType     String?                 @db.VarChar(64)
+  sourceDocumentId       Int?
+  createdBy              String?                 @db.VarChar(64)
+  createdAt              DateTime                @default(now())
+  updatedBy              String?                 @db.VarChar(64)
+  updatedAt              DateTime                @updatedAt
+  stockInOrders          StockInOrder[]          @relation("StockInOrderHandler")
+  customerStockOrders    CustomerStockOrder[]    @relation("CustomerStockOrderHandler")
+  workshopMaterialOrders WorkshopMaterialOrder[] @relation("WorkshopMaterialOrderHandler")
+  managedProjects        Project[]               @relation("ProjectManager")
+
+  @@map("personnel")
+}
+
+model Workshop {
+  id                        Int                        @id @default(autoincrement())
+  workshopCode              String                     @unique @db.VarChar(64)
+  workshopName              String                     @db.VarChar(128)
+  status                    MasterDataStatus           @default(ACTIVE)
+  createdBy                 String?                    @db.VarChar(64)
+  createdAt                 DateTime                   @default(now())
+  updatedBy                 String?                    @db.VarChar(64)
+  updatedAt                 DateTime                   @updatedAt
+  inventoryBalances         InventoryBalance[]
+  inventoryLogs             InventoryLog[]
+  factoryNumberReservations FactoryNumberReservation[]
+  stockInOrders             StockInOrder[]
+  customerStockOrders       CustomerStockOrder[]
+  workshopMaterialOrders    WorkshopMaterialOrder[]
+  projects                  Project[]
+
+  @@map("workshop")
+}
+
+model InventoryBalance {
+  id             Int            @id @default(autoincrement())
+  materialId     Int
+  workshopId     Int
+  quantityOnHand Decimal        @default(0) @db.Decimal(18, 6)
+  rowVersion     Int            @default(0)
+  createdBy      String?        @db.VarChar(64)
+  createdAt      DateTime       @default(now())
+  updatedBy      String?        @db.VarChar(64)
+  updatedAt      DateTime       @updatedAt
+  material       Material       @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  workshop       Workshop       @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  logs           InventoryLog[]
+
+  @@unique([materialId, workshopId])
+  @@index([workshopId])
+  @@map("inventory_balance")
+}
+
+model InventoryLog {
+  id                     Int                    @id @default(autoincrement())
+  balanceId              Int
+  materialId             Int
+  workshopId             Int
+  direction              StockDirection
+  operationType          InventoryOperationType
+  businessModule         String                 @db.VarChar(64)
+  businessDocumentType   String                 @db.VarChar(64)
+  businessDocumentId     Int
+  businessDocumentNumber String                 @db.VarChar(64)
+  businessDocumentLineId Int?
+  changeQty              Decimal                @db.Decimal(18, 6)
+  beforeQty              Decimal                @db.Decimal(18, 6)
+  afterQty               Decimal                @db.Decimal(18, 6)
+  operatorId             String?                @db.VarChar(64)
+  occurredAt             DateTime               @default(now())
+  reversalOfLogId        Int?
+  idempotencyKey         String                 @unique @db.VarChar(128)
+  note                   String?                @db.VarChar(500)
+  balance                InventoryBalance       @relation(fields: [balanceId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  material               Material               @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  workshop               Workshop               @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reversalOfLog          InventoryLog?          @relation("InventoryLogReversal", fields: [reversalOfLogId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  reversedByLogs         InventoryLog[]         @relation("InventoryLogReversal")
+  allocatedSourceUsages  InventorySourceUsage[]
+
+  @@index([balanceId])
+  @@index([businessDocumentType, businessDocumentId])
+  @@index([businessDocumentType, businessDocumentId, businessDocumentLineId])
+  @@index([occurredAt])
+  @@index([reversalOfLogId])
+  @@map("inventory_log")
+}
+
+model InventorySourceUsage {
+  id                   Int               @id @default(autoincrement())
+  materialId           Int
+  sourceLogId          Int
+  consumerDocumentType String            @db.VarChar(64)
+  consumerDocumentId   Int
+  consumerLineId       Int
+  allocatedQty         Decimal           @db.Decimal(18, 6)
+  releasedQty          Decimal           @default(0) @db.Decimal(18, 6)
+  status               SourceUsageStatus @default(ALLOCATED)
+  createdBy            String?           @db.VarChar(64)
+  createdAt            DateTime          @default(now())
+  updatedBy            String?           @db.VarChar(64)
+  updatedAt            DateTime          @updatedAt
+  material             Material          @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  sourceLog            InventoryLog      @relation(fields: [sourceLogId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([consumerDocumentType, consumerLineId, sourceLogId])
+  @@index([materialId])
+  @@index([consumerDocumentType, consumerDocumentId])
+  @@map("inventory_source_usage")
+}
+
+model FactoryNumberReservation {
+  id                     Int                            @id @default(autoincrement())
+  materialId             Int
+  workshopId             Int
+  businessDocumentType   String                         @db.VarChar(64)
+  businessDocumentId     Int
+  businessDocumentLineId Int
+  startNumber            String                         @db.VarChar(64)
+  endNumber              String                         @db.VarChar(64)
+  status                 FactoryNumberReservationStatus @default(RESERVED)
+  reservedAt             DateTime                       @default(now())
+  releasedAt             DateTime?
+  createdBy              String?                        @db.VarChar(64)
+  createdAt              DateTime                       @default(now())
+  updatedBy              String?                        @db.VarChar(64)
+  updatedAt              DateTime                       @updatedAt
+  material               Material                       @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  workshop               Workshop                       @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([businessDocumentType, businessDocumentLineId, startNumber, endNumber])
+  @@index([materialId, workshopId])
+  @@index([businessDocumentType, businessDocumentId])
+  @@map("factory_number_reservation")
+}
+
+model WorkflowAuditDocument {
+  id             Int                 @id @default(autoincrement())
+  documentFamily DocumentFamily
+  documentType   String              @db.VarChar(64)
+  documentId     Int
+  documentNumber String              @db.VarChar(64)
+  auditStatus    AuditStatusSnapshot @default(PENDING)
+  submittedBy    String?             @db.VarChar(64)
+  submittedAt    DateTime?
+  decidedBy      String?             @db.VarChar(64)
+  decidedAt      DateTime?
+  rejectReason   String?             @db.VarChar(500)
+  resetCount     Int                 @default(0)
+  lastResetAt    DateTime?
+  createdBy      String?             @db.VarChar(64)
+  createdAt      DateTime            @default(now())
+  updatedBy      String?             @db.VarChar(64)
+  updatedAt      DateTime            @updatedAt
+
+  @@unique([documentType, documentId])
+  @@index([documentFamily, auditStatus])
+  @@index([documentNumber])
+  @@map("workflow_audit_document")
+}
+
+model StockInOrder {
+  id                    Int                     @id @default(autoincrement())
+  documentNo            String                  @unique @db.VarChar(64)
+  orderType             StockInOrderType
+  bizDate               DateTime                @db.Date
+  supplierId            Int?
+  handlerPersonnelId    Int?
+  workshopId            Int
+  lifecycleStatus       DocumentLifecycleStatus @default(EFFECTIVE)
+  auditStatusSnapshot   AuditStatusSnapshot     @default(PENDING)
+  inventoryEffectStatus InventoryEffectStatus   @default(POSTED)
+  revisionNo            Int                     @default(1)
+  supplierCodeSnapshot  String?                 @db.VarChar(64)
+  supplierNameSnapshot  String?                 @db.VarChar(128)
+  handlerNameSnapshot   String?                 @db.VarChar(128)
+  workshopNameSnapshot  String                  @db.VarChar(128)
+  totalQty              Decimal                 @default(0) @db.Decimal(18, 6)
+  totalAmount           Decimal                 @default(0) @db.Decimal(18, 2)
+  remark                String?                 @db.VarChar(500)
+  voidReason            String?                 @db.VarChar(500)
+  voidedBy              String?                 @db.VarChar(64)
+  voidedAt              DateTime?
+  createdBy             String?                 @db.VarChar(64)
+  createdAt             DateTime                @default(now())
+  updatedBy             String?                 @db.VarChar(64)
+  updatedAt             DateTime                @updatedAt
+  supplier              Supplier?               @relation(fields: [supplierId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  handlerPersonnel      Personnel?              @relation("StockInOrderHandler", fields: [handlerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  workshop              Workshop                @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  lines                 StockInOrderLine[]
+
+  @@index([bizDate, orderType])
+  @@index([supplierId])
+  @@index([workshopId])
+  @@map("stock_in_order")
+}
+
+model StockInOrderLine {
+  id                   Int          @id @default(autoincrement())
+  orderId              Int
+  lineNo               Int
+  materialId           Int
+  materialCodeSnapshot String       @db.VarChar(64)
+  materialNameSnapshot String       @db.VarChar(128)
+  materialSpecSnapshot String?      @db.VarChar(128)
+  unitCodeSnapshot     String       @db.VarChar(32)
+  quantity             Decimal      @db.Decimal(18, 6)
+  unitPrice            Decimal      @default(0) @db.Decimal(18, 2)
+  amount               Decimal      @default(0) @db.Decimal(18, 2)
+  remark               String?      @db.VarChar(500)
+  createdBy            String?      @db.VarChar(64)
+  createdAt            DateTime     @default(now())
+  updatedBy            String?      @db.VarChar(64)
+  updatedAt            DateTime     @updatedAt
+  order                StockInOrder @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  material             Material     @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([orderId, lineNo])
+  @@index([materialId])
+  @@map("stock_in_order_line")
+}
+
+model CustomerStockOrder {
+  id                    Int                      @id @default(autoincrement())
+  documentNo            String                   @unique @db.VarChar(64)
+  orderType             CustomerStockOrderType
+  bizDate               DateTime                 @db.Date
+  customerId            Int?
+  handlerPersonnelId    Int?
+  workshopId            Int
+  lifecycleStatus       DocumentLifecycleStatus  @default(EFFECTIVE)
+  auditStatusSnapshot   AuditStatusSnapshot      @default(PENDING)
+  inventoryEffectStatus InventoryEffectStatus    @default(POSTED)
+  revisionNo            Int                      @default(1)
+  customerCodeSnapshot  String?                  @db.VarChar(64)
+  customerNameSnapshot  String?                  @db.VarChar(128)
+  handlerNameSnapshot   String?                  @db.VarChar(128)
+  workshopNameSnapshot  String                   @db.VarChar(128)
+  totalQty              Decimal                  @default(0) @db.Decimal(18, 6)
+  totalAmount           Decimal                  @default(0) @db.Decimal(18, 2)
+  remark                String?                  @db.VarChar(500)
+  voidReason            String?                  @db.VarChar(500)
+  voidedBy              String?                  @db.VarChar(64)
+  voidedAt              DateTime?
+  createdBy             String?                  @db.VarChar(64)
+  createdAt             DateTime                 @default(now())
+  updatedBy             String?                  @db.VarChar(64)
+  updatedAt             DateTime                 @updatedAt
+  customer              Customer?                @relation(fields: [customerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  handlerPersonnel      Personnel?               @relation("CustomerStockOrderHandler", fields: [handlerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  workshop              Workshop                 @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  lines                 CustomerStockOrderLine[]
+
+  @@index([bizDate, orderType])
+  @@index([customerId])
+  @@index([workshopId])
+  @@map("customer_stock_order")
+}
+
+model CustomerStockOrderLine {
+  id                   Int                @id @default(autoincrement())
+  orderId              Int
+  lineNo               Int
+  materialId           Int
+  materialCodeSnapshot String             @db.VarChar(64)
+  materialNameSnapshot String             @db.VarChar(128)
+  materialSpecSnapshot String?            @db.VarChar(128)
+  unitCodeSnapshot     String             @db.VarChar(32)
+  quantity             Decimal            @db.Decimal(18, 6)
+  unitPrice            Decimal            @default(0) @db.Decimal(18, 2)
+  amount               Decimal            @default(0) @db.Decimal(18, 2)
+  startNumber          String?            @db.VarChar(64)
+  endNumber            String?            @db.VarChar(64)
+  sourceDocumentType   String?            @db.VarChar(64)
+  sourceDocumentId     Int?
+  sourceDocumentLineId Int?
+  remark               String?            @db.VarChar(500)
+  createdBy            String?            @db.VarChar(64)
+  createdAt            DateTime           @default(now())
+  updatedBy            String?            @db.VarChar(64)
+  updatedAt            DateTime           @updatedAt
+  order                CustomerStockOrder @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  material             Material           @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([orderId, lineNo])
+  @@index([materialId])
+  @@index([sourceDocumentType, sourceDocumentId, sourceDocumentLineId])
+  @@map("customer_stock_order_line")
+}
+
+model WorkshopMaterialOrder {
+  id                    Int                         @id @default(autoincrement())
+  documentNo            String                      @unique @db.VarChar(64)
+  orderType             WorkshopMaterialOrderType
+  bizDate               DateTime                    @db.Date
+  handlerPersonnelId    Int?
+  workshopId            Int
+  lifecycleStatus       DocumentLifecycleStatus     @default(EFFECTIVE)
+  auditStatusSnapshot   AuditStatusSnapshot         @default(PENDING)
+  inventoryEffectStatus InventoryEffectStatus       @default(POSTED)
+  revisionNo            Int                         @default(1)
+  handlerNameSnapshot   String?                     @db.VarChar(128)
+  workshopNameSnapshot  String                      @db.VarChar(128)
+  totalQty              Decimal                     @default(0) @db.Decimal(18, 6)
+  totalAmount           Decimal                     @default(0) @db.Decimal(18, 2)
+  remark                String?                     @db.VarChar(500)
+  voidReason            String?                     @db.VarChar(500)
+  voidedBy              String?                     @db.VarChar(64)
+  voidedAt              DateTime?
+  createdBy             String?                     @db.VarChar(64)
+  createdAt             DateTime                    @default(now())
+  updatedBy             String?                     @db.VarChar(64)
+  updatedAt             DateTime                    @updatedAt
+  handlerPersonnel      Personnel?                  @relation("WorkshopMaterialOrderHandler", fields: [handlerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  workshop              Workshop                    @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  lines                 WorkshopMaterialOrderLine[]
+
+  @@index([bizDate, orderType])
+  @@index([workshopId])
+  @@map("workshop_material_order")
+}
+
+model WorkshopMaterialOrderLine {
+  id                   Int                   @id @default(autoincrement())
+  orderId              Int
+  lineNo               Int
+  materialId           Int
+  materialCodeSnapshot String                @db.VarChar(64)
+  materialNameSnapshot String                @db.VarChar(128)
+  materialSpecSnapshot String?               @db.VarChar(128)
+  unitCodeSnapshot     String                @db.VarChar(32)
+  quantity             Decimal               @db.Decimal(18, 6)
+  unitPrice            Decimal               @default(0) @db.Decimal(18, 2)
+  amount               Decimal               @default(0) @db.Decimal(18, 2)
+  sourceDocumentType   String?               @db.VarChar(64)
+  sourceDocumentId     Int?
+  sourceDocumentLineId Int?
+  remark               String?               @db.VarChar(500)
+  createdBy            String?               @db.VarChar(64)
+  createdAt            DateTime              @default(now())
+  updatedBy            String?               @db.VarChar(64)
+  updatedAt            DateTime              @updatedAt
+  order                WorkshopMaterialOrder @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  material             Material              @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([orderId, lineNo])
+  @@index([materialId])
+  @@index([sourceDocumentType, sourceDocumentId, sourceDocumentLineId])
+  @@map("workshop_material_order_line")
+}
+
+model Project {
+  id                    Int                     @id @default(autoincrement())
+  projectCode           String                  @unique @db.VarChar(64)
+  projectName           String                  @db.VarChar(128)
+  bizDate               DateTime                @db.Date
+  customerId            Int?
+  supplierId            Int?
+  managerPersonnelId    Int?
+  workshopId            Int
+  lifecycleStatus       DocumentLifecycleStatus @default(EFFECTIVE)
+  auditStatusSnapshot   AuditStatusSnapshot     @default(NOT_REQUIRED)
+  inventoryEffectStatus InventoryEffectStatus   @default(POSTED)
+  revisionNo            Int                     @default(1)
+  customerCodeSnapshot  String?                 @db.VarChar(64)
+  customerNameSnapshot  String?                 @db.VarChar(128)
+  supplierCodeSnapshot  String?                 @db.VarChar(64)
+  supplierNameSnapshot  String?                 @db.VarChar(128)
+  managerNameSnapshot   String?                 @db.VarChar(128)
+  workshopNameSnapshot  String                  @db.VarChar(128)
+  totalQty              Decimal                 @default(0) @db.Decimal(18, 6)
+  totalAmount           Decimal                 @default(0) @db.Decimal(18, 2)
+  remark                String?                 @db.VarChar(500)
+  voidReason            String?                 @db.VarChar(500)
+  voidedBy              String?                 @db.VarChar(64)
+  voidedAt              DateTime?
+  createdBy             String?                 @db.VarChar(64)
+  createdAt             DateTime                @default(now())
+  updatedBy             String?                 @db.VarChar(64)
+  updatedAt             DateTime                @updatedAt
+  customer              Customer?               @relation(fields: [customerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  supplier              Supplier?               @relation(fields: [supplierId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  managerPersonnel      Personnel?              @relation("ProjectManager", fields: [managerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  workshop              Workshop                @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  materialLines         ProjectMaterialLine[]
+
+  @@index([bizDate])
+  @@index([customerId])
+  @@index([supplierId])
+  @@index([workshopId])
+  @@map("project")
+}
+
+model ProjectMaterialLine {
+  id                   Int      @id @default(autoincrement())
+  projectId            Int
+  lineNo               Int
+  materialId           Int
+  materialCodeSnapshot String   @db.VarChar(64)
+  materialNameSnapshot String   @db.VarChar(128)
+  materialSpecSnapshot String?  @db.VarChar(128)
+  unitCodeSnapshot     String   @db.VarChar(32)
+  quantity             Decimal  @db.Decimal(18, 6)
+  unitPrice            Decimal  @default(0) @db.Decimal(18, 2)
+  amount               Decimal  @default(0) @db.Decimal(18, 2)
+  remark               String?  @db.VarChar(500)
+  createdBy            String?  @db.VarChar(64)
+  createdAt            DateTime @default(now())
+  updatedBy            String?  @db.VarChar(64)
+  updatedAt            DateTime @updatedAt
+  project              Project  @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  material             Material @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([projectId, lineNo])
+  @@index([materialId])
+  @@map("project_material_line")
+}
+
+model DocumentRelation {
+  id                     Int                  @id @default(autoincrement())
+  relationType           DocumentRelationType
+  upstreamFamily         DocumentFamily
+  upstreamDocumentType   String               @db.VarChar(64)
+  upstreamDocumentId     Int
+  downstreamFamily       DocumentFamily
+  downstreamDocumentType String               @db.VarChar(64)
+  downstreamDocumentId   Int
+  isActive               Boolean              @default(true)
+  createdBy              String?              @db.VarChar(64)
+  createdAt              DateTime             @default(now())
+  updatedBy              String?              @db.VarChar(64)
+  updatedAt              DateTime             @updatedAt
+
+  @@unique([relationType, upstreamFamily, upstreamDocumentId, downstreamFamily, downstreamDocumentId])
+  @@index([upstreamFamily, upstreamDocumentId])
+  @@index([downstreamFamily, downstreamDocumentId])
+  @@map("document_relation")
+}
+
+model DocumentLineRelation {
+  id                     Int                  @id @default(autoincrement())
+  relationType           DocumentRelationType
+  upstreamFamily         DocumentFamily
+  upstreamDocumentType   String               @db.VarChar(64)
+  upstreamDocumentId     Int
+  upstreamLineId         Int
+  downstreamFamily       DocumentFamily
+  downstreamDocumentType String               @db.VarChar(64)
+  downstreamDocumentId   Int
+  downstreamLineId       Int
+  linkedQty              Decimal              @db.Decimal(18, 6)
+  createdBy              String?              @db.VarChar(64)
+  createdAt              DateTime             @default(now())
+  updatedBy              String?              @db.VarChar(64)
+  updatedAt              DateTime             @updatedAt
+
+  @@unique([relationType, upstreamFamily, upstreamLineId, downstreamFamily, downstreamLineId])
+  @@index([upstreamFamily, upstreamDocumentId, upstreamLineId])
+  @@index([downstreamFamily, downstreamDocumentId, downstreamLineId])
+  @@map("document_line_relation")
+}

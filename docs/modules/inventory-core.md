@@ -1,0 +1,113 @@
+# `inventory-core` 模块设计
+
+## 模块目标与职责
+
+作为所有事务型单据唯一可依赖的库存中心域，负责库存现值、库存日志、来源追踪、预警和编号区间。任何业务模块不得直接改库存底表。
+
+## 原 Java 来源与映射范围
+
+- `business/src/main/java/com/saifute/stock`
+- `business/src/main/resources/mapper/stock`
+- 被 `entry`、`out`、`take`、`article` 广泛调用的库存副作用逻辑
+
+## 领域对象与核心用例
+
+核心对象：
+
+- `InventoryBalance`
+- `InventoryLog`
+- `InventorySourceUsage`
+- `InventoryWarning`
+- `FactoryNumberInterval`
+
+核心用例：
+
+- `increaseStock()`
+- `decreaseStock()`
+- `reverseStock()`
+- `recordInventoryLog()`
+- `allocateInventorySource()`
+- `releaseInventorySource()`
+- `checkInventoryWarning()`
+- `reserveFactoryNumberInterval()`
+
+## Controller 接口草案
+
+- `GET /inventory/balances`
+- `GET /inventory/logs`
+- `GET /inventory/warnings`
+- `GET /inventory/source-usages`
+
+说明：
+
+- 写操作原则上不直接对外暴露 HTTP API，而是通过其他业务模块的应用服务间接调用
+
+## Application 层编排
+
+- `IncreaseStockUseCase`
+- `DecreaseStockUseCase`
+- `ReverseStockUseCase`
+- `AllocateInventorySourceUseCase`
+- `ReleaseInventorySourceUseCase`
+- `QueryInventoryBalanceUseCase`
+
+编排约束：
+
+- 库存变更必须同时产生库存日志
+- 涉及来源追踪的业务必须同时维护 `InventorySourceUsage`
+- 单据作废走逆操作，不允许直接重写库存结果
+
+## Domain 规则与约束
+
+- `inventory-core` 是库存唯一写入口
+- 单据模块必须传入业务类型、单据号、来源标识和操作者
+- 是否允许负库存由策略配置决定，但默认先兼容现状
+- 所有数量字段迁移时优先改用精度明确的十进制类型
+- 来源追踪与逆操作补偿是不可省略的关键语义
+
+## Infrastructure 设计
+
+- 简单库存主表读写可用 Prisma
+- 库存分配、报表查询、历史回溯优先 raw SQL
+- 通过 `InventoryTransactionService` 统一封装库存事务边界
+- 若并发扣减风险较高，可在实现层补悲观锁或版本号控制
+
+## 与其他模块的依赖关系
+
+- 依赖 `master-data` 获取物料等基础快照
+- 被 `inbound`、`outbound`、`workshop-material`、`project` 依赖
+- 与 `workflow` 只通过业务模块协作，不直接耦合审核表
+
+## 事务边界与一致性要求
+
+- 库存主表、库存日志、来源追踪必须在同一数据库事务内提交
+- 业务单据与库存副作用原则上同事务完成
+- 不允许只写主表不写日志，或只回滚主表不释放来源占用
+
+## 权限点、数据权限、审计要求
+
+- 库存查询接口需要权限控制
+- 库存列表、日志、预警通常受物料/部门数据权限影响
+- 库存写操作的审计由上游业务单据和 `audit-log` 共同承担
+
+## 优化后表设计冻结
+
+- 对应核心表：`inventory_balance`、`inventory_log`、`inventory_source_usage`、`factory_number_reservation`
+- 第一阶段库存唯一维度固定为 `materialId + workshopId`
+- `inventory_warning` 收敛为只读视图 `vw_inventory_warning`，不单独落交易表
+- 单据模块必须通过 `businessDocumentType`、`businessDocumentId`、`businessDocumentLineId` 向库存中心传递来源语义
+- 详细业务流程与字段建议见 `docs/20-wms-business-flow-and-optimized-schema.md`
+
+## 待补测试清单
+
+- 库存增加、减少、逆操作测试
+- 库存日志必写测试
+- 来源分配与释放测试
+- 并发扣减一致性测试
+- 预警生成测试
+
+## 暂不实现范围
+
+- 标准 WMS 仓库/库位/批次模型升级
+- 冻结库存
+- 移库和盘点

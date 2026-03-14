@@ -1,0 +1,109 @@
+# `workshop-material` 模块设计
+
+## 模块目标与职责
+
+负责领料单、退料单、报废单的统一建模与实现。该模块把原 Java 中分散在 `take` 和 `stock` 包里的车间物料流转能力收拢为单一领域。
+
+## 原 Java 来源与映射范围
+
+- `business/src/main/java/com/saifute/take`
+- `business/src/main/java/com/saifute/stock` 中报废相关能力
+- `business/src/main/resources/mapper/take`
+- `business/src/main/resources/mapper/stock`
+
+## 领域对象与核心用例
+
+核心对象：
+
+- `PickOrder`
+- `PickOrderDetail`
+- `ReturnOrder`
+- `ReturnOrderDetail`
+- `ScrapOrder`
+- `ScrapOrderDetail`
+
+核心用例：
+
+- 新建领料单并扣减库存
+- 新建退料单并回补库存
+- 新建报废单并扣减库存
+- 维护 `inventory_used` 来源追踪
+- 作废领料、退料、报废并执行逆操作
+
+## Controller 接口草案
+
+- `GET /workshop-material/pick-orders`
+- `POST /workshop-material/pick-orders`
+- `POST /workshop-material/pick-orders/:id/void`
+- `GET /workshop-material/return-orders`
+- `POST /workshop-material/return-orders`
+- `GET /workshop-material/scrap-orders`
+- `POST /workshop-material/scrap-orders`
+
+## Application 层编排
+
+- `CreatePickOrderUseCase`
+- `VoidPickOrderUseCase`
+- `CreateReturnOrderUseCase`
+- `VoidReturnOrderUseCase`
+- `CreateScrapOrderUseCase`
+- `VoidScrapOrderUseCase`
+
+编排要点：
+
+- 领料和报废调用 `inventory-core.decreaseStock()`
+- 退料调用 `inventory-core.increaseStock()`
+- 涉及来源追踪的动作同步维护 `inventory_used`
+- 领料作废前需校验未作废退料下游
+
+## Domain 规则与约束
+
+- 领料、退料、报废属于同一车间物料流转域，但审核覆盖范围可能不同
+- `inventory_used` 是关键副模型，不得省略
+- 作废规则必须体现上下游依赖和逆向补偿
+- 修改单据不能只改表头，需重新计算明细差异与库存副作用
+
+## Infrastructure 设计
+
+- 主从表基础读写用 Prisma
+- 复杂列表、来源回溯、导出优先 raw SQL
+- 报废能力虽然来源于 `stock` 包，但在 NestJS 中放入同一模块实现
+
+## 与其他模块的依赖关系
+
+- 依赖 `master-data`
+- 依赖 `inventory-core`
+- 依赖 `workflow`
+- 审计和导出接入 `audit-log`
+
+## 事务边界与一致性要求
+
+- 主表、明细、库存、副日志、来源追踪必须同事务提交
+- 作废、逆操作、来源释放必须原子完成
+
+## 权限点、数据权限、审计要求
+
+- 领料、退料、报废分别定义权限点
+- 查询受车间、经办人、物料等数据权限影响
+- 新增、修改、作废、导出必须记录审计
+
+## 优化后表设计冻结
+
+- 车间物料家族统一收敛到 `workshop_material_order`、`workshop_material_order_line`
+- 通过 `orderType` 区分领料、退料、报废，不再拆散在多个来源模块中
+- `inventory_used` 语义在新模型中统一落到 `inventory_source_usage`
+- 退料与领料的上下游关系通过关系表表达，避免在业务字段中隐式推断
+- 表结构默认把审核快照起点设为 `PENDING`，若某类单据明确不走审核，由应用层显式写入 `NOT_REQUIRED`
+- 详细业务流程与字段建议见 `docs/20-wms-business-flow-and-optimized-schema.md`
+
+## 待补测试清单
+
+- 领料扣减库存与来源追踪测试
+- 退料回补库存测试
+- 报废扣减库存测试
+- 领料作废前下游退料校验测试
+
+## 暂不实现范围
+
+- 工单驱动领退料
+- 车间工位级库存

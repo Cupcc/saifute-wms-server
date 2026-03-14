@@ -1,0 +1,53 @@
+{
+  "name": "saifute-wms-server-nestjs",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.29.2",
+  "scripts": {
+    "biome": "biome check .",
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "ts-node --project tsconfig.json src/main.ts",
+    "format": "biome check . --write",
+    "lint": "biome check .",
+    "prisma:rebuild:collation": "node ./scripts/rebuild-collation.mjs",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:diff": "prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script",
+    "prisma:push": "pnpm prisma:rebuild:collation && prisma generate",
+    "prisma:validate": "prisma validate",
+    "start": "node dist/main.js",
+    "test": "jest --runInBand",
+    "test:e2e": "jest --config ./test/jest-e2e.json --runInBand",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.16",
+    "@nestjs/config": "^4.0.3",
+    "@nestjs/core": "^11.1.16",
+    "@nestjs/event-emitter": "^3.0.1",
+    "@nestjs/jwt": "^11.0.2",
+    "@nestjs/platform-express": "^11.1.16",
+    "@prisma/adapter-mariadb": "^7.5.0",
+    "@prisma/client": "^7.5.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "dotenv": "^17.3.1",
+    "eventemitter2": "^6.4.9",
+    "mariadb": "^3.5.2",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.7",
+    "@nestjs/testing": "^11.1.16",
+    "@types/express": "^5.0.6",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.5.0",
+    "@types/supertest": "^7.2.0",
+    "jest": "^30.3.0",
+    "prisma": "^7.5.0",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

@@ -1,0 +1,17 @@
+---
+description: Enforce Prisma push flow with utf8mb4_0900_ai_ci collation
+globs: "{prisma/**/*.prisma,scripts/rebuild-collation.mjs,package.json}"
+alwaysApply: false
+---
+
+# Prisma Push And Collation
+
+- 本仓库的 MySQL 目标排序规则固定为 `utf8mb4_0900_ai_ci`。
+- 不要直接执行 `prisma db push` 作为数据库推送方案；默认使用 `pnpm prisma:push`。
+- `pnpm prisma:push` 是受控入口：先运行 `scripts/rebuild-collation.mjs`，再执行 `prisma generate`。
+- `scripts/rebuild-collation.mjs` 必须从 `prisma/schema.prisma` 动态生成 SQL，不允许依赖 `prisma/migrations` 目录存在。
+- 生成 SQL 时，使用 Prisma 7 兼容写法：`prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script`。
+- 推送逻辑必须保证：重建数据库、应用 schema SQL、将数据库和所有物理表统一转换为 `utf8mb4_0900_ai_ci`。
+- 如果需要检查结果，查询 `information_schema.schemata` 和 `information_schema.tables`，并仅统计 `BASE TABLE`，不要把视图的 `NULL` collation 误判为失败。
+- 若用户要求其他 collation，先确认该 collation 在当前 MySQL 版本真实存在，再修改脚本或命令；不要编造不存在的 collation 名称。
+- 修改与 Prisma 推送相关的脚本或命令时，同步保持 `package.json` 中的 `prisma:push` 作为推荐入口，避免回答中再次建议用户直接使用裸 `prisma` 推库命令。

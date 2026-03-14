@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "hooks": {
+    "afterFileEdit": [
+      {
+        "command": "node .cursor/hooks/biome-after-edit.js",
+        "matcher": "Write"
+      }
+    ],
+    "afterTabFileEdit": [
+      {
+        "command": "node .cursor/hooks/biome-after-edit.js"
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "node .cursor/hooks/risky-shell-guard.js",
+        "matcher": "rm -rf|git reset --hard|git checkout --|prisma migrate reset|prisma db push|docker compose down -v|docker-compose down -v|pnpm add|pnpm remove|pnpm up|npm install|npm uninstall|npm update"
+      }
+    ]
+  }
+}
