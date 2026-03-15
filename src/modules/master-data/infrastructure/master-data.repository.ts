@@ -50,6 +50,24 @@ export class MasterDataRepository {
     });
   }
 
+  async findSupplierById(id: number) {
+    return this.prisma.supplier.findUnique({
+      where: { id },
+    });
+  }
+
+  async findCustomerById(id: number) {
+    return this.prisma.customer.findUnique({
+      where: { id },
+    });
+  }
+
+  async findPersonnelById(id: number) {
+    return this.prisma.personnel.findUnique({
+      where: { id },
+    });
+  }
+
   async findMaterialByCode(materialCode: string) {
     return this.prisma.material.findUnique({
       where: { materialCode },

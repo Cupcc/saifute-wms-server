@@ -1,5 +1,8 @@
 import { Injectable } from "@nestjs/common";
-import { Prisma } from "../../../generated/prisma/client";
+import {
+  FactoryNumberReservationStatus,
+  Prisma,
+} from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 
 type InventoryDbClient = Prisma.TransactionClient | PrismaService;
@@ -61,13 +64,16 @@ export class InventoryRepository {
     return { items, total };
   }
 
-  async findSourceUsages(params: {
-    materialId?: number;
-    consumerDocumentType?: string;
-    consumerDocumentId?: number;
-    limit: number;
-    offset: number;
-  }) {
+  async findSourceUsages(
+    params: {
+      materialId?: number;
+      consumerDocumentType?: string;
+      consumerDocumentId?: number;
+      limit: number;
+      offset: number;
+    },
+    db: InventoryDbClient = this.prisma,
+  ) {
     const where: Prisma.InventorySourceUsageWhereInput = {};
     if (params.materialId) where.materialId = params.materialId;
     if (params.consumerDocumentType)
@@ -76,13 +82,13 @@ export class InventoryRepository {
       where.consumerDocumentId = params.consumerDocumentId;
 
     const [items, total] = await Promise.all([
-      this.prisma.inventorySourceUsage.findMany({
+      db.inventorySourceUsage.findMany({
         where,
         take: params.limit,
         skip: params.offset,
         include: { material: true, sourceLog: true },
       }),
-      this.prisma.inventorySourceUsage.count({ where }),
+      db.inventorySourceUsage.count({ where }),
     ]);
 
     return { items, total };
@@ -123,6 +129,41 @@ export class InventoryRepository {
     return db.inventoryLog.findUnique({
       where: { reversalOfLogId: sourceLogId },
     });
+  }
+
+  async findOriginalLogsByBusinessDocument(
+    params: {
+      businessDocumentType: string;
+      businessDocumentId: number;
+    },
+    db: InventoryDbClient = this.prisma,
+  ) {
+    const [originalLogs, reversalLogs] = await Promise.all([
+      db.inventoryLog.findMany({
+        where: {
+          businessDocumentType: params.businessDocumentType,
+          businessDocumentId: params.businessDocumentId,
+          reversalOfLogId: null,
+        },
+        orderBy: { occurredAt: "asc" },
+      }),
+      db.inventoryLog.findMany({
+        where: {
+          businessDocumentType: params.businessDocumentType,
+          businessDocumentId: params.businessDocumentId,
+          reversalOfLogId: { not: null },
+        },
+        select: { reversalOfLogId: true },
+      }),
+    ]);
+
+    const reversedLogIds = new Set(
+      reversalLogs
+        .map((log) => log.reversalOfLogId)
+        .filter((logId): logId is number => logId !== null),
+    );
+
+    return originalLogs.filter((log) => !reversedLogIds.has(log.id));
   }
 
   async findSourceUsage(
@@ -180,6 +221,58 @@ export class InventoryRepository {
     return db.inventorySourceUsage.update({
       where: { id },
       data,
+    });
+  }
+
+  async createFactoryNumberReservation(
+    data: Prisma.FactoryNumberReservationUncheckedCreateInput,
+    db: InventoryDbClient = this.prisma,
+  ) {
+    return db.factoryNumberReservation.create({ data });
+  }
+
+  async findFactoryNumberReservationsByDocument(
+    params: {
+      businessDocumentType: string;
+      businessDocumentId: number;
+      status?: FactoryNumberReservationStatus;
+    },
+    db: InventoryDbClient = this.prisma,
+  ) {
+    const where: Prisma.FactoryNumberReservationWhereInput = {
+      businessDocumentType: params.businessDocumentType,
+      businessDocumentId: params.businessDocumentId,
+    };
+    if (params.status) {
+      where.status = params.status;
+    }
+    return db.factoryNumberReservation.findMany({
+      where,
+      orderBy: { id: "asc" },
+    });
+  }
+
+  async releaseFactoryNumberReservations(
+    params: {
+      businessDocumentType: string;
+      businessDocumentId: number;
+      businessDocumentLineId?: number;
+      updatedBy?: string;
+    },
+    db: InventoryDbClient = this.prisma,
+  ) {
+    return db.factoryNumberReservation.updateMany({
+      where: {
+        businessDocumentType: params.businessDocumentType,
+        businessDocumentId: params.businessDocumentId,
+        businessDocumentLineId: params.businessDocumentLineId,
+        status: FactoryNumberReservationStatus.RESERVED,
+      },
+      data: {
+        status: FactoryNumberReservationStatus.RELEASED,
+        releasedAt: new Date(),
+        updatedBy: params.updatedBy,
+      },
     });
   }
 }

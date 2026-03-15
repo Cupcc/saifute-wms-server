@@ -38,6 +38,30 @@ export class MasterDataService {
     return workshop;
   }
 
+  async getSupplierById(id: number) {
+    const supplier = await this.repository.findSupplierById(id);
+    if (!supplier) {
+      throw new NotFoundException(`供应商不存在: ${id}`);
+    }
+    return supplier;
+  }
+
+  async getCustomerById(id: number) {
+    const customer = await this.repository.findCustomerById(id);
+    if (!customer) {
+      throw new NotFoundException(`客户不存在: ${id}`);
+    }
+    return customer;
+  }
+
+  async getPersonnelById(id: number) {
+    const personnel = await this.repository.findPersonnelById(id);
+    if (!personnel) {
+      throw new NotFoundException(`人员不存在: ${id}`);
+    }
+    return personnel;
+  }
+
   async createMaterial(dto: CreateMaterialDto, createdBy?: string) {
     const existing = await this.repository.findMaterialByCode(dto.materialCode);
     if (existing) {

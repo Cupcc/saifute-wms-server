@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import {
+  FactoryNumberReservationStatus,
   InventoryOperationType,
   type InventoryOperationType as InventoryOperationTypeEnum,
   Prisma,
@@ -65,6 +66,24 @@ export interface ReleaseInventorySourceCommand {
   consumerDocumentId: number;
   consumerLineId: number;
   targetReleasedQty: Prisma.Decimal | number | string;
+  operatorId?: string;
+}
+
+export interface ReserveFactoryNumberCommand {
+  materialId: number;
+  workshopId: number;
+  businessDocumentType: string;
+  businessDocumentId: number;
+  businessDocumentLineId: number;
+  startNumber: string;
+  endNumber: string;
+  operatorId?: string;
+}
+
+export interface ReleaseFactoryNumberReservationsCommand {
+  businessDocumentType: string;
+  businessDocumentId: number;
+  businessDocumentLineId?: number;
   operatorId?: string;
 }
 
@@ -513,22 +532,79 @@ export class InventoryService {
     });
   }
 
-  async listSourceUsages(params: {
-    materialId?: number;
-    consumerDocumentType?: string;
-    consumerDocumentId?: number;
-    limit?: number;
-    offset?: number;
-  }) {
+  async getLogsForDocument(
+    params: {
+      businessDocumentType: string;
+      businessDocumentId: number;
+    },
+    tx?: Prisma.TransactionClient,
+  ) {
+    return this.repository.findOriginalLogsByBusinessDocument(params, tx);
+  }
+
+  async reserveFactoryNumber(
+    cmd: ReserveFactoryNumberCommand,
+    tx?: Prisma.TransactionClient,
+  ) {
+    await this.ensureMasterDataExists(cmd.materialId, cmd.workshopId);
+    return this.withTransaction(tx, async (db) => {
+      return this.repository.createFactoryNumberReservation(
+        {
+          materialId: cmd.materialId,
+          workshopId: cmd.workshopId,
+          businessDocumentType: cmd.businessDocumentType,
+          businessDocumentId: cmd.businessDocumentId,
+          businessDocumentLineId: cmd.businessDocumentLineId,
+          startNumber: cmd.startNumber,
+          endNumber: cmd.endNumber,
+          status: FactoryNumberReservationStatus.RESERVED,
+          createdBy: cmd.operatorId,
+          updatedBy: cmd.operatorId,
+        },
+        db,
+      );
+    });
+  }
+
+  async releaseFactoryNumberReservations(
+    cmd: ReleaseFactoryNumberReservationsCommand,
+    tx?: Prisma.TransactionClient,
+  ) {
+    return this.withTransaction(tx, async (db) => {
+      return this.repository.releaseFactoryNumberReservations(
+        {
+          businessDocumentType: cmd.businessDocumentType,
+          businessDocumentId: cmd.businessDocumentId,
+          businessDocumentLineId: cmd.businessDocumentLineId,
+          updatedBy: cmd.operatorId,
+        },
+        db,
+      );
+    });
+  }
+
+  async listSourceUsages(
+    params: {
+      materialId?: number;
+      consumerDocumentType?: string;
+      consumerDocumentId?: number;
+      limit?: number;
+      offset?: number;
+    },
+    tx?: Prisma.TransactionClient,
+  ) {
     const limit = Math.min(params.limit ?? 50, 100);
     const offset = params.offset ?? 0;
-    return this.repository.findSourceUsages({
-      materialId: params.materialId,
-      consumerDocumentType: params.consumerDocumentType,
-      consumerDocumentId: params.consumerDocumentId,
-      limit,
-      offset,
-    });
+    return this.repository.findSourceUsages(
+      {
+        materialId: params.materialId,
+        consumerDocumentType: params.consumerDocumentType,
+        consumerDocumentId: params.consumerDocumentId,
+        limit,
+        offset,
+      },
+      tx,
+    );
   }
 
   private toPositiveQuantityDecimal(

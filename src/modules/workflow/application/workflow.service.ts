@@ -6,6 +6,7 @@ import {
 import {
   AuditStatusSnapshot,
   DocumentFamily,
+  type Prisma,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { WorkflowRepository } from "../infrastructure/workflow.repository";
@@ -26,8 +27,12 @@ export class WorkflowService {
     private readonly repository: WorkflowRepository,
   ) {}
 
-  async createOrRefreshAuditDocument(cmd: CreateAuditDocumentCommand) {
-    return this.prisma.workflowAuditDocument.upsert({
+  async createOrRefreshAuditDocument(
+    cmd: CreateAuditDocumentCommand,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const db = tx ?? this.prisma;
+    return db.workflowAuditDocument.upsert({
       where: {
         documentType_documentId: {
           documentType: cmd.documentType,
@@ -46,10 +51,39 @@ export class WorkflowService {
         updatedBy: cmd.createdBy,
       },
       update: {
+        auditStatus: AuditStatusSnapshot.PENDING,
         documentNumber: cmd.documentNumber,
         submittedBy: cmd.submittedBy,
         submittedAt: cmd.submittedBy ? new Date() : undefined,
+        decidedBy: null,
+        decidedAt: null,
+        rejectReason: null,
+        resetCount: { increment: 1 },
+        lastResetAt: new Date(),
         updatedBy: cmd.createdBy,
+      },
+    });
+  }
+
+  async markAuditNotRequired(
+    documentType: string,
+    documentId: number,
+    updatedBy?: string,
+    tx?: Prisma.TransactionClient,
+  ) {
+    const db = tx ?? this.prisma;
+
+    return db.workflowAuditDocument.updateMany({
+      where: {
+        documentType,
+        documentId,
+      },
+      data: {
+        auditStatus: AuditStatusSnapshot.NOT_REQUIRED,
+        decidedBy: null,
+        decidedAt: null,
+        rejectReason: null,
+        updatedBy,
       },
     });
   }

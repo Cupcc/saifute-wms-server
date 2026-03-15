@@ -71,6 +71,64 @@ describe("WorkflowService", () => {
     expect(result.auditStatus).toBe(AuditStatusSnapshot.PENDING);
   });
 
+  it("should reset audit state when refreshing an existing document", async () => {
+    const refreshed = {
+      ...mockAudit,
+      auditStatus: AuditStatusSnapshot.PENDING,
+      decidedBy: null,
+      decidedAt: null,
+      rejectReason: null,
+      resetCount: 1,
+      lastResetAt: new Date(),
+    };
+    const upsert = jest.fn().mockResolvedValue(refreshed);
+    const mockPrisma = {
+      workflowAuditDocument: {
+        upsert,
+      },
+    };
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        WorkflowService,
+        {
+          provide: PrismaService,
+          useValue: mockPrisma,
+        },
+        {
+          provide: WorkflowRepository,
+          useValue: {
+            findAuditByDocument: jest.fn(),
+            findAuditById: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    const service = moduleRef.get(WorkflowService);
+    await service.createOrRefreshAuditDocument({
+      documentFamily: DocumentFamily.STOCK_IN,
+      documentType: "StockInOrder",
+      documentId: 100,
+      documentNumber: "SI-001",
+      submittedBy: "1",
+      createdBy: "1",
+    });
+
+    expect(upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        update: expect.objectContaining({
+          auditStatus: AuditStatusSnapshot.PENDING,
+          decidedBy: null,
+          decidedAt: null,
+          rejectReason: null,
+          resetCount: { increment: 1 },
+          lastResetAt: expect.any(Date),
+        }),
+      }),
+    );
+  });
+
   it("should approve and transition to APPROVED", async () => {
     const approved = {
       ...mockAudit,
@@ -239,5 +297,46 @@ describe("WorkflowService", () => {
 
     expect(result.auditStatus).toBe(AuditStatusSnapshot.PENDING);
     expect(result.resetCount).toBe(1);
+  });
+
+  it("should mark audit as NOT_REQUIRED", async () => {
+    const updateMany = jest.fn().mockResolvedValue({ count: 1 });
+    const mockPrisma = {
+      workflowAuditDocument: {
+        updateMany,
+      },
+    };
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        WorkflowService,
+        {
+          provide: PrismaService,
+          useValue: mockPrisma,
+        },
+        {
+          provide: WorkflowRepository,
+          useValue: {
+            findAuditByDocument: jest.fn(),
+            findAuditById: jest.fn(),
+          },
+        },
+      ],
+    }).compile();
+
+    const service = moduleRef.get(WorkflowService);
+    const result = await service.markAuditNotRequired("StockInOrder", 100, "9");
+
+    expect(result).toEqual({ count: 1 });
+    expect(updateMany).toHaveBeenCalledWith({
+      where: {
+        documentType: "StockInOrder",
+        documentId: 100,
+      },
+      data: expect.objectContaining({
+        auditStatus: AuditStatusSnapshot.NOT_REQUIRED,
+        updatedBy: "9",
+      }),
+    });
   });
 });
