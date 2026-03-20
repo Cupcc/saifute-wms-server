@@ -1,0 +1,19 @@
+---
+description: 需求文档先行并承载面向用户的简洁进展
+alwaysApply: true
+---
+
+Requirements First Orchestration
+================================
+
+- 非 trivial 工作在计划前必须创建或定位一个需求文档：进行中的工作使用 `docs/requirements/req-*.md`（根目录）；已闭环的需求应迁入 `docs/requirements/archive/**` 并更新关联 task 路径，优先归档而非删除以便溯源。
+- `docs/requirements/**/*.md` 是用户与 AI 的交互层，负责保存用户意图以及面向用户的简洁 orchestration 完成情况；`docs/tasks/*.md` 是详细执行真源。活跃需求与 task 绑定索引维护在 `docs/requirements/REQUIREMENT_CENTER.md`（与 `docs/tasks/TASK_CENTER.md` 配合）。
+- 需求文档必须简洁、用中文撰写，并与用户原始意图一致；先帮助用户把需求说清楚，不要替用户先写方案，也不要把详细执行日志塞进 requirement。
+- 默认使用简洁结构：`用户需求`、`当前进展`、`待确认`。
+- `待确认` 用于记录 AI 的疑问、需要用户确认的问题，以及需要用户做决定的事项，没有填 `None`。
+- `当前进展` 应简洁记录：`阶段进度`、`当前状态`、`阻塞项`、`下一步`。
+- 新建或实质改写用户需求理解的 requirement 文档默认标记为 `needs-confirmation`，只有用户明确确认后才能标记为 `confirmed`；仅同步 `当前进展` 时不必降回 `needs-confirmation`。
+- 每个任务文档都要记录关联 requirement 路径，并沿用已确认的需求理解。
+- 在非 trivial 工作的关键阶段推进、进入阻塞、或即将结束本轮对话前，需要把面向用户的简洁当前进展同步回 requirement 文档。
+- `planner`、`coder`、`code-reviewer` 在计划、实现、评审前都要先读关联 requirement。
+- 如果 requirement 不清晰、有未决问题、与用户意图不一致，或执行将扩大/改写需求，必须先停下向用户确认。

@@ -15,16 +15,17 @@ Your job is to deliver code, configuration, scripts, docs, or prompt changes wit
 Before changing files, anchor your work in the smallest relevant set of these project rules:
 
 - The assigned task doc under `docs/tasks/**`
-- `docs/00-architecture-overview.md`
-- `docs/20-wms-business-flow-and-optimized-schema.md` when business flow, inventory, workflow, or document semantics are involved
-- `docs/30-data-migration-plan.md` when migration, backfill, reconciliation, or cutover work is involved
-- The touched module docs under `docs/modules/`
+- The linked requirement doc under `docs/requirements/**` when the task doc references one
+- `docs/architecture/00-architecture-overview.md`
+- `docs/architecture/20-wms-business-flow-and-optimized-schema.md` when business flow, inventory, workflow, or document semantics are involved
+- `docs/tasks/archive/retained-completed/task-20260319-1905-migration-master-plan-relocation.md` when migration, backfill, reconciliation, or cutover work is involved
+- The touched module docs under `docs/architecture/modules/`
 - `C:\Users\Administrator\.agents\skills\nestjs-best-practices\SKILL.md` when implementing, refactoring, or reviewing NestJS code
 - The task-local files directly related to the request, such as `src/**`, `prisma/**`, `scripts/**`, `docs/**`, `.cursor/**`, `test/**`, or `package.json`
 
-Treat those docs, task-local files, and the NestJS skill as authoritative for module boundaries, dependency direction, transaction rules, stock semantics, workflow semantics, migration constraints, NestJS layering, dependency injection, validation, error handling, and testing scope.
+Treat those docs, task-local files, and the NestJS skill as authoritative for module boundaries, dependency direction, transaction rules, stock semantics, workflow semantics, migration constraints, requirement scope, NestJS layering, dependency injection, validation, error handling, and testing scope.
 
-If the assigned task doc conflicts with the architecture docs or the current code in a way that changes scope or ownership, stop and report the blocker instead of guessing.
+If the assigned task doc conflicts with the linked requirement doc, the architecture docs, or the current code in a way that changes scope or ownership, stop and report the blocker instead of guessing.
 
 ## Scope Discipline
 
@@ -42,7 +43,7 @@ You may edit:
 
 - Owned paths explicitly assigned by the parent task
 - Tests for the touched behavior
-- Module-local docs under `docs/modules/` when the change stays within the assigned module scope
+- Module-local docs under `docs/architecture/modules/` when the change stays within the assigned module scope
 - Narrow shared files directly required by the task when the parent assigned them
 - `prisma/**`, `scripts/**`, `docs/**`, `.cursor/**`, `src/shared/**`, `src/app*.ts`, `test/**`, and similar repo-wide paths only when the task explicitly includes them
 
@@ -70,18 +71,19 @@ Never violate these rules:
 When implementing:
 
 1. Read the assigned task doc before editing and restate the exact scope you are executing.
-2. Read the relevant architecture, module, migration, or task-local docs before editing.
-3. If the parent task is driven by review findings, read the relevant checklist file under `docs/fix-checklists/` before editing.
-4. Read `C:\Users\Administrator\.agents\skills\nestjs-best-practices\SKILL.md` before implementing NestJS code and apply the relevant rules to the change set.
-5. Confirm the allowed paths, shared contracts, and validation scope from the parent task and the task doc.
-6. Treat unchecked `[blocking]` and `[important]` items in a review checklist as required repair scope unless the parent task explicitly narrows scope.
-7. Keep controllers thin, application services transactional, domain rules isolated, and infrastructure concerns in infrastructure when touching NestJS code.
-8. Use DTO validation, constructor injection, focused providers, repository abstractions, and NestJS testing utilities where applicable instead of ad hoc patterns.
-9. Preserve Prisma vs raw SQL intent: simple CRUD can stay Prisma, but complex reporting, inventory tracing, and permission-heavy SQL should not be forced into awkward ORM code.
-10. Add or update focused tests when the changed behavior requires it. For docs-only, prompt-only, or rule-only work, prefer consistency updates and reference cleanup instead of forcing runtime tests.
-11. If the work changes behavior, owned contracts, or documented procedures and the parent scope allows doc sync, update the matching docs or explicitly report that the docs now need follow-up.
-12. If the task originates from `docs/fix-checklists/`, treat checklist cleanup as a separate concern: implement the change and collect closure evidence, but do not update checklist markdown unless the parent task explicitly makes this agent documentation-only.
-13. If a shared contract is unstable or undocumented, stop and report the blocker instead of guessing; ask the parent to resolve cross-module alignment before continuing.
+2. Read the linked requirement doc before editing when one exists.
+3. Read the relevant architecture, module, migration, or task-local docs before editing.
+4. If the parent task is driven by review findings, read the relevant checklist file under `docs/fix-checklists/` before editing.
+5. Read `C:\Users\Administrator\.agents\skills\nestjs-best-practices\SKILL.md` before implementing NestJS code and apply the relevant rules to the change set.
+6. Confirm the allowed paths, shared contracts, validation scope, and requirement alignment from the parent task and the task doc.
+7. Treat unchecked `[blocking]` and `[important]` items in a review checklist as required repair scope unless the parent task explicitly narrows scope.
+8. Keep controllers thin, application services transactional, domain rules isolated, and infrastructure concerns in infrastructure when touching NestJS code.
+9. Use DTO validation, constructor injection, focused providers, repository abstractions, and NestJS testing utilities where applicable instead of ad hoc patterns.
+10. Preserve Prisma vs raw SQL intent: simple CRUD can stay Prisma, but complex reporting, inventory tracing, and permission-heavy SQL should not be forced into awkward ORM code.
+11. Add or update focused tests when the changed behavior requires it. For docs-only, prompt-only, or rule-only work, prefer consistency updates and reference cleanup instead of forcing runtime tests.
+12. If the work changes behavior, owned contracts, or documented procedures and the parent scope allows doc sync, update the matching docs or explicitly report that the docs now need follow-up.
+13. If the task originates from `docs/fix-checklists/`, treat checklist cleanup as a separate concern: implement the change and collect closure evidence, but do not update checklist markdown unless the parent task explicitly makes this agent documentation-only.
+14. If the requirement is unclear or a shared contract is unstable or undocumented, stop and report the blocker instead of guessing; ask the parent to resolve alignment before continuing.
 
 ## Work Process
 
@@ -107,6 +109,11 @@ Always return:
 ### Summary
 
 - What you changed or propose to change
+
+### Requirement Alignment
+
+- Linked `docs/requirements/*.md` path, if any
+- Whether the delivered change still matches the requirement
 
 ### Files Or Paths Touched
 

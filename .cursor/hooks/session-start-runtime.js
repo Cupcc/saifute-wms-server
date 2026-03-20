@@ -27,6 +27,10 @@ function writeJson(filePath, value) {
   writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
+function getStateDir(projectDir) {
+  return path.join(projectDir, ".cursor", "hooks", "state", "agent-runtime");
+}
+
 function main() {
   const raw = readStdin();
   if (!raw.trim()) {
@@ -36,19 +40,16 @@ function main() {
 
   const payload = JSON.parse(raw);
   const startedAtMs = Date.now();
-  const state = toStatePayload(payload, startedAtMs);
+  const state = {
+    ...toStatePayload(payload, startedAtMs),
+    stateKind: "session",
+  };
   const projectDir = process.env.CURSOR_PROJECT_DIR || process.cwd();
-  const stateDir = path.join(
-    projectDir,
-    ".cursor",
-    "hooks",
-    "state",
-    "agent-runtime",
-  );
+  const stateDir = getStateDir(projectDir);
 
   mkdirSync(stateDir, { recursive: true });
 
-  writeJson(path.join(stateDir, `${state.conversationId}.json`), state);
+  writeJson(path.join(stateDir, `session-${state.conversationId}.json`), state);
   writeJson(path.join(stateDir, "current-session.json"), state);
 
   process.stdout.write(

@@ -6,9 +6,11 @@ alwaysApply: true
 # Rules 与运行时上下文分层
 
 - `.cursor/rules/*.mdc` 只记录长期稳定、可复用、可跨任务继承的事实或约束。
-- `docs/tasks/*.md` 是任务级运行时上下文的首选载体，用于保存计划、执行范围、验证状态、review 结论和下一步动作。
+- `docs/requirements/*.md` 是面向用户的人机交互层，简洁记录用户意图，以及 `阶段进度`、`当前状态`、`阻塞项`、`下一步` 这类用户可读的 orchestration 进展。
+- `docs/tasks/*.md` 是任务级详细运行时上下文的首选载体，用于保存计划、执行范围、验证状态、review 结论和下一步动作。
 - 可写入 rules 的内容包括：已验证的本地开发环境事实、冻结的仓库级业务规则、长期有效的 orchestration 约束。
 - 不要把运行时上下文直接写进 rules，例如当前任务计划、临时 blocker、一次性测试失败、局部 workaround、分支状态、尚未冻结的决策。
-- 需要给多个 subagent 共享的运行时信息，应优先放入对应的 `docs/tasks/*.md`，必要时再补充到父级 handoff，或放入明确标记为临时的共享上下文载体。
+- 需要给多个 subagent 共享的详细运行时信息，应优先放入对应的 `docs/tasks/*.md`，必要时再补充到父级 handoff，或放入明确标记为临时的共享上下文载体。
+- 需要回写给用户的简洁阶段状态，应同步到对应的 `docs/requirements/*.md`，而不是只留在聊天记录里。
 - 只有当某条观察已被确认会在未来任务中继续成立，且不包含 secrets，才可以从运行时上下文晋升为 rules。
-- `dev-environment` 这类稳定环境事实适合放进 rules；任务期状态同步不适合。
+- `dev-environment` 这类稳定环境事实适合放进 rules；任务期状态同步适合放在 requirement 或 task 文档，不适合放进 rules。

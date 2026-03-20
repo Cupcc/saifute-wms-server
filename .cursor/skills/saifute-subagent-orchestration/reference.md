@@ -6,6 +6,8 @@
 
 - Best for: turning a user request into an implementation plan and task doc before any code write step with the repo's dedicated planning worker
 - Owns:
+  - requirement-to-task alignment
+  - requirement-doc sync guidance for the parent orchestrator
   - task decomposition
   - impacted file, module, schema, script, doc, and operational-surface discovery
   - validation planning
@@ -31,7 +33,7 @@ Typical output:
 ### `coder`
 
 - Best for: scoped implementation, refactor, bug-fix, migration, backfill, reconciliation, cutover-prep, and related docs or tooling work
-- Owns: one explicitly assigned writable scope at a time, using an assigned `docs/tasks/*.md` as the execution brief
+- Owns: one explicitly assigned writable scope at a time, using an assigned `docs/tasks/*.md` as the execution brief and staying aligned with the linked `docs/requirements/*.md`
 - Typical files:
   - `src/modules/**`
   - related tests
@@ -68,6 +70,7 @@ Typical output:
 
 Checks include:
 
+- requirement drift between the linked requirement doc, task doc, and delivered changes
 - auth and session lifecycle where relevant
 - inventory side effects and reverse operations
 - workflow regressions
@@ -87,13 +90,15 @@ Checks include:
 ## Rules vs runtime context
 
 - Use `.cursor/rules/*.mdc` for durable facts and repository-wide constraints that future tasks should inherit
-- Keep live execution state in `docs/tasks/*.md`, the parent handoff, or a temporary shared context artifact, not in rules
+- Keep detailed live execution state in `docs/tasks/*.md`, the parent handoff, or a temporary shared context artifact, not in rules
+- Keep concise user-facing orchestration status in the linked `docs/requirements/*.md`
 - Good rule candidates: verified dev environment facts, frozen workflow rules, repo-wide orchestration conventions
 - Bad rule candidates: current task status, temporary blockers, one-off test failures, or branch-local workaround notes
 
 ## Suggested combinations
 
-- Default task flow: `planner` writes `docs/tasks/*.md` -> `coder` executes from that task doc -> `code-reviewer` reviews, tests, and updates docs -> if any `[blocking]` or `[important]` finding remains, route back to `coder` -> rerun `code-reviewer` -> parent commit step only if the user explicitly asked for a commit
+- Default task flow: create or confirm `docs/requirements/*.md` -> `planner` writes `docs/tasks/*.md` and returns req-sync lines -> parent syncs concise progress to the requirement doc -> `coder` executes from the task doc -> `code-reviewer` reviews, tests, and updates docs -> if any `[blocking]` or `[important]` finding remains, route back to `coder` -> rerun `code-reviewer` -> parent syncs concise progress to the requirement doc again -> parent commit step only if the user explicitly asked for a commit
+- Requirement-first flow: create or confirm `docs/requirements/*.md` -> `planner` writes `docs/tasks/*.md` against it -> `coder` executes the aligned scope -> `code-reviewer` checks requirement drift and validation -> parent keeps the requirement doc updated with concise current progress
 - Multi-module task with safe disjoint scopes: `planner` writes task docs or explicit scoped sections -> parallel `coder` workers with explicit boundaries -> `code-reviewer` -> fix loop as needed
 - Review-heavy task: `planner` writes `docs/tasks/*.md` -> `code-reviewer`
 - Small but non-trivial bugfix: `planner` writes `docs/tasks/*.md` -> `coder` -> `code-reviewer` -> fix loop -> parent commit step only if the user explicitly asked for a commit
@@ -115,6 +120,9 @@ Ask every subagent to report back in this shape:
 Task doc path:
 - ...
 
+Requirement path:
+- ...
+
 Summary:
 - ...
 
@@ -129,6 +137,12 @@ Tests run or still needed:
 
 Risks, blockers, sign-off needs, or follow-up work:
 - ...
+
+Requirement doc sync:
+- 阶段进度: ...
+- 当前状态: ...
+- 阻塞项: ...
+- 下一步: ...
 ```
 
 Planner append:

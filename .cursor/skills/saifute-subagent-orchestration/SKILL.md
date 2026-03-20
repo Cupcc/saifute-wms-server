@@ -21,19 +21,42 @@ Do not skip forward unless the user explicitly narrows the scope, or the step is
 
 Read the smallest relevant source of truth before assigning work:
 
-- `docs/00-architecture-overview.md`
-- the specific module docs in `docs/modules/`
+- the linked requirement doc under `docs/requirements/**` when the task is driven by a user request
+- `docs/architecture/00-architecture-overview.md`
+- the specific module docs in `docs/architecture/modules/`
 - the files directly related to the task
 
 For migration, backfill, reconciliation, or cutover-prep work, also read:
 
-- `docs/30-data-migration-plan.md`
-- `docs/20-wms-business-flow-and-optimized-schema.md` when the work touches inventory, workflow, reporting, document relations, reservation semantics, or business-state semantics
+- `docs/tasks/archive/retained-completed/task-20260319-1905-migration-master-plan-relocation.md`
+- `docs/architecture/20-wms-business-flow-and-optimized-schema.md` when the work touches inventory, workflow, reporting, document relations, reservation semantics, or business-state semantics
 - the relevant `prisma/**`, `scripts/**`, `docs/**`, or module surfaces that define the current schema and runtime behavior
 
-Treat those docs and files as the source of truth for module boundaries, dependencies, transaction rules, testing scope, runtime semantics, staging expectations, and cutover constraints.
+Treat those docs and files as the source of truth for requirement scope, module boundaries, dependencies, transaction rules, testing scope, runtime semantics, staging expectations, and cutover constraints.
 
 If legacy data and the current runtime disagree, adapt the legacy data to the current runtime and schema unless the user explicitly expands scope to change runtime behavior.
+
+## Requirement-first orchestration
+
+For non-trivial work, create or locate one concise requirement doc under `docs/requirements/**` before planning.
+
+- requirement doc: a concise Chinese user-and-AI interaction layer that records the user's requirement plus concise user-facing orchestration status
+- task doc in `docs/tasks/**`: detailed execution scope, validation state, review loop, handoff
+
+The requirement doc should stay concise. Use it for user-facing status only:
+
+- `阶段进度`
+- `当前状态`
+- `阻塞项`
+- `下一步`
+
+The task doc must link back to the requirement doc and carry forward the confirmed understanding.
+
+New or materially changed requirement docs default to `needs-confirmation`. Do not treat them as accepted scope until the user explicitly confirms and the doc can be marked `confirmed`.
+
+If you only sync current progress into an already confirmed requirement doc without changing the requirement understanding, keep it `confirmed`.
+
+If the requirement is unclear, has unresolved questions, or the planned execution would widen or rewrite it, stop and ask the user before planning, coding, or review sign-off.
 
 ## Intent mapping
 
@@ -63,6 +86,7 @@ When the user says `continue`, `resume`, `pick this up`, or asks to continue in 
 
 1. Look for an existing `docs/tasks/*.md` execution brief for the active scope before starting fresh exploration.
 2. If a task doc exists, treat it as the primary runtime handoff source and also read:
+   - the linked requirement doc under `docs/requirements/**`, if the task doc names one
    - the related `docs/fix-checklists/*.md`
    - any report files, validation artifacts, or generated outputs referenced by the task doc
 3. Reconstruct and state, at least to yourself before delegating:
@@ -113,6 +137,7 @@ Start with the `planner` subagent unless the task is trivially scoped or the use
 
 Ask the planner to return:
 
+- related requirement path and whether it is clear enough for planning
 - goal and acceptance criteria
 - exact `docs/tasks/*.md` path created or updated
 - impacted files, modules, or operational surfaces
@@ -159,6 +184,7 @@ Run `code-reviewer` after substantive edits.
 The reviewer should focus on:
 
 - bugs and behavioral regressions
+- requirement drift between `docs/requirements/**`, `docs/tasks/**`, and delivered changes
 - missing or weak tests
 - contract drift
 - auth, workflow, inventory, and transaction safety where relevant
@@ -215,14 +241,15 @@ The parent orchestrator owns the distinction between durable rules and runtime c
 
 - put stable, reusable facts in `.cursor/rules/*.mdc`
 - do not write temporary runtime observations into rules
-- put task-scoped runtime context in `docs/tasks/**`, the parent handoff, or another clearly temporary shared context artifact when multiple subagents need the same live status
+- put detailed task-scoped runtime context in `docs/tasks/**`, the parent handoff, or another clearly temporary shared context artifact when multiple subagents need the same live status
+- keep the linked `docs/requirements/**` updated with concise user-facing progress instead of leaving orchestration status only in chat memory
 - before promoting a new observation into rules, confirm that it is likely to remain valid across future tasks and does not contain secrets
 
 ## End-of-turn handoff requirements
 
-Before stopping and returning control to the user on any non-trivial task, make sure the continuation-critical runtime state is written to a durable task artifact instead of relying on chat memory alone.
+Before stopping and returning control to the user on any non-trivial task, make sure the continuation-critical runtime state is written to durable docs instead of relying on chat memory alone.
 
-Prefer the active `docs/tasks/*.md` as the handoff source. If task-doc ownership belongs to `planner` or `code-reviewer`, route the update through the appropriate owner before stopping instead of leaving the latest state only in the conversation.
+Prefer the active `docs/tasks/*.md` as the detailed handoff source, and sync concise user-facing progress into the linked `docs/requirements/*.md`. If task-doc ownership belongs to `planner` or `code-reviewer`, route the detailed update through the appropriate owner before stopping instead of leaving the latest state only in the conversation.
 
 The durable handoff should capture:
 
@@ -233,6 +260,13 @@ The durable handoff should capture:
 - the next recommended step
 - exact commands, report paths, or artifacts the next chat should read or run first
 - any required environment or credential prerequisites still missing
+
+The requirement doc should capture the same turn in concise user-facing form:
+
+- `阶段进度`
+- `当前状态`
+- `阻塞项`
+- `下一步`
 
 If a future chat must be able to resume safely, the task doc and related checklist should be sufficient for the parent orchestrator to continue without hidden assumptions.
 
@@ -289,6 +323,7 @@ Ask each subagent to return:
 - tests or validation run, plus what still needs to run
 - the resume point for the next chat
 - which reports, artifacts, or commands should be read or run first on continuation
+- concise requirement-doc sync lines for `阶段进度` / `当前状态` / `阻塞项` / `下一步`
 - risks, blockers, sign-off needs, and follow-up work
 
 Additionally require:
