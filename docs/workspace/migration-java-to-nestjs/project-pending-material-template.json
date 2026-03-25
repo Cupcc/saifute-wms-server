@@ -1,0 +1,44 @@
+{
+  "batch1Baseline": {
+    "actualBlockedMaterialCount": 21,
+    "actualMapCounts": {
+      "customer": 184,
+      "material": 437,
+      "materialCategory": 8,
+      "personnel": 51,
+      "supplier": 93,
+      "workshop": 13
+    },
+    "expectedBlockedMaterialCount": 21,
+    "expectedMapCounts": {
+      "customer": 184,
+      "material": 437,
+      "materialCategory": 8,
+      "personnel": 51,
+      "supplier": 93,
+      "workshop": 13
+    },
+    "issues": []
+  },
+  "generatedAt": "2026-03-25T09:14:47.405Z",
+  "globalBlockers": [],
+  "instructions": {
+    "candidateSummaryFormat": "materialCode|materialName|specModel|unitCode tuples separated by '; '",
+    "decisionOptions": "map | exclude | fix-source",
+    "fieldGuide": {
+      "approved_target_material_code": "Fill with the target materialCode when decision is 'map'.",
+      "decision": "One of: map | exclude | fix-source",
+      "notes": "Optional free-text annotation for the reviewer."
+    },
+    "purpose": "Manual material mapping template for the project migration backlog. Fill in approved_target_material_code and decision for each line, then hand off for re-execution."
+  },
+  "lines": [],
+  "status": "OK",
+  "summary": {
+    "pendingLineCount": 0,
+    "pendingLinesByProject": [],
+    "pendingProjectCount": 0,
+    "ruleBreakdown": {}
+  },
+  "targetDatabaseName": "saifute-wsm"
+}

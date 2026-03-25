@@ -3,10 +3,17 @@ import { stableJsonStringify } from "../shared/deterministic";
 import type {
   ArchivedFieldPayloadRecord,
   ExcludedProjectPlanRecord,
+  PendingLinePlanRecord,
+  PendingProjectPlanRecord,
+  ProjectAutoCreatedMaterialPlanRecord,
   ProjectExecutionResult,
   ProjectLinePlanRecord,
   ProjectMigrationPlan,
   ProjectPlanRecord,
+} from "./types";
+import {
+  PENDING_RELATION_TYPE_PROJECT_LINE_MATERIAL,
+  PROJECT_AUTO_CREATED_MATERIAL_SOURCE_DOCUMENT_TYPE,
 } from "./types";
 
 export const TARGET_TABLES = {
@@ -77,9 +84,17 @@ async function cleanupSliceStagingRows(
     `
       DELETE FROM migration_staging.archived_field_payload
       WHERE migration_batch = ?
-        AND target_table IN ('project', 'project_material_line')
+        AND target_table IN ('material', 'project', 'project_material_line')
     `,
     [migrationBatch],
+  );
+  await connection.query(
+    `
+      DELETE FROM material
+      WHERE creationMode = 'AUTO_CREATED'
+        AND sourceDocumentType = ?
+    `,
+    [PROJECT_AUTO_CREATED_MATERIAL_SOURCE_DOCUMENT_TYPE],
   );
   await connection.query(
     `
@@ -88,6 +103,77 @@ async function cleanupSliceStagingRows(
         AND legacy_table = 'saifute_composite_product'
     `,
     [migrationBatch],
+  );
+  await connection.query(
+    `
+      DELETE FROM migration_staging.pending_relations
+      WHERE migration_batch = ?
+        AND legacy_table = 'saifute_composite_product'
+    `,
+    [migrationBatch],
+  );
+}
+
+async function upsertAutoCreatedMaterial(
+  connection: MigrationConnectionLike,
+  record: ProjectAutoCreatedMaterialPlanRecord,
+): Promise<number> {
+  return runUpsert(
+    connection,
+    `
+      INSERT INTO material (
+        materialCode,
+        materialName,
+        specModel,
+        categoryId,
+        unitCode,
+        warningMinQty,
+        warningMaxQty,
+        status,
+        creationMode,
+        sourceDocumentType,
+        sourceDocumentId,
+        createdBy,
+        createdAt,
+        updatedBy,
+        updatedAt
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, COALESCE(?, CURRENT_TIMESTAMP)
+      )
+      ON DUPLICATE KEY UPDATE
+        materialName = VALUES(materialName),
+        specModel = VALUES(specModel),
+        categoryId = VALUES(categoryId),
+        unitCode = VALUES(unitCode),
+        warningMinQty = VALUES(warningMinQty),
+        warningMaxQty = VALUES(warningMaxQty),
+        status = VALUES(status),
+        creationMode = VALUES(creationMode),
+        sourceDocumentType = VALUES(sourceDocumentType),
+        sourceDocumentId = VALUES(sourceDocumentId),
+        createdBy = VALUES(createdBy),
+        createdAt = COALESCE(VALUES(createdAt), createdAt),
+        updatedBy = VALUES(updatedBy),
+        updatedAt = COALESCE(VALUES(updatedAt), updatedAt),
+        id = LAST_INSERT_ID(id)
+    `,
+    [
+      record.target.materialCode,
+      record.target.materialName,
+      record.target.specModel,
+      null,
+      record.target.unitCode,
+      record.target.warningMinQty,
+      record.target.warningMaxQty,
+      record.target.status,
+      record.target.creationMode,
+      record.target.sourceDocumentType,
+      record.target.sourceDocumentId,
+      record.target.createdBy,
+      record.target.createdAt,
+      record.target.updatedBy,
+      record.target.updatedAt,
+    ],
   );
 }
 
@@ -194,6 +280,7 @@ async function upsertProjectMaterialLine(
   connection: MigrationConnectionLike,
   projectId: number,
   record: ProjectLinePlanRecord,
+  materialId: number,
 ): Promise<number> {
   return runUpsert(
     connection,
@@ -236,7 +323,7 @@ async function upsertProjectMaterialLine(
     [
       projectId,
       record.target.lineNo,
-      record.target.materialId,
+      materialId,
       record.target.materialCodeSnapshot,
       record.target.materialNameSnapshot,
       record.target.materialSpecSnapshot,
@@ -296,7 +383,7 @@ async function upsertArchivedPayload(
   connection: MigrationConnectionLike,
   migrationBatch: string,
   payload: ArchivedFieldPayloadRecord,
-  targetId: number,
+  targetId: number | null,
 ): Promise<void> {
   await connection.query(
     `
@@ -358,19 +445,119 @@ async function insertExcludedProject(
   );
 }
 
+async function insertPendingRelation(
+  connection: MigrationConnectionLike,
+  migrationBatch: string,
+  projectLegacyId: number,
+  lineRecord: PendingLinePlanRecord,
+): Promise<void> {
+  const payloadJson = stableJsonStringify({
+    ...lineRecord.sourcePayload,
+    resolutionEvidence: lineRecord.resolutionEvidence,
+  });
+  await connection.query(
+    `
+      INSERT INTO migration_staging.pending_relations (
+        legacy_table,
+        legacy_id,
+        legacy_line_id,
+        relation_type,
+        pending_reason,
+        payload_json,
+        migration_batch
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `,
+    [
+      "saifute_composite_product",
+      projectLegacyId,
+      lineRecord.legacyId,
+      PENDING_RELATION_TYPE_PROJECT_LINE_MATERIAL,
+      lineRecord.pendingReason.slice(0, 255),
+      payloadJson,
+      migrationBatch,
+    ],
+  );
+}
+
+async function writePendingProjectEvidence(
+  connection: MigrationConnectionLike,
+  migrationBatch: string,
+  pendingProjects: readonly PendingProjectPlanRecord[],
+  counts: { pendingRelationCount: number; pendingArchivedPayloadCount: number },
+): Promise<void> {
+  for (const pendingProject of pendingProjects) {
+    await upsertArchivedPayload(
+      connection,
+      migrationBatch,
+      pendingProject.summaryArchivedPayload,
+      null,
+    );
+    counts.pendingArchivedPayloadCount += 1;
+
+    for (const pendingLine of pendingProject.pendingLines) {
+      await insertPendingRelation(
+        connection,
+        migrationBatch,
+        pendingProject.legacyId,
+        pendingLine,
+      );
+      counts.pendingRelationCount += 1;
+    }
+  }
+}
+
+function resolveLineMaterialId(
+  record: ProjectLinePlanRecord,
+  autoCreatedMaterialIdsByCode: ReadonlyMap<string, number>,
+): number {
+  const autoCreatedMaterialId =
+    autoCreatedMaterialIdsByCode.get(record.target.materialCodeSnapshot) ??
+    null;
+  if (autoCreatedMaterialId !== null) {
+    return autoCreatedMaterialId;
+  }
+
+  if (record.target.materialId !== null) {
+    return record.target.materialId;
+  }
+
+  throw new Error(
+    `Project line ${record.legacyTable}#${record.legacyId} references auto-created material ${record.target.materialCodeSnapshot}, but no target material id was available during execute.`,
+  );
+}
+
 export async function executeProjectPlan(
   connection: MigrationConnectionLike,
   plan: ProjectMigrationPlan,
 ): Promise<ProjectExecutionResult> {
+  let insertedOrUpdatedAutoCreatedMaterials = 0;
   let insertedOrUpdatedProjects = 0;
   let insertedOrUpdatedLines = 0;
   let archivedPayloadCount = 0;
   let excludedDocumentCount = 0;
+  const pendingCounts = {
+    pendingRelationCount: 0,
+    pendingArchivedPayloadCount: 0,
+  };
+  const autoCreatedMaterialIdsByCode = new Map<string, number>();
 
   await connection.beginTransaction();
 
   try {
     await cleanupSliceStagingRows(connection, plan.migrationBatch);
+
+    for (const record of plan.autoCreatedMaterials) {
+      const materialId = await upsertAutoCreatedMaterial(connection, record);
+      insertedOrUpdatedAutoCreatedMaterials += 1;
+      autoCreatedMaterialIdsByCode.set(record.target.materialCode, materialId);
+      await upsertArchivedPayload(
+        connection,
+        plan.migrationBatch,
+        record.archivedPayload,
+        materialId,
+      );
+      archivedPayloadCount += 1;
+    }
 
     for (const record of plan.migratedProjects) {
       const projectId = await upsertProject(connection, record);
@@ -392,10 +579,15 @@ export async function executeProjectPlan(
       archivedPayloadCount += 1;
 
       for (const lineRecord of record.lines) {
+        const materialId = resolveLineMaterialId(
+          lineRecord,
+          autoCreatedMaterialIdsByCode,
+        );
         const lineId = await upsertProjectMaterialLine(
           connection,
           projectId,
           lineRecord,
+          materialId,
         );
         insertedOrUpdatedLines += 1;
 
@@ -421,6 +613,13 @@ export async function executeProjectPlan(
       excludedDocumentCount += 1;
     }
 
+    await writePendingProjectEvidence(
+      connection,
+      plan.migrationBatch,
+      plan.pendingProjects,
+      pendingCounts,
+    );
+
     await connection.commit();
   } catch (error) {
     await connection.rollback();
@@ -428,9 +627,12 @@ export async function executeProjectPlan(
   }
 
   return {
+    insertedOrUpdatedAutoCreatedMaterials,
     insertedOrUpdatedProjects,
     insertedOrUpdatedLines,
     archivedPayloadCount,
     excludedDocumentCount,
+    pendingRelationCount: pendingCounts.pendingRelationCount,
+    pendingArchivedPayloadCount: pendingCounts.pendingArchivedPayloadCount,
   };
 }

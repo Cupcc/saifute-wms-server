@@ -9,12 +9,17 @@ import {
 import { closePools, createMariaDbPool, withPoolConnection } from "../db";
 import { stableJsonStringify } from "../shared/deterministic";
 import { writeStableReport } from "../shared/report-writer";
+import { buildCutoverReadiness } from "./cutover-readiness";
 import {
   readLegacyProjectSnapshot,
   readProjectDependencySnapshot,
 } from "./legacy-reader";
 import { buildProjectMigrationPlan } from "./transformer";
 import type { ArchivedFieldPayloadRecord, ProjectMigrationPlan } from "./types";
+import {
+  PENDING_RELATION_TYPE_PROJECT_LINE_MATERIAL,
+  PROJECT_AUTO_CREATED_MATERIAL_SOURCE_DOCUMENT_TYPE,
+} from "./types";
 import { MAP_TABLES, TARGET_TABLES } from "./writer";
 
 interface ArchivedPayloadExpectation {
@@ -51,6 +56,15 @@ interface MapStoredRow {
   targetTable: string;
   targetId: number;
   targetCode: string | null;
+}
+
+interface PendingRelationStoredRow {
+  legacyTable: string;
+  legacyId: number;
+  legacyLineId: number | null;
+  relationType: string | null;
+  pendingReason: string;
+  payloadJson: string;
 }
 
 function comparableScalar(value: unknown): string | null {
@@ -132,10 +146,34 @@ function buildMapIdentity(input: {
   return `${input.legacyTable}::${input.legacyId}`;
 }
 
+function buildPendingRelationIdentity(input: {
+  legacyTable: string;
+  legacyId: number;
+  legacyLineId: number | null;
+}): string {
+  return `${input.legacyTable}::${input.legacyId}::${input.legacyLineId ?? "null"}`;
+}
+
+/**
+ * Collect all expected archived_field_payload rows for this migration batch.
+ * Includes both migrated project/line payloads and pending project summary payloads.
+ */
 function collectExpectedArchivedPayloads(
   plan: ProjectMigrationPlan,
 ): ArchivedPayloadExpectation[] {
   const expectations: ArchivedPayloadExpectation[] = [];
+
+  for (const material of plan.autoCreatedMaterials) {
+    expectations.push({
+      legacyTable: material.archivedPayload.legacyTable,
+      legacyId: material.archivedPayload.legacyId,
+      targetTable: material.archivedPayload.targetTable,
+      targetCode: material.archivedPayload.targetCode,
+      payloadKind: material.archivedPayload.payloadKind,
+      archiveReason: material.archivedPayload.archiveReason,
+      payloadJson: stableJsonStringify(material.archivedPayload.payload),
+    });
+  }
 
   for (const project of plan.migratedProjects) {
     expectations.push({
@@ -159,6 +197,20 @@ function collectExpectedArchivedPayloads(
         payloadJson: stableJsonStringify(line.archivedPayload.payload),
       });
     }
+  }
+
+  for (const pendingProject of plan.pendingProjects) {
+    expectations.push({
+      legacyTable: pendingProject.summaryArchivedPayload.legacyTable,
+      legacyId: pendingProject.summaryArchivedPayload.legacyId,
+      targetTable: pendingProject.summaryArchivedPayload.targetTable,
+      targetCode: pendingProject.summaryArchivedPayload.targetCode,
+      payloadKind: pendingProject.summaryArchivedPayload.payloadKind,
+      archiveReason: pendingProject.summaryArchivedPayload.archiveReason,
+      payloadJson: stableJsonStringify(
+        pendingProject.summaryArchivedPayload.payload,
+      ),
+    });
   }
 
   return expectations.sort(
@@ -254,7 +306,7 @@ async function getArchivedPayloadCount(
       SELECT COUNT(*) AS total
       FROM migration_staging.archived_field_payload
       WHERE migration_batch = ?
-        AND target_table IN ('project', 'project_material_line')
+        AND target_table IN ('material', 'project', 'project_material_line')
     `,
     [migrationBatch],
   );
@@ -280,7 +332,7 @@ async function getArchivedPayloadRows(
         payload_json AS payloadJson
       FROM migration_staging.archived_field_payload
       WHERE migration_batch = ?
-        AND target_table IN ('project', 'project_material_line')
+        AND target_table IN ('material', 'project', 'project_material_line')
       ORDER BY legacy_table ASC, legacy_id ASC, target_table ASC, payload_kind ASC
     `,
     [migrationBatch],
@@ -327,6 +379,30 @@ async function getMapRows(
       FROM migration_staging.${mapTableName}
       WHERE migration_batch = ?
       ORDER BY legacy_table ASC, legacy_id ASC
+    `,
+    [migrationBatch],
+  );
+}
+
+async function getPendingRelationRows(
+  connection: {
+    query<T = unknown>(sql: string, values?: readonly unknown[]): Promise<T>;
+  },
+  migrationBatch: string,
+): Promise<PendingRelationStoredRow[]> {
+  return connection.query<PendingRelationStoredRow[]>(
+    `
+      SELECT
+        legacy_table AS legacyTable,
+        legacy_id AS legacyId,
+        legacy_line_id AS legacyLineId,
+        relation_type AS relationType,
+        pending_reason AS pendingReason,
+        payload_json AS payloadJson
+      FROM migration_staging.pending_relations
+      WHERE migration_batch = ?
+        AND legacy_table = 'saifute_composite_product'
+      ORDER BY legacy_id ASC, legacy_line_id ASC
     `,
     [migrationBatch],
   );
@@ -534,6 +610,117 @@ async function getLineRowsByIdentity(connection: {
   );
 }
 
+async function getAutoCreatedMaterialRowsByCode(connection: {
+  query<T = unknown>(sql: string, values?: readonly unknown[]): Promise<T>;
+}): Promise<
+  Map<
+    string,
+    {
+      id: number;
+      materialCode: string;
+      materialName: string;
+      specModel: string | null;
+      unitCode: string;
+      warningMinQty: string | number | null;
+      warningMaxQty: string | number | null;
+      status: string;
+      creationMode: string;
+      sourceDocumentType: string | null;
+      sourceDocumentId: number | null;
+      createdBy: string | null;
+      updatedBy: string | null;
+    }
+  >
+> {
+  const rows = await connection.query<
+    Array<{
+      id: number;
+      materialCode: string;
+      materialName: string;
+      specModel: string | null;
+      unitCode: string;
+      warningMinQty: string | number | null;
+      warningMaxQty: string | number | null;
+      status: string;
+      creationMode: string;
+      sourceDocumentType: string | null;
+      sourceDocumentId: number | null;
+      createdBy: string | null;
+      updatedBy: string | null;
+    }>
+  >(
+    `
+      SELECT
+        id,
+        materialCode,
+        materialName,
+        specModel,
+        unitCode,
+        warningMinQty,
+        warningMaxQty,
+        status,
+        creationMode,
+        sourceDocumentType,
+        sourceDocumentId,
+        createdBy,
+        updatedBy
+      FROM material
+      WHERE creationMode = 'AUTO_CREATED'
+        AND sourceDocumentType = ?
+      ORDER BY materialCode ASC
+    `,
+    [PROJECT_AUTO_CREATED_MATERIAL_SOURCE_DOCUMENT_TYPE],
+  );
+
+  return new Map(rows.map((row) => [row.materialCode, row] as const));
+}
+
+async function getProjectDownstreamConsumerCounts(connection: {
+  query<T = unknown>(sql: string, values?: readonly unknown[]): Promise<T>;
+}): Promise<Record<string, number>> {
+  const rows = await connection.query<
+    Array<{ consumer: string; total: number }>
+  >(
+    `
+      SELECT 'workflow_audit_document' AS consumer, COUNT(*) AS total
+      FROM workflow_audit_document
+      WHERE documentFamily = 'PROJECT' OR documentType = 'Project'
+      UNION ALL
+      SELECT 'document_relation' AS consumer, COUNT(*) AS total
+      FROM document_relation
+      WHERE upstreamFamily = 'PROJECT'
+         OR downstreamFamily = 'PROJECT'
+         OR upstreamDocumentType = 'Project'
+         OR downstreamDocumentType = 'Project'
+      UNION ALL
+      SELECT 'document_line_relation' AS consumer, COUNT(*) AS total
+      FROM document_line_relation
+      WHERE upstreamFamily = 'PROJECT'
+         OR downstreamFamily = 'PROJECT'
+         OR upstreamDocumentType = 'Project'
+         OR downstreamDocumentType = 'Project'
+      UNION ALL
+      SELECT 'inventory_log' AS consumer, COUNT(*) AS total
+      FROM inventory_log
+      WHERE businessDocumentType = 'Project'
+      UNION ALL
+      SELECT 'inventory_source_usage' AS consumer, COUNT(*) AS total
+      FROM inventory_source_usage
+      WHERE consumerDocumentType = 'Project'
+      UNION ALL
+      SELECT 'factory_number_reservation' AS consumer, COUNT(*) AS total
+      FROM factory_number_reservation
+      WHERE businessDocumentType = 'Project'
+    `,
+  );
+
+  return Object.fromEntries(
+    rows.map((row) => [row.consumer, Number(row.total)] as const),
+  );
+}
+
+// buildCutoverReadiness is imported from ./cutover-readiness and used in main().
+
 async function main(): Promise<void> {
   const cliOptions = parseMigrationCliOptions();
   const reportPath = resolveReportPath(
@@ -541,6 +728,10 @@ async function main(): Promise<void> {
     "project-validate-report.json",
   );
   const env = loadMigrationEnvironment({ requireLegacyDatabaseUrl: true });
+  const inventoryReplayConfirmed =
+    process.env["PROJECT_INVENTORY_REPLAY_CONFIRMED"] === "true";
+  const structuralExclusionsAcknowledged =
+    process.env["PROJECT_STRUCTURAL_EXCLUSIONS_ACKNOWLEDGED"] === "true";
   const targetDatabaseName = assertExpectedDatabaseName(
     env.databaseUrl,
     EXPECTED_TARGET_DATABASE_NAME,
@@ -575,6 +766,10 @@ async function main(): Promise<void> {
 
     const expectedArchivedPayloads = collectExpectedArchivedPayloads(plan);
     const expectedExcludedDocuments = collectExpectedExcludedDocuments(plan);
+    const expectedPendingRelationCount = plan.pendingProjects.reduce(
+      (total, project) => total + project.pendingLineCount,
+      0,
+    );
 
     const report = await withPoolConnection(
       targetPool,
@@ -642,6 +837,14 @@ async function main(): Promise<void> {
               plan.migrationBatch,
             )
           : 0;
+
+        const pendingRelationRows = stagingReady
+          ? await getPendingRelationRows(targetConnection, plan.migrationBatch)
+          : [];
+        const actualPendingRelationCount = pendingRelationRows.length;
+
+        const downstreamConsumerCounts =
+          await getProjectDownstreamConsumerCounts(targetConnection);
 
         if (stagingReady && projectBatchMapRows !== expectedMigratedProjects) {
           validationIssues.push({
@@ -713,6 +916,19 @@ async function main(): Promise<void> {
             reason:
               "Some project material line staging map rows point at missing target rows.",
             missingMappedLines,
+          });
+        }
+
+        if (
+          stagingReady &&
+          actualPendingRelationCount !== expectedPendingRelationCount
+        ) {
+          validationIssues.push({
+            severity: "blocker",
+            reason:
+              "pending_relations count does not match the deterministic plan's expected pending line count.",
+            expectedPendingRelationCount,
+            actualPendingRelationCount,
           });
         }
 
@@ -789,6 +1005,7 @@ async function main(): Promise<void> {
               legacyTable: expectation.legacyTable,
               legacyId: expectation.legacyId,
               targetTable: expectation.targetTable,
+              payloadKind: expectation.payloadKind,
             });
             continue;
           }
@@ -824,6 +1041,7 @@ async function main(): Promise<void> {
                 "archived_field_payload payload_json does not match the deterministic plan.",
               legacyTable: expectation.legacyTable,
               legacyId: expectation.legacyId,
+              payloadKind: expectation.payloadKind,
             });
           }
         }
@@ -925,6 +1143,151 @@ async function main(): Promise<void> {
           await getProjectRowsByProjectCode(targetConnection);
         const lineRowsByIdentity =
           await getLineRowsByIdentity(targetConnection);
+        const autoCreatedMaterialRowsByCode =
+          await getAutoCreatedMaterialRowsByCode(targetConnection);
+        const expectedAutoCreatedMaterialCodes = new Set(
+          plan.autoCreatedMaterials.map(
+            (material) => material.target.materialCode,
+          ),
+        );
+
+        for (const material of plan.autoCreatedMaterials) {
+          const targetRow = autoCreatedMaterialRowsByCode.get(
+            material.target.materialCode,
+          );
+
+          if (!targetRow) {
+            validationIssues.push({
+              severity: "blocker",
+              reason: "Expected auto-created material row is missing.",
+              legacyTable: material.archivedPayload.legacyTable,
+              legacyId: material.archivedPayload.legacyId,
+              materialCode: material.target.materialCode,
+            });
+            continue;
+          }
+
+          const context = {
+            legacyTable: material.archivedPayload.legacyTable,
+            legacyId: material.archivedPayload.legacyId,
+            materialCode: material.target.materialCode,
+          };
+          const materialArchivedPayloadRow = archivedPayloadRowsByIdentity.get(
+            buildArchivedPayloadIdentity(material.archivedPayload),
+          );
+
+          if (!materialArchivedPayloadRow) {
+            validationIssues.push({
+              severity: "blocker",
+              ...context,
+              reason:
+                "Expected auto-created material archived_field_payload row is missing.",
+            });
+          } else {
+            pushValueMismatch(
+              validationIssues,
+              context,
+              "archived_field_payload.targetId",
+              targetRow.id,
+              materialArchivedPayloadRow.targetId,
+            );
+          }
+
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "material.materialName",
+            material.target.materialName,
+            targetRow.materialName,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "material.specModel",
+            material.target.specModel,
+            targetRow.specModel,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "material.unitCode",
+            material.target.unitCode,
+            targetRow.unitCode,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "material.warningMinQty",
+            material.target.warningMinQty,
+            targetRow.warningMinQty,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "material.warningMaxQty",
+            material.target.warningMaxQty,
+            targetRow.warningMaxQty,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "material.status",
+            material.target.status,
+            targetRow.status,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "material.creationMode",
+            material.target.creationMode,
+            targetRow.creationMode,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "material.sourceDocumentType",
+            material.target.sourceDocumentType,
+            targetRow.sourceDocumentType,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "material.sourceDocumentId",
+            material.target.sourceDocumentId,
+            targetRow.sourceDocumentId,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "material.createdBy",
+            material.target.createdBy,
+            targetRow.createdBy,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "material.updatedBy",
+            material.target.updatedBy,
+            targetRow.updatedBy,
+          );
+        }
+
+        const unexpectedAutoCreatedMaterialCodes = [
+          ...autoCreatedMaterialRowsByCode.keys(),
+        ].filter(
+          (materialCode) => !expectedAutoCreatedMaterialCodes.has(materialCode),
+        );
+        if (unexpectedAutoCreatedMaterialCodes.length > 0) {
+          validationIssues.push({
+            severity: "blocker",
+            reason:
+              "material contains ProjectAutoCreatedMaterial rows outside the deterministic plan.",
+            unexpectedAutoCreatedMaterialCodes:
+              unexpectedAutoCreatedMaterialCodes.sort((left, right) =>
+                left.localeCompare(right),
+              ),
+          });
+        }
 
         for (const project of plan.migratedProjects) {
           const targetRow = projectRowsByProjectCode.get(
@@ -1355,6 +1718,100 @@ async function main(): Promise<void> {
           }
         }
 
+        const pendingRelationByIdentity = new Map(
+          pendingRelationRows.map(
+            (row) => [buildPendingRelationIdentity(row), row] as const,
+          ),
+        );
+
+        for (const pendingProject of plan.pendingProjects) {
+          for (const pendingLine of pendingProject.pendingLines) {
+            const expectedKey = buildPendingRelationIdentity({
+              legacyTable: "saifute_composite_product",
+              legacyId: pendingProject.legacyId,
+              legacyLineId: pendingLine.legacyId,
+            });
+            const storedRow = pendingRelationByIdentity.get(expectedKey);
+
+            if (!storedRow) {
+              validationIssues.push({
+                severity: "blocker",
+                reason: "Expected pending_relations row is missing.",
+                legacyTable: "saifute_composite_product",
+                legacyId: pendingProject.legacyId,
+                legacyLineId: pendingLine.legacyId,
+                relationType: "PROJECT_LINE_MATERIAL",
+              });
+              continue;
+            }
+
+            if (
+              storedRow.relationType !==
+              PENDING_RELATION_TYPE_PROJECT_LINE_MATERIAL
+            ) {
+              validationIssues.push({
+                severity: "blocker",
+                reason:
+                  "pending_relations relation_type does not match the deterministic plan.",
+                legacyTable: "saifute_composite_product",
+                legacyId: pendingProject.legacyId,
+                legacyLineId: pendingLine.legacyId,
+                expectedRelationType:
+                  PENDING_RELATION_TYPE_PROJECT_LINE_MATERIAL,
+                actualRelationType: storedRow.relationType,
+              });
+            }
+
+            const expectedPendingReason = pendingLine.pendingReason.slice(
+              0,
+              255,
+            );
+            if (storedRow.pendingReason !== expectedPendingReason) {
+              validationIssues.push({
+                severity: "blocker",
+                reason:
+                  "pending_relations pending_reason does not match the deterministic plan.",
+                legacyTable: "saifute_composite_product",
+                legacyId: pendingProject.legacyId,
+                legacyLineId: pendingLine.legacyId,
+                expectedPendingReason,
+                actualPendingReason: storedRow.pendingReason,
+              });
+            }
+
+            const expectedPayloadJson = stableJsonStringify({
+              ...pendingLine.sourcePayload,
+              resolutionEvidence: pendingLine.resolutionEvidence,
+            });
+            if (storedRow.payloadJson !== expectedPayloadJson) {
+              validationIssues.push({
+                severity: "blocker",
+                reason:
+                  "pending_relations payload_json does not match the deterministic plan.",
+                legacyTable: "saifute_composite_product",
+                legacyId: pendingProject.legacyId,
+                legacyLineId: pendingLine.legacyId,
+              });
+            }
+          }
+        }
+
+        const cutoverReadiness = buildCutoverReadiness(
+          plan,
+          downstreamConsumerCounts,
+          inventoryReplayConfirmed,
+          structuralExclusionsAcknowledged,
+        );
+
+        const pendingRelationRuleBreakdown: Record<string, number> = {};
+        for (const pendingProject of plan.pendingProjects) {
+          for (const pendingLine of pendingProject.pendingLines) {
+            const ruleId = pendingLine.resolutionEvidence.ruleId;
+            pendingRelationRuleBreakdown[ruleId] =
+              (pendingRelationRuleBreakdown[ruleId] ?? 0) + 1;
+          }
+        }
+
         return {
           mode: "validate",
           targetDatabaseName,
@@ -1367,6 +1824,7 @@ async function main(): Promise<void> {
           counts: plan.counts,
           expectedArchivedPayloadCount: expectedArchivedPayloads.length,
           expectedExcludedDocumentCount: expectedExcludedDocuments.length,
+          expectedPendingRelationCount,
           targetSummary: {
             projectTargetRows,
             lineTargetRows,
@@ -1376,7 +1834,26 @@ async function main(): Promise<void> {
             missingMappedLines,
             archivedPayloadCount,
             excludedDocumentCount: excludedDocumentRows.length,
+            pendingRelationCount: actualPendingRelationCount,
           },
+          autoCreatedMaterialSummary: {
+            materialCount: plan.autoCreatedMaterials.length,
+            materialCodes: plan.autoCreatedMaterials.map(
+              (material) => material.target.materialCode,
+            ),
+          },
+          pendingRelationSummary: {
+            expectedPendingRelationCount,
+            actualPendingRelationCount,
+            pendingProjectCount: plan.pendingProjects.length,
+            pendingLineCount: expectedPendingRelationCount,
+            ruleBreakdown: Object.fromEntries(
+              Object.entries(pendingRelationRuleBreakdown).sort(([a], [b]) =>
+                a.localeCompare(b),
+              ),
+            ),
+          },
+          cutoverReadiness,
           validationIssues,
         };
       },
@@ -1393,4 +1870,6 @@ async function main(): Promise<void> {
   }
 }
 
-void main();
+if (require.main === module) {
+  void main();
+}

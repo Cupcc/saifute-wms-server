@@ -10,13 +10,17 @@ import type {
   LegacyProjectRow,
   LegacyProjectSnapshot,
   MasterDataBaselineEntity,
+  ProjectAutoCreatedMaterialConflict,
   ProjectDependencySnapshot,
   ResolvedCustomerDependency,
   ResolvedMaterialDependency,
   ResolvedPersonnelDependency,
   ResolvedWorkshopDependency,
 } from "./types";
-import { BATCH1_MASTER_DATA_BATCH } from "./types";
+import {
+  BATCH1_MASTER_DATA_BATCH,
+  PROJECT_AUTO_CREATED_MATERIAL_SOURCE_DOCUMENT_TYPE,
+} from "./types";
 
 const EXPECTED_BATCH1_MAP_COUNTS: Record<MasterDataBaselineEntity, number> = {
   materialCategory: 8,
@@ -31,6 +35,17 @@ const EXPECTED_BLOCKED_MATERIAL_COUNT = 21;
 
 function buildLegacyKey(legacyTable: string, legacyId: number): string {
   return `${legacyTable}::${legacyId}`;
+}
+
+function buildNormalizedNameSpecUnitKey(
+  name: string | null | undefined,
+  spec: string | null | undefined,
+  unit: string | null | undefined,
+): string {
+  const normalizedName = normalizeOptionalText(name) ?? "";
+  const normalizedSpec = normalizeOptionalText(spec) ?? "";
+  const normalizedUnit = normalizeOptionalText(unit) ?? "";
+  return `${normalizedName}|${normalizedSpec}|${normalizedUnit}`;
 }
 
 export async function readLegacyProjectSnapshot(
@@ -135,6 +150,99 @@ async function readMappedMaterials(
   }
 
   return materialByLegacyKey;
+}
+
+async function readProjectAutoCreatedMaterials(
+  connection: MigrationConnectionLike,
+): Promise<{
+  autoCreatedMaterialByNormalizedKey: Map<string, ResolvedMaterialDependency>;
+  autoCreatedMaterialConflicts: ProjectAutoCreatedMaterialConflict[];
+}> {
+  const rows = await connection.query<
+    Array<{
+      targetId: number;
+      materialCode: string;
+      materialName: string;
+      specModel: string | null;
+      unitCode: string;
+    }>
+  >(
+    `
+      SELECT
+        material.id AS targetId,
+        material.materialCode AS materialCode,
+        material.materialName AS materialName,
+        material.specModel AS specModel,
+        material.unitCode AS unitCode
+      FROM material
+      WHERE material.creationMode = 'AUTO_CREATED'
+        AND material.sourceDocumentType = ?
+      ORDER BY material.materialCode ASC
+    `,
+    [PROJECT_AUTO_CREATED_MATERIAL_SOURCE_DOCUMENT_TYPE],
+  );
+  const groupedRows = new Map<string, ResolvedMaterialDependency[]>();
+
+  for (const row of rows) {
+    const key = buildNormalizedNameSpecUnitKey(
+      row.materialName,
+      row.specModel,
+      row.unitCode,
+    );
+    const existingRows = groupedRows.get(key) ?? [];
+    existingRows.push({
+      targetId: row.targetId,
+      materialCode: row.materialCode,
+      materialName: row.materialName,
+      specModel: row.specModel,
+      unitCode: row.unitCode,
+    });
+    groupedRows.set(key, existingRows);
+  }
+
+  const autoCreatedMaterialByNormalizedKey = new Map<
+    string,
+    ResolvedMaterialDependency
+  >();
+  const autoCreatedMaterialConflicts: ProjectAutoCreatedMaterialConflict[] = [];
+
+  for (const [normalizedKey, matches] of [...groupedRows.entries()].sort(
+    ([left], [right]) => left.localeCompare(right),
+  )) {
+    if (matches.length === 1) {
+      const [match] = matches;
+      if (match) {
+        autoCreatedMaterialByNormalizedKey.set(normalizedKey, match);
+      }
+      continue;
+    }
+
+    autoCreatedMaterialConflicts.push({
+      normalizedKey,
+      materialCodes: matches
+        .map((match) => match.materialCode)
+        .sort((left, right) => left.localeCompare(right)),
+    });
+  }
+
+  return {
+    autoCreatedMaterialByNormalizedKey,
+    autoCreatedMaterialConflicts,
+  };
+}
+
+async function readExistingMaterialCodes(
+  connection: MigrationConnectionLike,
+): Promise<Set<string>> {
+  const rows = await connection.query<Array<{ materialCode: string }>>(
+    `
+      SELECT materialCode
+      FROM material
+      ORDER BY materialCode ASC
+    `,
+  );
+
+  return new Set(rows.map((row) => row.materialCode));
 }
 
 async function readMappedCustomers(
@@ -431,6 +539,8 @@ export async function readProjectDependencySnapshot(
 ): Promise<ProjectDependencySnapshot> {
   const [
     materialByLegacyKey,
+    projectAutoCreatedMaterialSnapshot,
+    existingMaterialCodes,
     customerByLegacyKey,
     defaultWorkshop,
     personnelSnapshot,
@@ -438,6 +548,8 @@ export async function readProjectDependencySnapshot(
     blockedMaterialLegacyIds,
   ] = await Promise.all([
     readMappedMaterials(connection),
+    readProjectAutoCreatedMaterials(connection),
+    readExistingMaterialCodes(connection),
     readMappedCustomers(connection),
     readMappedWorkshops(connection),
     readPersonnelDependencies(connection),
@@ -447,6 +559,11 @@ export async function readProjectDependencySnapshot(
 
   return {
     materialByLegacyKey,
+    autoCreatedMaterialByNormalizedKey:
+      projectAutoCreatedMaterialSnapshot.autoCreatedMaterialByNormalizedKey,
+    autoCreatedMaterialConflicts:
+      projectAutoCreatedMaterialSnapshot.autoCreatedMaterialConflicts,
+    existingMaterialCodes,
     customerByLegacyKey,
     defaultWorkshop,
     personnelByNormalizedName: personnelSnapshot.personnelByNormalizedName,

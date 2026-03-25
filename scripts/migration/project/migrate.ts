@@ -11,6 +11,7 @@ import { writeStableReport } from "../shared/report-writer";
 import {
   buildDownstreamConsumerBlockers,
   buildMissingMapTargetBlockers,
+  buildPendingRelationCountBlockers,
   buildSliceDirtyTargetBlockers,
 } from "./execute-guard";
 import {
@@ -203,8 +204,13 @@ async function main(): Promise<void> {
     let lineBatchMapRows = 0;
     let missingMappedProjects = 0;
     let missingMappedLines = 0;
+    let batchPendingRelationRows = 0;
     let downstreamConsumerCounts: Record<string, number> = {};
     let stagingReady = false;
+    const expectedPendingRelationCount = plan.pendingProjects.reduce(
+      (total, project) => total + project.pendingLineCount,
+      0,
+    );
 
     const executionReport = await withPoolConnection(
       targetPool,
@@ -247,6 +253,15 @@ async function main(): Promise<void> {
             MAP_TABLES.line,
             TARGET_TABLES.line,
             plan.migrationBatch,
+          );
+          const pendingRelationCountRows = await targetConnection.query<
+            Array<{ total: number }>
+          >(
+            `SELECT COUNT(*) AS total FROM migration_staging.pending_relations WHERE migration_batch = ? AND legacy_table = 'saifute_composite_product'`,
+            [plan.migrationBatch],
+          );
+          batchPendingRelationRows = Number(
+            pendingRelationCountRows[0]?.total ?? 0,
           );
           downstreamConsumerCounts =
             await getProjectDownstreamConsumerCounts(targetConnection);
@@ -302,6 +317,8 @@ async function main(): Promise<void> {
               lineBatchMapRows,
               missingMappedProjects,
               missingMappedLines,
+              batchPendingRelationRows,
+              expectedPendingRelationCount,
               downstreamConsumerCounts,
             },
             executeBlockers,
@@ -315,6 +332,21 @@ async function main(): Promise<void> {
           targetConnection,
           plan,
         );
+
+        const postExecutePendingRelationCountRows =
+          await targetConnection.query<Array<{ total: number }>>(
+            `SELECT COUNT(*) AS total FROM migration_staging.pending_relations WHERE migration_batch = ? AND legacy_table = 'saifute_composite_product'`,
+            [plan.migrationBatch],
+          );
+        const postExecutePendingRelationRows = Number(
+          postExecutePendingRelationCountRows[0]?.total ?? 0,
+        );
+
+        const postExecuteBlockers = buildPendingRelationCountBlockers({
+          expectedPendingRelationCount,
+          actualPendingRelationCount: postExecutePendingRelationRows,
+        });
+
         const report = {
           ...dryRunReport,
           executionRequested: true,
@@ -326,10 +358,16 @@ async function main(): Promise<void> {
             lineBatchMapRows,
             missingMappedProjects,
             missingMappedLines,
+            batchPendingRelationRows: postExecutePendingRelationRows,
+            expectedPendingRelationCount,
             downstreamConsumerCounts,
           },
           executionResult,
+          postExecuteBlockers,
         };
+        if (postExecuteBlockers.length > 0) {
+          process.exitCode = 1;
+        }
         writeStableReport(reportPath, report);
         return report;
       },

@@ -10,6 +10,11 @@ import type {
   LegacyProjectLineRow,
   LegacyProjectRow,
   LegacyProjectSnapshot,
+  MaterialResolutionEvidence,
+  MaterialResolutionRuleId,
+  PendingLinePlanRecord,
+  PendingProjectPlanRecord,
+  ProjectAutoCreatedMaterialPlanRecord,
   ProjectDependencySnapshot,
   ProjectGlobalBlocker,
   ProjectLinePlanRecord,
@@ -23,7 +28,10 @@ import type {
   ResolvedPersonnelDependency,
   ResolvedWorkshopDependency,
 } from "./types";
-import { PROJECT_MIGRATION_BATCH } from "./types";
+import {
+  PROJECT_AUTO_CREATED_MATERIAL_SOURCE_DOCUMENT_TYPE,
+  PROJECT_MIGRATION_BATCH,
+} from "./types";
 
 interface ParsedDecimal {
   sign: 1 | -1;
@@ -50,6 +58,26 @@ interface PreparedHeaderDependencies {
   managerNameSnapshot: string | null;
   workshop: ResolvedWorkshopDependency;
 }
+
+interface PreparedStructuredLine {
+  quantity: string;
+  unitCodeSnapshot: string;
+  unitPrice: string;
+  amount: string;
+}
+
+interface AutoCreatedMaterialGroup {
+  normalizedKey: string;
+  representativeLine: LegacyProjectLineRow;
+  sourceLines: LegacyProjectLineRow[];
+}
+
+type LineClassification =
+  | { kind: "resolved"; preparedLine: PreparedLine }
+  | { kind: "pending"; record: PendingLinePlanRecord }
+  | { kind: "structural"; reason: string };
+
+const MATERIAL_CODE_MAX_LENGTH = 64;
 
 function buildLegacyKey(legacyTable: string, legacyId: number): string {
   return `${legacyTable}::${legacyId}`;
@@ -365,6 +393,592 @@ function buildExcludedProjectPlan(
   };
 }
 
+function buildPendingLineSourcePayload(
+  line: LegacyProjectLineRow,
+): Record<string, unknown> {
+  return {
+    materialLegacyId: normalizePositiveLegacyId(line.materialLegacyId),
+    materialName: normalizeOptionalText(line.materialName),
+    materialSpec: normalizeOptionalText(line.materialSpec),
+    quantity: normalizeDecimalToScale(line.quantity, 6),
+    unitPrice:
+      normalizeDecimalToScale(line.unitPrice, 2) ?? formatScaledInteger(0n, 2),
+    unit: normalizeOptionalText(line.unit),
+    supplierLegacyId: normalizePositiveLegacyId(line.supplierLegacyId),
+    acceptanceDate: normalizeDate(line.acceptanceDate),
+    instruction: normalizeOptionalText(line.instruction),
+    interval: normalizeOptionalText(line.interval),
+    remark: normalizeOptionalText(line.remark),
+    taxIncludedPrice: normalizeDecimalToScale(line.taxIncludedPrice, 2),
+  };
+}
+
+function buildPendingLinePlan(
+  line: LegacyProjectLineRow,
+  ruleId: MaterialResolutionRuleId,
+  pendingReason: string,
+  evidence: Omit<
+    MaterialResolutionEvidence,
+    "ruleId" | "resolved" | "pendingReason"
+  >,
+): PendingLinePlanRecord {
+  return {
+    legacyTable: line.legacyTable,
+    legacyId: line.legacyId,
+    parentLegacyTable: line.parentLegacyTable,
+    parentLegacyId: line.parentLegacyId,
+    pendingReason,
+    resolutionEvidence: {
+      ruleId,
+      resolved: false,
+      pendingReason,
+      ...evidence,
+    },
+    sourcePayload: buildPendingLineSourcePayload(line),
+  };
+}
+
+/**
+ * Build a lookup key from normalized material name, spec, and unit.
+ * All three components are required to be deterministic; null/empty values
+ * are represented as empty strings so the key remains stable.
+ */
+function buildNormalizedNameSpecUnitKey(
+  name: string | null | undefined,
+  spec: string | null | undefined,
+  unit: string | null | undefined,
+): string {
+  const normalizedName = normalizeOptionalText(name) ?? "";
+  const normalizedSpec = normalizeOptionalText(spec) ?? "";
+  const normalizedUnit = normalizeOptionalText(unit) ?? "";
+  return `${normalizedName}|${normalizedSpec}|${normalizedUnit}`;
+}
+
+/**
+ * Build an inverse index from the batch1 material map keyed by
+ * normalized name+spec+unit. Used only for the deterministic fallback
+ * when a line has no materialLegacyId but does have a material name.
+ * All materials in the map are non-blocked (blocked materials are never
+ * inserted into map_material).
+ */
+function buildMaterialNameSpecUnitIndex(
+  materialByLegacyKey: Map<string, ResolvedMaterialDependency>,
+): Map<string, ResolvedMaterialDependency[]> {
+  const index = new Map<string, ResolvedMaterialDependency[]>();
+
+  for (const material of materialByLegacyKey.values()) {
+    const key = buildNormalizedNameSpecUnitKey(
+      material.materialName,
+      material.specModel,
+      material.unitCode,
+    );
+    const existing = index.get(key) ?? [];
+    existing.push(material);
+    index.set(key, existing);
+  }
+
+  return index;
+}
+
+function buildStructuredLine(
+  line: LegacyProjectLineRow,
+):
+  | { kind: "valid"; prepared: PreparedStructuredLine }
+  | { kind: "structural"; reason: string } {
+  const quantity = normalizeDecimalToScale(line.quantity, 6);
+  if (!quantity) {
+    return {
+      kind: "structural",
+      reason: `Line ${line.legacyTable}#${line.legacyId} quantity is required.`,
+    };
+  }
+
+  const unitCodeSnapshot = normalizeOptionalText(line.unit);
+  if (!unitCodeSnapshot) {
+    return {
+      kind: "structural",
+      reason: `Line ${line.legacyTable}#${line.legacyId} unit is required for unitCodeSnapshot.`,
+    };
+  }
+
+  const unitPrice =
+    normalizeDecimalToScale(line.unitPrice, 2) ?? formatScaledInteger(0n, 2);
+  const amount = multiplyToAmount(quantity, unitPrice);
+  if (!amount) {
+    return {
+      kind: "structural",
+      reason: `Line ${line.legacyTable}#${line.legacyId} amount could not be derived deterministically.`,
+    };
+  }
+
+  return {
+    kind: "valid",
+    prepared: {
+      quantity,
+      unitCodeSnapshot,
+      unitPrice,
+      amount,
+    },
+  };
+}
+
+function createStableHexHash(value: string): string {
+  let hash = 2166136261;
+
+  for (const char of value) {
+    const codePoint = char.codePointAt(0) ?? 0;
+    hash ^= codePoint;
+    hash = Math.imul(hash, 16777619) >>> 0;
+  }
+
+  return hash.toString(16).toUpperCase().padStart(8, "0");
+}
+
+function normalizeMaterialCodeKey(code: string): string {
+  return (normalizeOptionalText(code) ?? "").toLocaleLowerCase("en-US");
+}
+
+function trimMaterialCodeWithSuffix(baseCode: string, suffix: string): string {
+  const maxBaseLength = MATERIAL_CODE_MAX_LENGTH - suffix.length;
+
+  if (maxBaseLength <= 0) {
+    throw new Error(
+      `Material code suffix ${suffix} exceeds the column length.`,
+    );
+  }
+
+  return `${baseCode.slice(0, maxBaseLength)}${suffix}`;
+}
+
+function allocateProjectAutoCreatedMaterialCode(
+  seedCode: string,
+  reservedKeys: ReadonlySet<string>,
+  assignedKeys: Set<string>,
+): string {
+  let attempt = 0;
+
+  while (true) {
+    const candidateCode =
+      attempt === 0
+        ? trimMaterialCodeWithSuffix(seedCode, "")
+        : trimMaterialCodeWithSuffix(seedCode, `-DUP-${attempt}`);
+    const candidateKey = normalizeMaterialCodeKey(candidateCode);
+
+    if (!reservedKeys.has(candidateKey) && !assignedKeys.has(candidateKey)) {
+      assignedKeys.add(candidateKey);
+      return candidateCode;
+    }
+
+    attempt += 1;
+  }
+}
+
+function buildProjectAutoCreatedMaterialCodeSeed(
+  representativeLine: LegacyProjectLineRow,
+  normalizedKey: string,
+): string {
+  return `MAT-PROJECT-AUTO-L${representativeLine.legacyId}-${createStableHexHash(normalizedKey)}`;
+}
+
+function buildProjectAutoCreatedMaterialArchivedPayload(
+  group: AutoCreatedMaterialGroup,
+  targetCode: string,
+): ArchivedFieldPayloadRecord {
+  const representativeLine = group.representativeLine;
+
+  return {
+    legacyTable: representativeLine.legacyTable,
+    legacyId: representativeLine.legacyId,
+    targetTable: "material",
+    targetCode,
+    payloadKind: "project-auto-created-material",
+    archiveReason:
+      "Auto-create deterministic project material because no existing target material matches normalized name/spec/unit.",
+    payload: {
+      normalizedKey: group.normalizedKey,
+      representativeLineLegacyId: representativeLine.legacyId,
+      representativeProjectLegacyId: representativeLine.parentLegacyId,
+      sourceLineCount: group.sourceLines.length,
+      sourceLines: [...group.sourceLines]
+        .sort((left, right) => left.legacyId - right.legacyId)
+        .map((line) => ({
+          projectLegacyId: line.parentLegacyId,
+          lineLegacyId: line.legacyId,
+          resolutionRuleId: "auto-created-project-material",
+          ...buildPendingLineSourcePayload(line),
+        })),
+    },
+  };
+}
+
+function buildAutoCreatedMaterialGroups(
+  lines: readonly LegacyProjectLineRow[],
+  dependencies: ProjectDependencySnapshot,
+  materialNameSpecUnitIndex: Map<string, ResolvedMaterialDependency[]>,
+): AutoCreatedMaterialGroup[] {
+  const groupedMaterials = new Map<string, AutoCreatedMaterialGroup>();
+
+  for (const line of [...lines].sort(
+    (left, right) => left.legacyId - right.legacyId,
+  )) {
+    const structuredLine = buildStructuredLine(line);
+    if (structuredLine.kind === "structural") {
+      continue;
+    }
+
+    const materialLegacyId = normalizePositiveLegacyId(line.materialLegacyId);
+    if (materialLegacyId !== null) {
+      continue;
+    }
+
+    const lineName = normalizeOptionalText(line.materialName);
+    if (!lineName) {
+      continue;
+    }
+
+    const normalizedKey = buildNormalizedNameSpecUnitKey(
+      lineName,
+      line.materialSpec,
+      structuredLine.prepared.unitCodeSnapshot,
+    );
+    const existingAutoCreatedMaterial =
+      dependencies.autoCreatedMaterialByNormalizedKey.get(normalizedKey) ??
+      null;
+    const candidates = materialNameSpecUnitIndex.get(normalizedKey) ?? [];
+    if (!existingAutoCreatedMaterial && candidates.length !== 0) {
+      continue;
+    }
+
+    const existingGroup = groupedMaterials.get(normalizedKey);
+    if (existingGroup) {
+      existingGroup.sourceLines.push(line);
+      continue;
+    }
+
+    groupedMaterials.set(normalizedKey, {
+      normalizedKey,
+      representativeLine: line,
+      sourceLines: [line],
+    });
+  }
+
+  return [...groupedMaterials.values()].sort(
+    (left, right) =>
+      left.representativeLine.legacyId - right.representativeLine.legacyId ||
+      left.normalizedKey.localeCompare(right.normalizedKey),
+  );
+}
+
+function buildProjectAutoCreatedMaterialPlans(
+  snapshot: LegacyProjectSnapshot,
+  dependencies: ProjectDependencySnapshot,
+  materialNameSpecUnitIndex: Map<string, ResolvedMaterialDependency[]>,
+): {
+  autoCreatedMaterials: ProjectAutoCreatedMaterialPlanRecord[];
+  autoCreatedMaterialByNormalizedKey: Map<string, ResolvedMaterialDependency>;
+} {
+  const groups = buildAutoCreatedMaterialGroups(
+    snapshot.lines,
+    dependencies,
+    materialNameSpecUnitIndex,
+  );
+  const reservedKeys = new Set(
+    [...dependencies.existingMaterialCodes].map((code) =>
+      normalizeMaterialCodeKey(code),
+    ),
+  );
+  const assignedKeys = new Set<string>();
+  const autoCreatedMaterialByNormalizedKey = new Map(
+    dependencies.autoCreatedMaterialByNormalizedKey,
+  );
+  const autoCreatedMaterials = groups.map((group) => {
+    const representativeLine = group.representativeLine;
+    const existingAutoCreatedMaterial =
+      dependencies.autoCreatedMaterialByNormalizedKey.get(
+        group.normalizedKey,
+      ) ?? null;
+    const materialName = normalizeOptionalText(representativeLine.materialName);
+    const unitCode = normalizeOptionalText(representativeLine.unit);
+
+    if (!materialName || !unitCode) {
+      throw new Error(
+        `Auto-created project material ${representativeLine.legacyTable}#${representativeLine.legacyId} is missing materialName or unit.`,
+      );
+    }
+
+    const targetCode =
+      existingAutoCreatedMaterial?.materialCode ??
+      allocateProjectAutoCreatedMaterialCode(
+        buildProjectAutoCreatedMaterialCodeSeed(
+          representativeLine,
+          group.normalizedKey,
+        ),
+        reservedKeys,
+        assignedKeys,
+      );
+    const record: ProjectAutoCreatedMaterialPlanRecord = {
+      normalizedKey: group.normalizedKey,
+      representativeLineLegacyId: representativeLine.legacyId,
+      targetTable: "material",
+      targetCode,
+      target: {
+        materialCode: targetCode,
+        materialName,
+        specModel: normalizeOptionalText(representativeLine.materialSpec),
+        unitCode,
+        warningMinQty: null,
+        warningMaxQty: null,
+        status: "ACTIVE",
+        creationMode: "AUTO_CREATED",
+        sourceDocumentType: PROJECT_AUTO_CREATED_MATERIAL_SOURCE_DOCUMENT_TYPE,
+        sourceDocumentId: representativeLine.legacyId,
+        createdBy: PROJECT_MIGRATION_BATCH,
+        createdAt: null,
+        updatedBy: PROJECT_MIGRATION_BATCH,
+        updatedAt: null,
+      },
+      archivedPayload: buildProjectAutoCreatedMaterialArchivedPayload(
+        group,
+        targetCode,
+      ),
+    };
+
+    autoCreatedMaterialByNormalizedKey.set(group.normalizedKey, {
+      targetId: existingAutoCreatedMaterial?.targetId ?? null,
+      materialCode: targetCode,
+      materialName,
+      specModel: record.target.specModel,
+      unitCode,
+    });
+
+    return record;
+  });
+
+  return {
+    autoCreatedMaterials,
+    autoCreatedMaterialByNormalizedKey,
+  };
+}
+
+/**
+ * Classify a single line as resolved, pending (material issue), or structural
+ * (non-material issue that blocks the whole project).
+ *
+ * Structural field checks (quantity, unit, amount) always take precedence.
+ * A line that fails structural validation is returned as "structural" regardless
+ * of whether material resolution would also fail, preventing mixed-invalid rows
+ * from entering the recoverable pending backlog.
+ *
+ * Resolution order once structural checks pass:
+ *   1. Primary: materialLegacyId → batch1 map (blocked → pending-blocked-material;
+ *      absent → pending-missing-from-map; present → resolved via legacy-material-id)
+ *   2. Deterministic fallback (only when materialLegacyId is null and materialName present):
+ *      normalised name+spec+unit against batch1 map.
+ *      - exactly 1 candidate → resolved via unique-normalized-name-spec-unit
+ *      - 0 candidates        → pending-no-candidate
+ *      - >1 candidates       → pending-ambiguous-candidate (with candidateSummary)
+ *   3. No-evidence fallback: materialId null AND materialName absent → pending-null-material-id
+ */
+function classifyLine(
+  line: LegacyProjectLineRow,
+  dependencies: ProjectDependencySnapshot,
+  materialNameSpecUnitIndex: Map<string, ResolvedMaterialDependency[]>,
+  autoCreatedMaterialByNormalizedKey: Map<string, ResolvedMaterialDependency>,
+): LineClassification {
+  const structuredLine = buildStructuredLine(line);
+  if (structuredLine.kind === "structural") {
+    return structuredLine;
+  }
+
+  // Material resolution follows after structural validity is confirmed.
+  const materialLegacyId = normalizePositiveLegacyId(line.materialLegacyId);
+  let material: ResolvedMaterialDependency | null = null;
+
+  if (materialLegacyId !== null) {
+    if (dependencies.blockedMaterialLegacyIds.has(materialLegacyId)) {
+      return {
+        kind: "pending",
+        record: buildPendingLinePlan(
+          line,
+          "pending-blocked-material",
+          `pending-blocked-material: material ${materialLegacyId} is a blocked batch1 material`,
+          {
+            materialLegacyId,
+            targetMaterialId: null,
+            targetMaterialCode: null,
+          },
+        ),
+      };
+    }
+
+    material =
+      dependencies.materialByLegacyKey.get(
+        buildLegacyKey("saifute_material", materialLegacyId),
+      ) ?? null;
+
+    if (!material) {
+      return {
+        kind: "pending",
+        record: buildPendingLinePlan(
+          line,
+          "pending-missing-from-map",
+          `pending-missing-from-map: material ${materialLegacyId} is absent from the batch1 material map`,
+          {
+            materialLegacyId,
+            targetMaterialId: null,
+            targetMaterialCode: null,
+          },
+        ),
+      };
+    }
+  } else {
+    const lineName = normalizeOptionalText(line.materialName);
+
+    if (!lineName) {
+      return {
+        kind: "pending",
+        record: buildPendingLinePlan(
+          line,
+          "pending-null-material-id",
+          "pending-null-material-id: material_id is null; no legacy key or name evidence to recover target material",
+          {
+            materialLegacyId: null,
+            targetMaterialId: null,
+            targetMaterialCode: null,
+          },
+        ),
+      };
+    }
+
+    const lineSpec = normalizeOptionalText(line.materialSpec);
+    const key = buildNormalizedNameSpecUnitKey(
+      lineName,
+      lineSpec,
+      structuredLine.prepared.unitCodeSnapshot,
+    );
+    material = autoCreatedMaterialByNormalizedKey.get(key) ?? null;
+
+    if (!material) {
+      const candidates = materialNameSpecUnitIndex.get(key) ?? [];
+
+      if (candidates.length === 0) {
+        return {
+          kind: "pending",
+          record: buildPendingLinePlan(
+            line,
+            "pending-no-candidate",
+            `pending-no-candidate: no material in batch1 map matches name=${lineName} spec=${lineSpec ?? ""} unit=${structuredLine.prepared.unitCodeSnapshot}`,
+            {
+              materialLegacyId: null,
+              targetMaterialId: null,
+              targetMaterialCode: null,
+              candidateSummary: [],
+            },
+          ),
+        };
+      }
+
+      if (candidates.length > 1) {
+        const candidateSummary = candidates.map((m) => ({
+          materialCode: m.materialCode,
+          materialName: m.materialName,
+          specModel: m.specModel,
+          unitCode: m.unitCode,
+        }));
+        return {
+          kind: "pending",
+          record: buildPendingLinePlan(
+            line,
+            "pending-ambiguous-candidate",
+            `pending-ambiguous-candidate: ${candidates.length} materials in batch1 map match name=${lineName} spec=${lineSpec ?? ""} unit=${structuredLine.prepared.unitCodeSnapshot}`,
+            {
+              materialLegacyId: null,
+              targetMaterialId: null,
+              targetMaterialCode: null,
+              candidateSummary,
+            },
+          ),
+        };
+      }
+
+      const [singleCandidate] = candidates;
+      if (!singleCandidate) {
+        throw new Error(
+          `Expected a single batch1 material candidate for ${line.legacyTable}#${line.legacyId}, but none was available.`,
+        );
+      }
+
+      material = singleCandidate;
+    }
+  }
+
+  return {
+    kind: "resolved",
+    preparedLine: {
+      source: line,
+      material,
+      materialNameSnapshot:
+        normalizeOptionalText(line.materialName) ?? material.materialName,
+      materialSpecSnapshot:
+        normalizeOptionalText(line.materialSpec) ?? material.specModel,
+      unitCodeSnapshot: structuredLine.prepared.unitCodeSnapshot,
+      quantity: structuredLine.prepared.quantity,
+      unitPrice: structuredLine.prepared.unitPrice,
+      amount: structuredLine.prepared.amount,
+    },
+  };
+}
+
+function buildPendingProjectPlan(
+  project: LegacyProjectRow,
+  allLines: readonly LegacyProjectLineRow[],
+  resolvedLines: readonly PreparedLine[],
+  pendingLines: readonly PendingLinePlanRecord[],
+  projectCode: string,
+): PendingProjectPlanRecord {
+  const ruleBreakdown: Record<string, number> = {};
+  for (const pendingLine of pendingLines) {
+    const ruleId = pendingLine.resolutionEvidence.ruleId;
+    ruleBreakdown[ruleId] = (ruleBreakdown[ruleId] ?? 0) + 1;
+  }
+
+  const summaryPayload: Record<string, unknown> = {
+    targetProjectCodeCandidate: projectCode,
+    projectName: normalizeOptionalText(project.projectName),
+    totalLineCount: allLines.length,
+    resolvedLineCount: resolvedLines.length,
+    pendingLineCount: pendingLines.length,
+    pendingRuleBreakdown: Object.fromEntries(
+      Object.entries(ruleBreakdown).sort(([a], [b]) => a.localeCompare(b)),
+    ),
+    pendingLinesEvidence: pendingLines.map((pl) => ({
+      legacyLineId: pl.legacyId,
+      ruleId: pl.resolutionEvidence.ruleId,
+      materialLegacyId: pl.resolutionEvidence.materialLegacyId,
+      pendingReason: pl.pendingReason,
+    })),
+  };
+
+  return {
+    legacyTable: project.legacyTable,
+    legacyId: project.legacyId,
+    targetProjectCodeCandidate: projectCode,
+    resolvedLineCount: resolvedLines.length,
+    pendingLineCount: pendingLines.length,
+    pendingLines: [...pendingLines],
+    summaryArchivedPayload: {
+      legacyTable: project.legacyTable,
+      legacyId: project.legacyId,
+      targetTable: "project",
+      targetCode: projectCode,
+      payloadKind: "pending-material-resolution-summary",
+      archiveReason:
+        "Pending project — at least one line lacks a uniquely provable material mapping.",
+      payload: summaryPayload,
+    },
+  };
+}
+
 function pushGlobalBlockers(
   globalBlockers: ProjectGlobalBlocker[],
   dependencies: ProjectDependencySnapshot,
@@ -382,6 +996,17 @@ function pushGlobalBlockers(
       details: {
         expectedWorkshopCode: DEFAULT_WORKSHOP_CODE,
         expectedWorkshopName: DEFAULT_WORKSHOP_NAME,
+      },
+    });
+  }
+
+  for (const conflict of dependencies.autoCreatedMaterialConflicts) {
+    globalBlockers.push({
+      reason:
+        "Project auto-created material baseline is ambiguous: multiple AUTO_CREATED target materials share the same normalized name/spec/unit key.",
+      details: {
+        normalizedKey: conflict.normalizedKey,
+        materialCodes: conflict.materialCodes,
       },
     });
   }
@@ -497,100 +1122,28 @@ function resolveHeaderDependencies(
   };
 }
 
-function prepareLines(
-  lines: readonly LegacyProjectLineRow[],
-  dependencies: ProjectDependencySnapshot,
-  exclusionReasons: string[],
-): PreparedLine[] {
-  const preparedLines: PreparedLine[] = [];
-
-  for (const line of [...lines].sort(
-    (left, right) => left.legacyId - right.legacyId,
-  )) {
-    const materialLegacyId = normalizePositiveLegacyId(line.materialLegacyId);
-    if (materialLegacyId === null) {
-      exclusionReasons.push(
-        `Line ${line.legacyTable}#${line.legacyId} is missing material_id.`,
-      );
-      continue;
-    }
-
-    if (dependencies.blockedMaterialLegacyIds.has(materialLegacyId)) {
-      exclusionReasons.push(
-        `Line ${line.legacyTable}#${line.legacyId} references blocked batch1 material ${materialLegacyId}.`,
-      );
-      continue;
-    }
-
-    const material =
-      dependencies.materialByLegacyKey.get(
-        buildLegacyKey("saifute_material", materialLegacyId),
-      ) ?? null;
-    if (!material) {
-      exclusionReasons.push(
-        `Line ${line.legacyTable}#${line.legacyId} material ${materialLegacyId} is missing from the batch1 material map.`,
-      );
-      continue;
-    }
-
-    const quantity = normalizeDecimalToScale(line.quantity, 6);
-    if (!quantity) {
-      exclusionReasons.push(
-        `Line ${line.legacyTable}#${line.legacyId} quantity is required.`,
-      );
-      continue;
-    }
-
-    const unitCodeSnapshot = normalizeOptionalText(line.unit);
-    if (!unitCodeSnapshot) {
-      exclusionReasons.push(
-        `Line ${line.legacyTable}#${line.legacyId} unit is required for unitCodeSnapshot.`,
-      );
-      continue;
-    }
-
-    const unitPrice =
-      normalizeDecimalToScale(line.unitPrice, 2) ?? formatScaledInteger(0n, 2);
-    const amount = multiplyToAmount(quantity, unitPrice);
-    if (!amount) {
-      exclusionReasons.push(
-        `Line ${line.legacyTable}#${line.legacyId} amount could not be derived deterministically.`,
-      );
-      continue;
-    }
-
-    preparedLines.push({
-      source: line,
-      material,
-      materialNameSnapshot:
-        normalizeOptionalText(line.materialName) ?? material.materialName,
-      materialSpecSnapshot:
-        normalizeOptionalText(line.materialSpec) ?? material.specModel,
-      unitCodeSnapshot,
-      quantity,
-      unitPrice,
-      amount,
-    });
-  }
-
-  return preparedLines;
-}
-
 function buildCounts(
   snapshot: LegacyProjectSnapshot,
   migratedProjects: readonly ProjectPlanRecord[],
+  pendingProjects: readonly PendingProjectPlanRecord[],
   excludedProjects: readonly ExcludedProjectPlanRecord[],
 ): ProjectPlanCounts {
   return {
     projects: {
       source: snapshot.projects.length,
       migrated: migratedProjects.length,
+      pending: pendingProjects.length,
       excluded: excludedProjects.length,
     },
     lines: {
       source: snapshot.lines.length,
       migrated: migratedProjects.reduce(
         (total, project) => total + project.lines.length,
+        0,
+      ),
+      pending: pendingProjects.reduce(
+        (total, project) =>
+          total + project.pendingLineCount + project.resolvedLineCount,
         0,
       ),
       excluded: excludedProjects.reduce((total, project) => {
@@ -607,6 +1160,21 @@ function buildCounts(
   };
 }
 
+function buildPendingRuleBreakdown(
+  pendingProjects: readonly PendingProjectPlanRecord[],
+): Record<string, number> {
+  const breakdown = new Map<string, number>();
+  for (const project of pendingProjects) {
+    for (const line of project.pendingLines) {
+      const ruleId = line.resolutionEvidence.ruleId;
+      breakdown.set(ruleId, (breakdown.get(ruleId) ?? 0) + 1);
+    }
+  }
+  return Object.fromEntries(
+    [...breakdown.entries()].sort(([a], [b]) => a.localeCompare(b)),
+  );
+}
+
 export function buildProjectMigrationPlan(
   snapshot: LegacyProjectSnapshot,
   dependencies: ProjectDependencySnapshot,
@@ -614,8 +1182,18 @@ export function buildProjectMigrationPlan(
   const warnings: ProjectWarning[] = [];
   const globalBlockers: ProjectGlobalBlocker[] = [];
   const migratedProjects: ProjectPlanRecord[] = [];
+  const pendingProjects: PendingProjectPlanRecord[] = [];
   const excludedProjects: ExcludedProjectPlanRecord[] = [];
   const linesByProjectKey = buildLinesByProjectKey(snapshot.lines);
+  const materialNameSpecUnitIndex = buildMaterialNameSpecUnitIndex(
+    dependencies.materialByLegacyKey,
+  );
+  const { autoCreatedMaterials, autoCreatedMaterialByNormalizedKey } =
+    buildProjectAutoCreatedMaterialPlans(
+      snapshot,
+      dependencies,
+      materialNameSpecUnitIndex,
+    );
 
   pushGlobalBlockers(globalBlockers, dependencies);
   pushDependencyWarnings(warnings, dependencies);
@@ -628,40 +1206,87 @@ export function buildProjectMigrationPlan(
     const projectCode = buildProjectCode(project.legacyId);
     const projectKey = buildProjectKey(project);
     const lines = linesByProjectKey.get(projectKey) ?? [];
-    const exclusionReasons: string[] = [];
+
+    const headerStructuralReasons: string[] = [];
 
     const projectName = normalizeOptionalText(project.projectName);
     if (!projectName) {
-      exclusionReasons.push("Project name is required.");
+      headerStructuralReasons.push("Project name is required.");
     }
 
     const bizDate = resolveBizDate(project);
     if (!bizDate) {
-      exclusionReasons.push(
+      headerStructuralReasons.push(
         "Business date is required from order_date, out_bound_date, or create_time.",
       );
     }
 
     if (lines.length === 0) {
-      exclusionReasons.push("No legacy line rows were found for this project.");
+      headerStructuralReasons.push(
+        "No legacy line rows were found for this project.",
+      );
     }
 
     const resolvedDependencies = resolveHeaderDependencies(
       project,
       dependencies,
-      exclusionReasons,
+      headerStructuralReasons,
       warnings,
     );
-    const preparedLines = prepareLines(lines, dependencies, exclusionReasons);
 
-    if (
-      exclusionReasons.length > 0 ||
-      !resolvedDependencies ||
-      !projectName ||
-      !bizDate
-    ) {
+    const sortedLines = [...lines].sort(
+      (left, right) => left.legacyId - right.legacyId,
+    );
+
+    const lineClassifications = sortedLines.map((line) =>
+      classifyLine(
+        line,
+        dependencies,
+        materialNameSpecUnitIndex,
+        autoCreatedMaterialByNormalizedKey,
+      ),
+    );
+
+    const lineStructuralReasons: string[] = [];
+    const pendingLinePlans: PendingLinePlanRecord[] = [];
+    const resolvedPreparedLines: PreparedLine[] = [];
+
+    for (const classification of lineClassifications) {
+      if (classification.kind === "structural") {
+        lineStructuralReasons.push(classification.reason);
+      } else if (classification.kind === "pending") {
+        pendingLinePlans.push(classification.record);
+      } else {
+        resolvedPreparedLines.push(classification.preparedLine);
+      }
+    }
+
+    const allStructuralReasons = [
+      ...headerStructuralReasons,
+      ...lineStructuralReasons,
+    ];
+
+    if (allStructuralReasons.length > 0 || !resolvedDependencies) {
       excludedProjects.push(
-        buildExcludedProjectPlan(project, lines, projectCode, exclusionReasons),
+        buildExcludedProjectPlan(
+          project,
+          lines,
+          projectCode,
+          allStructuralReasons,
+        ),
+      );
+      continue;
+    }
+
+    if (pendingLinePlans.length > 0) {
+      pendingProjects.push(
+        buildPendingProjectPlan(
+          project,
+          lines,
+          resolvedPreparedLines,
+          pendingLinePlans,
+          projectCode,
+        ),
       );
       continue;
     }
@@ -669,6 +1294,13 @@ export function buildProjectMigrationPlan(
     const lifecycleStatus = toLifecycleStatus(project.delFlag);
     const createdAt = normalizeDateTime(project.createdAt);
     const updatedAt = normalizeDateTime(project.updatedAt) ?? createdAt;
+
+    if (!projectName || !bizDate) {
+      throw new Error(
+        `Project ${project.legacyTable}#${project.legacyId} passed structural validation without projectName or bizDate.`,
+      );
+    }
+
     const target: ProjectTargetInsert = {
       projectCode,
       projectName,
@@ -689,13 +1321,13 @@ export function buildProjectMigrationPlan(
       managerNameSnapshot: resolvedDependencies.managerNameSnapshot,
       workshopNameSnapshot: resolvedDependencies.workshop.workshopName,
       totalQty: sumDecimalValues(
-        preparedLines.map((line) => line.quantity),
+        resolvedPreparedLines.map((line) => line.quantity),
         6,
       ),
       totalAmount:
         normalizeDecimalToScale(project.totalAmount, 2) ??
         sumDecimalValues(
-          preparedLines.map((line) => line.amount),
+          resolvedPreparedLines.map((line) => line.amount),
           2,
         ),
       remark: normalizeOptionalText(project.remark),
@@ -713,7 +1345,7 @@ export function buildProjectMigrationPlan(
       updatedBy: normalizeOptionalText(project.updatedBy),
       updatedAt,
     };
-    const linePlans: ProjectLinePlanRecord[] = preparedLines.map(
+    const linePlans: ProjectLinePlanRecord[] = resolvedPreparedLines.map(
       (preparedLine, index) => {
         const lineNo = index + 1;
         const targetCode = `${projectCode}#${lineNo}`;
@@ -760,11 +1392,26 @@ export function buildProjectMigrationPlan(
     });
   }
 
-  const counts = buildCounts(snapshot, migratedProjects, excludedProjects);
+  const counts = buildCounts(
+    snapshot,
+    migratedProjects,
+    pendingProjects,
+    excludedProjects,
+  );
 
   return {
     migrationBatch: PROJECT_MIGRATION_BATCH,
+    autoCreatedMaterials: autoCreatedMaterials.sort(
+      (left, right) =>
+        left.representativeLineLegacyId - right.representativeLineLegacyId ||
+        left.targetCode.localeCompare(right.targetCode),
+    ),
     migratedProjects: migratedProjects.sort(
+      (left, right) =>
+        left.legacyTable.localeCompare(right.legacyTable) ||
+        left.legacyId - right.legacyId,
+    ),
+    pendingProjects: pendingProjects.sort(
       (left, right) =>
         left.legacyTable.localeCompare(right.legacyTable) ||
         left.legacyId - right.legacyId,
@@ -807,6 +1454,35 @@ export function buildDryRunSummary(
     counts: plan.counts,
     globalBlockers: plan.globalBlockers,
     warnings: plan.warnings,
+    autoCreatedMaterials: plan.autoCreatedMaterials.map((material) => ({
+      representativeLineLegacyId: material.representativeLineLegacyId,
+      materialCode: material.target.materialCode,
+      materialName: material.target.materialName,
+      specModel: material.target.specModel,
+      unitCode: material.target.unitCode,
+      sourceLineCount:
+        typeof material.archivedPayload.payload.sourceLineCount === "number"
+          ? material.archivedPayload.payload.sourceLineCount
+          : null,
+    })),
+    migratedProjects: plan.migratedProjects.map((project) => ({
+      legacyTable: project.legacyTable,
+      legacyId: project.legacyId,
+      projectCode: project.target.projectCode,
+      lineCount: project.lines.length,
+      lifecycleStatus: project.target.lifecycleStatus,
+      auditStatusSnapshot: project.target.auditStatusSnapshot,
+      inventoryEffectStatus: project.target.inventoryEffectStatus,
+    })),
+    pendingProjects: plan.pendingProjects.map((project) => ({
+      legacyTable: project.legacyTable,
+      legacyId: project.legacyId,
+      targetProjectCodeCandidate: project.targetProjectCodeCandidate,
+      resolvedLineCount: project.resolvedLineCount,
+      pendingLineCount: project.pendingLineCount,
+      pendingRuleBreakdown:
+        project.summaryArchivedPayload.payload.pendingRuleBreakdown,
+    })),
     excludedProjects: plan.excludedProjects.map((project) => ({
       legacyTable: project.legacyTable,
       legacyId: project.legacyId,
@@ -819,15 +1495,7 @@ export function buildDryRunSummary(
         ? project.payload.lines.length
         : 0,
     })),
-    migratedProjects: plan.migratedProjects.map((project) => ({
-      legacyTable: project.legacyTable,
-      legacyId: project.legacyId,
-      projectCode: project.target.projectCode,
-      lineCount: project.lines.length,
-      lifecycleStatus: project.target.lifecycleStatus,
-      auditStatusSnapshot: project.target.auditStatusSnapshot,
-      inventoryEffectStatus: project.target.inventoryEffectStatus,
-    })),
+    pendingRuleBreakdown: buildPendingRuleBreakdown(plan.pendingProjects),
     context: plan.context,
   };
 }

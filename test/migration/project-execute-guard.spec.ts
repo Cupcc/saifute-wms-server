@@ -1,6 +1,7 @@
 import {
   buildDownstreamConsumerBlockers,
   buildMissingMapTargetBlockers,
+  buildPendingRelationCountBlockers,
   buildSliceDirtyTargetBlockers,
 } from "../../scripts/migration/project/execute-guard";
 
@@ -111,5 +112,71 @@ describe("project execute guard", () => {
         },
       }),
     ).toEqual([]);
+  });
+
+  it("should not block if pending_relations count matches expected pending line count", () => {
+    expect(
+      buildPendingRelationCountBlockers({
+        expectedPendingRelationCount: 2,
+        actualPendingRelationCount: 2,
+      }),
+    ).toEqual([]);
+  });
+
+  it("should block if pending_relations count does not match expected", () => {
+    expect(
+      buildPendingRelationCountBlockers({
+        expectedPendingRelationCount: 3,
+        actualPendingRelationCount: 2,
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        expectedPendingRelationCount: 3,
+        actualPendingRelationCount: 2,
+      }),
+    ]);
+  });
+
+  it("should allow first run with zero pending_relations when no pending lines are expected", () => {
+    expect(
+      buildPendingRelationCountBlockers({
+        expectedPendingRelationCount: 0,
+        actualPendingRelationCount: 0,
+      }),
+    ).toEqual([]);
+  });
+
+  it("should not block downstream consumers when isRerun is false, even if pending_relations existed from prior run", () => {
+    // pending_relations are staging-only; isRerun is determined by live row presence
+    expect(
+      buildDownstreamConsumerBlockers({
+        isRerun: false,
+        consumerCounts: {
+          document_relation: 0,
+          inventory_log: 0,
+          workflow_audit_document: 0,
+        },
+      }),
+    ).toEqual([]);
+  });
+
+  it("should block rerun when multiple downstream consumers exist", () => {
+    expect(
+      buildDownstreamConsumerBlockers({
+        isRerun: true,
+        consumerCounts: {
+          document_relation: 0,
+          inventory_log: 5,
+          workflow_audit_document: 2,
+        },
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        downstreamConsumers: {
+          inventory_log: 5,
+          workflow_audit_document: 2,
+        },
+      }),
+    ]);
   });
 });

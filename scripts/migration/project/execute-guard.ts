@@ -14,6 +14,15 @@ export interface DownstreamConsumerState {
   consumerCounts: Record<string, number>;
 }
 
+/**
+ * Pending relation state used to verify that batch-owned pending_relations
+ * were properly cleaned and re-written after a rerun.
+ */
+export interface PendingRelationCleanupState {
+  expectedPendingRelationCount: number;
+  actualPendingRelationCount: number;
+}
+
 export function buildSliceDirtyTargetBlockers(
   state: SliceTargetState,
 ): Array<Record<string, unknown>> {
@@ -73,6 +82,27 @@ export function buildDownstreamConsumerBlockers(
       reason:
         "Project rerun is blocked because downstream tables already reference Project rows or line ids.",
       downstreamConsumers: Object.fromEntries(activeConsumers),
+    },
+  ];
+}
+
+/**
+ * After execute, pending_relations count must match the plan's expected pending
+ * line count.  A mismatch indicates an incomplete rerun cleanup or write failure.
+ */
+export function buildPendingRelationCountBlockers(
+  state: PendingRelationCleanupState,
+): Array<Record<string, unknown>> {
+  if (state.actualPendingRelationCount === state.expectedPendingRelationCount) {
+    return [];
+  }
+
+  return [
+    {
+      reason:
+        "pending_relations count does not match the deterministic plan's expected pending line count.",
+      expectedPendingRelationCount: state.expectedPendingRelationCount,
+      actualPendingRelationCount: state.actualPendingRelationCount,
     },
   ];
 }
