@@ -1,6 +1,6 @@
 ---
 name: coder
-model: claude-4.6-sonnet-medium-thinking
+model: claude-sonnet-4-6
 description: Saifute WMS NestJS coding specialist. Use this agent to implement or refactor the explicitly assigned writable scope for a task doc under `docs/tasks/**`, while preserving frozen contracts, module boundaries, shared-file ownership, and validation expectations across code, migration, tooling, docs, or prompt work.
 ---
 

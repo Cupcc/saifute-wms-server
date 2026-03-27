@@ -12,8 +12,8 @@ import path from "node:path";
  *   pnpm notify:feishu "事件" "消息内容" "消息类型"
  *
  * 规则：
- * - `task_complete` / `complete` 必须传入精确耗时（毫秒）或精确开始时间，或依赖 hooks 写入的会话级开始时间。
- *   完成事件会自动追加人类可读的耗时描述，例如 `本次任务运行：1小时23分钟`。
+ * - `task_complete` / `complete` 必须传入精确耗时（毫秒）或精确开始时间，或依赖 hooks 写入的任务级开始时间。
+ *   完成事件会自动追加人类可读的耗时描述，例如 `本轮对话运行：47分钟50秒`。
  * - `subagent_complete` 必须通过 --duration-ms 或 --started-at-ms 显式传入子代理运行时长；
  *   缺少精确计时输入时脚本在发送 webhook 前终止。
  *   子代理完成事件会追加 `本次子代理运行：...`，不读取 session/task hook 状态。
@@ -82,7 +82,7 @@ function isSubagentCompletionEvent(event) {
 }
 
 function hasRuntimeInMessage(message) {
-  return /(运行时间|本次运行耗时|本次任务运行|本次子代理运行)\s*[:：]/u.test(
+  return /(运行时间|本次运行耗时|本次任务运行|本轮对话运行|本次子代理运行)\s*[:：]/u.test(
     message,
   );
 }
@@ -221,7 +221,7 @@ function formatDuration(durationMs) {
   return parts.join("");
 }
 
-function injectRuntime(message, runtimeText, label = "本次任务运行") {
+function injectRuntime(message, runtimeText, label = "本轮对话运行") {
   const nextStepPattern = /([；;]\s*下一步计划\s*[:：])/u;
   const match = nextStepPattern.exec(message);
 
@@ -232,12 +232,12 @@ function injectRuntime(message, runtimeText, label = "本次任务运行") {
   return `${message.slice(0, match.index)}；${label}：${runtimeText}${message.slice(match.index)}`;
 }
 
-function readTaskConversationId(projectDir) {
+function readCanonicalTaskStartedAtMs(projectDir) {
   const taskStatePath = path.join(projectDir, TASK_RUNTIME_STATE_PATH);
 
   if (!existsSync(taskStatePath)) {
     throw new Error(
-      `缺少任务级状态 ${TASK_RUNTIME_STATE_PATH}，无法定位当前会话。请修复 hook，或显式传入 --started-at-ms / --duration-ms。`,
+      `缺少任务级运行时状态 ${TASK_RUNTIME_STATE_PATH}，无法计算本轮对话运行时间。请修复 task-start hook，或显式传入 --started-at-ms / --duration-ms。`,
     );
   }
 
@@ -247,84 +247,23 @@ function readTaskConversationId(projectDir) {
     parsed = JSON.parse(readFileSync(taskStatePath, "utf8"));
   } catch (error) {
     throw new Error(
-      `读取任务级状态 ${TASK_RUNTIME_STATE_PATH} 失败：${error instanceof Error ? error.message : String(error)}`,
+      `读取任务级运行时状态 ${TASK_RUNTIME_STATE_PATH} 失败：${error instanceof Error ? error.message : String(error)}`,
     );
   }
 
-  const conversationId =
-    typeof parsed.conversationId === "string"
-      ? parsed.conversationId.trim()
-      : "";
+  const stateKind =
+    typeof parsed.stateKind === "string" ? parsed.stateKind.trim() : "";
 
-  if (!conversationId) {
+  if (stateKind && stateKind !== "task") {
     throw new Error(
-      `任务级状态 ${TASK_RUNTIME_STATE_PATH} 缺少合法的 conversationId，无法定位当前会话。请修复 hook，或显式传入 --started-at-ms / --duration-ms。`,
+      `${TASK_RUNTIME_STATE_PATH} 不是合法的任务级运行时状态（stateKind=${stateKind}）。请修复 task-start hook，或显式传入 --started-at-ms / --duration-ms。`,
     );
-  }
-
-  return conversationId;
-}
-
-function readCanonicalSessionStartedAtMs(projectDir) {
-  const conversationId = readTaskConversationId(projectDir);
-  const sessionStatePath = path.join(
-    projectDir,
-    SESSION_RUNTIME_STATE_DIR,
-    `session-${conversationId}.json`,
-  );
-  const currentSessionStatePath = path.join(
-    projectDir,
-    CURRENT_SESSION_RUNTIME_STATE_PATH,
-  );
-
-  if (!existsSync(sessionStatePath)) {
-    throw new Error(
-      `缺少当前会话的会话级运行时状态 session-${conversationId}.json；检测到任务级状态 ${TASK_RUNTIME_STATE_PATH}，但 completion 事件不会使用它计时。请修复 hook，或显式传入 --started-at-ms / --duration-ms。`,
-    );
-  }
-
-  let parsed;
-
-  try {
-    parsed = JSON.parse(readFileSync(sessionStatePath, "utf8"));
-  } catch (error) {
-    throw new Error(
-      `读取当前会话的会话级运行时状态 session-${conversationId}.json 失败：${error instanceof Error ? error.message : String(error)}`,
-    );
-  }
-
-  if (existsSync(currentSessionStatePath)) {
-    try {
-      const currentSessionParsed = JSON.parse(
-        readFileSync(currentSessionStatePath, "utf8"),
-      );
-      const currentSessionConversationId =
-        typeof currentSessionParsed.conversationId === "string"
-          ? currentSessionParsed.conversationId.trim()
-          : "";
-
-      if (
-        currentSessionConversationId &&
-        currentSessionConversationId !== conversationId
-      ) {
-        throw new Error(
-          `当前任务 conversationId=${conversationId}，但 ${CURRENT_SESSION_RUNTIME_STATE_PATH} 指向 ${currentSessionConversationId}。请修复 hook，或显式传入 --started-at-ms / --duration-ms。`,
-        );
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error;
-      }
-      throw new Error(
-        `读取 ${CURRENT_SESSION_RUNTIME_STATE_PATH} 失败：${String(error)}`,
-      );
-    }
   }
 
   try {
     const rawStartedAtMs = parsePositiveInteger(
       parsed.startedAtMs,
-      `session-${conversationId}.json.startedAtMs`,
+      `${TASK_RUNTIME_STATE_PATH}.startedAtMs`,
     );
 
     if (rawStartedAtMs === undefined) {
@@ -334,7 +273,7 @@ function readCanonicalSessionStartedAtMs(projectDir) {
     return normalizeEpochMs(rawStartedAtMs);
   } catch {
     throw new Error(
-      `当前会话的会话级运行时状态 session-${conversationId}.json 缺少合法的 startedAtMs。请修复 hook，或显式传入 --started-at-ms / --duration-ms。`,
+      `任务级运行时状态 ${TASK_RUNTIME_STATE_PATH} 缺少合法的 startedAtMs，无法计算本轮对话运行时间。请修复 task-start hook，或显式传入 --started-at-ms / --duration-ms。`,
     );
   }
 }
@@ -374,9 +313,9 @@ if (isCompletionEvent(event)) {
     durationMs ??
     (explicitStartedAtMs !== undefined
       ? Math.max(0, Date.now() - explicitStartedAtMs)
-      : Math.max(0, Date.now() - readCanonicalSessionStartedAtMs(projectDir)));
+      : Math.max(0, Date.now() - readCanonicalTaskStartedAtMs(projectDir)));
 
-  msg = injectRuntime(rawMsg, formatDuration(exactDurationMs));
+  msg = injectRuntime(rawMsg, formatDuration(exactDurationMs), "本轮对话运行");
 } else if (isSubagentCompletionEvent(event)) {
   if (hasRuntimeInMessage(rawMsg)) {
     throw new Error(

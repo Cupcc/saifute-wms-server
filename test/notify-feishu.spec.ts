@@ -242,7 +242,7 @@ describe("feishu runtime summary hooks", () => {
     });
   });
 
-  it("task_complete uses session runtime even when task runtime is shorter", async () => {
+  it("task_complete uses current task runtime even when session runtime is longer", async () => {
     await withWebhookServer(async ({ url, getRequests }) => {
       const stateDir = getRuntimeStateDir(projectDir);
       const now = Date.now();
@@ -287,8 +287,8 @@ describe("feishu runtime summary hooks", () => {
       };
 
       expect(payload.msg).toContain("任务已结束");
-      expect(payload.msg).toContain("本次任务运行：2小时");
-      expect(payload.msg).not.toContain("10分钟");
+      expect(payload.msg).toContain("本轮对话运行：10分钟");
+      expect(payload.msg).not.toContain("2小时");
       expect(payload.msg).toContain("task_id：gen-3");
 
       const logPath = join(projectDir, "logs", "feishu-notify.log");
@@ -306,31 +306,54 @@ describe("feishu runtime summary hooks", () => {
     });
   });
 
-  it("task_complete treats session startedAtMs stored as Unix seconds as milliseconds", async () => {
+  it("complete alias uses current task runtime", async () => {
+    await withWebhookServer(async ({ url, getRequests }) => {
+      const stateDir = getRuntimeStateDir(projectDir);
+      const now = Date.now();
+
+      writeJson(join(stateDir, "current-task.json"), {
+        conversationId: "conv-complete",
+        generationId: "gen-complete",
+        startedAtMs: now - 180_000,
+        startedAtIso: new Date(now - 180_000).toISOString(),
+        promptSummary: "complete alias",
+        stateKind: "task",
+      });
+
+      const result = await runNodeAsync(
+        notifyScript,
+        ["complete", "任务已结束；下一步计划：请查看总结。", "success"],
+        {
+          projectDir,
+          env: { FEISHU_WEBHOOK_URL: url },
+        },
+      );
+
+      expect(result.status).toBe(0);
+      expect(getRequests()).toHaveLength(1);
+
+      const payload = JSON.parse(getRequests()[0]?.body ?? "{}") as {
+        event?: string;
+        msg?: string;
+      };
+
+      expect(payload.event).toBe("complete");
+      expect(payload.msg).toContain("本轮对话运行：3分钟");
+      expect(payload.msg).toContain("task_id：gen-complete");
+    });
+  });
+
+  it("task_complete treats task startedAtMs stored as Unix seconds as milliseconds", async () => {
     await withWebhookServer(async ({ url, getRequests }) => {
       const stateDir = getRuntimeStateDir(projectDir);
       const nowSec = Math.floor(Date.now() / 1000);
       const startedSec = nowSec - 7_200;
 
-      writeJson(join(stateDir, "current-session.json"), {
-        conversationId: "conv-sec",
-        sessionId: "sess-sec",
-        startedAtMs: startedSec,
-        startedAtIso: new Date(startedSec * 1000).toISOString(),
-        stateKind: "session",
-      });
-      writeJson(join(stateDir, "session-conv-sec.json"), {
-        conversationId: "conv-sec",
-        sessionId: "sess-sec",
-        startedAtMs: startedSec,
-        startedAtIso: new Date(startedSec * 1000).toISOString(),
-        stateKind: "session",
-      });
       writeJson(join(stateDir, "current-task.json"), {
         conversationId: "conv-sec",
         generationId: "gen-sec",
-        startedAtMs: Date.now() - 60_000,
-        startedAtIso: new Date(Date.now() - 60_000).toISOString(),
+        startedAtMs: startedSec,
+        startedAtIso: new Date(startedSec * 1000).toISOString(),
         promptSummary: "测秒级时间戳",
         stateKind: "task",
       });
@@ -351,23 +374,29 @@ describe("feishu runtime summary hooks", () => {
         msg?: string;
       };
 
-      expect(payload.msg).toContain("本次任务运行：2小时");
+      expect(payload.msg).toContain("本轮对话运行：2小时");
       expect(payload.msg).not.toMatch(/[0-9]{3,}小时/);
     });
   });
 
-  it("task_complete fails explicitly when only task runtime state exists", async () => {
+  it("task_complete fails explicitly when only session runtime state exists", async () => {
     await withWebhookServer(async ({ url, getRequests }) => {
       const stateDir = getRuntimeStateDir(projectDir);
       const now = Date.now();
 
-      writeJson(join(stateDir, "current-task.json"), {
+      writeJson(join(stateDir, "current-session.json"), {
         conversationId: "conv-4",
-        generationId: "gen-4",
-        startedAtMs: now - 600_000,
-        startedAtIso: new Date(now - 600_000).toISOString(),
-        promptSummary: "最后一步",
-        stateKind: "task",
+        sessionId: "sess-4",
+        startedAtMs: now - 7_200_000,
+        startedAtIso: new Date(now - 7_200_000).toISOString(),
+        stateKind: "session",
+      });
+      writeJson(join(stateDir, "session-conv-4.json"), {
+        conversationId: "conv-4",
+        sessionId: "sess-4",
+        startedAtMs: now - 7_200_000,
+        startedAtIso: new Date(now - 7_200_000).toISOString(),
+        stateKind: "session",
       });
 
       const result = await runNodeAsync(
@@ -380,27 +409,18 @@ describe("feishu runtime summary hooks", () => {
       );
 
       expect(result.status).not.toBe(0);
-      expect(result.stderr).toContain("缺少当前会话的会话级运行时状态");
-      expect(result.stderr).toContain("不会使用它");
+      expect(result.stderr).toContain("缺少任务级运行时状态");
       expect(getRequests()).toHaveLength(0);
     });
   });
 
-  it("task_complete fails explicitly when session runtime state is malformed", async () => {
+  it("task_complete fails explicitly when task runtime state is malformed", async () => {
     await withWebhookServer(async ({ url, getRequests }) => {
       const stateDir = getRuntimeStateDir(projectDir);
       mkdirSync(stateDir, { recursive: true });
-      writeJson(join(stateDir, "current-task.json"), {
-        conversationId: "conv-5",
-        generationId: "gen-5",
-        startedAtMs: Date.now() - 60_000,
-        startedAtIso: new Date(Date.now() - 60_000).toISOString(),
-        promptSummary: "最后一步",
-        stateKind: "task",
-      });
       writeFileSync(
-        join(stateDir, "session-conv-5.json"),
-        '{"startedAtMs":"broken"}\n',
+        join(stateDir, "current-task.json"),
+        '{"conversationId":"conv-5","generationId":"gen-5","startedAtMs":"broken","stateKind":"task"}\n',
         "utf8",
       );
 
@@ -476,6 +496,7 @@ describe("feishu runtime summary hooks", () => {
       expect(payload.msg).toContain("coder 子代理已完成实现");
       expect(payload.msg).toContain("本次子代理运行：3分钟");
       expect(payload.msg).not.toContain("本次任务运行");
+      expect(payload.msg).not.toContain("本轮对话运行");
     });
   });
 
@@ -508,6 +529,7 @@ describe("feishu runtime summary hooks", () => {
       expect(payload.msg).toContain("planner 子代理已完成规划");
       expect(payload.msg).toContain("本次子代理运行：");
       expect(payload.msg).not.toContain("本次任务运行");
+      expect(payload.msg).not.toContain("本轮对话运行");
     });
   });
 
@@ -529,6 +551,48 @@ describe("feishu runtime summary hooks", () => {
       expect(result.status).not.toBe(0);
       expect(result.stderr).toContain("--duration-ms");
       expect(result.stderr).toContain("--started-at-ms");
+      expect(getRequests()).toHaveLength(0);
+    });
+  });
+
+  it("subagent_complete still rejects implicit timing even when task and session state exist", async () => {
+    await withWebhookServer(async ({ url, getRequests }) => {
+      const stateDir = getRuntimeStateDir(projectDir);
+      const now = Date.now();
+
+      writeJson(join(stateDir, "current-task.json"), {
+        conversationId: "conv-sub",
+        generationId: "gen-sub",
+        startedAtMs: now - 120_000,
+        startedAtIso: new Date(now - 120_000).toISOString(),
+        promptSummary: "subagent regression",
+        stateKind: "task",
+      });
+      writeJson(join(stateDir, "current-session.json"), {
+        conversationId: "conv-sub",
+        sessionId: "sess-sub",
+        startedAtMs: now - 3_600_000,
+        startedAtIso: new Date(now - 3_600_000).toISOString(),
+        stateKind: "session",
+      });
+
+      const result = await runNodeAsync(
+        notifyScript,
+        [
+          "subagent_complete",
+          "code-reviewer 子代理已完成审查；下一步计划：处理 findings。",
+          "info",
+        ],
+        {
+          projectDir,
+          env: { FEISHU_WEBHOOK_URL: url },
+        },
+      );
+
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain(
+        "subagent_complete 必须通过 --duration-ms 或 --started-at-ms",
+      );
       expect(getRequests()).toHaveLength(0);
     });
   });
@@ -556,7 +620,7 @@ describe("feishu runtime summary hooks", () => {
     });
   });
 
-  it("task_complete fails explicitly when current-session points to another conversation", async () => {
+  it("task_complete ignores current-session mismatch and still uses current task runtime", async () => {
     await withWebhookServer(async ({ url, getRequests }) => {
       const stateDir = getRuntimeStateDir(projectDir);
       const now = Date.now();
@@ -568,13 +632,6 @@ describe("feishu runtime summary hooks", () => {
         startedAtIso: new Date(now - 60_000).toISOString(),
         promptSummary: "最后一步",
         stateKind: "task",
-      });
-      writeJson(join(stateDir, "session-conv-6.json"), {
-        conversationId: "conv-6",
-        sessionId: "sess-6",
-        startedAtMs: now - 3_600_000,
-        startedAtIso: new Date(now - 3_600_000).toISOString(),
-        stateKind: "session",
       });
       writeJson(join(stateDir, "current-session.json"), {
         conversationId: "conv-other",
@@ -593,10 +650,15 @@ describe("feishu runtime summary hooks", () => {
         },
       );
 
-      expect(result.status).not.toBe(0);
-      expect(result.stderr).toContain("current-session.json");
-      expect(result.stderr).toContain("conv-other");
-      expect(getRequests()).toHaveLength(0);
+      expect(result.status).toBe(0);
+      expect(getRequests()).toHaveLength(1);
+
+      const payload = JSON.parse(getRequests()[0]?.body ?? "{}") as {
+        msg?: string;
+      };
+      expect(payload.msg).toContain("本轮对话运行：1分钟");
+      expect(payload.msg).toContain("task_id：gen-6");
+      expect(payload.msg).not.toContain("10秒");
     });
   });
 });

@@ -12,8 +12,8 @@ Main agent sends all notifications to avoid parent-child duplicates. Only notify
 | Scenario | event | Duration |
 | --- | --- | --- |
 | Subagent launched | `subagent_start` | No |
-| Subagent finished (main continues) | `subagent_complete` | Yes, `--duration-ms` required |
-| Main agent turn complete | `task_complete` | Yes, auto-reads session state |
+| Subagent finished (main continues) | `subagent_complete` | Yes, `--duration-ms` or `--started-at-ms` |
+| Main agent turn complete | `task_complete` / `complete` | Yes, auto-reads task state |
 | Main agent paused / awaiting user | `need_user_input` / `agent_stop` / `phase_complete` | No |
 
 ## Command
@@ -24,7 +24,7 @@ pnpm notify:feishu "<event>" "<result>; next: <action>" "<info|success|warning>"
 
 ## Timing Rules
 
-- `task_complete`: auto-reads `sessionStart` hook state; pass `--duration-ms` or `--started-at-ms` when unavailable.
+- `task_complete`: auto-reads `taskStart` hook state so the appended duration matches Cursor's current-turn `worked for ...`; pass `--duration-ms` or `--started-at-ms` when unavailable.
 - `subagent_complete`: must explicitly pass `--duration-ms` or `--started-at-ms`; script aborts if missing.
 - Timestamps in millisecond Unix time. Never hand-write or estimate duration in msg; script auto-appends human-readable duration.
 
@@ -32,5 +32,5 @@ pnpm notify:feishu "<event>" "<result>; next: <action>" "<info|success|warning>"
 
 - One notification per event; if parent already sent, child must not duplicate.
 - `task_complete` is for main agent's final wrap-up only, not subagent completion.
-- Duration labels: `subagent_complete` uses "subagent duration", `task_complete` uses "task duration"; never mix.
+- Duration labels: `task_complete` uses "current turn duration" (`本轮对话运行`), `subagent_complete` uses "subagent duration" (`本次子代理运行`); never mix.
 - Script auto-appends `task_id` (priority: `FEISHU_NOTIFY_TASK_ID` → `current-task.json` → `current-session.json`) and writes audit log to `logs/feishu-notify.log`.
