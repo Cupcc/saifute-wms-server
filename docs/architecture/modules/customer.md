@@ -35,13 +35,13 @@
 ## Controller 接口草案
 
 - 模块 canonical 命名保持 `customer`
-- 兼容期对外仍保留 `outbound` 路由前缀，避免旧前端同步改动
-- `GET /outbound/orders`
-- `POST /outbound/orders`
-- `PATCH /outbound/orders/:id`
-- `POST /outbound/orders/:id/void`
-- `GET /outbound/sales-returns`
-- `POST /outbound/sales-returns`
+- 对外路由前缀为 `/customer`
+- `GET /customer/orders`
+- `POST /customer/orders`
+- `PATCH /customer/orders/:id`
+- `POST /customer/orders/:id/void`
+- `GET /customer/sales-returns`
+- `POST /customer/sales-returns`
 
 ## Application 层编排
 
@@ -85,7 +85,7 @@
 
 ## 权限点、数据权限、审计要求
 
-- 模块内部命名保持 `customer`；兼容期仅保留外部权限码 `outbound:*`
+- 模块内部命名保持 `customer`；外部权限码统一为 `customer:*`
 - 列表、详情、新增、修改、作废、导出、退货均需独立权限点
 - 查询通常受客户、经办人、物料等数据权限影响
 - 所有命令类操作记录审计

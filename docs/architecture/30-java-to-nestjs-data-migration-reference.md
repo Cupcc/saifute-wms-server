@@ -278,25 +278,25 @@
 
 | 旧表组                                                      | 旧作用          | 新表组                                 | 新作用           | 迁移方式              | 当前状态    |
 | -------------------------------------------------------- | ------------ | ----------------------------------- | ------------- | ----------------- | ------- |
-| `saifute_composite_product` + `saifute_product_material` | 项目头与项目物料消耗明细 | `project` + `project_material_line` | 项目事务数据与项目物料消耗 | 事务型迁移，不是静态 BOM 复制 | 当前未正式迁入 |
+| `saifute_composite_product` + `saifute_product_material` | 项目头与项目物料消耗明细 | `project` + `project_material_line` | 项目事务数据与项目物料消耗 | 事务型迁移，不是静态 BOM 复制 | 已迁入 |
 
 当前状态：
 
 - 源表 `5` 个项目、`138` 条项目物料明细
-- 当前目标库 `0` 项目、`0` 行项目明细
-- `5` 个项目全部进入 `excluded_documents`
-- 直接原因不是“项目不重要”，而是旧 `saifute_product_material.material_id` 大量缺失，无法安全落到 `project_material_line.materialId`，因此也无法继续保证库存消耗、库存日志和来源追踪语义
+- 已迁入 `5 / 5` 个项目、`138 / 138` 条项目明细
+- 其中 `4` 行直接命中既有物料，`134` 行通过自动补建 `126` 条 `AUTO_CREATED` 物料后准入
+- `project` validate 已显示 `cutoverReady = true`，且已完成 `138` 条项目消耗库存重放
 
 ### 5.9 库存、审核、关系与辅助域
 
 | 旧表组                                                        | 旧作用           | 新表组                                                 | 新作用                         | 迁移方式              | 当前状态                                  |
 | ---------------------------------------------------------- | ------------- | --------------------------------------------------- | --------------------------- | ----------------- | ------------------------------------- |
-| `saifute_inventory`                                        | 旧库存现值         | `inventory_balance`                                 | 新库存现值                       | 重放/重建，不直拷         | 当前已由 admitted 业务单据重放出 `302` 条余额       |
-| `saifute_inventory_log`                                    | 旧库存流水         | `inventory_log`                                     | 新库存流水                       | 重放/重建，不直拷         | 当前已重放出 `617` 条流水                      |
-| `saifute_inventory_used`                                   | 旧来源占用         | `inventory_source_usage`                            | 来源占用与释放                     | 转换迁移，不直拷          | 当前仍为 `0`，退货家族尚有 `17` 个 unresolved gap |
+| `saifute_inventory`                                        | 旧库存现值         | `inventory_balance`                                 | 新库存现值                       | 重放/重建，不直拷         | 当前已由全域 admitted 业务单据重放出 `428` 条余额     |
+| `saifute_inventory_log`                                    | 旧库存流水         | `inventory_log`                                     | 新库存流水                       | 重放/重建，不直拷         | 当前已重放出 `733` 条流水                      |
+| `saifute_inventory_used`                                   | 旧来源占用         | `inventory_source_usage`                            | 来源占用与释放                     | 转换迁移，不直拷          | 当前仍为 `0`；本地迁移完成口径接受该受控留白，线上切换前需复核 |
 | `saifute_interval`                                         | 旧区间、编号、批次混合语义 | `factory_number_reservation` + `archived_intervals` | 编号区间 live reservation 与归档区间 | 按 `order_type` 分流 | 已部分完成                                 |
 | `saifute_audit_document`                                   | 旧审核投影         | `workflow_audit_document`                           | 当前有效审核投影                    | 投影重建              | 当前已生成 `360` 条审核投影                     |
-| 旧头表 `source_id/source_type` + `saifute_inventory_used` 等线索 | 旧上下游关系证据      | `document_relation` + `document_line_relation`      | 新上下游关系模型                    | 恢复式构造，不强造关系       | 当前仍为 `0`，后续按证据增强                      |
+| 旧头表 `source_id/source_type` + `saifute_inventory_used` 等线索 | 旧上下游关系证据      | `document_relation` + `document_line_relation`      | 新上下游关系模型                    | 恢复式构造，不强造关系       | 当前仍为 `0`；本地迁移完成口径接受该受控留白，线上切换前需复核 |
 | `saifute_inventory_warning`                                | 旧库存预警结果表      | `vw_inventory_warning`                              | 只读预警视图                      | 视图替代              | 不做表对表迁移                               |
 | `saifute_change_record`                                    | 旧变更记录         | 无稳定同名业务表                                            | 作为历史辅助信息保留                  | 归档或旧库留存           | 当前无正式目标表                              |
 
@@ -343,7 +343,7 @@
 | -------------------------------------------- | ---------------------------- |
 | `sys_job`、`sys_job_log`                      | 目标表保留给 NestJS 新系统运行期，旧平台调度历史不导入 |
 | `sys_logininfor`、`sys_oper_log`              | 目标表保留给 NestJS 新系统运行期，旧平台日志历史不导入 |
-| `saifute_scrap_order`、`saifute_scrap_detail` | 已确认纳入本次范围；虽然当前源数据为 `0`，仍需补齐迁移能力与 validate / cutover 口径 |
+| `saifute_scrap_order`、`saifute_scrap_detail` | 已纳入迁移范围；当前源数据为 `0`，但迁移能力与 validate 口径已补齐，后续有新历史数据时可直接重跑 |
 
 ### 7.3 当前不进入新业务表
 
@@ -396,7 +396,6 @@
 
 当前最重要的 `excluded_documents` 例子：
 
-- `project` 域全部 `5` 个项目
 - 一部分销售退货头
 - 一部分入库头、出库头、领料头
 
@@ -417,7 +416,8 @@
 - 入库家族的大部分记录
 - 出库家族的大部分记录
 - 领料家族的大部分记录
-- 一部分销售退货、退料正式行
+- 销售退货、退料 formal admission 已准入的正式行
+- `project` 域全部 `5` 个项目和 `138` 条项目明细
 
 ### 9.2 只能算 `replayed`
 
@@ -443,36 +443,65 @@
 
 以下对象表示当前不准入目标正式表：
 
-- `project` 全部旧项目
 - 一部分销售退货、入库、出库、领料头
 
-### 9.5 当前不能直接写成 `completed`
+### 9.5 不能直接按 `completed` 理解的对象
 
-以下对象当前都不能在文档里写成“已迁完”：
+以下对象虽然目标侧已有表、已有能力或已有局部结果，但不能等同理解为“旧平台历史整体无差异迁完”：
 
-- `scrap` 域：范围已确认，但当前只有目标模型与单据家族承载方式，迁移能力和验证口径尚未落地
 - 历史 `sys_job` / `sys_job_log`：旧平台调度历史不导入，只保留新系统运行期表
 - 历史 `sys_logininfor` / `sys_oper_log`：旧平台日志历史不导入，只保留新系统运行期表
 - 整体平台层账号、角色、菜单、组织、配置数据：按新系统方案重建，不纳入旧历史业务导入
+- `inventory_source_usage`、`document_relation`、`document_line_relation`：当前本地迁移完成口径接受目标表为 `0` 的受控留白，但线上切换前仍需结合追溯诉求重新复核
 
-## 10. 当前未决项与阅读边界
+## 10. 线上迁移前仍需复核的事项与阅读边界
 
-当前仍不能被文档写成“已完全收口”的事项：
+当前本地数据库迁移已完成，但如果后续要对线上库执行正式 cutover，仍应复核以下事项：
 
-1. `project` 域尚未正式迁入。
-  原因不是业务下线，而是旧明细缺少稳定 `material_id`，会破坏目标表外键与库存副作用语义。
-2. `scrap` 域已确认纳入本次全量迁移，但迁移能力、验证口径和独立切片尚未落地。
-  当前源数据行为 `0`，不能因此把该能力缺口写成“已完成”。
-3. `inventory_source_usage`、`document_relation`、`document_line_relation` 仍未完整恢复。
-  当前返回后增强批次显示：共享关系表仍为 `0`，来源占用仍为 `0`，退货家族尚有 `17` 个 unresolved source usage gap。
-4. `excluded_documents` 非空的家族，仍需要业务签收后才能作为最终 cutover 结论。
-5. `inventory_balance` 中存在 `102` 条负库存余额警告。
-  当前口径将其视为旧系统历史先后顺序漂移导致的已接受 warning，而不是单独 cutover blocker。
-6. 新库中已有 `sys_job`、`sys_job_log`、`sys_logininfor`、`sys_oper_log`，但它们属于 NestJS 新系统运行期表，不等于旧平台历史数据要迁入这些表。
-7. 旧平台账号 / 权限 / 菜单 / 组织 / 配置 / 公告历史不属于本次正式业务导入边界；需要的能力由 NestJS 新系统按新方案重建。
+1. `inventory_source_usage`、`document_relation`、`document_line_relation` 当前仍为 `0`。
+  本地迁移已按“业务事实准入 + 库存可重放 + validate 无 blocker”完成；如果线上切换要求完整来源追踪或上下游关系查询，需要先补齐证据恢复策略。
+2. `excluded_documents` 非空的家族仍要做业务签收。
+  本地迁移可以接受“受控排除 + 文档留痕”；线上 cutover 前要明确这些排除项是继续保留、人工补录，还是关账后放弃迁入。
+3. 全局库存重放后存在 `230` 个负余额 bucket warning。
+  当前解释是缺少期初库存或历史先后顺序漂移，local validate 将其视为 accepted warning；线上切换前应明确是否需要补录期初库存，或接受以当前余额起账。
+4. 新库中已有 `sys_job`、`sys_job_log`、`sys_logininfor`、`sys_oper_log`，但它们属于 NestJS 新系统运行期表，不等于旧平台历史数据要迁入这些表。
+5. 旧平台账号 / 权限 / 菜单 / 组织 / 配置 / 公告历史不属于本次正式业务导入边界；线上迁移时要单独准备新系统账号、角色、菜单与权限初始化方案。
 
 阅读边界：
 
 - 想看目标边界与模块职责，读 `00-architecture-overview.md`
 - 想看业务流程与优化后表设计，读 `20-wms-business-flow-and-optimized-schema.md`
 - 想看迁移运行时证据、批次状态、validate 细节，读 `docs/tasks/**` 与 `scripts/migration/reports/*.json`
+
+## 11. 本地迁移经验总结：给后续线上迁移
+
+### 11.1 已验证有效的做法
+
+- 先冻结迁移边界，再写脚本。迁移单位应该是“业务事实 + 目标模型”，不是“旧表逐张复制”。
+- 先迁主数据，再迁事务单据，最后统一做全局库存重放。库存余额和流水是共享副作用，不能在业务域只迁一半时提前生成。
+- 把迁移结果明确分成 `migrated / replayed / archived / excluded / pending`，避免“写进库了就算完成”的假完成。
+- 所有批次都坚持 `dry-run -> execute -> validate`，并保留 batch、mapping 和 validate report，确保可重跑、可对账、可解释。
+- 对关键外键和库存语义坚持 deterministic mapping。像 `project_material.material_id` 这类关键字段，宁可自动补建并留痕，也不要 fuzzy matching。
+- `migration_staging` 必须当成受控迁移层，而不是失败垃圾箱；`map_*`、`archived_*`、`pending_relations`、`excluded_documents` 都是 cutover 证据的一部分。
+- 本地迁移能完成，不代表线上可直接照搬。线上新增的复杂度主要来自停写窗口、最终补跑、业务签收和回退预案。
+
+### 11.2 本地经验对线上迁移的直接启发
+
+| 线上课题 | 本地迁移给出的经验 | 线上建议 |
+| --- | --- | --- |
+| 数据冻结 | 本地库是静态数据，脚本结果稳定 | 线上必须先定义停写时间点，并在停写后做最后一次幂等补跑 |
+| 幂等重跑 | 当前迁移依赖 batch、`map_*`、validate report 保证可复核 | 线上必须保持同样的 batch-owned rows / maps 口径，避免“补跑重复插入” |
+| 库存重放 | 库存副作用必须在全域单据迁完后统一 replay | 线上不能边迁边重放；应在最终数据搬家完成后一次性 replay 并验数 |
+| 负库存 warning | 本地接受了缺少期初库存导致的 `230` 个负余额 warning | 线上要提前决定是补录期初库存，还是接受以切换时余额为起点 |
+| 排除项治理 | `excluded_documents` 可以让迁移先完成，再做受控签收 | 线上必须为每类 excluded 指定责任人和处置方式，不能把它们留成模糊尾项 |
+| 平台数据切换 | 账号、角色、菜单、日志、调度不在旧历史业务导入主线 | 线上要把“业务数据迁移”和“新系统初始化”拆成两套 checklist 执行 |
+| 上线信心 | 本地真实库验证能证明脚本逻辑，但不能替代生产演练 | 线上至少要对生产快照做一次全链路 rehearsal，再安排正式 cutover |
+
+### 11.3 推荐的线上 cutover 顺序
+
+1. 先用线上库快照做一次全链路 rehearsal，确认 counts、`excluded_documents`、库存 replay、负库存 warning 和抽样单据都可解释。
+2. 明确业务停写窗口、回退条件和责任人，特别是排除项、账号初始化和报表核对负责人。
+3. 旧系统停写后，重跑一次幂等迁移脚本，把最后增量搬到新库。
+4. 在最终业务数据到位后执行全局 `inventory replay`，再跑 validate。
+5. 对关键域做抽样验收，并让业务签收 `excluded / archived / warning` 的最终口径。
+6. 最后再开启 NestJS 新系统写入；如需回退，只回退流量，不回退已归档的迁移证据。

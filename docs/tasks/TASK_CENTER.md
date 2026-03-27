@@ -36,7 +36,9 @@
 
 ## 活跃任务
 
-当前无活跃任务。
+| Task 文档 | 状态 | 说明 |
+| --- | --- | --- |
+| `docs/tasks/task-20260327-1000-frontend-home-legacy-chart-restore.md` | `planned` | 新开 `/index` 首页旧图表回归切片：从 `reporting/home` 容器脱钩，恢复旧项目图表节奏，并把 RD 直达与低权限无 `403` 降级作为硬性验收。 |
 
 ## 已完成但保留（归档至 `archive/retained-completed/`）
 
@@ -44,7 +46,13 @@
 
 | Task 文档 | 保留原因 |
 | --- | --- |
+| `docs/tasks/archive/retained-completed/task-20260326-0415-rd-subwarehouse-phase1-operating-foundation.md` | 已完成 RD Phase 1 operating foundation：研发独立工作台、固定仓别隔离、项目领用、本仓报废与研发侧库存/报表基础已落地，并通过 reviewer clean sign-off 与浏览器冒烟验证。 |
+| `docs/tasks/archive/retained-completed/task-20260326-0455-system-readiness-core-business-coverage.md` | 已完成 core business 页面群收口：`base/*`、`entry/*`、`take/*`、`stock/{inventory,log,used,scrap*,interval}` 菜单/主请求/关键过滤链路已对齐当前 NestJS，并通过 build + browser 定向验证。 |
+| `docs/tasks/archive/retained-completed/task-20260326-1557-system-readiness-customer-sales-domain-coverage.md` | 已完成 `customer` / 销售域补齐：首页 `dashboard`、`销售管理` 菜单、四个页面与关键写按钮/弹窗入口已恢复，并通过 fresh backend + fresh frontend 浏览器验证。 |
+| `docs/tasks/archive/retained-completed/task-20260326-1940-frontend-old-style-phase1-shell-integration.md` | 已完成第一阶段 shell integration：默认首页回归 dashboard 节奏、`销售管理/生产车间/研发协同` 分组收口、RD 直达 `workbench` 且不残留首页标签，并通过 admin/operator/rd 浏览器联调验证。 |
+| `docs/tasks/archive/retained-completed/task-20260326-0205-system-readiness-legacy-monitor-coverage.md` | 已完成 legacy `monitor/*` 兼容切片：页面可达、主请求 `200`、scheduler 最小读链路已补齐，保留为本轮 readiness 扩面 provenance。 |
 | `docs/tasks/archive/retained-completed/task-20260325-1740-agent-orchestration-completion-state.md` | 已完成 AI 编排完成态、归档协议、resume 真源与 `project` validate 假确认门修复，并以自身归档验证了新 completion-state 协议。 |
+| `docs/tasks/archive/retained-completed/task-20260325-2355-outbound-customer-cutover.md` | 已完成 repo-owned `outbound` 兼容层切换与 reviewer sign-off；保留为本轮 `customer` cutover 的执行 provenance 真源。 |
 | `docs/tasks/archive/retained-completed/task-20260323-1100-architecture-review-clarity.md` | 已完成 scoped architecture review，并产出 gap 与澄清结论；follow-up 已收口。 |
 | `docs/tasks/archive/retained-completed/task-20260321-1140-architecture-migration-reference.md` | 已完成全量迁移 architecture reference 的 docs-only 交付与复审，并与已归档 migration requirement 保持稳定溯源关系。 |
 | `docs/tasks/archive/retained-completed/task-20260323-1530-migration-project-material-resolution-readiness.md` | `project` 域迁移已完成：`5` 项目 / `138` 行全部准入 live，自动补建 `126` 条物料；inventory replay 完成后 validate 已改为基于下游证据判定，无残余假 blocker。 |
@@ -61,6 +69,7 @@
 | `docs/tasks/archive/retained-completed/task-20260319-1905-migration-master-plan-relocation.md` | 已完成，但仍是旧顶层迁移计划删除后的仓库级 migration master plan 真源。 |
 | `docs/tasks/archive/retained-completed/task-20260319-1605-feishu-runtime-summary.md` | 已完成：`task_complete` 会话级运行时长与失败语义修复；需求文件已删，保留为 provenance。 |
 | `docs/tasks/archive/retained-completed/task-20260319-1715-feishu-subagent-runtime-duration.md` | 已完成：`subagent_complete` 显式时长入参与规则/测试一致；保留为飞书通知合约变更真源。 |
+| `docs/tasks/archive/retained-completed/task-20260326-0827-feishu-turn-runtime.md` | 已完成：主完成通知改为当前轮次 `worked for ...` 对齐的本轮对话时长，`complete` 别名与子代理显式计时约束已通过测试与 reviewer sign-off。 |
 | `docs/tasks/archive/retained-completed/task-20260320-1400-architecture-doc-relocation.md` | 已完成架构文档目录迁移、说明补充与仓库级旧路径引用清理，并保留为本轮结构治理的执行与 review 记录。 |
 | `docs/tasks/archive/retained-completed/task-20260319-1100-migration-return-family-shared-post-admission.md` | 已完成退货族准入后共享下游迁移（relation / replay / validate / readiness policy），复审通过与需求对齐，仍作为该 scope 的执行与 provenance 真源。 |
 

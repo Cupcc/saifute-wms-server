@@ -76,7 +76,7 @@ flowchart TD
 | `inventory-core`    | `/inventory`         | 库存核心   | `inventory_balance`、`inventory_log`、`inventory_source_usage`、`factory_number_reservation` | 库存唯一写入口                                |
 | `workflow`          | `/workflow`          | 审核投影   | `workflow_audit_document`                                                                 | 单据表只保留审核快照                             |
 | `inbound`           | `/inbound`           | 入库家族   | `stock_in_order`、`stock_in_order_line`                                                    | `orders` 对应验收单，`into-orders` 对应生产入库单   |
-| `customer`          | `/outbound`（兼容期） | 客户收发家族 | `customer_stock_order`、`customer_stock_order_line`                                        | `orders` 对应出库单，`sales-returns` 对应销售退货单 |
+| `customer`          | `/customer`          | 客户收发家族 | `customer_stock_order`、`customer_stock_order_line`                                        | `orders` 对应出库单，`sales-returns` 对应销售退货单 |
 | `workshop-material` | `/workshop-material` | 车间物料家族 | `workshop_material_order`、`workshop_material_order_line`                                  | `pick` / `return` / `scrap` 共用一套主从表    |
 | `project`           | `/projects`          | 项目家族   | `project`、`project_material_line`                                                         | 默认不走审核                                 |
 | `reporting`         | `/reporting`         | 只读报表   | 读取事务表与视图                                                                                  | 不拥有事务写模型                               |
@@ -179,9 +179,9 @@ NestJS `inbound` 模块映射补充：
 
 NestJS `customer` 模块映射补充：
 
-- 模块 canonical 命名为 `customer`，兼容期对外继续暴露 `/outbound/*`
-- `/outbound/orders` 对应 `CustomerStockOrderType.OUTBOUND`，即出库单
-- `/outbound/sales-returns` 对应 `CustomerStockOrderType.SALES_RETURN`，即销售退货单
+- 模块 canonical 命名为 `customer`，对外路由前缀为 `/customer`
+- `/customer/orders` 对应 `CustomerStockOrderType.OUTBOUND`，即出库单
+- `/customer/sales-returns` 对应 `CustomerStockOrderType.SALES_RETURN`，即销售退货单
 - 两类单据共用 `customer_stock_order` / `customer_stock_order_line`
 - 销售退货与出库的来源关系优先通过 `document_relation`、`document_line_relation` 表达，而不是继续拆独立关系表
 
