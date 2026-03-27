@@ -166,7 +166,7 @@
   </div>
 </template>
 
-<script setup name="Index">
+<script setup name="LegacyHomeDashboard">
 import * as echarts from "echarts";
 import {
   nextTick,
@@ -183,6 +183,7 @@ import {
 } from "@/api/system/home";
 import useUserStore from "@/store/modules/user";
 
+// biome-ignore lint/correctness/noUnusedVariables: 模板欢迎语绑定 userStore.nickName
 const userStore = useUserStore();
 
 // 当前日期
@@ -507,8 +508,8 @@ onMounted(() => {
   void activateDashboard();
 });
 
-// 统一的数据加载函数
-async function loadData() {
+// 统一的数据加载函数（expectedSequence 防止 await 期间已失活仍写回图表）
+async function loadData(expectedSequence) {
   try {
     const [statisticsResponse, categoryResponse, trendResponse] =
       await Promise.all([
@@ -516,6 +517,10 @@ async function loadData() {
         getInventoryCategoryStatistics(),
         getDocumentDateStatistics(),
       ]);
+
+    if (expectedSequence !== activationSequence || !isDashboardActive.value) {
+      return;
+    }
 
     const statistics = statisticsResponse.data;
     if (statistics) {
@@ -529,9 +534,11 @@ async function loadData() {
   }
 }
 
-function startPolling() {
+function startPolling(anchorSequence) {
   stopPolling();
-  intervalId = setInterval(loadData, 300000);
+  intervalId = setInterval(() => {
+    void loadData(anchorSequence);
+  }, 300000);
 }
 
 function stopPolling() {
@@ -554,11 +561,11 @@ async function activateDashboard() {
   }
   initCharts();
   handleResize();
-  await loadData();
+  await loadData(currentSequence);
   if (!isDashboardActive.value || activationSequence !== currentSequence) {
     return;
   }
-  startPolling();
+  startPolling(currentSequence);
 }
 
 function deactivateDashboard() {
