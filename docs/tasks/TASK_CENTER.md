@@ -36,9 +36,7 @@
 
 ## 活跃任务
 
-| Task 文档 | 状态 | 说明 |
-| --- | --- | --- |
-| `docs/tasks/task-20260327-1000-frontend-home-legacy-chart-restore.md` | `planned` | 新开 `/index` 首页旧图表回归切片：从 `reporting/home` 容器脱钩，恢复旧项目图表节奏，并把 RD 直达与低权限无 `403` 降级作为硬性验收。 |
+当前无仍处规划/编码/review 中的根目录 `task-*.md`；下一条前端切片需另开 task 并在此登记。
 
 ## 已完成但保留（归档至 `archive/retained-completed/`）
 
@@ -50,6 +48,7 @@
 | `docs/tasks/archive/retained-completed/task-20260326-0455-system-readiness-core-business-coverage.md` | 已完成 core business 页面群收口：`base/*`、`entry/*`、`take/*`、`stock/{inventory,log,used,scrap*,interval}` 菜单/主请求/关键过滤链路已对齐当前 NestJS，并通过 build + browser 定向验证。 |
 | `docs/tasks/archive/retained-completed/task-20260326-1557-system-readiness-customer-sales-domain-coverage.md` | 已完成 `customer` / 销售域补齐：首页 `dashboard`、`销售管理` 菜单、四个页面与关键写按钮/弹窗入口已恢复，并通过 fresh backend + fresh frontend 浏览器验证。 |
 | `docs/tasks/archive/retained-completed/task-20260326-1940-frontend-old-style-phase1-shell-integration.md` | 已完成第一阶段 shell integration：默认首页回归 dashboard 节奏、`销售管理/生产车间/研发协同` 分组收口、RD 直达 `workbench` 且不残留首页标签，并通过 admin/operator/rd 浏览器联调验证。 |
+| `docs/tasks/archive/retained-completed/task-20260327-1000-frontend-home-legacy-chart-restore.md` | 已完成 `/index` 旧版图表首页：`LegacyHomeDashboard` + `api/system/home.js` reporting 适配，与 `reporting/home` 脱钩；keep-alive / 异步加载竞态与模板 `userStore` 已收口；`build:prod` + Biome 通过。 |
 | `docs/tasks/archive/retained-completed/task-20260326-0205-system-readiness-legacy-monitor-coverage.md` | 已完成 legacy `monitor/*` 兼容切片：页面可达、主请求 `200`、scheduler 最小读链路已补齐，保留为本轮 readiness 扩面 provenance。 |
 | `docs/tasks/archive/retained-completed/task-20260325-1740-agent-orchestration-completion-state.md` | 已完成 AI 编排完成态、归档协议、resume 真源与 `project` validate 假确认门修复，并以自身归档验证了新 completion-state 协议。 |
 | `docs/tasks/archive/retained-completed/task-20260325-2355-outbound-customer-cutover.md` | 已完成 repo-owned `outbound` 兼容层切换与 reviewer sign-off；保留为本轮 `customer` cutover 的执行 provenance 真源。 |

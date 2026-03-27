@@ -21,7 +21,7 @@
 
 | 需求文档                                                 | 状态                   | 说明                                                                                          |
 | ---------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------- |
-| `req-20260326-1900-frontend-old-style-adaptation.md` | `confirmed`          | 已确认前端进入“旧壳新核 + 业务域重分组”阶段；其中第一阶段 `shell integration` 已完成并归档 task：默认首页回归 dashboard 节奏，`销售管理` / `生产车间` / `研发协同` 菜单分域已落地，RD 用户直达 `workbench` 且不残留首页标签。后续仍可继续按新切片细化各业务页的旧风格节奏，同时保留现有后端权限/菜单/会话与报表监控能力。 |
+| `req-20260326-1900-frontend-old-style-adaptation.md` | `confirmed`          | 已确认前端进入“旧壳新核 + 业务域重分组”阶段；`shell integration` 与 `/index` 旧版图表首页（`task-20260327-1000` 归档）已落地，`销售管理` / `生产车间` / `研发协同` 分域与 RD 直达 `workbench` 行为保持。后续可按新切片细化各业务页旧风格节奏，同时保留现有后端权限/菜单/会话与报表监控能力。 |
 | `req-20260326-0048-rd-subwarehouse.md`              | `confirmed`          | 已完成首个 operating foundation 切片并归档对应 task：同平台支撑主仓 + 研发小仓协同，小仓独立工作台、固定仓别读写范围、项目领用、本仓报废与研发侧报表已落地；主仓到 RD 自动交接、研发采购链路与物料状态流仍待后续切片。 |
 | `req-20260323-0910-monthly-reporting.md`            | `confirmed`          | 系统自动生成月度报表需求已完成口径确认：指标范围与销售域统计均按“全包含”处理，采用“每月固定正式月报 + 人工触发重算 + 可选日期范围生成报表”，交付形式为系统查看 + Excel 导出，并允许月后补录后重算且需保证追溯。 |
 | `req-20260321-1109-architecture-review-clarity.md`   | `confirmed`          | 已按确认口径完成基于 `PROJECT_REQUIREMENTS.md` 的业务域与 shared core 架构 review；详细 findings 与 follow-up 收口见 `docs/tasks/archive/retained-completed/task-20260323-1100-architecture-review-clarity.md` 及同批归档 task。 |

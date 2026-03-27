@@ -8,6 +8,7 @@
 - Owner: `user`
 - Related tasks:
   - `docs/tasks/archive/retained-completed/task-20260326-1940-frontend-old-style-phase1-shell-integration.md`
+  - `docs/tasks/archive/retained-completed/task-20260327-1000-frontend-home-legacy-chart-restore.md`
 
 ## 用户需求
 
@@ -28,11 +29,11 @@
 
 ## 当前进展
 
-- 阶段进度: 已完成第一阶段 `shell integration` 切片并归档 task：默认首页回归 dashboard 节奏，`销售管理` 与 `入库管理` 同级，泛化“领料管理”已拆成 `生产车间` 与 `研发协同 / 研发小仓` 双视角，同时保持现有 NestJS 权限、菜单、会话与 RD scope 契约。
-- 当前状态 1: admin 登录后默认进入 `/index`，首页不再显示“首页工作台 + 快捷入口卡片”；一级菜单已收口为 `基础数据 / 入库管理 / 销售管理 / 生产车间 / 库存管理 / 研发协同 / 系统监控 / 报表中心`，且 `生产报废单` 已归入 `生产车间`。
+- 阶段进度: 已完成第一阶段 `shell integration` 与第二阶段 `/index` 旧版图表首页回归（详见归档 task `task-20260326-1940`、`task-20260327-1000`）：壳层分组与 RD 双视角已落地，富权限首页为统计卡 + ECharts，数据走 reporting 适配层，同时保持现有 NestJS 权限、菜单、会话与 RD scope 契约。
+- 当前状态 1: admin 登录后默认进入 `/index`，富权限账号首页为旧版「欢迎语 + 统计卡 + 双图」图表节奏（`LegacyHomeDashboard`，数据经 `web/src/api/system/home.js` 适配当前 reporting 接口）；一级菜单已收口为 `基础数据 / 入库管理 / 销售管理 / 生产车间 / 库存管理 / 研发协同 / 系统监控 / 报表中心`，且 `生产报废单` 已归入 `生产车间`。
 - 当前状态 2: operator 这类缺少完整 reporting 权限的普通账号访问 `/index` 时，已降级为基础概览视图，不再因报表接口权限不足出现 `403` 或白屏。
 - 当前状态 3: `rd-operator` 现可直接进入 `/rd/workbench`，固定仓别查询已恢复，`小仓库存 / 项目领用 / 本仓报废` 页面首屏请求返回 `200`，标签栏不再残留 `/index` 首页标签。
-- 当前状态 4: 本轮 reviewer 已复核无残留 `[blocking]` 或 `[important]` finding；`pnpm swagger:metadata && pnpm typecheck`、`pnpm --dir web build:prod`、RBAC 相关 scoped tests 与 admin/operator/rd fresh browser smoke 已通过。
+- 当前状态 4: 首页图表回归已归档 `task-20260327-1000`；`pnpm --dir web build:prod` 与 `biome check web/src/views/index.vue` 已通过，模板 `userStore` 与 keep-alive / 异步 `loadData` 竞态已收口；全量三账号 browser smoke 可按需复跑。
 - 阻塞项: None。
 - 下一步: 本 requirement 仍保持 active；后续如继续推进，应新开下一条前端切片，聚焦各业务列表页、详情页和编辑流的旧风格节奏细化，而不是继续复用已完成的 shell integration task。
 
