@@ -214,6 +214,7 @@
 </template>
 
 <script setup name="User">
+import { Pane, Splitpanes } from "splitpanes";
 import {
   addUser,
   changeUserStatus,
@@ -230,7 +231,7 @@ import { getToken } from "@/utils/auth";
 import "splitpanes/dist/splitpanes.css";
 
 const router = useRouter();
-const _appStore = useAppStore();
+const appStore = useAppStore();
 const { proxy } = getCurrentInstance();
 const { sys_normal_disable, sys_user_sex } = proxy.useDict(
   "sys_normal_disable",
@@ -240,7 +241,7 @@ const { sys_normal_disable, sys_user_sex } = proxy.useDict(
 const userList = ref([]);
 const open = ref(false);
 const loading = ref(true);
-const _showSearch = ref(true);
+const showSearch = ref(true);
 const ids = ref([]);
 const single = ref(true);
 const multiple = ref(true);
@@ -254,7 +255,7 @@ const initPassword = ref(undefined);
 const postOptions = ref([]);
 const dialogLoading = ref(false);
 const roleOptions = ref([]);
-const _USER_IMPORT_ENABLED = false;
+const USER_IMPORT_ENABLED = false;
 /*** 用户导入参数 */
 const upload = reactive({
   // 是否显示弹出层（用户导入）
@@ -271,7 +272,7 @@ const upload = reactive({
   url: `${import.meta.env.VITE_APP_BASE_API}/api/system/user/importData`,
 });
 // 列显隐信息
-const _columns = ref([
+const columns = ref([
   { key: 0, label: `用户编号`, visible: true },
   { key: 1, label: `用户名称`, visible: true },
   { key: 2, label: `用户昵称`, visible: true },
@@ -338,7 +339,7 @@ const data = reactive({
 const { queryParams, form, rules } = toRefs(data);
 
 /** 通过条件过滤节点  */
-const _filterNode = (value, data) => {
+const filterNode = (value, data) => {
   if (!value) return true;
   return data.label.indexOf(value) !== -1;
 };
@@ -384,7 +385,7 @@ function filterDisabledDept(deptList) {
 }
 
 /** 节点单击事件 */
-function _handleNodeClick(data) {
+function handleNodeClick(data) {
   queryParams.value.deptId = data.id;
   handleQuery();
 }
@@ -396,7 +397,7 @@ function handleQuery() {
 }
 
 /** 重置按钮操作 */
-function _resetQuery() {
+function resetQuery() {
   dateRange.value = [];
   proxy.resetForm("queryRef");
   queryParams.value.deptId = undefined;
@@ -405,7 +406,7 @@ function _resetQuery() {
 }
 
 /** 删除按钮操作 */
-function _handleDelete(row) {
+function handleDelete(row) {
   const userIds = row.userId || ids.value;
   proxy.$modal
     .confirm(`是否确认删除用户编号为"${userIds}"的数据项？`)
@@ -418,7 +419,7 @@ function _handleDelete(row) {
 }
 
 /** 导出按钮操作 */
-function _handleExport() {
+function handleExport() {
   proxy.download(
     "/api/system/user/export",
     {
@@ -429,7 +430,7 @@ function _handleExport() {
 }
 
 /** 用户状态修改  */
-function _handleStatusChange(row) {
+function handleStatusChange(row) {
   let text = row.status === "0" ? "启用" : "停用";
   proxy.$modal
     .confirm(`确认要"${text}""${row.userName}"用户吗?`)
@@ -443,7 +444,7 @@ function _handleStatusChange(row) {
 }
 
 /** 更多操作 */
-function _handleCommand(command, row) {
+function handleCommand(command, row) {
   switch (command) {
     case "handleResetPwd":
       handleResetPwd(row);
@@ -486,20 +487,20 @@ function handleResetPwd(row) {
 }
 
 /** 选择条数  */
-function _handleSelectionChange(selection) {
+function handleSelectionChange(selection) {
   ids.value = selection.map((item) => item.userId);
   single.value = selection.length !== 1;
   multiple.value = !selection.length;
 }
 
 /** 导入按钮操作 */
-function _handleImport() {
+function handleImport() {
   upload.title = "用户导入";
   upload.open = true;
 }
 
 /** 下载模板操作 */
-function _importTemplate() {
+function importTemplate() {
   proxy.download(
     "/api/system/user/importTemplate",
     {},
@@ -508,12 +509,12 @@ function _importTemplate() {
 }
 
 /**文件上传中处理 */
-const _handleFileUploadProgress = (_event, _file, _fileList) => {
+const handleFileUploadProgress = (_event, _file, _fileList) => {
   upload.isUploading = true;
 };
 
 /** 文件上传成功处理 */
-const _handleFileSuccess = (response, file, _fileList) => {
+const handleFileSuccess = (response, file, _fileList) => {
   upload.open = false;
   upload.isUploading = false;
   proxy.$refs.uploadRef.handleRemove(file);
@@ -528,7 +529,7 @@ const _handleFileSuccess = (response, file, _fileList) => {
 };
 
 /** 提交上传文件 */
-function _submitFileForm() {
+function submitFileForm() {
   proxy.$refs.uploadRef.submit();
 }
 
@@ -552,13 +553,13 @@ function reset() {
 }
 
 /** 取消按钮 */
-function _cancel() {
+function cancel() {
   open.value = false;
   reset();
 }
 
 /** 新增按钮操作 */
-function _handleAdd() {
+function handleAdd() {
   reset();
   title.value = "添加用户";
   open.value = true;
@@ -575,7 +576,7 @@ function _handleAdd() {
 }
 
 /** 修改按钮操作 */
-function _handleUpdate(row) {
+function handleUpdate(row) {
   reset();
   title.value = "修改用户";
   open.value = true;
@@ -596,7 +597,7 @@ function _handleUpdate(row) {
 }
 
 /** 提交按钮 */
-function _submitForm() {
+function submitForm() {
   proxy.$refs.userRef.validate((valid) => {
     if (valid) {
       if (form.value.userId !== undefined) {
