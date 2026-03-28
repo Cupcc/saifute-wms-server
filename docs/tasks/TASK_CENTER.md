@@ -46,6 +46,7 @@
 
 | Task 文档 | 保留原因 |
 | --- | --- |
+| `docs/tasks/archive/retained-completed/task-20260328-1855-biome-lint-cleanup.md` | 已完成全仓 `pnpm lint` 收口：`scripts/src/test` 低风险格式/import 噪音与 `web` 结构/宽松比较错误已按真实失败面收口，closing review `No findings`，根目录 `pnpm lint` 返回 `0`；若后续要继续压平 warnings / infos，需另开新 scope。 |
 | `docs/tasks/archive/retained-completed/task-20260326-0415-rd-subwarehouse-phase1-operating-foundation.md` | 已完成 RD Phase 1 operating foundation：研发独立工作台、固定仓别隔离、项目领用、本仓报废与研发侧库存/报表基础已落地，并通过 reviewer clean sign-off 与浏览器冒烟验证。 |
 | `docs/tasks/archive/retained-completed/task-20260328-1640-rd-subwarehouse-main-to-rd-handoff-foundation.md` | 已完成 RD handoff foundation：窄化 `RD handoff` 真源文档、`main - / RD +` 过账、独立权限点与 RD 真实结果面已落地，并通过 full test / build / reviewer clean sign-off。 |
 | `docs/tasks/archive/retained-completed/task-20260327-1845-redis-real-integration.md` | 已完成真实 Redis 接入：`shared/redis` 已切到 `ioredis`，`session` / `auth` 语义与 TTL/扫描/原子消费已对齐，真实 Redis 应用级 e2e、focused integration tests 与 `pnpm verify` 均通过，并经 closing re-review `No findings` sign-off。 |

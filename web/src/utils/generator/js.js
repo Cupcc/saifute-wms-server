@@ -199,10 +199,15 @@ function buildOptionMethod(methodName, model, methodList) {
  */
 function buildProps(conf, propsList) {
   if (conf.dataType === "dynamic") {
-    conf.valueKey !== "value" && (conf.props.props.value = conf.valueKey);
-    conf.labelKey !== "label" && (conf.props.props.label = conf.labelKey);
-    conf.childrenKey !== "children" &&
-      (conf.props.props.children = conf.childrenKey);
+    if (conf.valueKey !== "value") {
+      conf.props.props.value = conf.valueKey;
+    }
+    if (conf.labelKey !== "label") {
+      conf.props.props.label = conf.labelKey;
+    }
+    if (conf.childrenKey !== "children") {
+      conf.props.props.children = conf.childrenKey;
+    }
   }
   const str = `
   // props设置

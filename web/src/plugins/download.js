@@ -1,4 +1,4 @@
-﻿import axios from "axios";
+import axios from "axios";
 import { ElLoading, ElMessage } from "element-plus";
 import { saveAs } from "file-saver";
 import { getToken } from "@/utils/auth";
@@ -52,14 +52,14 @@ export default {
     });
   },
   zip(url, name) {
-    var url = baseURL + url;
+    const downloadUrl = baseURL + url;
     downloadLoadingInstance = ElLoading.service({
       text: "正在下载数据，请稍候",
       background: "rgba(0, 0, 0, 0.7)",
     });
     axios({
       method: "get",
-      url: url,
+      url: downloadUrl,
       responseType: "blob",
       headers: { Authorization: "Bearer " + getToken() },
     })

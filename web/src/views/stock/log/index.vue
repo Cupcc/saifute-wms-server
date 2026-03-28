@@ -264,7 +264,10 @@ const columns = ref([
 function getList() {
   loading.value = true;
   queryParams.value.params = {};
-  if (null != rangeRelatedOrderDate && "" != rangeRelatedOrderDate) {
+  if (
+    Array.isArray(rangeRelatedOrderDate.value) &&
+    rangeRelatedOrderDate.value.length === 2
+  ) {
     queryParams.value.params["startRelatedOrderDate"] =
       rangeRelatedOrderDate.value[0];
     queryParams.value.params["endRelatedOrderDate"] =
@@ -319,7 +322,7 @@ function resetQuery() {
 // 多选框选中数据
 function handleSelectionChange(selection) {
   ids.value = selection.map((item) => item.logId);
-  single.value = selection.length != 1;
+  single.value = selection.length !== 1;
   multiple.value = !selection.length;
 }
 

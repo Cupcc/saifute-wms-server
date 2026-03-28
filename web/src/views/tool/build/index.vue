@@ -181,7 +181,9 @@ function cloneComponent(origin) {
   if (!clone.layout) clone.layout = "colFormItem";
   if (clone.layout === "colFormItem") {
     clone.vModel = `field${idGlobal.value}`;
-    clone.placeholder !== undefined && (clone.placeholder += clone.label);
+    if (clone.placeholder !== undefined) {
+      clone.placeholder += clone.label;
+    }
     tempActiveData = clone;
   } else if (clone.layout === "rowFormItem") {
     delete clone.label;

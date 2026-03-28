@@ -6,12 +6,12 @@ import {
   parseMigrationCliOptions,
   resolveReportPath,
 } from "../config";
-import { closePools, createMariaDbPool, withPoolConnection } from "../db";
 import {
   readLegacySalesReturnSnapshot,
   readSalesReturnDependencySnapshot,
 } from "../customer-sales-return/legacy-reader";
 import { buildSalesReturnMigrationPlan } from "../customer-sales-return/transformer";
+import { closePools, createMariaDbPool, withPoolConnection } from "../db";
 import { writeStableReport } from "../shared/report-writer";
 import { buildAlreadyArchivedMismatchBlockers } from "./execute-guard";
 import {

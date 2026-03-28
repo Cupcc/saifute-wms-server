@@ -47,23 +47,24 @@ const realSrcList = computed(() => {
   if (!props.src) {
     return;
   }
-  let real_src_list = props.src.split(",");
-  let srcList = [];
+  const real_src_list = props.src.split(",");
+  const srcList = [];
   real_src_list.forEach((item) => {
     if (isExternal(item)) {
-      return srcList.push(item);
+      srcList.push(item);
+      return;
     }
-    return srcList.push(import.meta.env.VITE_APP_BASE_API + item);
+    srcList.push(import.meta.env.VITE_APP_BASE_API + item);
   });
   return srcList;
 });
 
 const realWidth = computed(() =>
-  typeof props.width == "string" ? props.width : `${props.width}px`,
+  typeof props.width === "string" ? props.width : `${props.width}px`,
 );
 
 const realHeight = computed(() =>
-  typeof props.height == "string" ? props.height : `${props.height}px`,
+  typeof props.height === "string" ? props.height : `${props.height}px`,
 );
 </script>
 

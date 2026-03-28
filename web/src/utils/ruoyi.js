@@ -80,12 +80,13 @@ export function selectDictLabel(datas, value) {
   if (value === undefined) {
     return "";
   }
-  var actions = [];
+  const actions = [];
   Object.keys(datas).some((key) => {
-    if (datas[key].value == "" + value) {
+    if (String(datas[key].value) === String(value)) {
       actions.push(datas[key].label);
       return true;
     }
+    return false;
   });
   if (actions.length === 0) {
     actions.push(value);
@@ -101,20 +102,23 @@ export function selectDictLabels(datas, value, separator) {
   if (Array.isArray(value)) {
     value = value.join(",");
   }
-  var actions = [];
-  var currentSeparator = undefined === separator ? "," : separator;
-  var temp = value.split(currentSeparator);
+  const actions = [];
+  const currentSeparator = separator === undefined ? "," : separator;
+  const temp = value.split(currentSeparator);
   Object.keys(value.split(currentSeparator)).some((val) => {
-    var match = false;
+    let match = false;
     Object.keys(datas).some((key) => {
-      if (datas[key].value == "" + temp[val]) {
+      if (String(datas[key].value) === String(temp[val])) {
         actions.push(datas[key].label + currentSeparator);
         match = true;
+        return true;
       }
+      return false;
     });
     if (!match) {
       actions.push(temp[val] + currentSeparator);
     }
+    return false;
   });
   return actions.join("").substring(0, actions.join("").length - 1);
 }
@@ -137,7 +141,7 @@ export function sprintf(str) {
 
 // 转换字符串，undefined,null等转化为""
 export function parseStrEmpty(str) {
-  if (!str || str == "undefined" || str == "null") {
+  if (!str || str === "undefined" || str === "null") {
     return "";
   }
   return str;
@@ -145,9 +149,9 @@ export function parseStrEmpty(str) {
 
 // 数据合并
 export function mergeRecursive(source, target) {
-  for (var p in target) {
+  for (const p in target) {
     try {
-      if (target[p].constructor == Object) {
+      if (target[p].constructor === Object) {
         source[p] = mergeRecursive(source[p], target[p]);
       } else {
         source[p] = target[p];
@@ -203,7 +207,7 @@ export function tansParams(params) {
   let result = "";
   for (const propName of Object.keys(params)) {
     const value = params[propName];
-    var part = encodeURIComponent(propName) + "=";
+    const part = encodeURIComponent(propName) + "=";
     if (value !== null && value !== "" && typeof value !== "undefined") {
       if (typeof value === "object") {
         for (const key of Object.keys(value)) {
@@ -213,7 +217,7 @@ export function tansParams(params) {
             typeof value[key] !== "undefined"
           ) {
             const params = propName + "[" + key + "]";
-            var subPart = encodeURIComponent(params) + "=";
+            const subPart = encodeURIComponent(params) + "=";
             result += subPart + encodeURIComponent(value[key]) + "&";
           }
         }
@@ -227,7 +231,7 @@ export function tansParams(params) {
 
 // 返回项目路径
 export function getNormalPath(p) {
-  if (p.length === 0 || !p || p == "undefined") {
+  if (p.length === 0 || !p || p === "undefined") {
     return p;
   }
   const res = p.replace("//", "/");

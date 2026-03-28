@@ -968,7 +968,7 @@ function submitForm() {
 
       // 检查当前选择的供应商是否存在于选项中
       const selectedSupplier = supplierOptionsForForm.value.find(
-        (item) => item.supplierId == form.value.supplierId,
+        (item) => String(item.supplierId) === String(form.value.supplierId),
       );
       // 如果不存在于现有选项中，且value不为空
       if (!selectedSupplier) {

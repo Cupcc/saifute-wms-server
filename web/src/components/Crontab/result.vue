@@ -551,7 +551,7 @@ function compare(value1, value2) {
 // 格式化日期格式如：2017-9-19 18:04:33
 function formatDate(value, type) {
   // 计算日期相关值
-  let time = typeof value == "number" ? new Date(value) : value;
+  let time = typeof value === "number" ? new Date(value) : value;
   let Y = time.getFullYear();
   let M = time.getMonth() + 1;
   let D = time.getDate();

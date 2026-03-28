@@ -267,11 +267,11 @@ function getList() {
 function getCustomerTree() {
   loading.value = true;
   let customerTypeValue = null;
-  if (form.value.customerType == null || form.value.customerType == 1) {
+  if (form.value.customerType == null || form.value.customerType === 1) {
     customerTypeValue = 11111;
-  } else if (form.value.customerType == 2) {
+  } else if (form.value.customerType === 2) {
     customerTypeValue = 1;
-  } else if (form.value.customerType == 3) {
+  } else if (form.value.customerType === 3) {
     customerTypeValue = 2;
   }
   listCustomer({ customerType: customerTypeValue }).then((response) => {
@@ -335,11 +335,11 @@ function filterCustomerByType(treeData, currentType) {
   let allowedTypes = [];
 
   // 如果当前客户类型为2，上级客户类型必须为1
-  if (currentType == 2) {
+  if (currentType === 2) {
     allowedTypes = [1];
   }
   // 如果当前客户类型为3，上级客户类型必须为2
-  else if (currentType == 3) {
+  else if (currentType === 3) {
     allowedTypes = [2];
   }
   // 如果当前客户类型为其他值，上级客户类型必须为2或3
@@ -412,7 +412,7 @@ function resetQuery() {
 // 多选框选中数据
 function handleSelectionChange(selection) {
   ids.value = selection.map((item) => item.customerId);
-  single.value = selection.length != 1;
+  single.value = selection.length !== 1;
   multiple.value = !selection.length;
 }
 

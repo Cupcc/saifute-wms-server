@@ -71,7 +71,7 @@
             <template #default="scope">
                <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:dept:edit']">修改</el-button>
                <el-button link type="primary" icon="Plus" @click="handleAdd(scope.row)" v-hasPermi="['system:dept:add']">新增</el-button>
-               <el-button v-if="scope.row.parentId != 0" link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:dept:remove']">删除</el-button>
+               <el-button v-if="scope.row.parentId !== 0" link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:dept:remove']">删除</el-button>
             </template>
          </el-table-column>
       </el-table>
@@ -245,7 +245,7 @@ function handleAdd(row) {
   listDept().then((response) => {
     deptOptions.value = proxy.handleTree(response.data, "deptId");
   });
-  if (row != undefined) {
+  if (row != null) {
     form.value.parentId = row.deptId;
   }
   open.value = true;
@@ -283,7 +283,7 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["deptRef"].validate((valid) => {
     if (valid) {
-      if (form.value.deptId != undefined) {
+      if (form.value.deptId != null) {
         updateDept(form.value).then((response) => {
           proxy.$modal.msgSuccess("修改成功");
           open.value = false;

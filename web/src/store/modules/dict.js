@@ -5,12 +5,12 @@ const useDictStore = defineStore("dict", {
   actions: {
     // 获取字典
     getDict(_key) {
-      if (_key == null && _key == "") {
+      if (_key == null || _key === "") {
         return null;
       }
       try {
         for (let i = 0; i < this.dict.length; i++) {
-          if (this.dict[i].key == _key) {
+          if (this.dict[i].key === _key) {
             return this.dict[i].value;
           }
         }
@@ -32,7 +32,7 @@ const useDictStore = defineStore("dict", {
       var bln = false;
       try {
         for (let i = 0; i < this.dict.length; i++) {
-          if (this.dict[i].key == _key) {
+          if (this.dict[i].key === _key) {
             this.dict.splice(i, 1);
             return true;
           }

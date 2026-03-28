@@ -148,8 +148,8 @@ const props = defineProps({
 });
 const tabTitles = ref(["秒", "分钟", "小时", "日", "月", "周", "年"]);
 const tabActive = ref(0);
-const hideComponent = ref([]);
-const expression = ref("");
+const hiddenComponents = ref([]);
+const cronExpression = ref("");
 const crontabValueObj = ref({
   second: "*",
   min: "*",
@@ -176,14 +176,14 @@ const crontabValueString = computed(() => {
     (obj.year === "" ? "" : " " + obj.year)
   );
 });
-watch(expression, () => resolveExp());
+watch(cronExpression, () => resolveExp());
 function shouldHide(key) {
-  return !(hideComponent.value && hideComponent.value.includes(key));
+  return !(hiddenComponents.value && hiddenComponents.value.includes(key));
 }
 function resolveExp() {
   // 反解析 表达式
-  if (expression.value) {
-    const arr = expression.value.split(/\s+/);
+  if (cronExpression.value) {
+    const arr = cronExpression.value.split(/\s+/);
     if (arr.length >= 6) {
       //6 位以上是合法表达式
       let obj = {
@@ -245,8 +245,8 @@ function clearCron() {
   };
 }
 onMounted(() => {
-  expression.value = props.expression;
-  hideComponent.value = props.hideComponent;
+  cronExpression.value = props.expression;
+  hiddenComponents.value = props.hideComponent;
 });
 </script>
 

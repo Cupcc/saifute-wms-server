@@ -441,7 +441,10 @@ const columns = ref([
 function getList() {
   loading.value = true;
   queryParams.value.params = {};
-  if (null != daterangeScrapDate && "" != daterangeScrapDate) {
+  if (
+    Array.isArray(daterangeScrapDate.value) &&
+    daterangeScrapDate.value.length === 2
+  ) {
     queryParams.value.params["beginScrapDate"] = daterangeScrapDate.value[0];
     queryParams.value.params["endScrapDate"] = daterangeScrapDate.value[1];
   }
@@ -506,7 +509,7 @@ function resetQuery() {
 // 多选框选中数据
 function handleSelectionChange(selection) {
   ids.value = selection.map((item) => item.scrapId);
-  single.value = selection.length != 1;
+  single.value = selection.length !== 1;
   multiple.value = !selection.length;
 }
 

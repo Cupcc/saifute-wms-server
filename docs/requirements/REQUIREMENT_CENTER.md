@@ -30,6 +30,7 @@
 
 | 需求文档 | 保留原因 |
 | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `archive/retained-completed/req-20260328-1855-biome-lint-cleanup.md` | 已完成全仓 `pnpm lint` 收口：根目录 `pnpm lint` 返回 `0`，`web` Biome error 校验通过，closing review 已关闭日期范围守卫的 open finding 并达到 `reviewed-no-findings`；若后续要继续收口全仓 warnings / infos，需另开新 scope。 |
 | `archive/retained-completed/req-20260321-1109-architecture-review-clarity.md` | 业务域与 shared core 架构 review 已按确认口径闭环；详细 findings 与 follow-up 见 `docs/tasks/archive/retained-completed/task-20260323-1100-architecture-review-clarity.md` 及同批归档 task。 |
 | `archive/retained-completed/req-20260328-1640-rd-subwarehouse-main-to-rd-handoff-foundation.md` | 已完成 RD handoff foundation：窄化 `RD handoff` 真源文档、`main - / RD +` 交接过账、独立权限点与 RD 真实结果面均已落地，并经 reviewer clean sign-off；后续 RD 采购链路、状态链与盘点/调整需另开新切片。 |
 | `archive/retained-completed/req-20260326-0048-rd-subwarehouse.md` | 已完成 RD Phase 1 operating foundation：受限子仓模型、角色/库存责任矩阵与模块边界已澄清，研发独立工作台、固定仓别隔离、项目领用、本仓报废与研发侧报表基础已落地；后续主仓到 RD 自动交接、研发采购链路、物料状态链与盘点/调整需另开新切片。 |

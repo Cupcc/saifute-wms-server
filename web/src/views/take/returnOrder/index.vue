@@ -664,7 +664,10 @@ const columns = ref([
 function getList() {
   loading.value = true;
   queryParams.value.params = {};
-  if (null != daterangeReturnDate && "" != daterangeReturnDate) {
+  if (
+    Array.isArray(daterangeReturnDate.value) &&
+    daterangeReturnDate.value.length === 2
+  ) {
     queryParams.value.params["beginReturnDate"] = daterangeReturnDate.value[0];
     queryParams.value.params["endReturnDate"] = daterangeReturnDate.value[1];
   }
@@ -853,7 +856,7 @@ function resetQuery() {
 // 多选框选中数据
 function handleSelectionChange(selection) {
   ids.value = selection.map((item) => item.returnId);
-  single.value = selection.length != 1;
+  single.value = selection.length !== 1;
   multiple.value = !selection.length;
 }
 
@@ -1139,7 +1142,10 @@ function handleSelectPickOrderForSearch() {
 function getPickOrderList() {
   pickOrderLoading.value = true;
   pickOrderQueryParams.value.params = {};
-  if (null != daterangePickDate && "" != daterangePickDate) {
+  if (
+    Array.isArray(daterangePickDate.value) &&
+    daterangePickDate.value.length === 2
+  ) {
     pickOrderQueryParams.value.params["beginPickDate"] =
       daterangePickDate.value[0];
     pickOrderQueryParams.value.params["endPickDate"] =

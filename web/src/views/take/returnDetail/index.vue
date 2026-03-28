@@ -250,7 +250,10 @@ function searchMaterial(query) {
 function getList() {
   loading.value = true;
   queryParams.value.params = {};
-  if (null != daterangeReturnDate.value && "" != daterangeReturnDate.value) {
+  if (
+    Array.isArray(daterangeReturnDate.value) &&
+    daterangeReturnDate.value.length === 2
+  ) {
     queryParams.value.params["beginReturnDate"] = daterangeReturnDate.value[0];
     queryParams.value.params["endReturnDate"] = daterangeReturnDate.value[1];
   }
@@ -360,7 +363,7 @@ function resetQuery() {
 // 多选框选中数据
 function handleSelectionChange(selection) {
   ids.value = selection.map((item) => item.detailId);
-  single.value = selection.length != 1;
+  single.value = selection.length !== 1;
   multiple.value = !selection.length;
 }
 

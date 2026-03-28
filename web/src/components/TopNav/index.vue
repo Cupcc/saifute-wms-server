@@ -60,7 +60,7 @@ const routers = computed(() => permissionStore.topbarRouters);
 // 顶部显示菜单
 const topMenus = computed(() => {
   let topMenus = [];
-  routers.value.map((menu) => {
+  routers.value.forEach((menu) => {
     if (menu.hidden !== true) {
       // 兼容顶部栏一级菜单内部跳转
       if (menu.path === "/" && menu.children) {
@@ -76,7 +76,7 @@ const topMenus = computed(() => {
 // 设置子路由
 const childrenMenus = computed(() => {
   let childrenMenus = [];
-  routers.value.map((router) => {
+  routers.value.forEach((router) => {
     for (let item in router.children) {
       if (router.children[item].parentPath === undefined) {
         if (router.path === "/") {
@@ -148,8 +148,8 @@ function handleSelect(key, keyPath) {
 function activeRoutes(key) {
   let routes = [];
   if (childrenMenus.value && childrenMenus.value.length > 0) {
-    childrenMenus.value.map((item) => {
-      if (key == item.parentPath || (key == "index" && "" == item.path)) {
+    childrenMenus.value.forEach((item) => {
+      if (key === item.parentPath || (key === "index" && "" === item.path)) {
         routes.push(item);
       }
     });

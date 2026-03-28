@@ -217,7 +217,7 @@ function listToString(list, separator) {
       strs += list[i].url + separator;
     }
   }
-  return strs != "" ? strs.substr(0, strs.length - 1) : "";
+  return strs !== "" ? strs.substr(0, strs.length - 1) : "";
 }
 
 // 初始化拖拽排序

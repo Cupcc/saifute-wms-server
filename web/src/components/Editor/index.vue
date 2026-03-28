@@ -111,7 +111,7 @@ watch(
   () => props.modelValue,
   (v) => {
     if (v !== content.value) {
-      content.value = v == undefined ? "<p></p>" : v;
+      content.value = v == null ? "<p></p>" : v;
     }
   },
   { immediate: true },
@@ -119,7 +119,7 @@ watch(
 
 // 如果设置了上传地址则自定义图片上传事件
 onMounted(() => {
-  if (props.type == "url") {
+  if (props.type === "url") {
     let quill = quillEditorRef.value.getQuill();
     let toolbar = quill.getModule("toolbar");
     toolbar.addHandler("image", (value) => {
@@ -156,7 +156,7 @@ function handleBeforeUpload(file) {
 // 上传成功处理
 function handleUploadSuccess(res, file) {
   // 如果上传成功
-  if (res.code == 200) {
+  if (res.code === 200) {
     // 获取富文本实例
     let quill = toRaw(quillEditorRef.value).getQuill();
     // 获取光标位置

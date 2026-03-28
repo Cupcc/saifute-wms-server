@@ -413,13 +413,14 @@ function parseFormDataFromLabel(label) {
   // 匹配 "物料名×数量" 或 "物料名 × 数量" 格式，支持多个逗号分隔
   const itemPattern = /([^,，×xX\d]+?)\s*[×xX]\s*(\d+(?:\.\d+)?)/g;
   const details = [];
-  let match;
-  while ((match = itemPattern.exec(content)) !== null) {
+  let match = itemPattern.exec(content);
+  while (match !== null) {
     const materialName = match[1].trim();
     const quantity = Number(match[2]);
     if (materialName && !isNaN(quantity)) {
       details.push({ materialName, quantity });
     }
+    match = itemPattern.exec(content);
   }
 
   if (details.length > 0) {

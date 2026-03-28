@@ -108,7 +108,7 @@
                      </el-radio-group>
                   </el-form-item>
                </el-col>
-               <el-col :span="12" v-if="form.menuType != 'F'">
+               <el-col :span="12" v-if="form.menuType !== 'F'">
                   <el-form-item label="菜单图标" prop="icon">
                      <el-popover
                         placement="bottom-start"
@@ -142,7 +142,7 @@
                      <el-input v-model="form.menuName" placeholder="请输入菜单名称" />
                   </el-form-item>
                </el-col>
-               <el-col :span="12" v-if="form.menuType == 'C'">
+               <el-col :span="12" v-if="form.menuType === 'C'">
                   <el-form-item prop="routeName">
                      <template #label>
                         <span>
@@ -155,7 +155,7 @@
                      <el-input v-model="form.routeName" placeholder="请输入路由名称" />
                   </el-form-item>
                </el-col>
-               <el-col :span="12" v-if="form.menuType != 'F'">
+               <el-col :span="12" v-if="form.menuType !== 'F'">
                   <el-form-item>
                      <template #label>
                         <span>
@@ -170,7 +170,7 @@
                      </el-radio-group>
                   </el-form-item>
                </el-col>
-               <el-col :span="12" v-if="form.menuType != 'F'">
+               <el-col :span="12" v-if="form.menuType !== 'F'">
                   <el-form-item prop="path">
                      <template #label>
                         <span>
@@ -183,7 +183,7 @@
                      <el-input v-model="form.path" placeholder="请输入路由地址" />
                   </el-form-item>
                </el-col>
-               <el-col :span="12" v-if="form.menuType == 'C'">
+               <el-col :span="12" v-if="form.menuType === 'C'">
                   <el-form-item prop="component">
                      <template #label>
                         <span>
@@ -196,7 +196,7 @@
                      <el-input v-model="form.component" placeholder="请输入组件路径" />
                   </el-form-item>
                </el-col>
-               <el-col :span="12" v-if="form.menuType != 'M'">
+               <el-col :span="12" v-if="form.menuType !== 'M'">
                   <el-form-item>
                      <el-input v-model="form.perms" placeholder="请输入权限标识" maxlength="100" />
                      <template #label>
@@ -209,7 +209,7 @@
                      </template>
                   </el-form-item>
                </el-col>
-               <el-col :span="12" v-if="form.menuType == 'C'">
+               <el-col :span="12" v-if="form.menuType === 'C'">
                   <el-form-item>
                      <el-input v-model="form.query" placeholder="请输入路由参数" maxlength="255" />
                      <template #label>
@@ -222,7 +222,7 @@
                      </template>
                   </el-form-item>
                </el-col>
-               <el-col :span="12" v-if="form.menuType == 'C'">
+               <el-col :span="12" v-if="form.menuType === 'C'">
                   <el-form-item>
                      <template #label>
                         <span>
@@ -238,7 +238,7 @@
                      </el-radio-group>
                   </el-form-item>
                </el-col>
-               <el-col :span="12" v-if="form.menuType != 'F'">
+               <el-col :span="12" v-if="form.menuType !== 'F'">
                   <el-form-item>
                      <template #label>
                         <span>
@@ -440,7 +440,7 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["menuRef"].validate((valid) => {
     if (valid) {
-      if (form.value.menuId != undefined) {
+      if (form.value.menuId != null) {
         updateMenu(form.value).then((response) => {
           proxy.$modal.msgSuccess("修改成功");
           open.value = false;
