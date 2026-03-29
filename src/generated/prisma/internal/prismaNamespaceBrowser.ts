@@ -75,6 +75,8 @@ export const ModelName = {
   ProjectMaterialLine: "ProjectMaterialLine",
   RdHandoffOrder: "RdHandoffOrder",
   RdHandoffOrderLine: "RdHandoffOrderLine",
+  RdProcurementRequest: "RdProcurementRequest",
+  RdProcurementRequestLine: "RdProcurementRequestLine",
   DocumentRelation: "DocumentRelation",
   DocumentLineRelation: "DocumentLineRelation",
   LoginLog: "LoginLog",
@@ -314,6 +316,7 @@ export const StockInOrderScalarFieldEnum = {
   supplierId: "supplierId",
   handlerPersonnelId: "handlerPersonnelId",
   workshopId: "workshopId",
+  rdProcurementRequestId: "rdProcurementRequestId",
   lifecycleStatus: "lifecycleStatus",
   auditStatusSnapshot: "auditStatusSnapshot",
   inventoryEffectStatus: "inventoryEffectStatus",
@@ -322,6 +325,9 @@ export const StockInOrderScalarFieldEnum = {
   supplierNameSnapshot: "supplierNameSnapshot",
   handlerNameSnapshot: "handlerNameSnapshot",
   workshopNameSnapshot: "workshopNameSnapshot",
+  rdProcurementRequestNoSnapshot: "rdProcurementRequestNoSnapshot",
+  rdProcurementProjectCodeSnapshot: "rdProcurementProjectCodeSnapshot",
+  rdProcurementProjectNameSnapshot: "rdProcurementProjectNameSnapshot",
   totalQty: "totalQty",
   totalAmount: "totalAmount",
   remark: "remark",
@@ -342,6 +348,7 @@ export const StockInOrderLineScalarFieldEnum = {
   orderId: "orderId",
   lineNo: "lineNo",
   materialId: "materialId",
+  rdProcurementRequestLineId: "rdProcurementRequestLineId",
   materialCodeSnapshot: "materialCodeSnapshot",
   materialNameSnapshot: "materialNameSnapshot",
   materialSpecSnapshot: "materialSpecSnapshot",
@@ -576,6 +583,59 @@ export const RdHandoffOrderLineScalarFieldEnum = {
 
 export type RdHandoffOrderLineScalarFieldEnum =
   (typeof RdHandoffOrderLineScalarFieldEnum)[keyof typeof RdHandoffOrderLineScalarFieldEnum];
+
+export const RdProcurementRequestScalarFieldEnum = {
+  id: "id",
+  documentNo: "documentNo",
+  bizDate: "bizDate",
+  projectCode: "projectCode",
+  projectName: "projectName",
+  supplierId: "supplierId",
+  handlerPersonnelId: "handlerPersonnelId",
+  workshopId: "workshopId",
+  lifecycleStatus: "lifecycleStatus",
+  auditStatusSnapshot: "auditStatusSnapshot",
+  revisionNo: "revisionNo",
+  supplierCodeSnapshot: "supplierCodeSnapshot",
+  supplierNameSnapshot: "supplierNameSnapshot",
+  handlerNameSnapshot: "handlerNameSnapshot",
+  workshopNameSnapshot: "workshopNameSnapshot",
+  totalQty: "totalQty",
+  totalAmount: "totalAmount",
+  remark: "remark",
+  voidReason: "voidReason",
+  voidedBy: "voidedBy",
+  voidedAt: "voidedAt",
+  createdBy: "createdBy",
+  createdAt: "createdAt",
+  updatedBy: "updatedBy",
+  updatedAt: "updatedAt",
+} as const;
+
+export type RdProcurementRequestScalarFieldEnum =
+  (typeof RdProcurementRequestScalarFieldEnum)[keyof typeof RdProcurementRequestScalarFieldEnum];
+
+export const RdProcurementRequestLineScalarFieldEnum = {
+  id: "id",
+  requestId: "requestId",
+  lineNo: "lineNo",
+  materialId: "materialId",
+  materialCodeSnapshot: "materialCodeSnapshot",
+  materialNameSnapshot: "materialNameSnapshot",
+  materialSpecSnapshot: "materialSpecSnapshot",
+  unitCodeSnapshot: "unitCodeSnapshot",
+  quantity: "quantity",
+  unitPrice: "unitPrice",
+  amount: "amount",
+  remark: "remark",
+  createdBy: "createdBy",
+  createdAt: "createdAt",
+  updatedBy: "updatedBy",
+  updatedAt: "updatedAt",
+} as const;
+
+export type RdProcurementRequestLineScalarFieldEnum =
+  (typeof RdProcurementRequestLineScalarFieldEnum)[keyof typeof RdProcurementRequestLineScalarFieldEnum];
 
 export const DocumentRelationScalarFieldEnum = {
   id: "id",
@@ -829,6 +889,9 @@ export const StockInOrderOrderByRelevanceFieldEnum = {
   supplierNameSnapshot: "supplierNameSnapshot",
   handlerNameSnapshot: "handlerNameSnapshot",
   workshopNameSnapshot: "workshopNameSnapshot",
+  rdProcurementRequestNoSnapshot: "rdProcurementRequestNoSnapshot",
+  rdProcurementProjectCodeSnapshot: "rdProcurementProjectCodeSnapshot",
+  rdProcurementProjectNameSnapshot: "rdProcurementProjectNameSnapshot",
   remark: "remark",
   voidReason: "voidReason",
   voidedBy: "voidedBy",
@@ -971,6 +1034,37 @@ export const RdHandoffOrderLineOrderByRelevanceFieldEnum = {
 
 export type RdHandoffOrderLineOrderByRelevanceFieldEnum =
   (typeof RdHandoffOrderLineOrderByRelevanceFieldEnum)[keyof typeof RdHandoffOrderLineOrderByRelevanceFieldEnum];
+
+export const RdProcurementRequestOrderByRelevanceFieldEnum = {
+  documentNo: "documentNo",
+  projectCode: "projectCode",
+  projectName: "projectName",
+  supplierCodeSnapshot: "supplierCodeSnapshot",
+  supplierNameSnapshot: "supplierNameSnapshot",
+  handlerNameSnapshot: "handlerNameSnapshot",
+  workshopNameSnapshot: "workshopNameSnapshot",
+  remark: "remark",
+  voidReason: "voidReason",
+  voidedBy: "voidedBy",
+  createdBy: "createdBy",
+  updatedBy: "updatedBy",
+} as const;
+
+export type RdProcurementRequestOrderByRelevanceFieldEnum =
+  (typeof RdProcurementRequestOrderByRelevanceFieldEnum)[keyof typeof RdProcurementRequestOrderByRelevanceFieldEnum];
+
+export const RdProcurementRequestLineOrderByRelevanceFieldEnum = {
+  materialCodeSnapshot: "materialCodeSnapshot",
+  materialNameSnapshot: "materialNameSnapshot",
+  materialSpecSnapshot: "materialSpecSnapshot",
+  unitCodeSnapshot: "unitCodeSnapshot",
+  remark: "remark",
+  createdBy: "createdBy",
+  updatedBy: "updatedBy",
+} as const;
+
+export type RdProcurementRequestLineOrderByRelevanceFieldEnum =
+  (typeof RdProcurementRequestLineOrderByRelevanceFieldEnum)[keyof typeof RdProcurementRequestLineOrderByRelevanceFieldEnum];
 
 export const DocumentRelationOrderByRelevanceFieldEnum = {
   upstreamDocumentType: "upstreamDocumentType",

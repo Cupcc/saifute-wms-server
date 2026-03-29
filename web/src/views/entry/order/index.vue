@@ -300,6 +300,37 @@
 	          </el-form-item>
           </el-col>
         </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="研发采购需求">
+              <el-select
+                v-model="form.rdProcurementRequestId"
+                filterable
+                remote
+                reserve-keyword
+                clearable
+                placeholder="请输入需求单号、项目编码、项目名称或物料搜索"
+                :remote-method="searchRdProcurementRequest"
+                :loading="rdProcurementRequestLoading"
+                style="width: 100%"
+                :disabled="form.inboundId != null"
+                @change="handleRdProcurementRequestChange"
+              >
+                <el-option
+                  v-for="item in rdProcurementRequestOptions"
+                  :key="item.id"
+                  :label="`${item.documentNo} / ${item.projectName}`"
+                  :value="item.id"
+                >
+                  <span style="float: left">{{ item.documentNo }}</span>
+                  <span style="float: left; margin-left: 10px;">
+                    {{ item.projectCode }} / {{ item.projectName }}
+                  </span>
+                </el-option>
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
 	      <el-row>
 		      <el-col :span="12">
 			      <el-form-item label="总金额" prop="totalAmount">
@@ -326,7 +357,7 @@
                 remote
                 reserve-keyword
                 placeholder="请输入物料名称或规格型号搜索"
-                :remote-method="(query) => searchMaterialForDetail(query, scope.$index)"
+                :remote-method="searchMaterialForDetail"
                 :loading="materialLoading"
                 style="width: 100%"
                 :disabled="form.inboundId != null"
@@ -400,6 +431,16 @@
               <el-descriptions-item label="验收日期">{{ parseTime(detailData.inboundDate, '{y}-{m}-{d}') }}</el-descriptions-item>
               <el-descriptions-item label="总金额">{{ detailData.totalAmount }}</el-descriptions-item>
               <el-descriptions-item label="供应商">{{ detailData.supplierName }}</el-descriptions-item>
+              <el-descriptions-item label="研发采购需求">
+                {{ detailData.rdProcurementRequestNo || "-" }}
+              </el-descriptions-item>
+              <el-descriptions-item label="关联项目">
+                {{
+                  detailData.rdProcurementProjectCode || detailData.rdProcurementProjectName
+                    ? `${detailData.rdProcurementProjectCode || "-"} / ${detailData.rdProcurementProjectName || "-"}`
+                    : "-"
+                }}
+              </el-descriptions-item>
               <el-descriptions-item label="负责人">{{ detailData.chargeBy }}</el-descriptions-item>
               <el-descriptions-item label="经办人">{{ detailData.attn }}</el-descriptions-item>
               <el-descriptions-item label="关联部门">{{ detailData.workshopName }}</el-descriptions-item>
@@ -511,6 +552,10 @@ import {
   listOrder,
   updateOrder,
 } from "@/api/entry/order";
+import {
+  getRdProcurementRequest,
+  listRdProcurementRequests,
+} from "@/api/rd-subwarehouse";
 import useAiActionStore from "@/store/modules/aiAction";
 import useUserStore from "@/store/modules/user";
 import { formatDateToYYYYMMDD, generateOrderNo } from "@/utils/orderNumber";
@@ -536,6 +581,8 @@ const supplierOptions = ref([]);
 const supplierOptionsForForm = ref([]);
 const supplierLoading = ref(false);
 const supplierLoadingForForm = ref(false);
+const rdProcurementRequestOptions = ref([]);
+const rdProcurementRequestLoading = ref(false);
 
 // 人员信息相关
 const personnelOptions = ref([]);
@@ -638,6 +685,23 @@ function searchSupplierForForm(query) {
     });
 }
 
+/** 搜索 RD 采购需求（用于表单） */
+function searchRdProcurementRequest(query) {
+  rdProcurementRequestLoading.value = true;
+  listRdProcurementRequests({
+    keyword: query || undefined,
+    limit: 20,
+    offset: 0,
+  })
+    .then((response) => {
+      rdProcurementRequestOptions.value = response.data?.items || [];
+      rdProcurementRequestLoading.value = false;
+    })
+    .catch(() => {
+      rdProcurementRequestLoading.value = false;
+    });
+}
+
 /** 搜索部门（用于查询条件） */
 function searchWorkshop(query) {
   workshopLoading.value = true;
@@ -662,6 +726,19 @@ function searchWorkshopForForm(query) {
     .catch(() => {
       workshopLoadingForForm.value = false;
     });
+}
+
+async function ensureMainWorkshopForLinkedRequest() {
+  const response = await listByNameOrContact({ workshopName: "主仓" });
+  const mainWorkshop =
+    response.rows?.find((item) => item.workshopCode === "MAIN") ??
+    response.rows?.find((item) => item.workshopName?.includes("主仓")) ??
+    null;
+  if (!mainWorkshop) {
+    return;
+  }
+  workshopOptionsForForm.value = response.rows || [];
+  form.value.workshopId = mainWorkshop.workshopId;
 }
 
 /** 搜索人员信息 */
@@ -699,7 +776,7 @@ function searchMaterial(query) {
 /**
  * 为明细行查询物料
  */
-function searchMaterialForDetail(query, rowIndex) {
+function searchMaterialForDetail(query) {
   materialLoading.value = true;
   listMaterialByCodeOrName({
     materialCode: query,
@@ -726,6 +803,10 @@ function reset() {
     inboundNo: null,
     inboundDate: null,
     supplierId: null,
+    rdProcurementRequestId: null,
+    rdProcurementRequestNo: "",
+    rdProcurementProjectCode: "",
+    rdProcurementProjectName: "",
     chargeBy: null,
     attn: null,
     totalAmount: null,
@@ -735,6 +816,7 @@ function reset() {
   detailList.value = [
     {
       materialId: null,
+      rdProcurementRequestLineId: null,
       quantity: null,
       unitPrice: null,
       taxPrice: null,
@@ -743,6 +825,7 @@ function reset() {
     },
   ];
   materialOptions.value = [];
+  rdProcurementRequestOptions.value = [];
   materialLoading.value = false;
   proxy.resetForm("orderRef");
 }
@@ -764,6 +847,7 @@ function handleQuery() {
 function addDetailItem() {
   detailList.value.push({
     materialId: null,
+    rdProcurementRequestLineId: null,
     quantity: null,
     unitPrice: null,
     taxPrice: null,
@@ -801,6 +885,64 @@ function handleMaterialChange(val, index) {
         proxy.$modal.msgError("获取物料最新单价失败");
       });
   }
+}
+
+async function handleRdProcurementRequestChange(requestId) {
+  if (!requestId) {
+    form.value.rdProcurementRequestId = null;
+    form.value.rdProcurementRequestNo = "";
+    form.value.rdProcurementProjectCode = "";
+    form.value.rdProcurementProjectName = "";
+    detailList.value = detailList.value.map((item) => ({
+      ...item,
+      rdProcurementRequestLineId: null,
+    }));
+    return;
+  }
+
+  const response = await getRdProcurementRequest(requestId);
+  const requestData = response.data;
+  if (!requestData) {
+    return;
+  }
+
+  rdProcurementRequestOptions.value = [requestData];
+  form.value.rdProcurementRequestId = requestData.id;
+  form.value.rdProcurementRequestNo = requestData.documentNo;
+  form.value.rdProcurementProjectCode = requestData.projectCode;
+  form.value.rdProcurementProjectName = requestData.projectName;
+  if (requestData.supplierId) {
+    form.value.supplierId = requestData.supplierId;
+    supplierOptionsForForm.value = [
+      {
+        supplierId: requestData.supplierId,
+        supplierCode: requestData.supplierCodeSnapshot,
+        supplierName: requestData.supplierNameSnapshot,
+      },
+    ];
+  }
+  if (!form.value.remark && requestData.remark) {
+    form.value.remark = requestData.remark;
+  }
+  detailList.value = (requestData.lines || []).map((line) => ({
+    materialId: line.materialId,
+    rdProcurementRequestLineId: line.id,
+    quantity: Number(line.quantity),
+    unitPrice: Number(line.unitPrice || 0),
+    taxPrice: Number(line.unitPrice || 0),
+    remark: line.remark || "",
+    subtotal: (
+      Number(line.quantity || 0) * Number(line.unitPrice || 0)
+    ).toFixed(2),
+  }));
+  materialOptions.value = (requestData.lines || []).map((line) => ({
+    materialId: line.materialId,
+    materialCode: line.materialCodeSnapshot,
+    materialName: line.materialNameSnapshot,
+    specification: line.materialSpecSnapshot || "",
+  }));
+  calculateTotalAmount();
+  await ensureMainWorkshopForLinkedRequest();
 }
 
 /** 计算小计和总金额 */
@@ -916,15 +1058,30 @@ function handleUpdate(row) {
         inboundDate: orderData.inboundDate,
         supplierId: orderData.supplierId,
         workshopId: orderData.workshopId,
+        rdProcurementRequestId: orderData.rdProcurementRequestId,
+        rdProcurementRequestNo: orderData.rdProcurementRequestNo,
+        rdProcurementProjectCode: orderData.rdProcurementProjectCode,
+        rdProcurementProjectName: orderData.rdProcurementProjectName,
         chargeBy: orderData.chargeBy,
         attn: orderData.attn,
         totalAmount: orderData.totalAmount,
         remark: orderData.remark,
       };
+      if (orderData.rdProcurementRequestId) {
+        rdProcurementRequestOptions.value = [
+          {
+            id: orderData.rdProcurementRequestId,
+            documentNo: orderData.rdProcurementRequestNo,
+            projectCode: orderData.rdProcurementProjectCode,
+            projectName: orderData.rdProcurementProjectName,
+          },
+        ];
+      }
       if (orderData.details && orderData.details.length > 0) {
         detailList.value = orderData.details.map((detail) => ({
           detailId: detail.detailId,
           materialId: detail.materialId,
+          rdProcurementRequestLineId: detail.rdProcurementRequestLineId ?? null,
           quantity: detail.quantity,
           unitPrice: detail.unitPrice,
           taxPrice: detail.taxPrice,
@@ -980,13 +1137,13 @@ function submitForm() {
 
       // 直接提交表单，后端会处理经办人创建逻辑
       if (form.value.inboundId != null) {
-        updateOrder(form.value).then((response) => {
+        updateOrder(form.value).then(() => {
           proxy.$modal.msgSuccess("修改成功");
           open.value = false;
           getList();
         });
       } else {
-        addOrder(form.value).then((response) => {
+        addOrder(form.value).then(() => {
           proxy.$modal.msgSuccess("新增成功");
           open.value = false;
           getList();
@@ -1036,7 +1193,7 @@ function handleExport() {
     {
       ...queryParams.value,
     },
-    `order_${new Date().getTime()}.xlsx`,
+    `order_${Date.now()}.xlsx`,
   );
 }
 
@@ -1151,6 +1308,7 @@ async function handleAiPrefill(formData) {
       }
       const row = {
         materialId: null,
+        rdProcurementRequestLineId: null,
         quantity,
         unitPrice: item.unitPrice || null,
         taxPrice: item.taxPrice || null,
@@ -1163,7 +1321,7 @@ async function handleAiPrefill(formData) {
             materialCode: item.materialName,
           });
           materialOptions.value = matRes.rows || [];
-          if (matRes.rows && matRes.rows.length > 0) {
+          if (matRes.rows?.length > 0) {
             row.materialId = matRes.rows[0].materialId;
             if (!row.unitPrice) {
               try {
@@ -1195,7 +1353,7 @@ function checkAiAction() {
   if (!action || action.type !== "openForm" || !action.formData) return;
   if (action.path && action.path !== route.path) return;
   const consumed = aiActionStore.consumeAction();
-  if (consumed && consumed.formData) handleAiPrefill(consumed.formData);
+  if (consumed?.formData) handleAiPrefill(consumed.formData);
 }
 // 首次访问（onMounted）和缓存后再次访问（onActivated）都需要检查
 onMounted(() => checkAiAction());

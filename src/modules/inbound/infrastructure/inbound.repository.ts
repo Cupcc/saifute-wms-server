@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { DocumentFamily, type Prisma } from "../../../generated/prisma/client";
+import { DocumentFamily, Prisma } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 
 type DbClient = Prisma.TransactionClient | PrismaService;
@@ -196,5 +196,43 @@ export class InboundRepository {
     ]);
 
     return documentCount > 0 || lineCount > 0;
+  }
+
+  async sumEffectiveAcceptedQtyByRdProcurementLineIds(
+    lineIds: number[],
+    excludeOrderId?: number,
+    db?: DbClient,
+  ) {
+    if (lineIds.length === 0) {
+      return new Map<number, Prisma.Decimal>();
+    }
+
+    const rows = await this.db(db).stockInOrderLine.findMany({
+      where: {
+        rdProcurementRequestLineId: { in: lineIds },
+        order: {
+          lifecycleStatus: "EFFECTIVE",
+          ...(excludeOrderId ? { id: { not: excludeOrderId } } : {}),
+        },
+      },
+      select: {
+        rdProcurementRequestLineId: true,
+        quantity: true,
+      },
+    });
+
+    const totals = new Map<number, Prisma.Decimal>();
+    rows.forEach((row) => {
+      if (!row.rdProcurementRequestLineId) {
+        return;
+      }
+      const current =
+        totals.get(row.rdProcurementRequestLineId) ?? new Prisma.Decimal(0);
+      totals.set(
+        row.rdProcurementRequestLineId,
+        current.add(new Prisma.Decimal(row.quantity)),
+      );
+    });
+    return totals;
   }
 }

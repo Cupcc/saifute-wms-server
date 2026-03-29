@@ -150,6 +150,16 @@ export type RdHandoffOrder = Prisma.RdHandoffOrderModel;
  */
 export type RdHandoffOrderLine = Prisma.RdHandoffOrderLineModel;
 /**
+ * Model RdProcurementRequest
+ *
+ */
+export type RdProcurementRequest = Prisma.RdProcurementRequestModel;
+/**
+ * Model RdProcurementRequestLine
+ *
+ */
+export type RdProcurementRequestLine = Prisma.RdProcurementRequestLineModel;
+/**
  * Model DocumentRelation
  *
  */

@@ -93,6 +93,14 @@ const SUPPORTED_BACKEND_ROUTE_META = {
     visibleInModes: [CONSOLE_MODES.RD],
     affixInModes: [CONSOLE_MODES.RD],
   },
+  RdProcurementRequests: {
+    group: "rd",
+    path: "procurement-requests",
+    component: "rd/procurement-requests/index",
+    title: "采购需求",
+    icon: "tickets",
+    visibleInModes: [CONSOLE_MODES.DEFAULT, CONSOLE_MODES.RD],
+  },
   RdInventorySummary: {
     group: "rd",
     path: "inventory-summary",

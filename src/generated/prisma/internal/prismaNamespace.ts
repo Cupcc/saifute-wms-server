@@ -435,6 +435,8 @@ export const ModelName = {
   ProjectMaterialLine: "ProjectMaterialLine",
   RdHandoffOrder: "RdHandoffOrder",
   RdHandoffOrderLine: "RdHandoffOrderLine",
+  RdProcurementRequest: "RdProcurementRequest",
+  RdProcurementRequestLine: "RdProcurementRequestLine",
   DocumentRelation: "DocumentRelation",
   DocumentLineRelation: "DocumentLineRelation",
   LoginLog: "LoginLog",
@@ -484,6 +486,8 @@ export type TypeMap<
       | "projectMaterialLine"
       | "rdHandoffOrder"
       | "rdHandoffOrderLine"
+      | "rdProcurementRequest"
+      | "rdProcurementRequestLine"
       | "documentRelation"
       | "documentLineRelation"
       | "loginLog"
@@ -1921,6 +1925,142 @@ export type TypeMap<
         };
       };
     };
+    RdProcurementRequest: {
+      payload: Prisma.$RdProcurementRequestPayload<ExtArgs>;
+      fields: Prisma.RdProcurementRequestFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.RdProcurementRequestFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.RdProcurementRequestFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestPayload>;
+        };
+        findFirst: {
+          args: Prisma.RdProcurementRequestFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.RdProcurementRequestFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestPayload>;
+        };
+        findMany: {
+          args: Prisma.RdProcurementRequestFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestPayload>[];
+        };
+        create: {
+          args: Prisma.RdProcurementRequestCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestPayload>;
+        };
+        createMany: {
+          args: Prisma.RdProcurementRequestCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        delete: {
+          args: Prisma.RdProcurementRequestDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestPayload>;
+        };
+        update: {
+          args: Prisma.RdProcurementRequestUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestPayload>;
+        };
+        deleteMany: {
+          args: Prisma.RdProcurementRequestDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.RdProcurementRequestUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        upsert: {
+          args: Prisma.RdProcurementRequestUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestPayload>;
+        };
+        aggregate: {
+          args: Prisma.RdProcurementRequestAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRdProcurementRequest>;
+        };
+        groupBy: {
+          args: Prisma.RdProcurementRequestGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.RdProcurementRequestGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.RdProcurementRequestCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.RdProcurementRequestCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    RdProcurementRequestLine: {
+      payload: Prisma.$RdProcurementRequestLinePayload<ExtArgs>;
+      fields: Prisma.RdProcurementRequestLineFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.RdProcurementRequestLineFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestLinePayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.RdProcurementRequestLineFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestLinePayload>;
+        };
+        findFirst: {
+          args: Prisma.RdProcurementRequestLineFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestLinePayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.RdProcurementRequestLineFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestLinePayload>;
+        };
+        findMany: {
+          args: Prisma.RdProcurementRequestLineFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestLinePayload>[];
+        };
+        create: {
+          args: Prisma.RdProcurementRequestLineCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestLinePayload>;
+        };
+        createMany: {
+          args: Prisma.RdProcurementRequestLineCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        delete: {
+          args: Prisma.RdProcurementRequestLineDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestLinePayload>;
+        };
+        update: {
+          args: Prisma.RdProcurementRequestLineUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestLinePayload>;
+        };
+        deleteMany: {
+          args: Prisma.RdProcurementRequestLineDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.RdProcurementRequestLineUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        upsert: {
+          args: Prisma.RdProcurementRequestLineUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdProcurementRequestLinePayload>;
+        };
+        aggregate: {
+          args: Prisma.RdProcurementRequestLineAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRdProcurementRequestLine>;
+        };
+        groupBy: {
+          args: Prisma.RdProcurementRequestLineGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.RdProcurementRequestLineGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.RdProcurementRequestLineCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.RdProcurementRequestLineCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
     DocumentRelation: {
       payload: Prisma.$DocumentRelationPayload<ExtArgs>;
       fields: Prisma.DocumentRelationFieldRefs;
@@ -2583,6 +2723,7 @@ export const StockInOrderScalarFieldEnum = {
   supplierId: "supplierId",
   handlerPersonnelId: "handlerPersonnelId",
   workshopId: "workshopId",
+  rdProcurementRequestId: "rdProcurementRequestId",
   lifecycleStatus: "lifecycleStatus",
   auditStatusSnapshot: "auditStatusSnapshot",
   inventoryEffectStatus: "inventoryEffectStatus",
@@ -2591,6 +2732,9 @@ export const StockInOrderScalarFieldEnum = {
   supplierNameSnapshot: "supplierNameSnapshot",
   handlerNameSnapshot: "handlerNameSnapshot",
   workshopNameSnapshot: "workshopNameSnapshot",
+  rdProcurementRequestNoSnapshot: "rdProcurementRequestNoSnapshot",
+  rdProcurementProjectCodeSnapshot: "rdProcurementProjectCodeSnapshot",
+  rdProcurementProjectNameSnapshot: "rdProcurementProjectNameSnapshot",
   totalQty: "totalQty",
   totalAmount: "totalAmount",
   remark: "remark",
@@ -2611,6 +2755,7 @@ export const StockInOrderLineScalarFieldEnum = {
   orderId: "orderId",
   lineNo: "lineNo",
   materialId: "materialId",
+  rdProcurementRequestLineId: "rdProcurementRequestLineId",
   materialCodeSnapshot: "materialCodeSnapshot",
   materialNameSnapshot: "materialNameSnapshot",
   materialSpecSnapshot: "materialSpecSnapshot",
@@ -2845,6 +2990,59 @@ export const RdHandoffOrderLineScalarFieldEnum = {
 
 export type RdHandoffOrderLineScalarFieldEnum =
   (typeof RdHandoffOrderLineScalarFieldEnum)[keyof typeof RdHandoffOrderLineScalarFieldEnum];
+
+export const RdProcurementRequestScalarFieldEnum = {
+  id: "id",
+  documentNo: "documentNo",
+  bizDate: "bizDate",
+  projectCode: "projectCode",
+  projectName: "projectName",
+  supplierId: "supplierId",
+  handlerPersonnelId: "handlerPersonnelId",
+  workshopId: "workshopId",
+  lifecycleStatus: "lifecycleStatus",
+  auditStatusSnapshot: "auditStatusSnapshot",
+  revisionNo: "revisionNo",
+  supplierCodeSnapshot: "supplierCodeSnapshot",
+  supplierNameSnapshot: "supplierNameSnapshot",
+  handlerNameSnapshot: "handlerNameSnapshot",
+  workshopNameSnapshot: "workshopNameSnapshot",
+  totalQty: "totalQty",
+  totalAmount: "totalAmount",
+  remark: "remark",
+  voidReason: "voidReason",
+  voidedBy: "voidedBy",
+  voidedAt: "voidedAt",
+  createdBy: "createdBy",
+  createdAt: "createdAt",
+  updatedBy: "updatedBy",
+  updatedAt: "updatedAt",
+} as const;
+
+export type RdProcurementRequestScalarFieldEnum =
+  (typeof RdProcurementRequestScalarFieldEnum)[keyof typeof RdProcurementRequestScalarFieldEnum];
+
+export const RdProcurementRequestLineScalarFieldEnum = {
+  id: "id",
+  requestId: "requestId",
+  lineNo: "lineNo",
+  materialId: "materialId",
+  materialCodeSnapshot: "materialCodeSnapshot",
+  materialNameSnapshot: "materialNameSnapshot",
+  materialSpecSnapshot: "materialSpecSnapshot",
+  unitCodeSnapshot: "unitCodeSnapshot",
+  quantity: "quantity",
+  unitPrice: "unitPrice",
+  amount: "amount",
+  remark: "remark",
+  createdBy: "createdBy",
+  createdAt: "createdAt",
+  updatedBy: "updatedBy",
+  updatedAt: "updatedAt",
+} as const;
+
+export type RdProcurementRequestLineScalarFieldEnum =
+  (typeof RdProcurementRequestLineScalarFieldEnum)[keyof typeof RdProcurementRequestLineScalarFieldEnum];
 
 export const DocumentRelationScalarFieldEnum = {
   id: "id",
@@ -3098,6 +3296,9 @@ export const StockInOrderOrderByRelevanceFieldEnum = {
   supplierNameSnapshot: "supplierNameSnapshot",
   handlerNameSnapshot: "handlerNameSnapshot",
   workshopNameSnapshot: "workshopNameSnapshot",
+  rdProcurementRequestNoSnapshot: "rdProcurementRequestNoSnapshot",
+  rdProcurementProjectCodeSnapshot: "rdProcurementProjectCodeSnapshot",
+  rdProcurementProjectNameSnapshot: "rdProcurementProjectNameSnapshot",
   remark: "remark",
   voidReason: "voidReason",
   voidedBy: "voidedBy",
@@ -3240,6 +3441,37 @@ export const RdHandoffOrderLineOrderByRelevanceFieldEnum = {
 
 export type RdHandoffOrderLineOrderByRelevanceFieldEnum =
   (typeof RdHandoffOrderLineOrderByRelevanceFieldEnum)[keyof typeof RdHandoffOrderLineOrderByRelevanceFieldEnum];
+
+export const RdProcurementRequestOrderByRelevanceFieldEnum = {
+  documentNo: "documentNo",
+  projectCode: "projectCode",
+  projectName: "projectName",
+  supplierCodeSnapshot: "supplierCodeSnapshot",
+  supplierNameSnapshot: "supplierNameSnapshot",
+  handlerNameSnapshot: "handlerNameSnapshot",
+  workshopNameSnapshot: "workshopNameSnapshot",
+  remark: "remark",
+  voidReason: "voidReason",
+  voidedBy: "voidedBy",
+  createdBy: "createdBy",
+  updatedBy: "updatedBy",
+} as const;
+
+export type RdProcurementRequestOrderByRelevanceFieldEnum =
+  (typeof RdProcurementRequestOrderByRelevanceFieldEnum)[keyof typeof RdProcurementRequestOrderByRelevanceFieldEnum];
+
+export const RdProcurementRequestLineOrderByRelevanceFieldEnum = {
+  materialCodeSnapshot: "materialCodeSnapshot",
+  materialNameSnapshot: "materialNameSnapshot",
+  materialSpecSnapshot: "materialSpecSnapshot",
+  unitCodeSnapshot: "unitCodeSnapshot",
+  remark: "remark",
+  createdBy: "createdBy",
+  updatedBy: "updatedBy",
+} as const;
+
+export type RdProcurementRequestLineOrderByRelevanceFieldEnum =
+  (typeof RdProcurementRequestLineOrderByRelevanceFieldEnum)[keyof typeof RdProcurementRequestLineOrderByRelevanceFieldEnum];
 
 export const DocumentRelationOrderByRelevanceFieldEnum = {
   upstreamDocumentType: "upstreamDocumentType",
@@ -3628,6 +3860,8 @@ export type GlobalOmitConfig = {
   projectMaterialLine?: Prisma.ProjectMaterialLineOmit;
   rdHandoffOrder?: Prisma.RdHandoffOrderOmit;
   rdHandoffOrderLine?: Prisma.RdHandoffOrderLineOmit;
+  rdProcurementRequest?: Prisma.RdProcurementRequestOmit;
+  rdProcurementRequestLine?: Prisma.RdProcurementRequestLineOmit;
   documentRelation?: Prisma.DocumentRelationOmit;
   documentLineRelation?: Prisma.DocumentLineRelationOmit;
   loginLog?: Prisma.LoginLogOmit;

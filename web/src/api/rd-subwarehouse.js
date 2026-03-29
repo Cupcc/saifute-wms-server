@@ -24,6 +24,37 @@ export function listRdInboundResults(params = {}) {
   });
 }
 
+export function listRdProcurementRequests(params = {}) {
+  return request({
+    url: "/api/rd-subwarehouse/procurement-requests",
+    method: "get",
+    params,
+  });
+}
+
+export function getRdProcurementRequest(requestId) {
+  return request({
+    url: `/api/rd-subwarehouse/procurement-requests/${requestId}`,
+    method: "get",
+  });
+}
+
+export function createRdProcurementRequest(data) {
+  return request({
+    url: "/api/rd-subwarehouse/procurement-requests",
+    method: "post",
+    data,
+  });
+}
+
+export function voidRdProcurementRequest(requestId, data) {
+  return request({
+    url: `/api/rd-subwarehouse/procurement-requests/${requestId}/void`,
+    method: "post",
+    data,
+  });
+}
+
 export function listRdProjects(params = {}) {
   return request({
     url: "/api/projects",

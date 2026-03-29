@@ -66,6 +66,7 @@ function mapInboundLine(line, config, order, audit = null) {
     [config.noKey]: order.documentNo,
     [config.dateKey]: order.bizDate,
     materialId: line.materialId,
+    rdProcurementRequestLineId: line.rdProcurementRequestLineId ?? null,
     materialCode: line.materialCodeSnapshot,
     quantity,
     unitPrice,
@@ -98,6 +99,10 @@ function mapInboundOrder(order, config, audit = null) {
     supplierName: order.supplierNameSnapshot ?? "",
     workshopId: order.workshopId,
     workshopName: order.workshopNameSnapshot ?? "",
+    rdProcurementRequestId: order.rdProcurementRequestId ?? null,
+    rdProcurementRequestNo: order.rdProcurementRequestNoSnapshot ?? "",
+    rdProcurementProjectCode: order.rdProcurementProjectCodeSnapshot ?? "",
+    rdProcurementProjectName: order.rdProcurementProjectNameSnapshot ?? "",
     chargeBy: order.handlerNameSnapshot ?? "",
     attn: order.handlerNameSnapshot ?? "",
     totalAmount: Number(order.totalAmount ?? 0).toFixed(2),
@@ -157,10 +162,14 @@ function buildInboundPayload(data, config, handlerPersonnelId, supplierId) {
     supplierId,
     handlerPersonnelId,
     workshopId: data.workshopId,
+    rdProcurementRequestId: data.rdProcurementRequestId ?? undefined,
     remark: data.remark,
     lines: lines.map((line) => ({
       ...(line[config.detailIdKey] ? { id: line[config.detailIdKey] } : {}),
       materialId: line.materialId,
+      ...(line.rdProcurementRequestLineId
+        ? { rdProcurementRequestLineId: line.rdProcurementRequestLineId }
+        : {}),
       quantity: toDecimalString(line.quantity),
       unitPrice: toDecimalString(line.unitPrice),
       remark: line.remark,

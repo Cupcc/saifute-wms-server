@@ -11,6 +11,7 @@ import {
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
+import { RdProcurementRequestService } from "../../rd-subwarehouse/application/rd-procurement-request.service";
 import { WorkflowService } from "../../workflow/application/workflow.service";
 import { InboundRepository } from "../infrastructure/inbound.repository";
 import { InboundService } from "./inbound.service";
@@ -72,19 +73,39 @@ describe("InboundService", () => {
     unitCode: "PCS",
   };
 
-  const mockWorkshop = { id: 1, workshopName: "Workshop A" };
+  const mockWorkshop = {
+    id: 1,
+    workshopCode: "MAIN",
+    workshopName: "Workshop A",
+  };
   const mockSupplier = {
     id: 10,
     supplierCode: "SUP001",
     supplierName: "Supplier A",
   };
   const mockPersonnel = { id: 20, personnelName: "Handler A" };
+  const mockRdProcurementRequest = {
+    id: 9,
+    documentNo: "RDPUR-001",
+    projectCode: "RD-PJT-001",
+    projectName: "研发治具归集",
+    supplierId: 10,
+    lifecycleStatus: DocumentLifecycleStatus.EFFECTIVE,
+    lines: [
+      {
+        id: 500,
+        materialId: 100,
+        quantity: new Prisma.Decimal(100),
+      },
+    ],
+  };
 
   let service: InboundService;
   let repository: jest.Mocked<InboundRepository>;
   let masterDataService: jest.Mocked<MasterDataService>;
   let inventoryService: jest.Mocked<InventoryService>;
   let workflowService: jest.Mocked<WorkflowService>;
+  let rdProcurementRequestService: jest.Mocked<RdProcurementRequestService>;
   let prisma: { runInTransaction: jest.Mock };
 
   beforeEach(async () => {
@@ -114,6 +135,9 @@ describe("InboundService", () => {
             createOrderLine: jest.fn(),
             updateOrderLine: jest.fn(),
             deleteOrderLine: jest.fn(),
+            sumEffectiveAcceptedQtyByRdProcurementLineIds: jest
+              .fn()
+              .mockResolvedValue(new Map()),
             hasActiveDownstreamDependencies: jest.fn().mockResolvedValue(false),
           },
         },
@@ -141,6 +165,14 @@ describe("InboundService", () => {
             markAuditNotRequired: jest.fn().mockResolvedValue({ count: 1 }),
           },
         },
+        {
+          provide: RdProcurementRequestService,
+          useValue: {
+            getRequestById: jest
+              .fn()
+              .mockResolvedValue(mockRdProcurementRequest),
+          },
+        },
       ],
     }).compile();
 
@@ -149,6 +181,7 @@ describe("InboundService", () => {
     masterDataService = moduleRef.get(MasterDataService);
     inventoryService = moduleRef.get(InventoryService);
     workflowService = moduleRef.get(WorkflowService);
+    rdProcurementRequestService = moduleRef.get(RdProcurementRequestService);
 
     (masterDataService.getMaterialById as jest.Mock).mockResolvedValue(
       mockMaterial,
@@ -203,6 +236,111 @@ describe("InboundService", () => {
         }),
         expect.anything(),
       );
+    });
+
+    it("should create linked acceptance without writing RD stock", async () => {
+      (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(null);
+      (repository.createOrder as jest.Mock).mockResolvedValue(mockOrder);
+
+      const dto = {
+        documentNo: "SI-001",
+        orderType: StockInOrderType.ACCEPTANCE,
+        bizDate: "2025-03-14",
+        workshopId: 1,
+        rdProcurementRequestId: 9,
+        lines: [
+          {
+            materialId: 100,
+            rdProcurementRequestLineId: 500,
+            quantity: "100",
+            unitPrice: "10",
+          },
+        ],
+      };
+
+      await service.createOrder(dto, "1");
+
+      expect(rdProcurementRequestService.getRequestById).toHaveBeenCalledWith(
+        9,
+      );
+      expect(repository.createOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          rdProcurementRequestId: 9,
+          rdProcurementRequestNoSnapshot: "RDPUR-001",
+          rdProcurementProjectCodeSnapshot: "RD-PJT-001",
+          rdProcurementProjectNameSnapshot: "研发治具归集",
+          workshopId: 1,
+        }),
+        expect.arrayContaining([
+          expect.objectContaining({
+            rdProcurementRequestLineId: 500,
+          }),
+        ]),
+        expect.anything(),
+      );
+      expect(inventoryService.increaseStock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workshopId: 1,
+        }),
+        expect.anything(),
+      );
+    });
+
+    it("should reject linked acceptance when workshop is not main", async () => {
+      (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(null);
+      (masterDataService.getWorkshopById as jest.Mock).mockResolvedValueOnce({
+        id: 6,
+        workshopCode: "RD",
+        workshopName: "研发小仓",
+      });
+
+      await expect(
+        service.createOrder(
+          {
+            documentNo: "SI-002",
+            orderType: StockInOrderType.ACCEPTANCE,
+            bizDate: "2025-03-14",
+            workshopId: 6,
+            rdProcurementRequestId: 9,
+            lines: [
+              {
+                materialId: 100,
+                rdProcurementRequestLineId: 500,
+                quantity: "10",
+              },
+            ],
+          },
+          "1",
+        ),
+      ).rejects.toThrow("关联 RD 采购需求的验收单必须先入主仓");
+    });
+
+    it("should reject linked acceptance when cumulative quantity exceeds request", async () => {
+      (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(null);
+      (
+        repository.sumEffectiveAcceptedQtyByRdProcurementLineIds as jest.Mock
+      ).mockResolvedValue(new Map([[500, new Prisma.Decimal(95)]]));
+
+      await expect(
+        service.createOrder(
+          {
+            documentNo: "SI-003",
+            orderType: StockInOrderType.ACCEPTANCE,
+            bizDate: "2025-03-14",
+            workshopId: 1,
+            rdProcurementRequestId: 9,
+            lines: [
+              {
+                materialId: 100,
+                rdProcurementRequestLineId: 500,
+                quantity: "10",
+                unitPrice: "10",
+              },
+            ],
+          },
+          "1",
+        ),
+      ).rejects.toThrow("累计验收数量不能大于对应 RD 采购需求数量");
     });
 
     it("should throw ConflictException when documentNo exists", async () => {

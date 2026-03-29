@@ -7,20 +7,10 @@ import {
   Min,
 } from "class-validator";
 
-export class UpdateInboundOrderLineDto {
-  @IsInt()
-  @IsOptional()
-  @Min(1)
-  id?: number;
-
+export class CreateRdProcurementRequestLineDto {
   @IsInt()
   @Min(1)
   materialId!: number;
-
-  @IsInt()
-  @IsOptional()
-  @Min(1)
-  rdProcurementRequestLineId?: number;
 
   @IsString()
   @Matches(/^(?!0+(\.0+)?$)\d+(\.\d{1,6})?$/, {

@@ -39,6 +39,9 @@
       </el-row>
 
       <div class="quick-actions">
+        <el-button type="primary" @click="goTo('/rd/procurement-requests')">
+          采购需求
+        </el-button>
         <el-button type="primary" @click="goTo('/rd/project-consumption')">
           项目领用
         </el-button>

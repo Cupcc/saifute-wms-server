@@ -3,7 +3,6 @@ import {
   ArrayMinSize,
   IsArray,
   IsDateString,
-  IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -12,20 +11,26 @@ import {
   Min,
   ValidateNested,
 } from "class-validator";
-import { StockInOrderType } from "../../../generated/prisma/client";
-import { CreateInboundOrderLineDto } from "./create-inbound-order-line.dto";
+import { CreateRdProcurementRequestLineDto } from "./create-rd-procurement-request-line.dto";
 
-export class CreateInboundOrderDto {
+export class CreateRdProcurementRequestDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(64)
   documentNo!: string;
 
-  @IsEnum(StockInOrderType)
-  orderType!: StockInOrderType;
-
   @IsDateString()
   bizDate!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(64)
+  projectCode!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(128)
+  projectName!: string;
 
   @IsInt()
   @IsOptional()
@@ -41,11 +46,6 @@ export class CreateInboundOrderDto {
   @Min(1)
   workshopId!: number;
 
-  @IsInt()
-  @IsOptional()
-  @Min(1)
-  rdProcurementRequestId?: number;
-
   @IsString()
   @IsOptional()
   @MaxLength(500)
@@ -54,6 +54,6 @@ export class CreateInboundOrderDto {
   @IsArray()
   @ArrayMinSize(1, { message: "lines must have at least one item" })
   @ValidateNested({ each: true })
-  @Type(() => CreateInboundOrderLineDto)
-  lines!: CreateInboundOrderLineDto[];
+  @Type(() => CreateRdProcurementRequestLineDto)
+  lines!: CreateRdProcurementRequestLineDto[];
 }

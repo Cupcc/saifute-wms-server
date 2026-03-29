@@ -348,6 +348,12 @@ export class InMemoryRbacRepository {
           permissions: ["rd:workbench:view"],
         },
         {
+          name: "RdProcurementRequests",
+          path: "/rd/procurement-requests",
+          component: "rd/procurement-requests/index",
+          permissions: ["rd:procurement-request:list"],
+        },
+        {
           name: "RdInventorySummary",
           path: "/rd/inventory-summary",
           component: "reporting/inventory-summary/index",
@@ -1460,6 +1466,9 @@ export class InMemoryRbacRepository {
         "inbound:into-order:create",
         "inbound:into-order:update",
         "inbound:into-order:void",
+        "rd:procurement-request:list",
+        "rd:procurement-request:create",
+        "rd:procurement-request:void",
         "rd:handoff-order:list",
         "rd:handoff-order:create",
         "rd:handoff-order:void",
@@ -1514,7 +1523,7 @@ export class InMemoryRbacRepository {
         workshopCode: null,
         workshopName: null,
       },
-      extraPermissions: ["dashboard:view"],
+      extraPermissions: ["dashboard:view", "rd:procurement-request:list"],
     },
     {
       userId: 3,
@@ -1591,6 +1600,9 @@ export class InMemoryRbacRepository {
       },
       extraPermissions: [
         "dashboard:view",
+        "rd:procurement-request:list",
+        "rd:procurement-request:create",
+        "rd:procurement-request:void",
         "rd:workbench:view",
         "reporting:home:view",
         "reporting:inventory-summary:view",
@@ -1631,7 +1643,7 @@ export class InMemoryRbacRepository {
         workshopCode: null,
         workshopName: null,
       },
-      extraPermissions: ["dashboard:view"],
+      extraPermissions: ["dashboard:view", "rd:procurement-request:list"],
     },
   ];
 

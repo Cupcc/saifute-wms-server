@@ -34,8 +34,9 @@ describe("RbacService", () => {
 
   it("should filter routes for non-admin user", async () => {
     const routes = await rbacService.getRoutesForUser(2);
-    expect(routes).toHaveLength(1);
+    expect(routes).toHaveLength(2);
     expect(routes[0]?.path).toBe("/dashboard");
+    expect(routes[1]?.name).toBe("RdSubwarehouse");
   });
 
   it("should only return rd console routes for rd users", async () => {

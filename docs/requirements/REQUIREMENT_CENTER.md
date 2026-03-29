@@ -22,7 +22,6 @@
 | 需求文档                                                 | 状态                   | 说明                                                                                          |
 | ---------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------- |
 | `req-20260327-1317-migration-stage-planning.md`      | `needs-confirmation` | 新增“迁移开发阶段规划与阶段性交付展示”需求：已完成 `workspace draft` 机制首轮落地，并把当前工作流改造成“决策 + 草稿”样板；当前待确认阶段划分应更偏 `业务价值可见性` / `技术底座先行` / `需求确认→实现→验收` / `混合口径`。 |
-| `req-20260328-1831-rd-procurement-main-acceptance-linkage.md` | `confirmed` | RD 下一活跃切片已切到“研发采购需求与主仓验收联动 foundation”：目标是把 RD 采购需求落成真实上游事实，并让主仓验收可直接选取/带出对应采购信息；研发物料状态链、小仓盘点/调整与最终 smoke 继续留在后续 RD 收口。 |
 | `req-20260326-1900-frontend-old-style-adaptation.md` | `confirmed`          | 已确认前端进入“旧壳新核 + 业务域重分组”阶段；`shell integration` 与 `/index` 旧版图表首页（`task-20260327-1000` 归档）已落地，`销售管理` / `生产车间` / `研发协同` 分域与 RD 直达 `workbench` 行为保持。后续可按新切片细化各业务页旧风格节奏，同时保留现有后端权限/菜单/会话与报表监控能力。 |
 | `req-20260323-0910-monthly-reporting.md`            | `confirmed`          | 系统自动生成月度报表需求已完成口径确认：指标范围与销售域统计均按“全包含”处理，采用“每月固定正式月报 + 人工触发重算 + 可选日期范围生成报表”，交付形式为系统查看 + Excel 导出，并允许月后补录后重算且需保证追溯。 |
 
@@ -31,6 +30,7 @@
 | 需求文档 | 保留原因 |
 | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `archive/retained-completed/req-20260328-1855-biome-lint-cleanup.md` | 已完成全仓 `pnpm lint` 收口：根目录 `pnpm lint` 返回 `0`，`web` Biome error 校验通过，closing review 已关闭日期范围守卫的 open finding 并达到 `reviewed-no-findings`；若后续要继续收口全仓 warnings / infos，需另开新 scope。 |
+| `archive/retained-completed/req-20260328-1831-rd-procurement-main-acceptance-linkage.md` | 已完成 RD 采购需求与主仓验收联动 foundation：RD 采购需求真源、主仓验收选择/自动带出、累计验收量保护、权限/路由与前端入口均已收口，并通过 closing review、全量 Jest 与前端生产构建验证；后续 RD 物料状态链、小仓盘点/调整与最终 smoke 需另开新切片。 |
 | `archive/retained-completed/req-20260321-1109-architecture-review-clarity.md` | 业务域与 shared core 架构 review 已按确认口径闭环；详细 findings 与 follow-up 见 `docs/tasks/archive/retained-completed/task-20260323-1100-architecture-review-clarity.md` 及同批归档 task。 |
 | `archive/retained-completed/req-20260328-1640-rd-subwarehouse-main-to-rd-handoff-foundation.md` | 已完成 RD handoff foundation：窄化 `RD handoff` 真源文档、`main - / RD +` 交接过账、独立权限点与 RD 真实结果面均已落地，并经 reviewer clean sign-off；后续 RD 采购链路、状态链与盘点/调整需另开新切片。 |
 | `archive/retained-completed/req-20260326-0048-rd-subwarehouse.md` | 已完成 RD Phase 1 operating foundation：受限子仓模型、角色/库存责任矩阵与模块边界已澄清，研发独立工作台、固定仓别隔离、项目领用、本仓报废与研发侧报表基础已落地；后续主仓到 RD 自动交接、研发采购链路、物料状态链与盘点/调整需另开新切片。 |
