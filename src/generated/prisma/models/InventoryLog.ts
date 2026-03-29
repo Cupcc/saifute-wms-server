@@ -409,6 +409,11 @@ export type InventoryLogWhereInput = {
   > | null;
   reversedByLogs?: Prisma.InventoryLogListRelationFilter;
   allocatedSourceUsages?: Prisma.InventorySourceUsageListRelationFilter;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryListRelationFilter;
+  rdStocktakeOrderLine?: Prisma.XOR<
+    Prisma.RdStocktakeOrderLineNullableScalarRelationFilter,
+    Prisma.RdStocktakeOrderLineWhereInput
+  > | null;
 };
 
 export type InventoryLogOrderByWithRelationInput = {
@@ -437,6 +442,8 @@ export type InventoryLogOrderByWithRelationInput = {
   reversalOfLog?: Prisma.InventoryLogOrderByWithRelationInput;
   reversedByLogs?: Prisma.InventoryLogOrderByRelationAggregateInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageOrderByRelationAggregateInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryOrderByRelationAggregateInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineOrderByWithRelationInput;
   _relevance?: Prisma.InventoryLogOrderByRelevanceInput;
 };
 
@@ -504,6 +511,11 @@ export type InventoryLogWhereUniqueInput = Prisma.AtLeast<
     > | null;
     reversedByLogs?: Prisma.InventoryLogListRelationFilter;
     allocatedSourceUsages?: Prisma.InventorySourceUsageListRelationFilter;
+    rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryListRelationFilter;
+    rdStocktakeOrderLine?: Prisma.XOR<
+      Prisma.RdStocktakeOrderLineNullableScalarRelationFilter,
+      Prisma.RdStocktakeOrderLineWhereInput
+    > | null;
   },
   "id" | "reversalOfLogId" | "idempotencyKey"
 >;
@@ -623,6 +635,8 @@ export type InventoryLogCreateInput = {
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageCreateNestedManyWithoutSourceLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryCreateNestedManyWithoutRelatedInventoryLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineCreateNestedOneWithoutInventoryLogInput;
 };
 
 export type InventoryLogUncheckedCreateInput = {
@@ -647,6 +661,8 @@ export type InventoryLogUncheckedCreateInput = {
   note?: string | null;
   reversedByLogs?: Prisma.InventoryLogUncheckedCreateNestedManyWithoutReversalOfLogInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedCreateNestedManyWithoutSourceLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedCreateNestedManyWithoutRelatedInventoryLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedOneWithoutInventoryLogInput;
 };
 
 export type InventoryLogUpdateInput = {
@@ -692,6 +708,8 @@ export type InventoryLogUpdateInput = {
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUpdateManyWithoutSourceLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUpdateManyWithoutRelatedInventoryLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUpdateOneWithoutInventoryLogNestedInput;
 };
 
 export type InventoryLogUncheckedUpdateInput = {
@@ -741,6 +759,8 @@ export type InventoryLogUncheckedUpdateInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   reversedByLogs?: Prisma.InventoryLogUncheckedUpdateManyWithoutReversalOfLogNestedInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedUpdateManyWithoutSourceLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedUpdateManyWithoutRelatedInventoryLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedUpdateOneWithoutInventoryLogNestedInput;
 };
 
 export type InventoryLogCreateManyInput = {
@@ -1474,6 +1494,62 @@ export type InventoryLogUpdateOneRequiredWithoutAllocatedSourceUsagesNestedInput
     >;
   };
 
+export type InventoryLogCreateNestedOneWithoutRdMaterialStatusHistoriesInput = {
+  create?: Prisma.XOR<
+    Prisma.InventoryLogCreateWithoutRdMaterialStatusHistoriesInput,
+    Prisma.InventoryLogUncheckedCreateWithoutRdMaterialStatusHistoriesInput
+  >;
+  connectOrCreate?: Prisma.InventoryLogCreateOrConnectWithoutRdMaterialStatusHistoriesInput;
+  connect?: Prisma.InventoryLogWhereUniqueInput;
+};
+
+export type InventoryLogUpdateOneWithoutRdMaterialStatusHistoriesNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.InventoryLogCreateWithoutRdMaterialStatusHistoriesInput,
+    Prisma.InventoryLogUncheckedCreateWithoutRdMaterialStatusHistoriesInput
+  >;
+  connectOrCreate?: Prisma.InventoryLogCreateOrConnectWithoutRdMaterialStatusHistoriesInput;
+  upsert?: Prisma.InventoryLogUpsertWithoutRdMaterialStatusHistoriesInput;
+  disconnect?: Prisma.InventoryLogWhereInput | boolean;
+  delete?: Prisma.InventoryLogWhereInput | boolean;
+  connect?: Prisma.InventoryLogWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.InventoryLogUpdateToOneWithWhereWithoutRdMaterialStatusHistoriesInput,
+      Prisma.InventoryLogUpdateWithoutRdMaterialStatusHistoriesInput
+    >,
+    Prisma.InventoryLogUncheckedUpdateWithoutRdMaterialStatusHistoriesInput
+  >;
+};
+
+export type InventoryLogCreateNestedOneWithoutRdStocktakeOrderLineInput = {
+  create?: Prisma.XOR<
+    Prisma.InventoryLogCreateWithoutRdStocktakeOrderLineInput,
+    Prisma.InventoryLogUncheckedCreateWithoutRdStocktakeOrderLineInput
+  >;
+  connectOrCreate?: Prisma.InventoryLogCreateOrConnectWithoutRdStocktakeOrderLineInput;
+  connect?: Prisma.InventoryLogWhereUniqueInput;
+};
+
+export type InventoryLogUpdateOneWithoutRdStocktakeOrderLineNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.InventoryLogCreateWithoutRdStocktakeOrderLineInput,
+    Prisma.InventoryLogUncheckedCreateWithoutRdStocktakeOrderLineInput
+  >;
+  connectOrCreate?: Prisma.InventoryLogCreateOrConnectWithoutRdStocktakeOrderLineInput;
+  upsert?: Prisma.InventoryLogUpsertWithoutRdStocktakeOrderLineInput;
+  disconnect?: Prisma.InventoryLogWhereInput | boolean;
+  delete?: Prisma.InventoryLogWhereInput | boolean;
+  connect?: Prisma.InventoryLogWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.InventoryLogUpdateToOneWithWhereWithoutRdStocktakeOrderLineInput,
+      Prisma.InventoryLogUpdateWithoutRdStocktakeOrderLineInput
+    >,
+    Prisma.InventoryLogUncheckedUpdateWithoutRdStocktakeOrderLineInput
+  >;
+};
+
 export type InventoryLogCreateWithoutMaterialInput = {
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -1494,6 +1570,8 @@ export type InventoryLogCreateWithoutMaterialInput = {
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageCreateNestedManyWithoutSourceLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryCreateNestedManyWithoutRelatedInventoryLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineCreateNestedOneWithoutInventoryLogInput;
 };
 
 export type InventoryLogUncheckedCreateWithoutMaterialInput = {
@@ -1517,6 +1595,8 @@ export type InventoryLogUncheckedCreateWithoutMaterialInput = {
   note?: string | null;
   reversedByLogs?: Prisma.InventoryLogUncheckedCreateNestedManyWithoutReversalOfLogInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedCreateNestedManyWithoutSourceLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedCreateNestedManyWithoutRelatedInventoryLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedOneWithoutInventoryLogInput;
 };
 
 export type InventoryLogCreateOrConnectWithoutMaterialInput = {
@@ -1633,6 +1713,8 @@ export type InventoryLogCreateWithoutWorkshopInput = {
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageCreateNestedManyWithoutSourceLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryCreateNestedManyWithoutRelatedInventoryLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineCreateNestedOneWithoutInventoryLogInput;
 };
 
 export type InventoryLogUncheckedCreateWithoutWorkshopInput = {
@@ -1656,6 +1738,8 @@ export type InventoryLogUncheckedCreateWithoutWorkshopInput = {
   note?: string | null;
   reversedByLogs?: Prisma.InventoryLogUncheckedCreateNestedManyWithoutReversalOfLogInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedCreateNestedManyWithoutSourceLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedCreateNestedManyWithoutRelatedInventoryLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedOneWithoutInventoryLogInput;
 };
 
 export type InventoryLogCreateOrConnectWithoutWorkshopInput = {
@@ -1721,6 +1805,8 @@ export type InventoryLogCreateWithoutBalanceInput = {
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageCreateNestedManyWithoutSourceLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryCreateNestedManyWithoutRelatedInventoryLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineCreateNestedOneWithoutInventoryLogInput;
 };
 
 export type InventoryLogUncheckedCreateWithoutBalanceInput = {
@@ -1744,6 +1830,8 @@ export type InventoryLogUncheckedCreateWithoutBalanceInput = {
   note?: string | null;
   reversedByLogs?: Prisma.InventoryLogUncheckedCreateNestedManyWithoutReversalOfLogInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedCreateNestedManyWithoutSourceLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedCreateNestedManyWithoutRelatedInventoryLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedOneWithoutInventoryLogInput;
 };
 
 export type InventoryLogCreateOrConnectWithoutBalanceInput = {
@@ -1809,6 +1897,8 @@ export type InventoryLogCreateWithoutReversedByLogsInput = {
   workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageCreateNestedManyWithoutSourceLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryCreateNestedManyWithoutRelatedInventoryLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineCreateNestedOneWithoutInventoryLogInput;
 };
 
 export type InventoryLogUncheckedCreateWithoutReversedByLogsInput = {
@@ -1832,6 +1922,8 @@ export type InventoryLogUncheckedCreateWithoutReversedByLogsInput = {
   idempotencyKey: string;
   note?: string | null;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedCreateNestedManyWithoutSourceLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedCreateNestedManyWithoutRelatedInventoryLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedOneWithoutInventoryLogInput;
 };
 
 export type InventoryLogCreateOrConnectWithoutReversedByLogsInput = {
@@ -1862,6 +1954,8 @@ export type InventoryLogCreateWithoutReversalOfLogInput = {
   workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageCreateNestedManyWithoutSourceLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryCreateNestedManyWithoutRelatedInventoryLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineCreateNestedOneWithoutInventoryLogInput;
 };
 
 export type InventoryLogUncheckedCreateWithoutReversalOfLogInput = {
@@ -1885,6 +1979,8 @@ export type InventoryLogUncheckedCreateWithoutReversalOfLogInput = {
   note?: string | null;
   reversedByLogs?: Prisma.InventoryLogUncheckedCreateNestedManyWithoutReversalOfLogInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedCreateNestedManyWithoutSourceLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedCreateNestedManyWithoutRelatedInventoryLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedOneWithoutInventoryLogInput;
 };
 
 export type InventoryLogCreateOrConnectWithoutReversalOfLogInput = {
@@ -1964,6 +2060,8 @@ export type InventoryLogUpdateWithoutReversedByLogsInput = {
   workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUpdateManyWithoutSourceLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUpdateManyWithoutRelatedInventoryLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUpdateOneWithoutInventoryLogNestedInput;
 };
 
 export type InventoryLogUncheckedUpdateWithoutReversedByLogsInput = {
@@ -2012,6 +2110,8 @@ export type InventoryLogUncheckedUpdateWithoutReversedByLogsInput = {
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedUpdateManyWithoutSourceLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedUpdateManyWithoutRelatedInventoryLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedUpdateOneWithoutInventoryLogNestedInput;
 };
 
 export type InventoryLogUpsertWithWhereUniqueWithoutReversalOfLogInput = {
@@ -2062,6 +2162,8 @@ export type InventoryLogCreateWithoutAllocatedSourceUsagesInput = {
   workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryCreateNestedManyWithoutRelatedInventoryLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineCreateNestedOneWithoutInventoryLogInput;
 };
 
 export type InventoryLogUncheckedCreateWithoutAllocatedSourceUsagesInput = {
@@ -2085,6 +2187,8 @@ export type InventoryLogUncheckedCreateWithoutAllocatedSourceUsagesInput = {
   idempotencyKey: string;
   note?: string | null;
   reversedByLogs?: Prisma.InventoryLogUncheckedCreateNestedManyWithoutReversalOfLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedCreateNestedManyWithoutRelatedInventoryLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedOneWithoutInventoryLogInput;
 };
 
 export type InventoryLogCreateOrConnectWithoutAllocatedSourceUsagesInput = {
@@ -2158,6 +2262,8 @@ export type InventoryLogUpdateWithoutAllocatedSourceUsagesInput = {
   workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUpdateManyWithoutRelatedInventoryLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUpdateOneWithoutInventoryLogNestedInput;
 };
 
 export type InventoryLogUncheckedUpdateWithoutAllocatedSourceUsagesInput = {
@@ -2206,6 +2312,355 @@ export type InventoryLogUncheckedUpdateWithoutAllocatedSourceUsagesInput = {
   idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string;
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   reversedByLogs?: Prisma.InventoryLogUncheckedUpdateManyWithoutReversalOfLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedUpdateManyWithoutRelatedInventoryLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedUpdateOneWithoutInventoryLogNestedInput;
+};
+
+export type InventoryLogCreateWithoutRdMaterialStatusHistoriesInput = {
+  direction: $Enums.StockDirection;
+  operationType: $Enums.InventoryOperationType;
+  businessModule: string;
+  businessDocumentType: string;
+  businessDocumentId: number;
+  businessDocumentNumber: string;
+  businessDocumentLineId?: number | null;
+  changeQty: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  beforeQty: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  afterQty: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  operatorId?: string | null;
+  occurredAt?: Date | string;
+  idempotencyKey: string;
+  note?: string | null;
+  balance: Prisma.InventoryBalanceCreateNestedOneWithoutLogsInput;
+  material: Prisma.MaterialCreateNestedOneWithoutInventoryLogsInput;
+  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
+  reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
+  reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
+  allocatedSourceUsages?: Prisma.InventorySourceUsageCreateNestedManyWithoutSourceLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineCreateNestedOneWithoutInventoryLogInput;
+};
+
+export type InventoryLogUncheckedCreateWithoutRdMaterialStatusHistoriesInput = {
+  id?: number;
+  balanceId: number;
+  materialId: number;
+  workshopId: number;
+  direction: $Enums.StockDirection;
+  operationType: $Enums.InventoryOperationType;
+  businessModule: string;
+  businessDocumentType: string;
+  businessDocumentId: number;
+  businessDocumentNumber: string;
+  businessDocumentLineId?: number | null;
+  changeQty: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  beforeQty: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  afterQty: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  operatorId?: string | null;
+  occurredAt?: Date | string;
+  reversalOfLogId?: number | null;
+  idempotencyKey: string;
+  note?: string | null;
+  reversedByLogs?: Prisma.InventoryLogUncheckedCreateNestedManyWithoutReversalOfLogInput;
+  allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedCreateNestedManyWithoutSourceLogInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedOneWithoutInventoryLogInput;
+};
+
+export type InventoryLogCreateOrConnectWithoutRdMaterialStatusHistoriesInput = {
+  where: Prisma.InventoryLogWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.InventoryLogCreateWithoutRdMaterialStatusHistoriesInput,
+    Prisma.InventoryLogUncheckedCreateWithoutRdMaterialStatusHistoriesInput
+  >;
+};
+
+export type InventoryLogUpsertWithoutRdMaterialStatusHistoriesInput = {
+  update: Prisma.XOR<
+    Prisma.InventoryLogUpdateWithoutRdMaterialStatusHistoriesInput,
+    Prisma.InventoryLogUncheckedUpdateWithoutRdMaterialStatusHistoriesInput
+  >;
+  create: Prisma.XOR<
+    Prisma.InventoryLogCreateWithoutRdMaterialStatusHistoriesInput,
+    Prisma.InventoryLogUncheckedCreateWithoutRdMaterialStatusHistoriesInput
+  >;
+  where?: Prisma.InventoryLogWhereInput;
+};
+
+export type InventoryLogUpdateToOneWithWhereWithoutRdMaterialStatusHistoriesInput =
+  {
+    where?: Prisma.InventoryLogWhereInput;
+    data: Prisma.XOR<
+      Prisma.InventoryLogUpdateWithoutRdMaterialStatusHistoriesInput,
+      Prisma.InventoryLogUncheckedUpdateWithoutRdMaterialStatusHistoriesInput
+    >;
+  };
+
+export type InventoryLogUpdateWithoutRdMaterialStatusHistoriesInput = {
+  direction?:
+    | Prisma.EnumStockDirectionFieldUpdateOperationsInput
+    | $Enums.StockDirection;
+  operationType?:
+    | Prisma.EnumInventoryOperationTypeFieldUpdateOperationsInput
+    | $Enums.InventoryOperationType;
+  businessModule?: Prisma.StringFieldUpdateOperationsInput | string;
+  businessDocumentType?: Prisma.StringFieldUpdateOperationsInput | string;
+  businessDocumentId?: Prisma.IntFieldUpdateOperationsInput | number;
+  businessDocumentNumber?: Prisma.StringFieldUpdateOperationsInput | string;
+  businessDocumentLineId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
+  changeQty?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  beforeQty?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  afterQty?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  operatorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  occurredAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  balance?: Prisma.InventoryBalanceUpdateOneRequiredWithoutLogsNestedInput;
+  material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
+  reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
+  allocatedSourceUsages?: Prisma.InventorySourceUsageUpdateManyWithoutSourceLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUpdateOneWithoutInventoryLogNestedInput;
+};
+
+export type InventoryLogUncheckedUpdateWithoutRdMaterialStatusHistoriesInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number;
+  balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
+  materialId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  direction?:
+    | Prisma.EnumStockDirectionFieldUpdateOperationsInput
+    | $Enums.StockDirection;
+  operationType?:
+    | Prisma.EnumInventoryOperationTypeFieldUpdateOperationsInput
+    | $Enums.InventoryOperationType;
+  businessModule?: Prisma.StringFieldUpdateOperationsInput | string;
+  businessDocumentType?: Prisma.StringFieldUpdateOperationsInput | string;
+  businessDocumentId?: Prisma.IntFieldUpdateOperationsInput | number;
+  businessDocumentNumber?: Prisma.StringFieldUpdateOperationsInput | string;
+  businessDocumentLineId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
+  changeQty?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  beforeQty?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  afterQty?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  operatorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  occurredAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  reversalOfLogId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
+  idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  reversedByLogs?: Prisma.InventoryLogUncheckedUpdateManyWithoutReversalOfLogNestedInput;
+  allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedUpdateManyWithoutSourceLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedUpdateOneWithoutInventoryLogNestedInput;
+};
+
+export type InventoryLogCreateWithoutRdStocktakeOrderLineInput = {
+  direction: $Enums.StockDirection;
+  operationType: $Enums.InventoryOperationType;
+  businessModule: string;
+  businessDocumentType: string;
+  businessDocumentId: number;
+  businessDocumentNumber: string;
+  businessDocumentLineId?: number | null;
+  changeQty: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  beforeQty: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  afterQty: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  operatorId?: string | null;
+  occurredAt?: Date | string;
+  idempotencyKey: string;
+  note?: string | null;
+  balance: Prisma.InventoryBalanceCreateNestedOneWithoutLogsInput;
+  material: Prisma.MaterialCreateNestedOneWithoutInventoryLogsInput;
+  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
+  reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
+  reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
+  allocatedSourceUsages?: Prisma.InventorySourceUsageCreateNestedManyWithoutSourceLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryCreateNestedManyWithoutRelatedInventoryLogInput;
+};
+
+export type InventoryLogUncheckedCreateWithoutRdStocktakeOrderLineInput = {
+  id?: number;
+  balanceId: number;
+  materialId: number;
+  workshopId: number;
+  direction: $Enums.StockDirection;
+  operationType: $Enums.InventoryOperationType;
+  businessModule: string;
+  businessDocumentType: string;
+  businessDocumentId: number;
+  businessDocumentNumber: string;
+  businessDocumentLineId?: number | null;
+  changeQty: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  beforeQty: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  afterQty: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  operatorId?: string | null;
+  occurredAt?: Date | string;
+  reversalOfLogId?: number | null;
+  idempotencyKey: string;
+  note?: string | null;
+  reversedByLogs?: Prisma.InventoryLogUncheckedCreateNestedManyWithoutReversalOfLogInput;
+  allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedCreateNestedManyWithoutSourceLogInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedCreateNestedManyWithoutRelatedInventoryLogInput;
+};
+
+export type InventoryLogCreateOrConnectWithoutRdStocktakeOrderLineInput = {
+  where: Prisma.InventoryLogWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.InventoryLogCreateWithoutRdStocktakeOrderLineInput,
+    Prisma.InventoryLogUncheckedCreateWithoutRdStocktakeOrderLineInput
+  >;
+};
+
+export type InventoryLogUpsertWithoutRdStocktakeOrderLineInput = {
+  update: Prisma.XOR<
+    Prisma.InventoryLogUpdateWithoutRdStocktakeOrderLineInput,
+    Prisma.InventoryLogUncheckedUpdateWithoutRdStocktakeOrderLineInput
+  >;
+  create: Prisma.XOR<
+    Prisma.InventoryLogCreateWithoutRdStocktakeOrderLineInput,
+    Prisma.InventoryLogUncheckedCreateWithoutRdStocktakeOrderLineInput
+  >;
+  where?: Prisma.InventoryLogWhereInput;
+};
+
+export type InventoryLogUpdateToOneWithWhereWithoutRdStocktakeOrderLineInput = {
+  where?: Prisma.InventoryLogWhereInput;
+  data: Prisma.XOR<
+    Prisma.InventoryLogUpdateWithoutRdStocktakeOrderLineInput,
+    Prisma.InventoryLogUncheckedUpdateWithoutRdStocktakeOrderLineInput
+  >;
+};
+
+export type InventoryLogUpdateWithoutRdStocktakeOrderLineInput = {
+  direction?:
+    | Prisma.EnumStockDirectionFieldUpdateOperationsInput
+    | $Enums.StockDirection;
+  operationType?:
+    | Prisma.EnumInventoryOperationTypeFieldUpdateOperationsInput
+    | $Enums.InventoryOperationType;
+  businessModule?: Prisma.StringFieldUpdateOperationsInput | string;
+  businessDocumentType?: Prisma.StringFieldUpdateOperationsInput | string;
+  businessDocumentId?: Prisma.IntFieldUpdateOperationsInput | number;
+  businessDocumentNumber?: Prisma.StringFieldUpdateOperationsInput | string;
+  businessDocumentLineId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
+  changeQty?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  beforeQty?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  afterQty?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  operatorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  occurredAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  balance?: Prisma.InventoryBalanceUpdateOneRequiredWithoutLogsNestedInput;
+  material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
+  reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
+  allocatedSourceUsages?: Prisma.InventorySourceUsageUpdateManyWithoutSourceLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUpdateManyWithoutRelatedInventoryLogNestedInput;
+};
+
+export type InventoryLogUncheckedUpdateWithoutRdStocktakeOrderLineInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number;
+  balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
+  materialId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  direction?:
+    | Prisma.EnumStockDirectionFieldUpdateOperationsInput
+    | $Enums.StockDirection;
+  operationType?:
+    | Prisma.EnumInventoryOperationTypeFieldUpdateOperationsInput
+    | $Enums.InventoryOperationType;
+  businessModule?: Prisma.StringFieldUpdateOperationsInput | string;
+  businessDocumentType?: Prisma.StringFieldUpdateOperationsInput | string;
+  businessDocumentId?: Prisma.IntFieldUpdateOperationsInput | number;
+  businessDocumentNumber?: Prisma.StringFieldUpdateOperationsInput | string;
+  businessDocumentLineId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
+  changeQty?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  beforeQty?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  afterQty?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  operatorId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  occurredAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  reversalOfLogId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
+  idempotencyKey?: Prisma.StringFieldUpdateOperationsInput | string;
+  note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  reversedByLogs?: Prisma.InventoryLogUncheckedUpdateManyWithoutReversalOfLogNestedInput;
+  allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedUpdateManyWithoutSourceLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedUpdateManyWithoutRelatedInventoryLogNestedInput;
 };
 
 export type InventoryLogCreateManyMaterialInput = {
@@ -2271,6 +2726,8 @@ export type InventoryLogUpdateWithoutMaterialInput = {
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUpdateManyWithoutSourceLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUpdateManyWithoutRelatedInventoryLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUpdateOneWithoutInventoryLogNestedInput;
 };
 
 export type InventoryLogUncheckedUpdateWithoutMaterialInput = {
@@ -2319,6 +2776,8 @@ export type InventoryLogUncheckedUpdateWithoutMaterialInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   reversedByLogs?: Prisma.InventoryLogUncheckedUpdateManyWithoutReversalOfLogNestedInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedUpdateManyWithoutSourceLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedUpdateManyWithoutRelatedInventoryLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedUpdateOneWithoutInventoryLogNestedInput;
 };
 
 export type InventoryLogUncheckedUpdateManyWithoutMaterialInput = {
@@ -2430,6 +2889,8 @@ export type InventoryLogUpdateWithoutWorkshopInput = {
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUpdateManyWithoutSourceLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUpdateManyWithoutRelatedInventoryLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUpdateOneWithoutInventoryLogNestedInput;
 };
 
 export type InventoryLogUncheckedUpdateWithoutWorkshopInput = {
@@ -2478,6 +2939,8 @@ export type InventoryLogUncheckedUpdateWithoutWorkshopInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   reversedByLogs?: Prisma.InventoryLogUncheckedUpdateManyWithoutReversalOfLogNestedInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedUpdateManyWithoutSourceLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedUpdateManyWithoutRelatedInventoryLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedUpdateOneWithoutInventoryLogNestedInput;
 };
 
 export type InventoryLogUncheckedUpdateManyWithoutWorkshopInput = {
@@ -2589,6 +3052,8 @@ export type InventoryLogUpdateWithoutBalanceInput = {
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUpdateManyWithoutSourceLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUpdateManyWithoutRelatedInventoryLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUpdateOneWithoutInventoryLogNestedInput;
 };
 
 export type InventoryLogUncheckedUpdateWithoutBalanceInput = {
@@ -2637,6 +3102,8 @@ export type InventoryLogUncheckedUpdateWithoutBalanceInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   reversedByLogs?: Prisma.InventoryLogUncheckedUpdateManyWithoutReversalOfLogNestedInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedUpdateManyWithoutSourceLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedUpdateManyWithoutRelatedInventoryLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedUpdateOneWithoutInventoryLogNestedInput;
 };
 
 export type InventoryLogUncheckedUpdateManyWithoutBalanceInput = {
@@ -2748,6 +3215,8 @@ export type InventoryLogUpdateWithoutReversalOfLogInput = {
   workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUpdateManyWithoutSourceLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUpdateManyWithoutRelatedInventoryLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUpdateOneWithoutInventoryLogNestedInput;
 };
 
 export type InventoryLogUncheckedUpdateWithoutReversalOfLogInput = {
@@ -2793,6 +3262,8 @@ export type InventoryLogUncheckedUpdateWithoutReversalOfLogInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   reversedByLogs?: Prisma.InventoryLogUncheckedUpdateManyWithoutReversalOfLogNestedInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUncheckedUpdateManyWithoutSourceLogNestedInput;
+  rdMaterialStatusHistories?: Prisma.RdMaterialStatusHistoryUncheckedUpdateManyWithoutRelatedInventoryLogNestedInput;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineUncheckedUpdateOneWithoutInventoryLogNestedInput;
 };
 
 export type InventoryLogUncheckedUpdateManyWithoutReversalOfLogInput = {
@@ -2845,6 +3316,7 @@ export type InventoryLogUncheckedUpdateManyWithoutReversalOfLogInput = {
 export type InventoryLogCountOutputType = {
   reversedByLogs: number;
   allocatedSourceUsages: number;
+  rdMaterialStatusHistories: number;
 };
 
 export type InventoryLogCountOutputTypeSelect<
@@ -2855,6 +3327,9 @@ export type InventoryLogCountOutputTypeSelect<
   allocatedSourceUsages?:
     | boolean
     | InventoryLogCountOutputTypeCountAllocatedSourceUsagesArgs;
+  rdMaterialStatusHistories?:
+    | boolean
+    | InventoryLogCountOutputTypeCountRdMaterialStatusHistoriesArgs;
 };
 
 /**
@@ -2890,6 +3365,16 @@ export type InventoryLogCountOutputTypeCountAllocatedSourceUsagesArgs<
   where?: Prisma.InventorySourceUsageWhereInput;
 };
 
+/**
+ * InventoryLogCountOutputType without action
+ */
+export type InventoryLogCountOutputTypeCountRdMaterialStatusHistoriesArgs<
+  ExtArgs extends
+    runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.RdMaterialStatusHistoryWhereInput;
+};
+
 export type InventoryLogSelect<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
@@ -2922,6 +3407,12 @@ export type InventoryLogSelect<
     allocatedSourceUsages?:
       | boolean
       | Prisma.InventoryLog$allocatedSourceUsagesArgs<ExtArgs>;
+    rdMaterialStatusHistories?:
+      | boolean
+      | Prisma.InventoryLog$rdMaterialStatusHistoriesArgs<ExtArgs>;
+    rdStocktakeOrderLine?:
+      | boolean
+      | Prisma.InventoryLog$rdStocktakeOrderLineArgs<ExtArgs>;
     _count?: boolean | Prisma.InventoryLogCountOutputTypeDefaultArgs<ExtArgs>;
   },
   ExtArgs["result"]["inventoryLog"]
@@ -2986,6 +3477,12 @@ export type InventoryLogInclude<
   allocatedSourceUsages?:
     | boolean
     | Prisma.InventoryLog$allocatedSourceUsagesArgs<ExtArgs>;
+  rdMaterialStatusHistories?:
+    | boolean
+    | Prisma.InventoryLog$rdMaterialStatusHistoriesArgs<ExtArgs>;
+  rdStocktakeOrderLine?:
+    | boolean
+    | Prisma.InventoryLog$rdStocktakeOrderLineArgs<ExtArgs>;
   _count?: boolean | Prisma.InventoryLogCountOutputTypeDefaultArgs<ExtArgs>;
 };
 
@@ -3001,6 +3498,8 @@ export type $InventoryLogPayload<
     reversalOfLog: Prisma.$InventoryLogPayload<ExtArgs> | null;
     reversedByLogs: Prisma.$InventoryLogPayload<ExtArgs>[];
     allocatedSourceUsages: Prisma.$InventorySourceUsagePayload<ExtArgs>[];
+    rdMaterialStatusHistories: Prisma.$RdMaterialStatusHistoryPayload<ExtArgs>[];
+    rdStocktakeOrderLine: Prisma.$RdStocktakeOrderLinePayload<ExtArgs> | null;
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -3591,6 +4090,40 @@ export interface Prisma__InventoryLogClient<
       >
     | Null
   >;
+  rdMaterialStatusHistories<
+    T extends Prisma.InventoryLog$rdMaterialStatusHistoriesArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<
+      T,
+      Prisma.InventoryLog$rdMaterialStatusHistoriesArgs<ExtArgs>
+    >,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$RdMaterialStatusHistoryPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
+  rdStocktakeOrderLine<
+    T extends Prisma.InventoryLog$rdStocktakeOrderLineArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<
+      T,
+      Prisma.InventoryLog$rdStocktakeOrderLineArgs<ExtArgs>
+    >,
+  ): Prisma.Prisma__RdStocktakeOrderLineClient<
+    runtime.Types.Result.GetResult<
+      Prisma.$RdStocktakeOrderLinePayload<ExtArgs>,
+      T,
+      "findUniqueOrThrow",
+      GlobalOmitOptions
+    > | null,
+    null,
+    ExtArgs,
+    GlobalOmitOptions
+  >;
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4148,6 +4681,59 @@ export type InventoryLog$allocatedSourceUsagesArgs<
   distinct?:
     | Prisma.InventorySourceUsageScalarFieldEnum
     | Prisma.InventorySourceUsageScalarFieldEnum[];
+};
+
+/**
+ * InventoryLog.rdMaterialStatusHistories
+ */
+export type InventoryLog$rdMaterialStatusHistoriesArgs<
+  ExtArgs extends
+    runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the RdMaterialStatusHistory
+   */
+  select?: Prisma.RdMaterialStatusHistorySelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the RdMaterialStatusHistory
+   */
+  omit?: Prisma.RdMaterialStatusHistoryOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RdMaterialStatusHistoryInclude<ExtArgs> | null;
+  where?: Prisma.RdMaterialStatusHistoryWhereInput;
+  orderBy?:
+    | Prisma.RdMaterialStatusHistoryOrderByWithRelationInput
+    | Prisma.RdMaterialStatusHistoryOrderByWithRelationInput[];
+  cursor?: Prisma.RdMaterialStatusHistoryWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.RdMaterialStatusHistoryScalarFieldEnum
+    | Prisma.RdMaterialStatusHistoryScalarFieldEnum[];
+};
+
+/**
+ * InventoryLog.rdStocktakeOrderLine
+ */
+export type InventoryLog$rdStocktakeOrderLineArgs<
+  ExtArgs extends
+    runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the RdStocktakeOrderLine
+   */
+  select?: Prisma.RdStocktakeOrderLineSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the RdStocktakeOrderLine
+   */
+  omit?: Prisma.RdStocktakeOrderLineOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RdStocktakeOrderLineInclude<ExtArgs> | null;
+  where?: Prisma.RdStocktakeOrderLineWhereInput;
 };
 
 /**

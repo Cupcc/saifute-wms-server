@@ -727,6 +727,102 @@ export type EnumWorkshopMaterialOrderTypeWithAggregatesFilter<
   _max?: Prisma.NestedEnumWorkshopMaterialOrderTypeFilter<$PrismaModel>;
 };
 
+export type EnumRdMaterialStatusEventTypeFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.RdMaterialStatusEventType
+    | Prisma.EnumRdMaterialStatusEventTypeFieldRefInput<$PrismaModel>;
+  in?: $Enums.RdMaterialStatusEventType[];
+  notIn?: $Enums.RdMaterialStatusEventType[];
+  not?:
+    | Prisma.NestedEnumRdMaterialStatusEventTypeFilter<$PrismaModel>
+    | $Enums.RdMaterialStatusEventType;
+};
+
+export type EnumRdMaterialStatusNullableFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.RdMaterialStatus
+    | Prisma.EnumRdMaterialStatusFieldRefInput<$PrismaModel>
+    | null;
+  in?: $Enums.RdMaterialStatus[] | null;
+  notIn?: $Enums.RdMaterialStatus[] | null;
+  not?:
+    | Prisma.NestedEnumRdMaterialStatusNullableFilter<$PrismaModel>
+    | $Enums.RdMaterialStatus
+    | null;
+};
+
+export type EnumRdMaterialStatusFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.RdMaterialStatus
+    | Prisma.EnumRdMaterialStatusFieldRefInput<$PrismaModel>;
+  in?: $Enums.RdMaterialStatus[];
+  notIn?: $Enums.RdMaterialStatus[];
+  not?:
+    | Prisma.NestedEnumRdMaterialStatusFilter<$PrismaModel>
+    | $Enums.RdMaterialStatus;
+};
+
+export type BoolFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean;
+};
+
+export type EnumRdMaterialStatusEventTypeWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.RdMaterialStatusEventType
+    | Prisma.EnumRdMaterialStatusEventTypeFieldRefInput<$PrismaModel>;
+  in?: $Enums.RdMaterialStatusEventType[];
+  notIn?: $Enums.RdMaterialStatusEventType[];
+  not?:
+    | Prisma.NestedEnumRdMaterialStatusEventTypeWithAggregatesFilter<$PrismaModel>
+    | $Enums.RdMaterialStatusEventType;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumRdMaterialStatusEventTypeFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumRdMaterialStatusEventTypeFilter<$PrismaModel>;
+};
+
+export type EnumRdMaterialStatusNullableWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.RdMaterialStatus
+    | Prisma.EnumRdMaterialStatusFieldRefInput<$PrismaModel>
+    | null;
+  in?: $Enums.RdMaterialStatus[] | null;
+  notIn?: $Enums.RdMaterialStatus[] | null;
+  not?:
+    | Prisma.NestedEnumRdMaterialStatusNullableWithAggregatesFilter<$PrismaModel>
+    | $Enums.RdMaterialStatus
+    | null;
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumRdMaterialStatusNullableFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumRdMaterialStatusNullableFilter<$PrismaModel>;
+};
+
+export type EnumRdMaterialStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.RdMaterialStatus
+    | Prisma.EnumRdMaterialStatusFieldRefInput<$PrismaModel>;
+  in?: $Enums.RdMaterialStatus[];
+  notIn?: $Enums.RdMaterialStatus[];
+  not?:
+    | Prisma.NestedEnumRdMaterialStatusWithAggregatesFilter<$PrismaModel>
+    | $Enums.RdMaterialStatus;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumRdMaterialStatusFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumRdMaterialStatusFilter<$PrismaModel>;
+};
+
+export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedBoolWithAggregatesFilter<$PrismaModel> | boolean;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedBoolFilter<$PrismaModel>;
+  _max?: Prisma.NestedBoolFilter<$PrismaModel>;
+};
+
 export type EnumDocumentRelationTypeFilter<$PrismaModel = never> = {
   equals?:
     | $Enums.DocumentRelationType
@@ -736,11 +832,6 @@ export type EnumDocumentRelationTypeFilter<$PrismaModel = never> = {
   not?:
     | Prisma.NestedEnumDocumentRelationTypeFilter<$PrismaModel>
     | $Enums.DocumentRelationType;
-};
-
-export type BoolFilter<$PrismaModel = never> = {
-  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>;
-  not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean;
 };
 
 export type EnumDocumentRelationTypeWithAggregatesFilter<$PrismaModel = never> =
@@ -757,14 +848,6 @@ export type EnumDocumentRelationTypeWithAggregatesFilter<$PrismaModel = never> =
     _min?: Prisma.NestedEnumDocumentRelationTypeFilter<$PrismaModel>;
     _max?: Prisma.NestedEnumDocumentRelationTypeFilter<$PrismaModel>;
   };
-
-export type BoolWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>;
-  not?: Prisma.NestedBoolWithAggregatesFilter<$PrismaModel> | boolean;
-  _count?: Prisma.NestedIntFilter<$PrismaModel>;
-  _min?: Prisma.NestedBoolFilter<$PrismaModel>;
-  _max?: Prisma.NestedBoolFilter<$PrismaModel>;
-};
 
 export type EnumLoginLogActionFilter<$PrismaModel = never> = {
   equals?:
@@ -1692,6 +1775,104 @@ export type NestedEnumWorkshopMaterialOrderTypeWithAggregatesFilter<
   _max?: Prisma.NestedEnumWorkshopMaterialOrderTypeFilter<$PrismaModel>;
 };
 
+export type NestedEnumRdMaterialStatusEventTypeFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.RdMaterialStatusEventType
+    | Prisma.EnumRdMaterialStatusEventTypeFieldRefInput<$PrismaModel>;
+  in?: $Enums.RdMaterialStatusEventType[];
+  notIn?: $Enums.RdMaterialStatusEventType[];
+  not?:
+    | Prisma.NestedEnumRdMaterialStatusEventTypeFilter<$PrismaModel>
+    | $Enums.RdMaterialStatusEventType;
+};
+
+export type NestedEnumRdMaterialStatusNullableFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.RdMaterialStatus
+    | Prisma.EnumRdMaterialStatusFieldRefInput<$PrismaModel>
+    | null;
+  in?: $Enums.RdMaterialStatus[] | null;
+  notIn?: $Enums.RdMaterialStatus[] | null;
+  not?:
+    | Prisma.NestedEnumRdMaterialStatusNullableFilter<$PrismaModel>
+    | $Enums.RdMaterialStatus
+    | null;
+};
+
+export type NestedEnumRdMaterialStatusFilter<$PrismaModel = never> = {
+  equals?:
+    | $Enums.RdMaterialStatus
+    | Prisma.EnumRdMaterialStatusFieldRefInput<$PrismaModel>;
+  in?: $Enums.RdMaterialStatus[];
+  notIn?: $Enums.RdMaterialStatus[];
+  not?:
+    | Prisma.NestedEnumRdMaterialStatusFilter<$PrismaModel>
+    | $Enums.RdMaterialStatus;
+};
+
+export type NestedBoolFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean;
+};
+
+export type NestedEnumRdMaterialStatusEventTypeWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.RdMaterialStatusEventType
+    | Prisma.EnumRdMaterialStatusEventTypeFieldRefInput<$PrismaModel>;
+  in?: $Enums.RdMaterialStatusEventType[];
+  notIn?: $Enums.RdMaterialStatusEventType[];
+  not?:
+    | Prisma.NestedEnumRdMaterialStatusEventTypeWithAggregatesFilter<$PrismaModel>
+    | $Enums.RdMaterialStatusEventType;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumRdMaterialStatusEventTypeFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumRdMaterialStatusEventTypeFilter<$PrismaModel>;
+};
+
+export type NestedEnumRdMaterialStatusNullableWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.RdMaterialStatus
+    | Prisma.EnumRdMaterialStatusFieldRefInput<$PrismaModel>
+    | null;
+  in?: $Enums.RdMaterialStatus[] | null;
+  notIn?: $Enums.RdMaterialStatus[] | null;
+  not?:
+    | Prisma.NestedEnumRdMaterialStatusNullableWithAggregatesFilter<$PrismaModel>
+    | $Enums.RdMaterialStatus
+    | null;
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumRdMaterialStatusNullableFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumRdMaterialStatusNullableFilter<$PrismaModel>;
+};
+
+export type NestedEnumRdMaterialStatusWithAggregatesFilter<
+  $PrismaModel = never,
+> = {
+  equals?:
+    | $Enums.RdMaterialStatus
+    | Prisma.EnumRdMaterialStatusFieldRefInput<$PrismaModel>;
+  in?: $Enums.RdMaterialStatus[];
+  notIn?: $Enums.RdMaterialStatus[];
+  not?:
+    | Prisma.NestedEnumRdMaterialStatusWithAggregatesFilter<$PrismaModel>
+    | $Enums.RdMaterialStatus;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedEnumRdMaterialStatusFilter<$PrismaModel>;
+  _max?: Prisma.NestedEnumRdMaterialStatusFilter<$PrismaModel>;
+};
+
+export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>;
+  not?: Prisma.NestedBoolWithAggregatesFilter<$PrismaModel> | boolean;
+  _count?: Prisma.NestedIntFilter<$PrismaModel>;
+  _min?: Prisma.NestedBoolFilter<$PrismaModel>;
+  _max?: Prisma.NestedBoolFilter<$PrismaModel>;
+};
+
 export type NestedEnumDocumentRelationTypeFilter<$PrismaModel = never> = {
   equals?:
     | $Enums.DocumentRelationType
@@ -1701,11 +1882,6 @@ export type NestedEnumDocumentRelationTypeFilter<$PrismaModel = never> = {
   not?:
     | Prisma.NestedEnumDocumentRelationTypeFilter<$PrismaModel>
     | $Enums.DocumentRelationType;
-};
-
-export type NestedBoolFilter<$PrismaModel = never> = {
-  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>;
-  not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean;
 };
 
 export type NestedEnumDocumentRelationTypeWithAggregatesFilter<
@@ -1722,14 +1898,6 @@ export type NestedEnumDocumentRelationTypeWithAggregatesFilter<
   _count?: Prisma.NestedIntFilter<$PrismaModel>;
   _min?: Prisma.NestedEnumDocumentRelationTypeFilter<$PrismaModel>;
   _max?: Prisma.NestedEnumDocumentRelationTypeFilter<$PrismaModel>;
-};
-
-export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>;
-  not?: Prisma.NestedBoolWithAggregatesFilter<$PrismaModel> | boolean;
-  _count?: Prisma.NestedIntFilter<$PrismaModel>;
-  _min?: Prisma.NestedBoolFilter<$PrismaModel>;
-  _max?: Prisma.NestedBoolFilter<$PrismaModel>;
 };
 
 export type NestedEnumLoginLogActionFilter<$PrismaModel = never> = {

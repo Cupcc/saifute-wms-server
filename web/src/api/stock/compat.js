@@ -8,6 +8,8 @@ const LEGACY_OPERATION_TYPE_MAP = {
   4: "OUTBOUND_OUT",
   5: "RETURN_IN",
   6: "SCRAP_OUT",
+  7: "RD_STOCKTAKE_IN",
+  8: "RD_STOCKTAKE_OUT",
 };
 
 function buildPageQuery(query = {}) {
@@ -36,6 +38,10 @@ function mapOperationTypeToLegacyType(operationType) {
       return "5";
     case "SCRAP_OUT":
       return "6";
+    case "RD_STOCKTAKE_IN":
+      return "7";
+    case "RD_STOCKTAKE_OUT":
+      return "8";
     default:
       return "";
   }

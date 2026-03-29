@@ -13,13 +13,17 @@ export default async () => {
     ["./modules/customer/dto/update-outbound-order-line.dto"]: await import(
       "./modules/customer/dto/update-outbound-order-line.dto"
     ),
+    ["./modules/rd-subwarehouse/dto/create-rd-handoff-order-line.dto"]:
+      await import(
+        "./modules/rd-subwarehouse/dto/create-rd-handoff-order-line.dto"
+      ),
     ["./modules/rd-subwarehouse/dto/create-rd-procurement-request-line.dto"]:
       await import(
         "./modules/rd-subwarehouse/dto/create-rd-procurement-request-line.dto"
       ),
-    ["./modules/rd-subwarehouse/dto/create-rd-handoff-order-line.dto"]:
+    ["./modules/rd-subwarehouse/dto/create-rd-stocktake-order-line.dto"]:
       await import(
-        "./modules/rd-subwarehouse/dto/create-rd-handoff-order-line.dto"
+        "./modules/rd-subwarehouse/dto/create-rd-stocktake-order-line.dto"
       ),
     ["./modules/inbound/dto/create-inbound-order-line.dto"]: await import(
       "./modules/inbound/dto/create-inbound-order-line.dto"
@@ -787,6 +791,141 @@ export default async () => {
         ],
         [
           import(
+            "./modules/rd-subwarehouse/dto/create-rd-handoff-order-line.dto"
+          ),
+          {
+            CreateRdHandoffOrderLineDto: {
+              materialId: { required: true, type: () => Number, minimum: 1 },
+              sourceDocumentType: {
+                required: false,
+                type: () => String,
+                maxLength: 64,
+              },
+              sourceDocumentId: {
+                required: false,
+                type: () => Number,
+                minimum: 1,
+              },
+              sourceDocumentLineId: {
+                required: false,
+                type: () => Number,
+                minimum: 1,
+              },
+              quantity: {
+                required: true,
+                type: () => String,
+                pattern: "/^(?!0+(\\.0+)?$)\\d+(\\.\\d{1,6})?$/",
+              },
+              unitPrice: {
+                required: false,
+                type: () => String,
+                pattern: "/^\\d+(\\.\\d{1,2})?$/",
+              },
+              remark: { required: false, type: () => String, maxLength: 500 },
+            },
+          },
+        ],
+        [
+          import("./modules/rd-subwarehouse/dto/create-rd-handoff-order.dto"),
+          {
+            CreateRdHandoffOrderDto: {
+              documentNo: { required: true, type: () => String, maxLength: 64 },
+              bizDate: { required: true, type: () => String },
+              sourceWorkshopId: {
+                required: true,
+                type: () => Number,
+                minimum: 1,
+              },
+              handlerPersonnelId: {
+                required: false,
+                type: () => Number,
+                minimum: 1,
+              },
+              remark: { required: false, type: () => String, maxLength: 500 },
+              lines: {
+                required: true,
+                type: () => [
+                  t[
+                    "./modules/rd-subwarehouse/dto/create-rd-handoff-order-line.dto"
+                  ].CreateRdHandoffOrderLineDto,
+                ],
+                minItems: 1,
+              },
+            },
+          },
+        ],
+        [
+          import("./modules/rd-subwarehouse/dto/query-rd-handoff-order.dto"),
+          {
+            QueryRdHandoffOrderDto: {
+              documentNo: {
+                required: false,
+                type: () => String,
+                maxLength: 64,
+              },
+              bizDateFrom: { required: false, type: () => String },
+              bizDateTo: { required: false, type: () => String },
+              handlerName: {
+                required: false,
+                type: () => String,
+                maxLength: 64,
+              },
+              materialId: { required: false, type: () => Number, minimum: 1 },
+              materialName: {
+                required: false,
+                type: () => String,
+                maxLength: 128,
+              },
+              sourceWorkshopId: {
+                required: false,
+                type: () => Number,
+                minimum: 1,
+              },
+              targetWorkshopId: {
+                required: false,
+                type: () => Number,
+                minimum: 1,
+              },
+              limit: {
+                required: false,
+                type: () => Number,
+                default: 50,
+                minimum: 1,
+              },
+              offset: {
+                required: false,
+                type: () => Number,
+                default: 0,
+                minimum: 0,
+              },
+            },
+          },
+        ],
+        [
+          import(
+            "./modules/rd-subwarehouse/dto/apply-rd-procurement-status-action.dto"
+          ),
+          {
+            ApplyRdProcurementStatusActionDto: {
+              actionType: { required: true, type: () => Object },
+              lineId: { required: true, type: () => Number, minimum: 1 },
+              quantity: {
+                required: true,
+                type: () => String,
+                pattern: "/^(?!0+(\\.0+)?$)\\d+(\\.\\d{1,6})?$/",
+              },
+              referenceNo: {
+                required: false,
+                type: () => String,
+                maxLength: 128,
+              },
+              reason: { required: false, type: () => String, maxLength: 500 },
+              note: { required: false, type: () => String, maxLength: 500 },
+            },
+          },
+        ],
+        [
+          import(
             "./modules/rd-subwarehouse/dto/create-rd-procurement-request-line.dto"
           ),
           {
@@ -898,58 +1037,56 @@ export default async () => {
         ],
         [
           import(
-            "./modules/rd-subwarehouse/dto/create-rd-handoff-order-line.dto"
+            "./modules/rd-subwarehouse/dto/create-rd-stocktake-order-line.dto"
           ),
           {
-            CreateRdHandoffOrderLineDto: {
+            CreateRdStocktakeOrderLineDto: {
               materialId: { required: true, type: () => Number, minimum: 1 },
-              quantity: {
+              countedQty: {
                 required: true,
                 type: () => String,
-                pattern: "/^(?!0+(\\.0+)?$)\\d+(\\.\\d{1,6})?$/",
+                pattern: "/^\\d+(\\.\\d{1,6})?$/",
               },
-              unitPrice: {
-                required: false,
-                type: () => String,
-                pattern: "/^\\d+(\\.\\d{1,2})?$/",
-              },
+              reason: { required: true, type: () => String, maxLength: 500 },
               remark: { required: false, type: () => String, maxLength: 500 },
             },
           },
         ],
         [
-          import("./modules/rd-subwarehouse/dto/create-rd-handoff-order.dto"),
+          import("./modules/rd-subwarehouse/dto/create-rd-stocktake-order.dto"),
           {
-            CreateRdHandoffOrderDto: {
+            CreateRdStocktakeOrderDto: {
               documentNo: { required: true, type: () => String, maxLength: 64 },
               bizDate: { required: true, type: () => String },
-              sourceWorkshopId: {
-                required: true,
-                type: () => Number,
-                minimum: 1,
-              },
-              handlerPersonnelId: {
+              workshopId: { required: true, type: () => Number, minimum: 1 },
+              countedBy: {
                 required: false,
-                type: () => Number,
-                minimum: 1,
+                type: () => String,
+                maxLength: 128,
+              },
+              approvedBy: {
+                required: false,
+                type: () => String,
+                maxLength: 128,
               },
               remark: { required: false, type: () => String, maxLength: 500 },
               lines: {
                 required: true,
                 type: () => [
                   t[
-                    "./modules/rd-subwarehouse/dto/create-rd-handoff-order-line.dto"
-                  ].CreateRdHandoffOrderLineDto,
+                    "./modules/rd-subwarehouse/dto/create-rd-stocktake-order-line.dto"
+                  ].CreateRdStocktakeOrderLineDto,
                 ],
+                uniqueItems: true,
                 minItems: 1,
               },
             },
           },
         ],
         [
-          import("./modules/rd-subwarehouse/dto/query-rd-handoff-order.dto"),
+          import("./modules/rd-subwarehouse/dto/query-rd-stocktake-order.dto"),
           {
-            QueryRdHandoffOrderDto: {
+            QueryRdStocktakeOrderDto: {
               documentNo: {
                 required: false,
                 type: () => String,
@@ -957,27 +1094,8 @@ export default async () => {
               },
               bizDateFrom: { required: false, type: () => String },
               bizDateTo: { required: false, type: () => String },
-              handlerName: {
-                required: false,
-                type: () => String,
-                maxLength: 64,
-              },
               materialId: { required: false, type: () => Number, minimum: 1 },
-              materialName: {
-                required: false,
-                type: () => String,
-                maxLength: 128,
-              },
-              sourceWorkshopId: {
-                required: false,
-                type: () => Number,
-                minimum: 1,
-              },
-              targetWorkshopId: {
-                required: false,
-                type: () => Number,
-                minimum: 1,
-              },
+              workshopId: { required: false, type: () => Number, minimum: 1 },
               limit: {
                 required: false,
                 type: () => Number,
@@ -989,6 +1107,18 @@ export default async () => {
                 type: () => Number,
                 default: 0,
                 minimum: 0,
+              },
+            },
+          },
+        ],
+        [
+          import("./modules/rd-subwarehouse/dto/void-rd-handoff-order.dto"),
+          {
+            VoidRdHandoffOrderDto: {
+              voidReason: {
+                required: false,
+                type: () => String,
+                maxLength: 500,
               },
             },
           },
@@ -1008,9 +1138,9 @@ export default async () => {
           },
         ],
         [
-          import("./modules/rd-subwarehouse/dto/void-rd-handoff-order.dto"),
+          import("./modules/rd-subwarehouse/dto/void-rd-stocktake-order.dto"),
           {
-            VoidRdHandoffOrderDto: {
+            VoidRdStocktakeOrderDto: {
               voidReason: {
                 required: false,
                 type: () => String,
@@ -1958,6 +2088,17 @@ export default async () => {
           },
         ],
         [
+          import("./modules/rd-subwarehouse/controllers/rd-handoff.controller"),
+          {
+            RdHandoffController: {
+              listOrders: {},
+              getOrder: { type: Object },
+              createOrder: { type: Object },
+              voidOrder: { type: Object },
+            },
+          },
+        ],
+        [
           import(
             "./modules/rd-subwarehouse/controllers/rd-procurement-request.controller"
           ),
@@ -1967,13 +2108,16 @@ export default async () => {
               getRequest: { type: Object },
               createRequest: { type: Object },
               voidRequest: { type: Object },
+              applyStatusAction: { type: Object },
             },
           },
         ],
         [
-          import("./modules/rd-subwarehouse/controllers/rd-handoff.controller"),
+          import(
+            "./modules/rd-subwarehouse/controllers/rd-stocktake-order.controller"
+          ),
           {
-            RdHandoffController: {
+            RdStocktakeOrderController: {
               listOrders: {},
               getOrder: { type: Object },
               createOrder: { type: Object },

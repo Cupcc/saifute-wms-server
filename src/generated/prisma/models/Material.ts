@@ -354,6 +354,7 @@ export type MaterialWhereInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineListRelationFilter;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineListRelationFilter;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineListRelationFilter;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineListRelationFilter;
 };
 
 export type MaterialOrderByWithRelationInput = {
@@ -384,6 +385,7 @@ export type MaterialOrderByWithRelationInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineOrderByRelationAggregateInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineOrderByRelationAggregateInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineOrderByRelationAggregateInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineOrderByRelationAggregateInput;
   _relevance?: Prisma.MaterialOrderByRelevanceInput;
 };
 
@@ -441,6 +443,7 @@ export type MaterialWhereUniqueInput = Prisma.AtLeast<
     projectMaterialLines?: Prisma.ProjectMaterialLineListRelationFilter;
     rdHandoffOrderLines?: Prisma.RdHandoffOrderLineListRelationFilter;
     rdProcurementRequestLines?: Prisma.RdProcurementRequestLineListRelationFilter;
+    rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineListRelationFilter;
   },
   "id" | "materialCode"
 >;
@@ -565,6 +568,7 @@ export type MaterialCreateInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialUncheckedCreateInput = {
@@ -604,6 +608,7 @@ export type MaterialUncheckedCreateInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialUpdateInput = {
@@ -654,6 +659,7 @@ export type MaterialUpdateInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialUncheckedUpdateInput = {
@@ -705,6 +711,7 @@ export type MaterialUncheckedUpdateInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialCreateManyInput = {
@@ -1282,6 +1289,32 @@ export type MaterialUpdateOneRequiredWithoutRdProcurementRequestLinesNestedInput
     >;
   };
 
+export type MaterialCreateNestedOneWithoutRdStocktakeOrderLinesInput = {
+  create?: Prisma.XOR<
+    Prisma.MaterialCreateWithoutRdStocktakeOrderLinesInput,
+    Prisma.MaterialUncheckedCreateWithoutRdStocktakeOrderLinesInput
+  >;
+  connectOrCreate?: Prisma.MaterialCreateOrConnectWithoutRdStocktakeOrderLinesInput;
+  connect?: Prisma.MaterialWhereUniqueInput;
+};
+
+export type MaterialUpdateOneRequiredWithoutRdStocktakeOrderLinesNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.MaterialCreateWithoutRdStocktakeOrderLinesInput,
+    Prisma.MaterialUncheckedCreateWithoutRdStocktakeOrderLinesInput
+  >;
+  connectOrCreate?: Prisma.MaterialCreateOrConnectWithoutRdStocktakeOrderLinesInput;
+  upsert?: Prisma.MaterialUpsertWithoutRdStocktakeOrderLinesInput;
+  connect?: Prisma.MaterialWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.MaterialUpdateToOneWithWhereWithoutRdStocktakeOrderLinesInput,
+      Prisma.MaterialUpdateWithoutRdStocktakeOrderLinesInput
+    >,
+    Prisma.MaterialUncheckedUpdateWithoutRdStocktakeOrderLinesInput
+  >;
+};
+
 export type MaterialCreateWithoutCategoryInput = {
   materialCode: string;
   materialName: string;
@@ -1317,6 +1350,7 @@ export type MaterialCreateWithoutCategoryInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialUncheckedCreateWithoutCategoryInput = {
@@ -1355,6 +1389,7 @@ export type MaterialUncheckedCreateWithoutCategoryInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialCreateOrConnectWithoutCategoryInput = {
@@ -1473,6 +1508,7 @@ export type MaterialCreateWithoutInventoryBalancesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialUncheckedCreateWithoutInventoryBalancesInput = {
@@ -1511,6 +1547,7 @@ export type MaterialUncheckedCreateWithoutInventoryBalancesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialCreateOrConnectWithoutInventoryBalancesInput = {
@@ -1588,6 +1625,7 @@ export type MaterialUpdateWithoutInventoryBalancesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialUncheckedUpdateWithoutInventoryBalancesInput = {
@@ -1638,6 +1676,7 @@ export type MaterialUncheckedUpdateWithoutInventoryBalancesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialCreateWithoutInventoryLogsInput = {
@@ -1675,6 +1714,7 @@ export type MaterialCreateWithoutInventoryLogsInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialUncheckedCreateWithoutInventoryLogsInput = {
@@ -1713,6 +1753,7 @@ export type MaterialUncheckedCreateWithoutInventoryLogsInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialCreateOrConnectWithoutInventoryLogsInput = {
@@ -1790,6 +1831,7 @@ export type MaterialUpdateWithoutInventoryLogsInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialUncheckedUpdateWithoutInventoryLogsInput = {
@@ -1840,6 +1882,7 @@ export type MaterialUncheckedUpdateWithoutInventoryLogsInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialCreateWithoutInventorySourceUsagesInput = {
@@ -1877,6 +1920,7 @@ export type MaterialCreateWithoutInventorySourceUsagesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialUncheckedCreateWithoutInventorySourceUsagesInput = {
@@ -1915,6 +1959,7 @@ export type MaterialUncheckedCreateWithoutInventorySourceUsagesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialCreateOrConnectWithoutInventorySourceUsagesInput = {
@@ -1992,6 +2037,7 @@ export type MaterialUpdateWithoutInventorySourceUsagesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialUncheckedUpdateWithoutInventorySourceUsagesInput = {
@@ -2042,6 +2088,7 @@ export type MaterialUncheckedUpdateWithoutInventorySourceUsagesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialCreateWithoutFactoryNumberReservationsInput = {
@@ -2079,6 +2126,7 @@ export type MaterialCreateWithoutFactoryNumberReservationsInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialUncheckedCreateWithoutFactoryNumberReservationsInput = {
@@ -2117,6 +2165,7 @@ export type MaterialUncheckedCreateWithoutFactoryNumberReservationsInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialCreateOrConnectWithoutFactoryNumberReservationsInput = {
@@ -2195,6 +2244,7 @@ export type MaterialUpdateWithoutFactoryNumberReservationsInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialUncheckedUpdateWithoutFactoryNumberReservationsInput = {
@@ -2245,6 +2295,7 @@ export type MaterialUncheckedUpdateWithoutFactoryNumberReservationsInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialCreateWithoutStockInOrderLinesInput = {
@@ -2282,6 +2333,7 @@ export type MaterialCreateWithoutStockInOrderLinesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialUncheckedCreateWithoutStockInOrderLinesInput = {
@@ -2320,6 +2372,7 @@ export type MaterialUncheckedCreateWithoutStockInOrderLinesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialCreateOrConnectWithoutStockInOrderLinesInput = {
@@ -2397,6 +2450,7 @@ export type MaterialUpdateWithoutStockInOrderLinesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialUncheckedUpdateWithoutStockInOrderLinesInput = {
@@ -2447,6 +2501,7 @@ export type MaterialUncheckedUpdateWithoutStockInOrderLinesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialCreateWithoutCustomerStockOrderLinesInput = {
@@ -2484,6 +2539,7 @@ export type MaterialCreateWithoutCustomerStockOrderLinesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialUncheckedCreateWithoutCustomerStockOrderLinesInput = {
@@ -2522,6 +2578,7 @@ export type MaterialUncheckedCreateWithoutCustomerStockOrderLinesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialCreateOrConnectWithoutCustomerStockOrderLinesInput = {
@@ -2599,6 +2656,7 @@ export type MaterialUpdateWithoutCustomerStockOrderLinesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialUncheckedUpdateWithoutCustomerStockOrderLinesInput = {
@@ -2649,6 +2707,7 @@ export type MaterialUncheckedUpdateWithoutCustomerStockOrderLinesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialCreateWithoutWorkshopMaterialOrderLinesInput = {
@@ -2686,6 +2745,7 @@ export type MaterialCreateWithoutWorkshopMaterialOrderLinesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialUncheckedCreateWithoutWorkshopMaterialOrderLinesInput = {
@@ -2724,6 +2784,7 @@ export type MaterialUncheckedCreateWithoutWorkshopMaterialOrderLinesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialCreateOrConnectWithoutWorkshopMaterialOrderLinesInput = {
@@ -2802,6 +2863,7 @@ export type MaterialUpdateWithoutWorkshopMaterialOrderLinesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialUncheckedUpdateWithoutWorkshopMaterialOrderLinesInput = {
@@ -2852,6 +2914,7 @@ export type MaterialUncheckedUpdateWithoutWorkshopMaterialOrderLinesInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialCreateWithoutProjectMaterialLinesInput = {
@@ -2889,6 +2952,7 @@ export type MaterialCreateWithoutProjectMaterialLinesInput = {
   workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialUncheckedCreateWithoutProjectMaterialLinesInput = {
@@ -2927,6 +2991,7 @@ export type MaterialUncheckedCreateWithoutProjectMaterialLinesInput = {
   workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialCreateOrConnectWithoutProjectMaterialLinesInput = {
@@ -3004,6 +3069,7 @@ export type MaterialUpdateWithoutProjectMaterialLinesInput = {
   workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialUncheckedUpdateWithoutProjectMaterialLinesInput = {
@@ -3054,6 +3120,7 @@ export type MaterialUncheckedUpdateWithoutProjectMaterialLinesInput = {
   workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialCreateWithoutRdHandoffOrderLinesInput = {
@@ -3091,6 +3158,7 @@ export type MaterialCreateWithoutRdHandoffOrderLinesInput = {
   workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineCreateNestedManyWithoutMaterialInput;
   projectMaterialLines?: Prisma.ProjectMaterialLineCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialUncheckedCreateWithoutRdHandoffOrderLinesInput = {
@@ -3129,6 +3197,7 @@ export type MaterialUncheckedCreateWithoutRdHandoffOrderLinesInput = {
   workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialCreateOrConnectWithoutRdHandoffOrderLinesInput = {
@@ -3206,6 +3275,7 @@ export type MaterialUpdateWithoutRdHandoffOrderLinesInput = {
   workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineUpdateManyWithoutMaterialNestedInput;
   projectMaterialLines?: Prisma.ProjectMaterialLineUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialUncheckedUpdateWithoutRdHandoffOrderLinesInput = {
@@ -3256,6 +3326,7 @@ export type MaterialUncheckedUpdateWithoutRdHandoffOrderLinesInput = {
   workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialCreateWithoutRdProcurementRequestLinesInput = {
@@ -3293,6 +3364,7 @@ export type MaterialCreateWithoutRdProcurementRequestLinesInput = {
   workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineCreateNestedManyWithoutMaterialInput;
   projectMaterialLines?: Prisma.ProjectMaterialLineCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialUncheckedCreateWithoutRdProcurementRequestLinesInput = {
@@ -3331,6 +3403,7 @@ export type MaterialUncheckedCreateWithoutRdProcurementRequestLinesInput = {
   workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedCreateNestedManyWithoutMaterialInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
 };
 
 export type MaterialCreateOrConnectWithoutRdProcurementRequestLinesInput = {
@@ -3409,6 +3482,7 @@ export type MaterialUpdateWithoutRdProcurementRequestLinesInput = {
   workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineUpdateManyWithoutMaterialNestedInput;
   projectMaterialLines?: Prisma.ProjectMaterialLineUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialUncheckedUpdateWithoutRdProcurementRequestLinesInput = {
@@ -3459,6 +3533,213 @@ export type MaterialUncheckedUpdateWithoutRdProcurementRequestLinesInput = {
   workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
+};
+
+export type MaterialCreateWithoutRdStocktakeOrderLinesInput = {
+  materialCode: string;
+  materialName: string;
+  specModel?: string | null;
+  unitCode: string;
+  warningMinQty?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | null;
+  warningMaxQty?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | null;
+  status?: $Enums.MasterDataStatus;
+  creationMode?: $Enums.DataCreationMode;
+  sourceDocumentType?: string | null;
+  sourceDocumentId?: number | null;
+  createdBy?: string | null;
+  createdAt?: Date | string;
+  updatedBy?: string | null;
+  updatedAt?: Date | string;
+  category?: Prisma.MaterialCategoryCreateNestedOneWithoutMaterialsInput;
+  inventoryBalances?: Prisma.InventoryBalanceCreateNestedManyWithoutMaterialInput;
+  inventoryLogs?: Prisma.InventoryLogCreateNestedManyWithoutMaterialInput;
+  inventorySourceUsages?: Prisma.InventorySourceUsageCreateNestedManyWithoutMaterialInput;
+  factoryNumberReservations?: Prisma.FactoryNumberReservationCreateNestedManyWithoutMaterialInput;
+  stockInOrderLines?: Prisma.StockInOrderLineCreateNestedManyWithoutMaterialInput;
+  customerStockOrderLines?: Prisma.CustomerStockOrderLineCreateNestedManyWithoutMaterialInput;
+  workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineCreateNestedManyWithoutMaterialInput;
+  projectMaterialLines?: Prisma.ProjectMaterialLineCreateNestedManyWithoutMaterialInput;
+  rdHandoffOrderLines?: Prisma.RdHandoffOrderLineCreateNestedManyWithoutMaterialInput;
+  rdProcurementRequestLines?: Prisma.RdProcurementRequestLineCreateNestedManyWithoutMaterialInput;
+};
+
+export type MaterialUncheckedCreateWithoutRdStocktakeOrderLinesInput = {
+  id?: number;
+  materialCode: string;
+  materialName: string;
+  specModel?: string | null;
+  categoryId?: number | null;
+  unitCode: string;
+  warningMinQty?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | null;
+  warningMaxQty?:
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | null;
+  status?: $Enums.MasterDataStatus;
+  creationMode?: $Enums.DataCreationMode;
+  sourceDocumentType?: string | null;
+  sourceDocumentId?: number | null;
+  createdBy?: string | null;
+  createdAt?: Date | string;
+  updatedBy?: string | null;
+  updatedAt?: Date | string;
+  inventoryBalances?: Prisma.InventoryBalanceUncheckedCreateNestedManyWithoutMaterialInput;
+  inventoryLogs?: Prisma.InventoryLogUncheckedCreateNestedManyWithoutMaterialInput;
+  inventorySourceUsages?: Prisma.InventorySourceUsageUncheckedCreateNestedManyWithoutMaterialInput;
+  factoryNumberReservations?: Prisma.FactoryNumberReservationUncheckedCreateNestedManyWithoutMaterialInput;
+  stockInOrderLines?: Prisma.StockInOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
+  customerStockOrderLines?: Prisma.CustomerStockOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
+  workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
+  projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedCreateNestedManyWithoutMaterialInput;
+  rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedCreateNestedManyWithoutMaterialInput;
+  rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedCreateNestedManyWithoutMaterialInput;
+};
+
+export type MaterialCreateOrConnectWithoutRdStocktakeOrderLinesInput = {
+  where: Prisma.MaterialWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.MaterialCreateWithoutRdStocktakeOrderLinesInput,
+    Prisma.MaterialUncheckedCreateWithoutRdStocktakeOrderLinesInput
+  >;
+};
+
+export type MaterialUpsertWithoutRdStocktakeOrderLinesInput = {
+  update: Prisma.XOR<
+    Prisma.MaterialUpdateWithoutRdStocktakeOrderLinesInput,
+    Prisma.MaterialUncheckedUpdateWithoutRdStocktakeOrderLinesInput
+  >;
+  create: Prisma.XOR<
+    Prisma.MaterialCreateWithoutRdStocktakeOrderLinesInput,
+    Prisma.MaterialUncheckedCreateWithoutRdStocktakeOrderLinesInput
+  >;
+  where?: Prisma.MaterialWhereInput;
+};
+
+export type MaterialUpdateToOneWithWhereWithoutRdStocktakeOrderLinesInput = {
+  where?: Prisma.MaterialWhereInput;
+  data: Prisma.XOR<
+    Prisma.MaterialUpdateWithoutRdStocktakeOrderLinesInput,
+    Prisma.MaterialUncheckedUpdateWithoutRdStocktakeOrderLinesInput
+  >;
+};
+
+export type MaterialUpdateWithoutRdStocktakeOrderLinesInput = {
+  materialCode?: Prisma.StringFieldUpdateOperationsInput | string;
+  materialName?: Prisma.StringFieldUpdateOperationsInput | string;
+  specModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  unitCode?: Prisma.StringFieldUpdateOperationsInput | string;
+  warningMinQty?:
+    | Prisma.NullableDecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | null;
+  warningMaxQty?:
+    | Prisma.NullableDecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | null;
+  status?:
+    | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
+    | $Enums.MasterDataStatus;
+  creationMode?:
+    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
+    | $Enums.DataCreationMode;
+  sourceDocumentType?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  sourceDocumentId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
+  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  category?: Prisma.MaterialCategoryUpdateOneWithoutMaterialsNestedInput;
+  inventoryBalances?: Prisma.InventoryBalanceUpdateManyWithoutMaterialNestedInput;
+  inventoryLogs?: Prisma.InventoryLogUpdateManyWithoutMaterialNestedInput;
+  inventorySourceUsages?: Prisma.InventorySourceUsageUpdateManyWithoutMaterialNestedInput;
+  factoryNumberReservations?: Prisma.FactoryNumberReservationUpdateManyWithoutMaterialNestedInput;
+  stockInOrderLines?: Prisma.StockInOrderLineUpdateManyWithoutMaterialNestedInput;
+  customerStockOrderLines?: Prisma.CustomerStockOrderLineUpdateManyWithoutMaterialNestedInput;
+  workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineUpdateManyWithoutMaterialNestedInput;
+  projectMaterialLines?: Prisma.ProjectMaterialLineUpdateManyWithoutMaterialNestedInput;
+  rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUpdateManyWithoutMaterialNestedInput;
+  rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUpdateManyWithoutMaterialNestedInput;
+};
+
+export type MaterialUncheckedUpdateWithoutRdStocktakeOrderLinesInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number;
+  materialCode?: Prisma.StringFieldUpdateOperationsInput | string;
+  materialName?: Prisma.StringFieldUpdateOperationsInput | string;
+  specModel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  categoryId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
+  unitCode?: Prisma.StringFieldUpdateOperationsInput | string;
+  warningMinQty?:
+    | Prisma.NullableDecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | null;
+  warningMaxQty?:
+    | Prisma.NullableDecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string
+    | null;
+  status?:
+    | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
+    | $Enums.MasterDataStatus;
+  creationMode?:
+    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
+    | $Enums.DataCreationMode;
+  sourceDocumentType?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  sourceDocumentId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
+  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  inventoryBalances?: Prisma.InventoryBalanceUncheckedUpdateManyWithoutMaterialNestedInput;
+  inventoryLogs?: Prisma.InventoryLogUncheckedUpdateManyWithoutMaterialNestedInput;
+  inventorySourceUsages?: Prisma.InventorySourceUsageUncheckedUpdateManyWithoutMaterialNestedInput;
+  factoryNumberReservations?: Prisma.FactoryNumberReservationUncheckedUpdateManyWithoutMaterialNestedInput;
+  stockInOrderLines?: Prisma.StockInOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  customerStockOrderLines?: Prisma.CustomerStockOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  workshopMaterialOrderLines?: Prisma.WorkshopMaterialOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialCreateManyCategoryInput = {
@@ -3536,6 +3817,7 @@ export type MaterialUpdateWithoutCategoryInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialUncheckedUpdateWithoutCategoryInput = {
@@ -3586,6 +3868,7 @@ export type MaterialUncheckedUpdateWithoutCategoryInput = {
   projectMaterialLines?: Prisma.ProjectMaterialLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdHandoffOrderLines?: Prisma.RdHandoffOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
   rdProcurementRequestLines?: Prisma.RdProcurementRequestLineUncheckedUpdateManyWithoutMaterialNestedInput;
+  rdStocktakeOrderLines?: Prisma.RdStocktakeOrderLineUncheckedUpdateManyWithoutMaterialNestedInput;
 };
 
 export type MaterialUncheckedUpdateManyWithoutCategoryInput = {
@@ -3643,6 +3926,7 @@ export type MaterialCountOutputType = {
   projectMaterialLines: number;
   rdHandoffOrderLines: number;
   rdProcurementRequestLines: number;
+  rdStocktakeOrderLines: number;
 };
 
 export type MaterialCountOutputTypeSelect<
@@ -3677,6 +3961,9 @@ export type MaterialCountOutputTypeSelect<
   rdProcurementRequestLines?:
     | boolean
     | MaterialCountOutputTypeCountRdProcurementRequestLinesArgs;
+  rdStocktakeOrderLines?:
+    | boolean
+    | MaterialCountOutputTypeCountRdStocktakeOrderLinesArgs;
 };
 
 /**
@@ -3792,6 +4079,16 @@ export type MaterialCountOutputTypeCountRdProcurementRequestLinesArgs<
   where?: Prisma.RdProcurementRequestLineWhereInput;
 };
 
+/**
+ * MaterialCountOutputType without action
+ */
+export type MaterialCountOutputTypeCountRdStocktakeOrderLinesArgs<
+  ExtArgs extends
+    runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.RdStocktakeOrderLineWhereInput;
+};
+
 export type MaterialSelect<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
@@ -3842,6 +4139,9 @@ export type MaterialSelect<
     rdProcurementRequestLines?:
       | boolean
       | Prisma.Material$rdProcurementRequestLinesArgs<ExtArgs>;
+    rdStocktakeOrderLines?:
+      | boolean
+      | Prisma.Material$rdStocktakeOrderLinesArgs<ExtArgs>;
     _count?: boolean | Prisma.MaterialCountOutputTypeDefaultArgs<ExtArgs>;
   },
   ExtArgs["result"]["material"]
@@ -3917,6 +4217,9 @@ export type MaterialInclude<
   rdProcurementRequestLines?:
     | boolean
     | Prisma.Material$rdProcurementRequestLinesArgs<ExtArgs>;
+  rdStocktakeOrderLines?:
+    | boolean
+    | Prisma.Material$rdStocktakeOrderLinesArgs<ExtArgs>;
   _count?: boolean | Prisma.MaterialCountOutputTypeDefaultArgs<ExtArgs>;
 };
 
@@ -3937,6 +4240,7 @@ export type $MaterialPayload<
     projectMaterialLines: Prisma.$ProjectMaterialLinePayload<ExtArgs>[];
     rdHandoffOrderLines: Prisma.$RdHandoffOrderLinePayload<ExtArgs>[];
     rdProcurementRequestLines: Prisma.$RdProcurementRequestLinePayload<ExtArgs>[];
+    rdStocktakeOrderLines: Prisma.$RdStocktakeOrderLinePayload<ExtArgs>[];
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -4581,6 +4885,19 @@ export interface Prisma__MaterialClient<
   ): Prisma.PrismaPromise<
     | runtime.Types.Result.GetResult<
         Prisma.$RdProcurementRequestLinePayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
+  rdStocktakeOrderLines<
+    T extends Prisma.Material$rdStocktakeOrderLinesArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<T, Prisma.Material$rdStocktakeOrderLinesArgs<ExtArgs>>,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$RdStocktakeOrderLinePayload<ExtArgs>,
         T,
         "findMany",
         GlobalOmitOptions
@@ -5378,6 +5695,37 @@ export type Material$rdProcurementRequestLinesArgs<
   distinct?:
     | Prisma.RdProcurementRequestLineScalarFieldEnum
     | Prisma.RdProcurementRequestLineScalarFieldEnum[];
+};
+
+/**
+ * Material.rdStocktakeOrderLines
+ */
+export type Material$rdStocktakeOrderLinesArgs<
+  ExtArgs extends
+    runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the RdStocktakeOrderLine
+   */
+  select?: Prisma.RdStocktakeOrderLineSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the RdStocktakeOrderLine
+   */
+  omit?: Prisma.RdStocktakeOrderLineOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RdStocktakeOrderLineInclude<ExtArgs> | null;
+  where?: Prisma.RdStocktakeOrderLineWhereInput;
+  orderBy?:
+    | Prisma.RdStocktakeOrderLineOrderByWithRelationInput
+    | Prisma.RdStocktakeOrderLineOrderByWithRelationInput[];
+  cursor?: Prisma.RdStocktakeOrderLineWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.RdStocktakeOrderLineScalarFieldEnum
+    | Prisma.RdStocktakeOrderLineScalarFieldEnum[];
 };
 
 /**

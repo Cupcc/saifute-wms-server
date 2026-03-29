@@ -11,10 +11,22 @@ import {
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
+import {
+  applyAcceptanceStatusesForOrder,
+  reverseAcceptanceStatusesForOrder,
+} from "../../rd-subwarehouse/application/rd-material-status.helper";
 import { RdProcurementRequestService } from "../../rd-subwarehouse/application/rd-procurement-request.service";
 import { WorkflowService } from "../../workflow/application/workflow.service";
 import { InboundRepository } from "../infrastructure/inbound.repository";
 import { InboundService } from "./inbound.service";
+
+jest.mock(
+  "../../rd-subwarehouse/application/rd-material-status.helper",
+  () => ({
+    applyAcceptanceStatusesForOrder: jest.fn().mockResolvedValue(undefined),
+    reverseAcceptanceStatusesForOrder: jest.fn().mockResolvedValue(undefined),
+  }),
+);
 
 describe("InboundService", () => {
   const mockOrder = {
@@ -284,6 +296,7 @@ describe("InboundService", () => {
         }),
         expect.anything(),
       );
+      expect(applyAcceptanceStatusesForOrder).toHaveBeenCalled();
     });
 
     it("should reject linked acceptance when workshop is not main", async () => {
@@ -393,6 +406,8 @@ describe("InboundService", () => {
 
       expect(inventoryService.reverseStock).toHaveBeenCalled();
       expect(inventoryService.increaseStock).toHaveBeenCalled();
+      expect(reverseAcceptanceStatusesForOrder).toHaveBeenCalled();
+      expect(applyAcceptanceStatusesForOrder).toHaveBeenCalled();
       expect(workflowService.createOrRefreshAuditDocument).toHaveBeenCalled();
     });
   });
@@ -442,6 +457,7 @@ describe("InboundService", () => {
         "1",
         expect.anything(),
       );
+      expect(reverseAcceptanceStatusesForOrder).toHaveBeenCalled();
       expect(result).not.toBeNull();
       if (result) {
         expect(result.lifecycleStatus).toBe(DocumentLifecycleStatus.VOIDED);

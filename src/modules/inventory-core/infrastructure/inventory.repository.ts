@@ -34,6 +34,21 @@ export class InventoryRepository {
     return { items, total };
   }
 
+  async findBalanceByMaterialAndWorkshop(
+    materialId: number,
+    workshopId: number,
+    db: InventoryDbClient = this.prisma,
+  ) {
+    return db.inventoryBalance.findUnique({
+      where: {
+        materialId_workshopId: {
+          materialId,
+          workshopId,
+        },
+      },
+    });
+  }
+
   async findLogs(params: {
     materialId?: number;
     workshopId?: number;

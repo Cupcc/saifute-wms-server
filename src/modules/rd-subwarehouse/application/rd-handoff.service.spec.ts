@@ -12,9 +12,31 @@ import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { RdHandoffRepository } from "../infrastructure/rd-handoff.repository";
+import { RdProcurementRequestRepository } from "../infrastructure/rd-procurement-request.repository";
 import { RdHandoffService } from "./rd-handoff.service";
+import {
+  applyHandoffStatusesForOrder,
+  reverseHandoffStatusesForOrder,
+} from "./rd-material-status.helper";
+
+jest.mock("./rd-material-status.helper", () => ({
+  RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE: "RdProcurementRequest",
+  applyHandoffStatusesForOrder: jest.fn().mockResolvedValue(undefined),
+  reverseHandoffStatusesForOrder: jest.fn().mockResolvedValue(0),
+}));
 
 describe("RdHandoffService", () => {
+  const mockRequest = {
+    id: 5,
+    lifecycleStatus: DocumentLifecycleStatus.EFFECTIVE,
+    lines: [
+      {
+        id: 501,
+        materialId: 100,
+        quantity: new Prisma.Decimal(8),
+      },
+    ],
+  };
   const mockOrder = {
     id: 1,
     documentNo: "RDH-001",
@@ -52,6 +74,9 @@ describe("RdHandoffService", () => {
         quantity: new Prisma.Decimal(8),
         unitPrice: new Prisma.Decimal(10),
         amount: new Prisma.Decimal(80),
+        sourceDocumentType: "RdProcurementRequest",
+        sourceDocumentId: 5,
+        sourceDocumentLineId: 501,
         remark: null,
         createdBy: "1",
         createdAt: new Date(),
@@ -63,6 +88,7 @@ describe("RdHandoffService", () => {
 
   let service: RdHandoffService;
   let repository: jest.Mocked<RdHandoffRepository>;
+  let rdProcurementRequestRepository: jest.Mocked<RdProcurementRequestRepository>;
   let masterDataService: jest.Mocked<MasterDataService>;
   let inventoryService: jest.Mocked<InventoryService>;
   let prisma: { runInTransaction: jest.Mock };
@@ -89,6 +115,12 @@ describe("RdHandoffService", () => {
             findOrderByDocumentNo: jest.fn(),
             createOrder: jest.fn(),
             updateOrder: jest.fn(),
+          },
+        },
+        {
+          provide: RdProcurementRequestRepository,
+          useValue: {
+            findRequestById: jest.fn().mockResolvedValue(mockRequest),
           },
         },
         {
@@ -134,6 +166,9 @@ describe("RdHandoffService", () => {
 
     service = moduleRef.get(RdHandoffService);
     repository = moduleRef.get(RdHandoffRepository);
+    rdProcurementRequestRepository = moduleRef.get(
+      RdProcurementRequestRepository,
+    );
     masterDataService = moduleRef.get(MasterDataService);
     inventoryService = moduleRef.get(InventoryService);
   });
@@ -148,7 +183,15 @@ describe("RdHandoffService", () => {
         bizDate: "2026-03-28",
         sourceWorkshopId: 1,
         handlerPersonnelId: 20,
-        lines: [{ materialId: 100, quantity: "8", unitPrice: "10" }],
+        lines: [
+          {
+            materialId: 100,
+            quantity: "8",
+            unitPrice: "10",
+            sourceDocumentId: 5,
+            sourceDocumentLineId: 501,
+          },
+        ],
       },
       "1",
     );
@@ -171,6 +214,10 @@ describe("RdHandoffService", () => {
       }),
       expect.anything(),
     );
+    expect(rdProcurementRequestRepository.findRequestById).toHaveBeenCalledWith(
+      5,
+    );
+    expect(applyHandoffStatusesForOrder).toHaveBeenCalled();
     expect(masterDataService.getWorkshopByCode).toHaveBeenCalledWith("RD");
   });
 
@@ -182,7 +229,14 @@ describe("RdHandoffService", () => {
         documentNo: "RDH-001",
         bizDate: "2026-03-28",
         sourceWorkshopId: 1,
-        lines: [{ materialId: 100, quantity: "8" }],
+        lines: [
+          {
+            materialId: 100,
+            quantity: "8",
+            sourceDocumentId: 5,
+            sourceDocumentLineId: 501,
+          },
+        ],
       }),
     ).rejects.toThrow(ConflictException);
   });
@@ -200,13 +254,21 @@ describe("RdHandoffService", () => {
         documentNo: "RDH-002",
         bizDate: "2026-03-28",
         sourceWorkshopId: 2,
-        lines: [{ materialId: 100, quantity: "2" }],
+        lines: [
+          {
+            materialId: 100,
+            quantity: "2",
+            sourceDocumentId: 5,
+            sourceDocumentLineId: 501,
+          },
+        ],
       }),
     ).rejects.toThrow("当前切片只允许主仓发起到 RD 小仓的交接");
     expect(repository.createOrder).not.toHaveBeenCalled();
   });
 
   it("voids a handoff order and reverses RD-side stock first", async () => {
+    (reverseHandoffStatusesForOrder as jest.Mock).mockResolvedValueOnce(1);
     repository.findOrderById
       .mockResolvedValueOnce(mockOrder)
       .mockResolvedValueOnce({
@@ -233,6 +295,12 @@ describe("RdHandoffService", () => {
         lifecycleStatus: DocumentLifecycleStatus.VOIDED,
         inventoryEffectStatus: InventoryEffectStatus.REVERSED,
         voidReason: "rollback",
+      }),
+      expect.anything(),
+    );
+    expect(reverseHandoffStatusesForOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: 1,
       }),
       expect.anything(),
     );

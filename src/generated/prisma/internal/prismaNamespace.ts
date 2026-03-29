@@ -437,6 +437,10 @@ export const ModelName = {
   RdHandoffOrderLine: "RdHandoffOrderLine",
   RdProcurementRequest: "RdProcurementRequest",
   RdProcurementRequestLine: "RdProcurementRequestLine",
+  RdMaterialStatusLedger: "RdMaterialStatusLedger",
+  RdMaterialStatusHistory: "RdMaterialStatusHistory",
+  RdStocktakeOrder: "RdStocktakeOrder",
+  RdStocktakeOrderLine: "RdStocktakeOrderLine",
   DocumentRelation: "DocumentRelation",
   DocumentLineRelation: "DocumentLineRelation",
   LoginLog: "LoginLog",
@@ -488,6 +492,10 @@ export type TypeMap<
       | "rdHandoffOrderLine"
       | "rdProcurementRequest"
       | "rdProcurementRequestLine"
+      | "rdMaterialStatusLedger"
+      | "rdMaterialStatusHistory"
+      | "rdStocktakeOrder"
+      | "rdStocktakeOrderLine"
       | "documentRelation"
       | "documentLineRelation"
       | "loginLog"
@@ -2061,6 +2069,278 @@ export type TypeMap<
         };
       };
     };
+    RdMaterialStatusLedger: {
+      payload: Prisma.$RdMaterialStatusLedgerPayload<ExtArgs>;
+      fields: Prisma.RdMaterialStatusLedgerFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.RdMaterialStatusLedgerFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusLedgerPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.RdMaterialStatusLedgerFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusLedgerPayload>;
+        };
+        findFirst: {
+          args: Prisma.RdMaterialStatusLedgerFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusLedgerPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.RdMaterialStatusLedgerFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusLedgerPayload>;
+        };
+        findMany: {
+          args: Prisma.RdMaterialStatusLedgerFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusLedgerPayload>[];
+        };
+        create: {
+          args: Prisma.RdMaterialStatusLedgerCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusLedgerPayload>;
+        };
+        createMany: {
+          args: Prisma.RdMaterialStatusLedgerCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        delete: {
+          args: Prisma.RdMaterialStatusLedgerDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusLedgerPayload>;
+        };
+        update: {
+          args: Prisma.RdMaterialStatusLedgerUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusLedgerPayload>;
+        };
+        deleteMany: {
+          args: Prisma.RdMaterialStatusLedgerDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.RdMaterialStatusLedgerUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        upsert: {
+          args: Prisma.RdMaterialStatusLedgerUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusLedgerPayload>;
+        };
+        aggregate: {
+          args: Prisma.RdMaterialStatusLedgerAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRdMaterialStatusLedger>;
+        };
+        groupBy: {
+          args: Prisma.RdMaterialStatusLedgerGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.RdMaterialStatusLedgerGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.RdMaterialStatusLedgerCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.RdMaterialStatusLedgerCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    RdMaterialStatusHistory: {
+      payload: Prisma.$RdMaterialStatusHistoryPayload<ExtArgs>;
+      fields: Prisma.RdMaterialStatusHistoryFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.RdMaterialStatusHistoryFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusHistoryPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.RdMaterialStatusHistoryFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusHistoryPayload>;
+        };
+        findFirst: {
+          args: Prisma.RdMaterialStatusHistoryFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusHistoryPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.RdMaterialStatusHistoryFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusHistoryPayload>;
+        };
+        findMany: {
+          args: Prisma.RdMaterialStatusHistoryFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusHistoryPayload>[];
+        };
+        create: {
+          args: Prisma.RdMaterialStatusHistoryCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusHistoryPayload>;
+        };
+        createMany: {
+          args: Prisma.RdMaterialStatusHistoryCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        delete: {
+          args: Prisma.RdMaterialStatusHistoryDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusHistoryPayload>;
+        };
+        update: {
+          args: Prisma.RdMaterialStatusHistoryUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusHistoryPayload>;
+        };
+        deleteMany: {
+          args: Prisma.RdMaterialStatusHistoryDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.RdMaterialStatusHistoryUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        upsert: {
+          args: Prisma.RdMaterialStatusHistoryUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdMaterialStatusHistoryPayload>;
+        };
+        aggregate: {
+          args: Prisma.RdMaterialStatusHistoryAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRdMaterialStatusHistory>;
+        };
+        groupBy: {
+          args: Prisma.RdMaterialStatusHistoryGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.RdMaterialStatusHistoryGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.RdMaterialStatusHistoryCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.RdMaterialStatusHistoryCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    RdStocktakeOrder: {
+      payload: Prisma.$RdStocktakeOrderPayload<ExtArgs>;
+      fields: Prisma.RdStocktakeOrderFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.RdStocktakeOrderFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.RdStocktakeOrderFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderPayload>;
+        };
+        findFirst: {
+          args: Prisma.RdStocktakeOrderFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.RdStocktakeOrderFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderPayload>;
+        };
+        findMany: {
+          args: Prisma.RdStocktakeOrderFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderPayload>[];
+        };
+        create: {
+          args: Prisma.RdStocktakeOrderCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderPayload>;
+        };
+        createMany: {
+          args: Prisma.RdStocktakeOrderCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        delete: {
+          args: Prisma.RdStocktakeOrderDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderPayload>;
+        };
+        update: {
+          args: Prisma.RdStocktakeOrderUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderPayload>;
+        };
+        deleteMany: {
+          args: Prisma.RdStocktakeOrderDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.RdStocktakeOrderUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        upsert: {
+          args: Prisma.RdStocktakeOrderUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderPayload>;
+        };
+        aggregate: {
+          args: Prisma.RdStocktakeOrderAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRdStocktakeOrder>;
+        };
+        groupBy: {
+          args: Prisma.RdStocktakeOrderGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.RdStocktakeOrderGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.RdStocktakeOrderCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.RdStocktakeOrderCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
+    RdStocktakeOrderLine: {
+      payload: Prisma.$RdStocktakeOrderLinePayload<ExtArgs>;
+      fields: Prisma.RdStocktakeOrderLineFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.RdStocktakeOrderLineFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderLinePayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.RdStocktakeOrderLineFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderLinePayload>;
+        };
+        findFirst: {
+          args: Prisma.RdStocktakeOrderLineFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderLinePayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.RdStocktakeOrderLineFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderLinePayload>;
+        };
+        findMany: {
+          args: Prisma.RdStocktakeOrderLineFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderLinePayload>[];
+        };
+        create: {
+          args: Prisma.RdStocktakeOrderLineCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderLinePayload>;
+        };
+        createMany: {
+          args: Prisma.RdStocktakeOrderLineCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        delete: {
+          args: Prisma.RdStocktakeOrderLineDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderLinePayload>;
+        };
+        update: {
+          args: Prisma.RdStocktakeOrderLineUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderLinePayload>;
+        };
+        deleteMany: {
+          args: Prisma.RdStocktakeOrderLineDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.RdStocktakeOrderLineUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        upsert: {
+          args: Prisma.RdStocktakeOrderLineUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$RdStocktakeOrderLinePayload>;
+        };
+        aggregate: {
+          args: Prisma.RdStocktakeOrderLineAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateRdStocktakeOrderLine>;
+        };
+        groupBy: {
+          args: Prisma.RdStocktakeOrderLineGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.RdStocktakeOrderLineGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.RdStocktakeOrderLineCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.RdStocktakeOrderLineCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
     DocumentRelation: {
       payload: Prisma.$DocumentRelationPayload<ExtArgs>;
       fields: Prisma.DocumentRelationFieldRefs;
@@ -2981,6 +3261,9 @@ export const RdHandoffOrderLineScalarFieldEnum = {
   quantity: "quantity",
   unitPrice: "unitPrice",
   amount: "amount",
+  sourceDocumentType: "sourceDocumentType",
+  sourceDocumentId: "sourceDocumentId",
+  sourceDocumentLineId: "sourceDocumentLineId",
   remark: "remark",
   createdBy: "createdBy",
   createdAt: "createdAt",
@@ -3043,6 +3326,103 @@ export const RdProcurementRequestLineScalarFieldEnum = {
 
 export type RdProcurementRequestLineScalarFieldEnum =
   (typeof RdProcurementRequestLineScalarFieldEnum)[keyof typeof RdProcurementRequestLineScalarFieldEnum];
+
+export const RdMaterialStatusLedgerScalarFieldEnum = {
+  id: "id",
+  requestLineId: "requestLineId",
+  pendingQty: "pendingQty",
+  inProcurementQty: "inProcurementQty",
+  canceledQty: "canceledQty",
+  acceptedQty: "acceptedQty",
+  handedOffQty: "handedOffQty",
+  scrappedQty: "scrappedQty",
+  returnedQty: "returnedQty",
+  lastEventAt: "lastEventAt",
+  createdBy: "createdBy",
+  createdAt: "createdAt",
+  updatedBy: "updatedBy",
+  updatedAt: "updatedAt",
+} as const;
+
+export type RdMaterialStatusLedgerScalarFieldEnum =
+  (typeof RdMaterialStatusLedgerScalarFieldEnum)[keyof typeof RdMaterialStatusLedgerScalarFieldEnum];
+
+export const RdMaterialStatusHistoryScalarFieldEnum = {
+  id: "id",
+  requestLineId: "requestLineId",
+  eventType: "eventType",
+  fromStatus: "fromStatus",
+  toStatus: "toStatus",
+  quantity: "quantity",
+  sourceDocumentType: "sourceDocumentType",
+  sourceDocumentId: "sourceDocumentId",
+  sourceDocumentLineId: "sourceDocumentLineId",
+  sourceDocumentNumber: "sourceDocumentNumber",
+  referenceNo: "referenceNo",
+  reason: "reason",
+  note: "note",
+  relatedInventoryLogId: "relatedInventoryLogId",
+  reversalOfHistoryId: "reversalOfHistoryId",
+  isReversed: "isReversed",
+  reversedBy: "reversedBy",
+  reversedAt: "reversedAt",
+  createdBy: "createdBy",
+  createdAt: "createdAt",
+} as const;
+
+export type RdMaterialStatusHistoryScalarFieldEnum =
+  (typeof RdMaterialStatusHistoryScalarFieldEnum)[keyof typeof RdMaterialStatusHistoryScalarFieldEnum];
+
+export const RdStocktakeOrderScalarFieldEnum = {
+  id: "id",
+  documentNo: "documentNo",
+  bizDate: "bizDate",
+  workshopId: "workshopId",
+  lifecycleStatus: "lifecycleStatus",
+  inventoryEffectStatus: "inventoryEffectStatus",
+  auditStatusSnapshot: "auditStatusSnapshot",
+  revisionNo: "revisionNo",
+  countedBy: "countedBy",
+  approvedBy: "approvedBy",
+  totalBookQty: "totalBookQty",
+  totalCountQty: "totalCountQty",
+  totalAdjustmentQty: "totalAdjustmentQty",
+  remark: "remark",
+  voidReason: "voidReason",
+  voidedBy: "voidedBy",
+  voidedAt: "voidedAt",
+  createdBy: "createdBy",
+  createdAt: "createdAt",
+  updatedBy: "updatedBy",
+  updatedAt: "updatedAt",
+} as const;
+
+export type RdStocktakeOrderScalarFieldEnum =
+  (typeof RdStocktakeOrderScalarFieldEnum)[keyof typeof RdStocktakeOrderScalarFieldEnum];
+
+export const RdStocktakeOrderLineScalarFieldEnum = {
+  id: "id",
+  orderId: "orderId",
+  lineNo: "lineNo",
+  materialId: "materialId",
+  materialCodeSnapshot: "materialCodeSnapshot",
+  materialNameSnapshot: "materialNameSnapshot",
+  materialSpecSnapshot: "materialSpecSnapshot",
+  unitCodeSnapshot: "unitCodeSnapshot",
+  bookQty: "bookQty",
+  countedQty: "countedQty",
+  adjustmentQty: "adjustmentQty",
+  inventoryLogId: "inventoryLogId",
+  reason: "reason",
+  remark: "remark",
+  createdBy: "createdBy",
+  createdAt: "createdAt",
+  updatedBy: "updatedBy",
+  updatedAt: "updatedAt",
+} as const;
+
+export type RdStocktakeOrderLineScalarFieldEnum =
+  (typeof RdStocktakeOrderLineScalarFieldEnum)[keyof typeof RdStocktakeOrderLineScalarFieldEnum];
 
 export const DocumentRelationScalarFieldEnum = {
   id: "id",
@@ -3434,6 +3814,7 @@ export const RdHandoffOrderLineOrderByRelevanceFieldEnum = {
   materialNameSnapshot: "materialNameSnapshot",
   materialSpecSnapshot: "materialSpecSnapshot",
   unitCodeSnapshot: "unitCodeSnapshot",
+  sourceDocumentType: "sourceDocumentType",
   remark: "remark",
   createdBy: "createdBy",
   updatedBy: "updatedBy",
@@ -3472,6 +3853,55 @@ export const RdProcurementRequestLineOrderByRelevanceFieldEnum = {
 
 export type RdProcurementRequestLineOrderByRelevanceFieldEnum =
   (typeof RdProcurementRequestLineOrderByRelevanceFieldEnum)[keyof typeof RdProcurementRequestLineOrderByRelevanceFieldEnum];
+
+export const RdMaterialStatusLedgerOrderByRelevanceFieldEnum = {
+  createdBy: "createdBy",
+  updatedBy: "updatedBy",
+} as const;
+
+export type RdMaterialStatusLedgerOrderByRelevanceFieldEnum =
+  (typeof RdMaterialStatusLedgerOrderByRelevanceFieldEnum)[keyof typeof RdMaterialStatusLedgerOrderByRelevanceFieldEnum];
+
+export const RdMaterialStatusHistoryOrderByRelevanceFieldEnum = {
+  sourceDocumentType: "sourceDocumentType",
+  sourceDocumentNumber: "sourceDocumentNumber",
+  referenceNo: "referenceNo",
+  reason: "reason",
+  note: "note",
+  reversedBy: "reversedBy",
+  createdBy: "createdBy",
+} as const;
+
+export type RdMaterialStatusHistoryOrderByRelevanceFieldEnum =
+  (typeof RdMaterialStatusHistoryOrderByRelevanceFieldEnum)[keyof typeof RdMaterialStatusHistoryOrderByRelevanceFieldEnum];
+
+export const RdStocktakeOrderOrderByRelevanceFieldEnum = {
+  documentNo: "documentNo",
+  countedBy: "countedBy",
+  approvedBy: "approvedBy",
+  remark: "remark",
+  voidReason: "voidReason",
+  voidedBy: "voidedBy",
+  createdBy: "createdBy",
+  updatedBy: "updatedBy",
+} as const;
+
+export type RdStocktakeOrderOrderByRelevanceFieldEnum =
+  (typeof RdStocktakeOrderOrderByRelevanceFieldEnum)[keyof typeof RdStocktakeOrderOrderByRelevanceFieldEnum];
+
+export const RdStocktakeOrderLineOrderByRelevanceFieldEnum = {
+  materialCodeSnapshot: "materialCodeSnapshot",
+  materialNameSnapshot: "materialNameSnapshot",
+  materialSpecSnapshot: "materialSpecSnapshot",
+  unitCodeSnapshot: "unitCodeSnapshot",
+  reason: "reason",
+  remark: "remark",
+  createdBy: "createdBy",
+  updatedBy: "updatedBy",
+} as const;
+
+export type RdStocktakeOrderLineOrderByRelevanceFieldEnum =
+  (typeof RdStocktakeOrderLineOrderByRelevanceFieldEnum)[keyof typeof RdStocktakeOrderLineOrderByRelevanceFieldEnum];
 
 export const DocumentRelationOrderByRelevanceFieldEnum = {
   upstreamDocumentType: "upstreamDocumentType",
@@ -3667,10 +4097,18 @@ export type EnumWorkshopMaterialOrderTypeFieldRefInput<$PrismaModel> =
   FieldRefInputType<$PrismaModel, "WorkshopMaterialOrderType">;
 
 /**
- * Reference to a field of type 'DocumentRelationType'
+ * Reference to a field of type 'RdMaterialStatusEventType'
  */
-export type EnumDocumentRelationTypeFieldRefInput<$PrismaModel> =
-  FieldRefInputType<$PrismaModel, "DocumentRelationType">;
+export type EnumRdMaterialStatusEventTypeFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "RdMaterialStatusEventType">;
+
+/**
+ * Reference to a field of type 'RdMaterialStatus'
+ */
+export type EnumRdMaterialStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "RdMaterialStatus"
+>;
 
 /**
  * Reference to a field of type 'Boolean'
@@ -3679,6 +4117,12 @@ export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<
   $PrismaModel,
   "Boolean"
 >;
+
+/**
+ * Reference to a field of type 'DocumentRelationType'
+ */
+export type EnumDocumentRelationTypeFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "DocumentRelationType">;
 
 /**
  * Reference to a field of type 'LoginLogAction'
@@ -3862,6 +4306,10 @@ export type GlobalOmitConfig = {
   rdHandoffOrderLine?: Prisma.RdHandoffOrderLineOmit;
   rdProcurementRequest?: Prisma.RdProcurementRequestOmit;
   rdProcurementRequestLine?: Prisma.RdProcurementRequestLineOmit;
+  rdMaterialStatusLedger?: Prisma.RdMaterialStatusLedgerOmit;
+  rdMaterialStatusHistory?: Prisma.RdMaterialStatusHistoryOmit;
+  rdStocktakeOrder?: Prisma.RdStocktakeOrderOmit;
+  rdStocktakeOrderLine?: Prisma.RdStocktakeOrderLineOmit;
   documentRelation?: Prisma.DocumentRelationOmit;
   documentLineRelation?: Prisma.DocumentLineRelationOmit;
   loginLog?: Prisma.LoginLogOmit;

@@ -160,6 +160,26 @@ export type RdProcurementRequest = Prisma.RdProcurementRequestModel;
  */
 export type RdProcurementRequestLine = Prisma.RdProcurementRequestLineModel;
 /**
+ * Model RdMaterialStatusLedger
+ *
+ */
+export type RdMaterialStatusLedger = Prisma.RdMaterialStatusLedgerModel;
+/**
+ * Model RdMaterialStatusHistory
+ *
+ */
+export type RdMaterialStatusHistory = Prisma.RdMaterialStatusHistoryModel;
+/**
+ * Model RdStocktakeOrder
+ *
+ */
+export type RdStocktakeOrder = Prisma.RdStocktakeOrderModel;
+/**
+ * Model RdStocktakeOrderLine
+ *
+ */
+export type RdStocktakeOrderLine = Prisma.RdStocktakeOrderLineModel;
+/**
  * Model DocumentRelation
  *
  */

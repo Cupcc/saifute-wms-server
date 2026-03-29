@@ -45,6 +45,7 @@
 
 | Task 文档 | 保留原因 |
 | --- | --- |
+| `docs/tasks/archive/retained-completed/task-20260330-0129-rd-subwarehouse-phase4-phase5.md` | 已完成 `RD 小仓` `F4/F5` 收口：quantity-aware 物料状态链、RD 盘点/调整、动作级权限收紧与主仓验收联动展示已落地，并通过 focused tests、`pnpm test`、`web build:prod` 与 `rd-operator` / `admin` browser smoke。 |
 | `docs/tasks/archive/retained-completed/task-20260328-1855-biome-lint-cleanup.md` | 已完成全仓 `pnpm lint` 收口：`scripts/src/test` 低风险格式/import 噪音与 `web` 结构/宽松比较错误已按真实失败面收口，closing review `No findings`，根目录 `pnpm lint` 返回 `0`；若后续要继续压平 warnings / infos，需另开新 scope。 |
 | `docs/tasks/archive/retained-completed/task-20260328-1831-rd-procurement-main-acceptance-linkage.md` | 已完成 RD procurement/acceptance linkage foundation：RD 采购需求真源、主仓验收选择/带出、累计验收量保护、权限入口与前端页面已落地，并通过 closing review、`pnpm test` 与 `pnpm --dir web build:prod`。 |
 | `docs/tasks/archive/retained-completed/task-20260326-0415-rd-subwarehouse-phase1-operating-foundation.md` | 已完成 RD Phase 1 operating foundation：研发独立工作台、固定仓别隔离、项目领用、本仓报废与研发侧库存/报表基础已落地，并通过 reviewer clean sign-off 与浏览器冒烟验证。 |

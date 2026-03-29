@@ -512,6 +512,21 @@ export class InventoryService {
     });
   }
 
+  async getBalanceSnapshot(
+    params: {
+      materialId: number;
+      workshopId: number;
+    },
+    tx?: Prisma.TransactionClient,
+  ) {
+    await this.ensureMasterDataExists(params.materialId, params.workshopId);
+    return this.repository.findBalanceByMaterialAndWorkshop(
+      params.materialId,
+      params.workshopId,
+      tx,
+    );
+  }
+
   async listLogs(params: {
     materialId?: number;
     workshopId?: number;

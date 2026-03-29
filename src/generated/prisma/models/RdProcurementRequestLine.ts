@@ -393,6 +393,11 @@ export type RdProcurementRequestLineWhereInput = {
     Prisma.MaterialWhereInput
   >;
   acceptanceLines?: Prisma.StockInOrderLineListRelationFilter;
+  statusLedger?: Prisma.XOR<
+    Prisma.RdMaterialStatusLedgerNullableScalarRelationFilter,
+    Prisma.RdMaterialStatusLedgerWhereInput
+  > | null;
+  statusHistories?: Prisma.RdMaterialStatusHistoryListRelationFilter;
 };
 
 export type RdProcurementRequestLineOrderByWithRelationInput = {
@@ -415,6 +420,8 @@ export type RdProcurementRequestLineOrderByWithRelationInput = {
   request?: Prisma.RdProcurementRequestOrderByWithRelationInput;
   material?: Prisma.MaterialOrderByWithRelationInput;
   acceptanceLines?: Prisma.StockInOrderLineOrderByRelationAggregateInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerOrderByWithRelationInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryOrderByRelationAggregateInput;
   _relevance?: Prisma.RdProcurementRequestLineOrderByRelevanceInput;
 };
 
@@ -490,6 +497,11 @@ export type RdProcurementRequestLineWhereUniqueInput = Prisma.AtLeast<
       Prisma.MaterialWhereInput
     >;
     acceptanceLines?: Prisma.StockInOrderLineListRelationFilter;
+    statusLedger?: Prisma.XOR<
+      Prisma.RdMaterialStatusLedgerNullableScalarRelationFilter,
+      Prisma.RdMaterialStatusLedgerWhereInput
+    > | null;
+    statusHistories?: Prisma.RdMaterialStatusHistoryListRelationFilter;
   },
   "id" | "requestId_lineNo"
 >;
@@ -604,6 +616,8 @@ export type RdProcurementRequestLineCreateInput = {
   request: Prisma.RdProcurementRequestCreateNestedOneWithoutLinesInput;
   material: Prisma.MaterialCreateNestedOneWithoutRdProcurementRequestLinesInput;
   acceptanceLines?: Prisma.StockInOrderLineCreateNestedManyWithoutRdProcurementRequestLineInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerCreateNestedOneWithoutRequestLineInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryCreateNestedManyWithoutRequestLineInput;
 };
 
 export type RdProcurementRequestLineUncheckedCreateInput = {
@@ -624,6 +638,8 @@ export type RdProcurementRequestLineUncheckedCreateInput = {
   updatedBy?: string | null;
   updatedAt?: Date | string;
   acceptanceLines?: Prisma.StockInOrderLineUncheckedCreateNestedManyWithoutRdProcurementRequestLineInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerUncheckedCreateNestedOneWithoutRequestLineInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryUncheckedCreateNestedManyWithoutRequestLineInput;
 };
 
 export type RdProcurementRequestLineUpdateInput = {
@@ -661,6 +677,8 @@ export type RdProcurementRequestLineUpdateInput = {
   request?: Prisma.RdProcurementRequestUpdateOneRequiredWithoutLinesNestedInput;
   material?: Prisma.MaterialUpdateOneRequiredWithoutRdProcurementRequestLinesNestedInput;
   acceptanceLines?: Prisma.StockInOrderLineUpdateManyWithoutRdProcurementRequestLineNestedInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerUpdateOneWithoutRequestLineNestedInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryUpdateManyWithoutRequestLineNestedInput;
 };
 
 export type RdProcurementRequestLineUncheckedUpdateInput = {
@@ -699,6 +717,8 @@ export type RdProcurementRequestLineUncheckedUpdateInput = {
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   acceptanceLines?: Prisma.StockInOrderLineUncheckedUpdateManyWithoutRdProcurementRequestLineNestedInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerUncheckedUpdateOneWithoutRequestLineNestedInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryUncheckedUpdateManyWithoutRequestLineNestedInput;
 };
 
 export type RdProcurementRequestLineCreateManyInput = {
@@ -894,6 +914,11 @@ export type RdProcurementRequestLineSumOrderByAggregateInput = {
   quantity?: Prisma.SortOrder;
   unitPrice?: Prisma.SortOrder;
   amount?: Prisma.SortOrder;
+};
+
+export type RdProcurementRequestLineScalarRelationFilter = {
+  is?: Prisma.RdProcurementRequestLineWhereInput;
+  isNot?: Prisma.RdProcurementRequestLineWhereInput;
 };
 
 export type RdProcurementRequestLineCreateNestedManyWithoutMaterialInput = {
@@ -1150,6 +1175,61 @@ export type RdProcurementRequestLineUncheckedUpdateManyWithoutRequestNestedInput
       | Prisma.RdProcurementRequestLineScalarWhereInput[];
   };
 
+export type RdProcurementRequestLineCreateNestedOneWithoutStatusLedgerInput = {
+  create?: Prisma.XOR<
+    Prisma.RdProcurementRequestLineCreateWithoutStatusLedgerInput,
+    Prisma.RdProcurementRequestLineUncheckedCreateWithoutStatusLedgerInput
+  >;
+  connectOrCreate?: Prisma.RdProcurementRequestLineCreateOrConnectWithoutStatusLedgerInput;
+  connect?: Prisma.RdProcurementRequestLineWhereUniqueInput;
+};
+
+export type RdProcurementRequestLineUpdateOneRequiredWithoutStatusLedgerNestedInput =
+  {
+    create?: Prisma.XOR<
+      Prisma.RdProcurementRequestLineCreateWithoutStatusLedgerInput,
+      Prisma.RdProcurementRequestLineUncheckedCreateWithoutStatusLedgerInput
+    >;
+    connectOrCreate?: Prisma.RdProcurementRequestLineCreateOrConnectWithoutStatusLedgerInput;
+    upsert?: Prisma.RdProcurementRequestLineUpsertWithoutStatusLedgerInput;
+    connect?: Prisma.RdProcurementRequestLineWhereUniqueInput;
+    update?: Prisma.XOR<
+      Prisma.XOR<
+        Prisma.RdProcurementRequestLineUpdateToOneWithWhereWithoutStatusLedgerInput,
+        Prisma.RdProcurementRequestLineUpdateWithoutStatusLedgerInput
+      >,
+      Prisma.RdProcurementRequestLineUncheckedUpdateWithoutStatusLedgerInput
+    >;
+  };
+
+export type RdProcurementRequestLineCreateNestedOneWithoutStatusHistoriesInput =
+  {
+    create?: Prisma.XOR<
+      Prisma.RdProcurementRequestLineCreateWithoutStatusHistoriesInput,
+      Prisma.RdProcurementRequestLineUncheckedCreateWithoutStatusHistoriesInput
+    >;
+    connectOrCreate?: Prisma.RdProcurementRequestLineCreateOrConnectWithoutStatusHistoriesInput;
+    connect?: Prisma.RdProcurementRequestLineWhereUniqueInput;
+  };
+
+export type RdProcurementRequestLineUpdateOneRequiredWithoutStatusHistoriesNestedInput =
+  {
+    create?: Prisma.XOR<
+      Prisma.RdProcurementRequestLineCreateWithoutStatusHistoriesInput,
+      Prisma.RdProcurementRequestLineUncheckedCreateWithoutStatusHistoriesInput
+    >;
+    connectOrCreate?: Prisma.RdProcurementRequestLineCreateOrConnectWithoutStatusHistoriesInput;
+    upsert?: Prisma.RdProcurementRequestLineUpsertWithoutStatusHistoriesInput;
+    connect?: Prisma.RdProcurementRequestLineWhereUniqueInput;
+    update?: Prisma.XOR<
+      Prisma.XOR<
+        Prisma.RdProcurementRequestLineUpdateToOneWithWhereWithoutStatusHistoriesInput,
+        Prisma.RdProcurementRequestLineUpdateWithoutStatusHistoriesInput
+      >,
+      Prisma.RdProcurementRequestLineUncheckedUpdateWithoutStatusHistoriesInput
+    >;
+  };
+
 export type RdProcurementRequestLineCreateWithoutMaterialInput = {
   lineNo: number;
   materialCodeSnapshot: string;
@@ -1166,6 +1246,8 @@ export type RdProcurementRequestLineCreateWithoutMaterialInput = {
   updatedAt?: Date | string;
   request: Prisma.RdProcurementRequestCreateNestedOneWithoutLinesInput;
   acceptanceLines?: Prisma.StockInOrderLineCreateNestedManyWithoutRdProcurementRequestLineInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerCreateNestedOneWithoutRequestLineInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryCreateNestedManyWithoutRequestLineInput;
 };
 
 export type RdProcurementRequestLineUncheckedCreateWithoutMaterialInput = {
@@ -1185,6 +1267,8 @@ export type RdProcurementRequestLineUncheckedCreateWithoutMaterialInput = {
   updatedBy?: string | null;
   updatedAt?: Date | string;
   acceptanceLines?: Prisma.StockInOrderLineUncheckedCreateNestedManyWithoutRdProcurementRequestLineInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerUncheckedCreateNestedOneWithoutRequestLineInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryUncheckedCreateNestedManyWithoutRequestLineInput;
 };
 
 export type RdProcurementRequestLineCreateOrConnectWithoutMaterialInput = {
@@ -1305,6 +1389,8 @@ export type RdProcurementRequestLineCreateWithoutAcceptanceLinesInput = {
   updatedAt?: Date | string;
   request: Prisma.RdProcurementRequestCreateNestedOneWithoutLinesInput;
   material: Prisma.MaterialCreateNestedOneWithoutRdProcurementRequestLinesInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerCreateNestedOneWithoutRequestLineInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryCreateNestedManyWithoutRequestLineInput;
 };
 
 export type RdProcurementRequestLineUncheckedCreateWithoutAcceptanceLinesInput =
@@ -1325,6 +1411,8 @@ export type RdProcurementRequestLineUncheckedCreateWithoutAcceptanceLinesInput =
     createdAt?: Date | string;
     updatedBy?: string | null;
     updatedAt?: Date | string;
+    statusLedger?: Prisma.RdMaterialStatusLedgerUncheckedCreateNestedOneWithoutRequestLineInput;
+    statusHistories?: Prisma.RdMaterialStatusHistoryUncheckedCreateNestedManyWithoutRequestLineInput;
   };
 
 export type RdProcurementRequestLineCreateOrConnectWithoutAcceptanceLinesInput =
@@ -1391,6 +1479,8 @@ export type RdProcurementRequestLineUpdateWithoutAcceptanceLinesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   request?: Prisma.RdProcurementRequestUpdateOneRequiredWithoutLinesNestedInput;
   material?: Prisma.MaterialUpdateOneRequiredWithoutRdProcurementRequestLinesNestedInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerUpdateOneWithoutRequestLineNestedInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryUpdateManyWithoutRequestLineNestedInput;
 };
 
 export type RdProcurementRequestLineUncheckedUpdateWithoutAcceptanceLinesInput =
@@ -1429,6 +1519,8 @@ export type RdProcurementRequestLineUncheckedUpdateWithoutAcceptanceLinesInput =
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    statusLedger?: Prisma.RdMaterialStatusLedgerUncheckedUpdateOneWithoutRequestLineNestedInput;
+    statusHistories?: Prisma.RdMaterialStatusHistoryUncheckedUpdateManyWithoutRequestLineNestedInput;
   };
 
 export type RdProcurementRequestLineCreateWithoutRequestInput = {
@@ -1447,6 +1539,8 @@ export type RdProcurementRequestLineCreateWithoutRequestInput = {
   updatedAt?: Date | string;
   material: Prisma.MaterialCreateNestedOneWithoutRdProcurementRequestLinesInput;
   acceptanceLines?: Prisma.StockInOrderLineCreateNestedManyWithoutRdProcurementRequestLineInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerCreateNestedOneWithoutRequestLineInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryCreateNestedManyWithoutRequestLineInput;
 };
 
 export type RdProcurementRequestLineUncheckedCreateWithoutRequestInput = {
@@ -1466,6 +1560,8 @@ export type RdProcurementRequestLineUncheckedCreateWithoutRequestInput = {
   updatedBy?: string | null;
   updatedAt?: Date | string;
   acceptanceLines?: Prisma.StockInOrderLineUncheckedCreateNestedManyWithoutRdProcurementRequestLineInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerUncheckedCreateNestedOneWithoutRequestLineInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryUncheckedCreateNestedManyWithoutRequestLineInput;
 };
 
 export type RdProcurementRequestLineCreateOrConnectWithoutRequestInput = {
@@ -1510,6 +1606,303 @@ export type RdProcurementRequestLineUpdateManyWithWhereWithoutRequestInput = {
     Prisma.RdProcurementRequestLineUncheckedUpdateManyWithoutRequestInput
   >;
 };
+
+export type RdProcurementRequestLineCreateWithoutStatusLedgerInput = {
+  lineNo: number;
+  materialCodeSnapshot: string;
+  materialNameSnapshot: string;
+  materialSpecSnapshot?: string | null;
+  unitCodeSnapshot: string;
+  quantity: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  remark?: string | null;
+  createdBy?: string | null;
+  createdAt?: Date | string;
+  updatedBy?: string | null;
+  updatedAt?: Date | string;
+  request: Prisma.RdProcurementRequestCreateNestedOneWithoutLinesInput;
+  material: Prisma.MaterialCreateNestedOneWithoutRdProcurementRequestLinesInput;
+  acceptanceLines?: Prisma.StockInOrderLineCreateNestedManyWithoutRdProcurementRequestLineInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryCreateNestedManyWithoutRequestLineInput;
+};
+
+export type RdProcurementRequestLineUncheckedCreateWithoutStatusLedgerInput = {
+  id?: number;
+  requestId: number;
+  lineNo: number;
+  materialId: number;
+  materialCodeSnapshot: string;
+  materialNameSnapshot: string;
+  materialSpecSnapshot?: string | null;
+  unitCodeSnapshot: string;
+  quantity: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  remark?: string | null;
+  createdBy?: string | null;
+  createdAt?: Date | string;
+  updatedBy?: string | null;
+  updatedAt?: Date | string;
+  acceptanceLines?: Prisma.StockInOrderLineUncheckedCreateNestedManyWithoutRdProcurementRequestLineInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryUncheckedCreateNestedManyWithoutRequestLineInput;
+};
+
+export type RdProcurementRequestLineCreateOrConnectWithoutStatusLedgerInput = {
+  where: Prisma.RdProcurementRequestLineWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.RdProcurementRequestLineCreateWithoutStatusLedgerInput,
+    Prisma.RdProcurementRequestLineUncheckedCreateWithoutStatusLedgerInput
+  >;
+};
+
+export type RdProcurementRequestLineUpsertWithoutStatusLedgerInput = {
+  update: Prisma.XOR<
+    Prisma.RdProcurementRequestLineUpdateWithoutStatusLedgerInput,
+    Prisma.RdProcurementRequestLineUncheckedUpdateWithoutStatusLedgerInput
+  >;
+  create: Prisma.XOR<
+    Prisma.RdProcurementRequestLineCreateWithoutStatusLedgerInput,
+    Prisma.RdProcurementRequestLineUncheckedCreateWithoutStatusLedgerInput
+  >;
+  where?: Prisma.RdProcurementRequestLineWhereInput;
+};
+
+export type RdProcurementRequestLineUpdateToOneWithWhereWithoutStatusLedgerInput =
+  {
+    where?: Prisma.RdProcurementRequestLineWhereInput;
+    data: Prisma.XOR<
+      Prisma.RdProcurementRequestLineUpdateWithoutStatusLedgerInput,
+      Prisma.RdProcurementRequestLineUncheckedUpdateWithoutStatusLedgerInput
+    >;
+  };
+
+export type RdProcurementRequestLineUpdateWithoutStatusLedgerInput = {
+  lineNo?: Prisma.IntFieldUpdateOperationsInput | number;
+  materialCodeSnapshot?: Prisma.StringFieldUpdateOperationsInput | string;
+  materialNameSnapshot?: Prisma.StringFieldUpdateOperationsInput | string;
+  materialSpecSnapshot?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  unitCodeSnapshot?: Prisma.StringFieldUpdateOperationsInput | string;
+  quantity?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  unitPrice?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  amount?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  request?: Prisma.RdProcurementRequestUpdateOneRequiredWithoutLinesNestedInput;
+  material?: Prisma.MaterialUpdateOneRequiredWithoutRdProcurementRequestLinesNestedInput;
+  acceptanceLines?: Prisma.StockInOrderLineUpdateManyWithoutRdProcurementRequestLineNestedInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryUpdateManyWithoutRequestLineNestedInput;
+};
+
+export type RdProcurementRequestLineUncheckedUpdateWithoutStatusLedgerInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number;
+  requestId?: Prisma.IntFieldUpdateOperationsInput | number;
+  lineNo?: Prisma.IntFieldUpdateOperationsInput | number;
+  materialId?: Prisma.IntFieldUpdateOperationsInput | number;
+  materialCodeSnapshot?: Prisma.StringFieldUpdateOperationsInput | string;
+  materialNameSnapshot?: Prisma.StringFieldUpdateOperationsInput | string;
+  materialSpecSnapshot?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  unitCodeSnapshot?: Prisma.StringFieldUpdateOperationsInput | string;
+  quantity?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  unitPrice?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  amount?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  acceptanceLines?: Prisma.StockInOrderLineUncheckedUpdateManyWithoutRdProcurementRequestLineNestedInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryUncheckedUpdateManyWithoutRequestLineNestedInput;
+};
+
+export type RdProcurementRequestLineCreateWithoutStatusHistoriesInput = {
+  lineNo: number;
+  materialCodeSnapshot: string;
+  materialNameSnapshot: string;
+  materialSpecSnapshot?: string | null;
+  unitCodeSnapshot: string;
+  quantity: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  amount?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+  remark?: string | null;
+  createdBy?: string | null;
+  createdAt?: Date | string;
+  updatedBy?: string | null;
+  updatedAt?: Date | string;
+  request: Prisma.RdProcurementRequestCreateNestedOneWithoutLinesInput;
+  material: Prisma.MaterialCreateNestedOneWithoutRdProcurementRequestLinesInput;
+  acceptanceLines?: Prisma.StockInOrderLineCreateNestedManyWithoutRdProcurementRequestLineInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerCreateNestedOneWithoutRequestLineInput;
+};
+
+export type RdProcurementRequestLineUncheckedCreateWithoutStatusHistoriesInput =
+  {
+    id?: number;
+    requestId: number;
+    lineNo: number;
+    materialId: number;
+    materialCodeSnapshot: string;
+    materialNameSnapshot: string;
+    materialSpecSnapshot?: string | null;
+    unitCodeSnapshot: string;
+    quantity: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    unitPrice?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    amount?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    remark?: string | null;
+    createdBy?: string | null;
+    createdAt?: Date | string;
+    updatedBy?: string | null;
+    updatedAt?: Date | string;
+    acceptanceLines?: Prisma.StockInOrderLineUncheckedCreateNestedManyWithoutRdProcurementRequestLineInput;
+    statusLedger?: Prisma.RdMaterialStatusLedgerUncheckedCreateNestedOneWithoutRequestLineInput;
+  };
+
+export type RdProcurementRequestLineCreateOrConnectWithoutStatusHistoriesInput =
+  {
+    where: Prisma.RdProcurementRequestLineWhereUniqueInput;
+    create: Prisma.XOR<
+      Prisma.RdProcurementRequestLineCreateWithoutStatusHistoriesInput,
+      Prisma.RdProcurementRequestLineUncheckedCreateWithoutStatusHistoriesInput
+    >;
+  };
+
+export type RdProcurementRequestLineUpsertWithoutStatusHistoriesInput = {
+  update: Prisma.XOR<
+    Prisma.RdProcurementRequestLineUpdateWithoutStatusHistoriesInput,
+    Prisma.RdProcurementRequestLineUncheckedUpdateWithoutStatusHistoriesInput
+  >;
+  create: Prisma.XOR<
+    Prisma.RdProcurementRequestLineCreateWithoutStatusHistoriesInput,
+    Prisma.RdProcurementRequestLineUncheckedCreateWithoutStatusHistoriesInput
+  >;
+  where?: Prisma.RdProcurementRequestLineWhereInput;
+};
+
+export type RdProcurementRequestLineUpdateToOneWithWhereWithoutStatusHistoriesInput =
+  {
+    where?: Prisma.RdProcurementRequestLineWhereInput;
+    data: Prisma.XOR<
+      Prisma.RdProcurementRequestLineUpdateWithoutStatusHistoriesInput,
+      Prisma.RdProcurementRequestLineUncheckedUpdateWithoutStatusHistoriesInput
+    >;
+  };
+
+export type RdProcurementRequestLineUpdateWithoutStatusHistoriesInput = {
+  lineNo?: Prisma.IntFieldUpdateOperationsInput | number;
+  materialCodeSnapshot?: Prisma.StringFieldUpdateOperationsInput | string;
+  materialNameSnapshot?: Prisma.StringFieldUpdateOperationsInput | string;
+  materialSpecSnapshot?:
+    | Prisma.NullableStringFieldUpdateOperationsInput
+    | string
+    | null;
+  unitCodeSnapshot?: Prisma.StringFieldUpdateOperationsInput | string;
+  quantity?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  unitPrice?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  amount?:
+    | Prisma.DecimalFieldUpdateOperationsInput
+    | runtime.Decimal
+    | runtime.DecimalJsLike
+    | number
+    | string;
+  remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  request?: Prisma.RdProcurementRequestUpdateOneRequiredWithoutLinesNestedInput;
+  material?: Prisma.MaterialUpdateOneRequiredWithoutRdProcurementRequestLinesNestedInput;
+  acceptanceLines?: Prisma.StockInOrderLineUpdateManyWithoutRdProcurementRequestLineNestedInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerUpdateOneWithoutRequestLineNestedInput;
+};
+
+export type RdProcurementRequestLineUncheckedUpdateWithoutStatusHistoriesInput =
+  {
+    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    requestId?: Prisma.IntFieldUpdateOperationsInput | number;
+    lineNo?: Prisma.IntFieldUpdateOperationsInput | number;
+    materialId?: Prisma.IntFieldUpdateOperationsInput | number;
+    materialCodeSnapshot?: Prisma.StringFieldUpdateOperationsInput | string;
+    materialNameSnapshot?: Prisma.StringFieldUpdateOperationsInput | string;
+    materialSpecSnapshot?:
+      | Prisma.NullableStringFieldUpdateOperationsInput
+      | string
+      | null;
+    unitCodeSnapshot?: Prisma.StringFieldUpdateOperationsInput | string;
+    quantity?:
+      | Prisma.DecimalFieldUpdateOperationsInput
+      | runtime.Decimal
+      | runtime.DecimalJsLike
+      | number
+      | string;
+    unitPrice?:
+      | Prisma.DecimalFieldUpdateOperationsInput
+      | runtime.Decimal
+      | runtime.DecimalJsLike
+      | number
+      | string;
+    amount?:
+      | Prisma.DecimalFieldUpdateOperationsInput
+      | runtime.Decimal
+      | runtime.DecimalJsLike
+      | number
+      | string;
+    remark?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    acceptanceLines?: Prisma.StockInOrderLineUncheckedUpdateManyWithoutRdProcurementRequestLineNestedInput;
+    statusLedger?: Prisma.RdMaterialStatusLedgerUncheckedUpdateOneWithoutRequestLineNestedInput;
+  };
 
 export type RdProcurementRequestLineCreateManyMaterialInput = {
   id?: number;
@@ -1563,6 +1956,8 @@ export type RdProcurementRequestLineUpdateWithoutMaterialInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   request?: Prisma.RdProcurementRequestUpdateOneRequiredWithoutLinesNestedInput;
   acceptanceLines?: Prisma.StockInOrderLineUpdateManyWithoutRdProcurementRequestLineNestedInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerUpdateOneWithoutRequestLineNestedInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryUpdateManyWithoutRequestLineNestedInput;
 };
 
 export type RdProcurementRequestLineUncheckedUpdateWithoutMaterialInput = {
@@ -1600,6 +1995,8 @@ export type RdProcurementRequestLineUncheckedUpdateWithoutMaterialInput = {
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   acceptanceLines?: Prisma.StockInOrderLineUncheckedUpdateManyWithoutRdProcurementRequestLineNestedInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerUncheckedUpdateOneWithoutRequestLineNestedInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryUncheckedUpdateManyWithoutRequestLineNestedInput;
 };
 
 export type RdProcurementRequestLineUncheckedUpdateManyWithoutMaterialInput = {
@@ -1690,6 +2087,8 @@ export type RdProcurementRequestLineUpdateWithoutRequestInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   material?: Prisma.MaterialUpdateOneRequiredWithoutRdProcurementRequestLinesNestedInput;
   acceptanceLines?: Prisma.StockInOrderLineUpdateManyWithoutRdProcurementRequestLineNestedInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerUpdateOneWithoutRequestLineNestedInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryUpdateManyWithoutRequestLineNestedInput;
 };
 
 export type RdProcurementRequestLineUncheckedUpdateWithoutRequestInput = {
@@ -1727,6 +2126,8 @@ export type RdProcurementRequestLineUncheckedUpdateWithoutRequestInput = {
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   acceptanceLines?: Prisma.StockInOrderLineUncheckedUpdateManyWithoutRdProcurementRequestLineNestedInput;
+  statusLedger?: Prisma.RdMaterialStatusLedgerUncheckedUpdateOneWithoutRequestLineNestedInput;
+  statusHistories?: Prisma.RdMaterialStatusHistoryUncheckedUpdateManyWithoutRequestLineNestedInput;
 };
 
 export type RdProcurementRequestLineUncheckedUpdateManyWithoutRequestInput = {
@@ -1771,6 +2172,7 @@ export type RdProcurementRequestLineUncheckedUpdateManyWithoutRequestInput = {
 
 export type RdProcurementRequestLineCountOutputType = {
   acceptanceLines: number;
+  statusHistories: number;
 };
 
 export type RdProcurementRequestLineCountOutputTypeSelect<
@@ -1780,6 +2182,9 @@ export type RdProcurementRequestLineCountOutputTypeSelect<
   acceptanceLines?:
     | boolean
     | RdProcurementRequestLineCountOutputTypeCountAcceptanceLinesArgs;
+  statusHistories?:
+    | boolean
+    | RdProcurementRequestLineCountOutputTypeCountStatusHistoriesArgs;
 };
 
 /**
@@ -1803,6 +2208,16 @@ export type RdProcurementRequestLineCountOutputTypeCountAcceptanceLinesArgs<
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   where?: Prisma.StockInOrderLineWhereInput;
+};
+
+/**
+ * RdProcurementRequestLineCountOutputType without action
+ */
+export type RdProcurementRequestLineCountOutputTypeCountStatusHistoriesArgs<
+  ExtArgs extends
+    runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.RdMaterialStatusHistoryWhereInput;
 };
 
 export type RdProcurementRequestLineSelect<
@@ -1831,6 +2246,12 @@ export type RdProcurementRequestLineSelect<
     acceptanceLines?:
       | boolean
       | Prisma.RdProcurementRequestLine$acceptanceLinesArgs<ExtArgs>;
+    statusLedger?:
+      | boolean
+      | Prisma.RdProcurementRequestLine$statusLedgerArgs<ExtArgs>;
+    statusHistories?:
+      | boolean
+      | Prisma.RdProcurementRequestLine$statusHistoriesArgs<ExtArgs>;
     _count?:
       | boolean
       | Prisma.RdProcurementRequestLineCountOutputTypeDefaultArgs<ExtArgs>;
@@ -1888,6 +2309,12 @@ export type RdProcurementRequestLineInclude<
   acceptanceLines?:
     | boolean
     | Prisma.RdProcurementRequestLine$acceptanceLinesArgs<ExtArgs>;
+  statusLedger?:
+    | boolean
+    | Prisma.RdProcurementRequestLine$statusLedgerArgs<ExtArgs>;
+  statusHistories?:
+    | boolean
+    | Prisma.RdProcurementRequestLine$statusHistoriesArgs<ExtArgs>;
   _count?:
     | boolean
     | Prisma.RdProcurementRequestLineCountOutputTypeDefaultArgs<ExtArgs>;
@@ -1902,6 +2329,8 @@ export type $RdProcurementRequestLinePayload<
     request: Prisma.$RdProcurementRequestPayload<ExtArgs>;
     material: Prisma.$MaterialPayload<ExtArgs>;
     acceptanceLines: Prisma.$StockInOrderLinePayload<ExtArgs>[];
+    statusLedger: Prisma.$RdMaterialStatusLedgerPayload<ExtArgs> | null;
+    statusHistories: Prisma.$RdMaterialStatusHistoryPayload<ExtArgs>[];
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -2477,6 +2906,40 @@ export interface Prisma__RdProcurementRequestLineClient<
       >
     | Null
   >;
+  statusLedger<
+    T extends Prisma.RdProcurementRequestLine$statusLedgerArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<
+      T,
+      Prisma.RdProcurementRequestLine$statusLedgerArgs<ExtArgs>
+    >,
+  ): Prisma.Prisma__RdMaterialStatusLedgerClient<
+    runtime.Types.Result.GetResult<
+      Prisma.$RdMaterialStatusLedgerPayload<ExtArgs>,
+      T,
+      "findUniqueOrThrow",
+      GlobalOmitOptions
+    > | null,
+    null,
+    ExtArgs,
+    GlobalOmitOptions
+  >;
+  statusHistories<
+    T extends Prisma.RdProcurementRequestLine$statusHistoriesArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<
+      T,
+      Prisma.RdProcurementRequestLine$statusHistoriesArgs<ExtArgs>
+    >,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$RdMaterialStatusHistoryPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2987,6 +3450,59 @@ export type RdProcurementRequestLine$acceptanceLinesArgs<
   distinct?:
     | Prisma.StockInOrderLineScalarFieldEnum
     | Prisma.StockInOrderLineScalarFieldEnum[];
+};
+
+/**
+ * RdProcurementRequestLine.statusLedger
+ */
+export type RdProcurementRequestLine$statusLedgerArgs<
+  ExtArgs extends
+    runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the RdMaterialStatusLedger
+   */
+  select?: Prisma.RdMaterialStatusLedgerSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the RdMaterialStatusLedger
+   */
+  omit?: Prisma.RdMaterialStatusLedgerOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RdMaterialStatusLedgerInclude<ExtArgs> | null;
+  where?: Prisma.RdMaterialStatusLedgerWhereInput;
+};
+
+/**
+ * RdProcurementRequestLine.statusHistories
+ */
+export type RdProcurementRequestLine$statusHistoriesArgs<
+  ExtArgs extends
+    runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the RdMaterialStatusHistory
+   */
+  select?: Prisma.RdMaterialStatusHistorySelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the RdMaterialStatusHistory
+   */
+  omit?: Prisma.RdMaterialStatusHistoryOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.RdMaterialStatusHistoryInclude<ExtArgs> | null;
+  where?: Prisma.RdMaterialStatusHistoryWhereInput;
+  orderBy?:
+    | Prisma.RdMaterialStatusHistoryOrderByWithRelationInput
+    | Prisma.RdMaterialStatusHistoryOrderByWithRelationInput[];
+  cursor?: Prisma.RdMaterialStatusHistoryWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?:
+    | Prisma.RdMaterialStatusHistoryScalarFieldEnum
+    | Prisma.RdMaterialStatusHistoryScalarFieldEnum[];
 };
 
 /**

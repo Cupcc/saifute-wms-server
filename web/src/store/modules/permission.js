@@ -141,6 +141,14 @@ const SUPPORTED_BACKEND_ROUTE_META = {
     icon: "bug",
     visibleInModes: [CONSOLE_MODES.RD],
   },
+  RdStocktakeOrders: {
+    group: "rd",
+    path: "stocktake-orders",
+    component: "rd/stocktake-orders/index",
+    title: "盘点调整",
+    icon: "edit",
+    visibleInModes: [CONSOLE_MODES.RD],
+  },
   RdMaterialCategorySummary: {
     group: "rd",
     path: "material-category-summary",

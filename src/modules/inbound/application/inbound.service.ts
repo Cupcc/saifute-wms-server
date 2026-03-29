@@ -16,6 +16,10 @@ import {
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
+import {
+  applyAcceptanceStatusesForOrder,
+  reverseAcceptanceStatusesForOrder,
+} from "../../rd-subwarehouse/application/rd-material-status.helper";
 import { RdProcurementRequestService } from "../../rd-subwarehouse/application/rd-procurement-request.service";
 import { WorkflowService } from "../../workflow/application/workflow.service";
 import type { CreateInboundOrderDto } from "../dto/create-inbound-order.dto";
@@ -176,8 +180,9 @@ export class InboundService {
       );
 
       const operationType = toOperationType(dto.orderType);
+      const logIdByLineId = new Map<number, number>();
       for (const line of order.lines) {
-        await this.inventoryService.increaseStock(
+        const log = await this.inventoryService.increaseStock(
           {
             materialId: line.materialId,
             workshopId: order.workshopId,
@@ -193,7 +198,19 @@ export class InboundService {
           },
           tx,
         );
+        logIdByLineId.set(line.id, log.id);
       }
+
+      await applyAcceptanceStatusesForOrder(
+        {
+          orderId: order.id,
+          documentNo: order.documentNo,
+          lines: order.lines,
+          operatorId: createdBy,
+          logIdByLineId,
+        },
+        tx,
+      );
 
       await this.workflowService.createOrRefreshAuditDocument(
         {
@@ -273,6 +290,16 @@ export class InboundService {
         throw new NotFoundException(`入库单不存在: ${id}`);
       }
 
+      await reverseAcceptanceStatusesForOrder(
+        {
+          orderId: id,
+          documentNo: existing.documentNo,
+          operatorId: updatedBy,
+          note: `改单重算验收状态: ${existing.documentNo}`,
+        },
+        tx,
+      );
+
       const logs = await this.inventoryService.getLogsForDocument(
         {
           businessDocumentType: DOCUMENT_TYPE,
@@ -287,6 +314,11 @@ export class InboundService {
       );
       const currentLinesById = new Map(
         currentOrder.lines.map((line) => [line.id, line]),
+      );
+      const acceptanceLogIdByLineId = new Map(
+        logs
+          .filter((log) => log.businessDocumentLineId !== null)
+          .map((log) => [log.businessDocumentLineId as number, log.id]),
       );
       const seenLineIds = new Set<number>();
       const workshopId = dto.workshopId ?? currentOrder.workshopId;
@@ -396,7 +428,7 @@ export class InboundService {
           );
 
           if (inventoryNeedsRepost) {
-            await this.inventoryService.increaseStock(
+            const log = await this.inventoryService.increaseStock(
               {
                 materialId: updatedLine.materialId,
                 workshopId,
@@ -412,6 +444,7 @@ export class InboundService {
               },
               tx,
             );
+            acceptanceLogIdByLineId.set(updatedLine.id, log.id);
           }
 
           finalLines.push(updatedLine);
@@ -447,7 +480,7 @@ export class InboundService {
           tx,
         );
 
-        await this.inventoryService.increaseStock(
+        const log = await this.inventoryService.increaseStock(
           {
             materialId: createdLine.materialId,
             workshopId,
@@ -463,6 +496,7 @@ export class InboundService {
           },
           tx,
         );
+        acceptanceLogIdByLineId.set(createdLine.id, log.id);
 
         finalLines.push(createdLine);
       }
@@ -507,6 +541,17 @@ export class InboundService {
         tx,
       );
 
+      await applyAcceptanceStatusesForOrder(
+        {
+          orderId: id,
+          documentNo: existing.documentNo,
+          lines: finalLines,
+          operatorId: updatedBy,
+          logIdByLineId: acceptanceLogIdByLineId,
+        },
+        tx,
+      );
+
       await this.workflowService.createOrRefreshAuditDocument(
         {
           documentFamily: DocumentFamily.STOCK_IN,
@@ -541,6 +586,16 @@ export class InboundService {
       if (hasDownstreamDependencies) {
         throw new BadRequestException("存在下游依赖，不能作废");
       }
+
+      await reverseAcceptanceStatusesForOrder(
+        {
+          orderId: id,
+          documentNo: order.documentNo,
+          operatorId: voidedBy,
+          note: `作废验收单: ${order.documentNo}`,
+        },
+        tx,
+      );
 
       const logs = await this.inventoryService.getLogsForDocument(
         {

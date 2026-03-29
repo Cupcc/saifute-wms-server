@@ -97,7 +97,10 @@ export class RdProcurementRequestRepository {
         skip: params.offset,
         orderBy: [{ bizDate: "desc" }, { id: "desc" }],
         include: {
-          lines: { orderBy: { lineNo: "asc" } },
+          lines: {
+            orderBy: { lineNo: "asc" },
+            include: { statusLedger: true },
+          },
           acceptanceOrders: {
             where: { lifecycleStatus: "EFFECTIVE" },
             select: { id: true },
@@ -114,7 +117,15 @@ export class RdProcurementRequestRepository {
     return this.db(db).rdProcurementRequest.findUnique({
       where: { id },
       include: {
-        lines: { orderBy: { lineNo: "asc" } },
+        lines: {
+          orderBy: { lineNo: "asc" },
+          include: {
+            statusLedger: true,
+            statusHistories: {
+              orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            },
+          },
+        },
         acceptanceOrders: {
           where: { lifecycleStatus: "EFFECTIVE" },
           orderBy: [{ bizDate: "desc" }, { id: "desc" }],
@@ -132,7 +143,12 @@ export class RdProcurementRequestRepository {
   async findRequestByDocumentNo(documentNo: string, db?: DbClient) {
     return this.db(db).rdProcurementRequest.findUnique({
       where: { documentNo },
-      include: { lines: { orderBy: { lineNo: "asc" } } },
+      include: {
+        lines: {
+          orderBy: { lineNo: "asc" },
+          include: { statusLedger: true },
+        },
+      },
     });
   }
 
@@ -151,7 +167,12 @@ export class RdProcurementRequestRepository {
     });
     const result = await client.rdProcurementRequest.findUnique({
       where: { id: request.id },
-      include: { lines: { orderBy: { lineNo: "asc" } } },
+      include: {
+        lines: {
+          orderBy: { lineNo: "asc" },
+          include: { statusLedger: true },
+        },
+      },
     });
     if (!result) {
       throw new Error("RD procurement request creation failed");
@@ -167,7 +188,12 @@ export class RdProcurementRequestRepository {
     return this.db(db).rdProcurementRequest.update({
       where: { id },
       data,
-      include: { lines: { orderBy: { lineNo: "asc" } } },
+      include: {
+        lines: {
+          orderBy: { lineNo: "asc" },
+          include: { statusLedger: true },
+        },
+      },
     });
   }
 

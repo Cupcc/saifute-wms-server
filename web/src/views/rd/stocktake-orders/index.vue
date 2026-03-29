@@ -3,7 +3,12 @@
     <el-card shadow="never">
       <template #header>
         <div class="page-header">
-          <div>研发本仓报废</div>
+          <div>
+            <div class="page-title">研发盘点调整</div>
+            <div class="page-subtitle">
+              账面数与实盘数同单闭环，库存写入仍统一走 inventory-core
+            </div>
+          </div>
           <el-tag type="success">{{ workshopLabel }}</el-tag>
         </div>
       </template>
@@ -13,7 +18,7 @@
           <el-input
             v-model="filters.documentNo"
             clearable
-            placeholder="请输入单据编号"
+            placeholder="请输入盘点单号"
             style="width: 240px"
             @keyup.enter="handleSearch"
           />
@@ -25,7 +30,13 @@
       </el-form>
 
       <div class="toolbar">
-        <el-button type="primary" @click="openCreateDialog">新增报废单</el-button>
+        <el-button
+          type="primary"
+          v-hasPermi="['rd:stocktake-order:create']"
+          @click="openCreateDialog"
+        >
+          新增盘点调整单
+        </el-button>
       </div>
 
       <el-table :data="rows" stripe v-loading="loading">
@@ -41,18 +52,32 @@
             {{ formatDate(row.bizDate) }}
           </template>
         </el-table-column>
-        <el-table-column prop="totalQty" label="总数量" min-width="120" />
-        <el-table-column prop="totalAmount" label="总金额" min-width="120" />
-        <el-table-column label="物料行数" min-width="100">
+        <el-table-column prop="totalBookQty" label="账面总数" min-width="120" />
+        <el-table-column prop="totalCountQty" label="实盘总数" min-width="120" />
+        <el-table-column
+          prop="totalAdjustmentQty"
+          label="调整差异"
+          min-width="120"
+        />
+        <el-table-column label="明细数" min-width="100">
           <template #default="{ row }">
             {{ row.lines?.length || 0 }}
           </template>
         </el-table-column>
-        <el-table-column prop="remark" label="备注" min-width="180" />
+        <el-table-column prop="remark" label="备注" min-width="200" />
         <el-table-column label="操作" width="140" fixed="right">
           <template #default="{ row }">
-            <el-button link type="primary" @click="openDetail(row.id)">详情</el-button>
-            <el-button link type="danger" @click="handleVoid(row.id)">作废</el-button>
+            <el-button link type="primary" @click="openDetail(row.id)">
+              详情
+            </el-button>
+            <el-button
+              link
+              type="danger"
+              v-hasPermi="['rd:stocktake-order:void']"
+              @click="handleVoid(row.id)"
+            >
+              作废
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -71,7 +96,7 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="createOpen" title="新增报废单" width="1000px">
+    <el-dialog v-model="createOpen" title="新增研发盘点调整单" width="1080px">
       <el-form label-width="100px">
         <el-row :gutter="16">
           <el-col :span="12">
@@ -92,44 +117,42 @@
         </el-row>
         <el-row :gutter="16">
           <el-col :span="12">
+            <el-form-item label="盘点人">
+              <el-input v-model="form.countedBy" placeholder="请输入盘点人" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="复核人">
+              <el-input v-model="form.approvedBy" placeholder="请输入复核人" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row :gutter="16">
+          <el-col :span="12">
             <el-form-item label="研发仓别">
               <el-input :model-value="workshopLabel" disabled />
             </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="备注">
+              <el-input v-model="form.remark" type="textarea" :rows="2" />
+            </el-form-item>
+          </el-col>
         </el-row>
-        <el-form-item label="备注">
-          <el-input v-model="form.remark" type="textarea" :rows="3" />
-        </el-form-item>
 
         <div class="line-toolbar">
-          <div class="section-title">报废明细</div>
-          <el-button type="primary" plain @click="addLine">添加明细</el-button>
+          <div class="section-title">盘点明细</div>
+          <el-button
+            type="primary"
+            plain
+            v-hasPermi="['rd:stocktake-order:create']"
+            @click="addLine"
+          >
+            添加明细
+          </el-button>
         </div>
 
         <el-table :data="form.lines" border stripe>
-          <el-table-column label="来源采购行" min-width="320">
-            <template #default="{ row }">
-              <el-select
-                v-model="row.sourceKey"
-                filterable
-                remote
-                reserve-keyword
-                clearable
-                placeholder="请输入需求单号、项目或物料搜索"
-                :remote-method="searchProcurementSources"
-                :loading="procurementSourceLoading"
-                style="width: 100%"
-                @change="(value) => handleProcurementSourceChange(value, row)"
-              >
-                <el-option
-                  v-for="item in procurementSourceOptions"
-                  :key="item.key"
-                  :label="item.label"
-                  :value="item.key"
-                />
-              </el-select>
-            </template>
-          </el-table-column>
           <el-table-column label="物料" min-width="260">
             <template #default="{ row }">
               <el-select
@@ -142,7 +165,7 @@
                 :remote-method="searchMaterials"
                 :loading="materialLoading"
                 style="width: 100%"
-                :disabled="Boolean(row.sourceDocumentLineId)"
+                @change="() => syncBookQty(row)"
               >
                 <el-option
                   v-for="item in materialOptions"
@@ -153,31 +176,35 @@
               </el-select>
             </template>
           </el-table-column>
-          <el-table-column label="数量" min-width="140">
+          <el-table-column label="账面数" min-width="120">
+            <template #default="{ row }">
+              <span>{{ formatQty(row.bookQty) }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="实盘数" min-width="140">
             <template #default="{ row }">
               <el-input-number
-                v-model="row.quantity"
-                :min="0.000001"
+                v-model="row.countedQty"
+                :min="0"
                 :precision="6"
                 controls-position="right"
                 style="width: 100%"
               />
             </template>
           </el-table-column>
-          <el-table-column label="单价" min-width="140">
+          <el-table-column label="差异" min-width="120">
             <template #default="{ row }">
-              <el-input-number
-                v-model="row.unitPrice"
-                :min="0"
-                :precision="2"
-                controls-position="right"
-                style="width: 100%"
-              />
+              <span :class="differenceClass(getAdjustmentQty(row))">
+                {{ formatSignedQty(getAdjustmentQty(row)) }}
+              </span>
             </template>
           </el-table-column>
-          <el-table-column label="小计" min-width="140">
+          <el-table-column label="原因" min-width="220">
             <template #default="{ row }">
-              {{ calculateLineAmount(row) }}
+              <el-input
+                v-model="row.reason"
+                placeholder="请填写盘点调整原因"
+              />
             </template>
           </el-table-column>
           <el-table-column label="备注" min-width="180">
@@ -187,7 +214,9 @@
           </el-table-column>
           <el-table-column label="操作" width="90">
             <template #default="{ $index }">
-              <el-button link type="danger" @click="removeLine($index)">删除</el-button>
+              <el-button link type="danger" @click="removeLine($index)">
+                删除
+              </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -195,13 +224,18 @@
 
       <template #footer>
         <el-button @click="createOpen = false">取消</el-button>
-        <el-button type="primary" :loading="submitting" @click="submitCreate">
+        <el-button
+          type="primary"
+          v-hasPermi="['rd:stocktake-order:create']"
+          :loading="submitting"
+          @click="submitCreate"
+        >
           提交
         </el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="detailOpen" title="报废单详情" width="1000px">
+    <el-dialog v-model="detailOpen" title="研发盘点调整详情" width="1080px">
       <template v-if="detailRow">
         <el-descriptions :column="2" border class="detail-descriptions">
           <el-descriptions-item label="单据编号">
@@ -210,14 +244,20 @@
           <el-descriptions-item label="业务日期">
             {{ formatDate(detailRow.bizDate) }}
           </el-descriptions-item>
-          <el-descriptions-item label="仓别">
-            {{ detailRow.workshopNameSnapshot }}
+          <el-descriptions-item label="账面总数">
+            {{ detailRow.totalBookQty }}
           </el-descriptions-item>
-          <el-descriptions-item label="总数量">
-            {{ detailRow.totalQty }}
+          <el-descriptions-item label="实盘总数">
+            {{ detailRow.totalCountQty }}
           </el-descriptions-item>
-          <el-descriptions-item label="总金额">
-            {{ detailRow.totalAmount }}
+          <el-descriptions-item label="调整差异">
+            {{ detailRow.totalAdjustmentQty }}
+          </el-descriptions-item>
+          <el-descriptions-item label="盘点人">
+            {{ detailRow.countedBy || "-" }}
+          </el-descriptions-item>
+          <el-descriptions-item label="复核人">
+            {{ detailRow.approvedBy || "-" }}
           </el-descriptions-item>
           <el-descriptions-item label="备注">
             {{ detailRow.remark || "-" }}
@@ -226,20 +266,20 @@
 
         <el-table :data="detailRow.lines || []" stripe class="detail-table">
           <el-table-column prop="lineNo" label="行号" width="80" />
-          <el-table-column label="来源采购行" min-width="160">
-            <template #default="{ row }">
-              <span v-if="row.sourceDocumentId && row.sourceDocumentLineId">
-                {{ `需求 ${row.sourceDocumentId} / 行 ${row.sourceDocumentLineId}` }}
-              </span>
-              <span v-else>-</span>
-            </template>
-          </el-table-column>
           <el-table-column prop="materialCodeSnapshot" label="物料编码" min-width="140" />
           <el-table-column prop="materialNameSnapshot" label="物料名称" min-width="180" />
-          <el-table-column prop="materialSpecSnapshot" label="规格型号" min-width="140" />
-          <el-table-column prop="quantity" label="数量" min-width="100" />
-          <el-table-column prop="unitPrice" label="单价" min-width="100" />
-          <el-table-column prop="amount" label="金额" min-width="100" />
+          <el-table-column prop="bookQty" label="账面数" min-width="110" />
+          <el-table-column prop="countedQty" label="实盘数" min-width="110" />
+          <el-table-column prop="adjustmentQty" label="差异" min-width="110" />
+          <el-table-column label="库存前后" min-width="180">
+            <template #default="{ row }">
+              <span v-if="row.inventoryLog">
+                {{ row.inventoryLog.beforeQty }} -> {{ row.inventoryLog.afterQty }}
+              </span>
+              <span v-else>一致，无调账</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="reason" label="原因" min-width="180" />
           <el-table-column prop="remark" label="备注" min-width="160" />
         </el-table>
       </template>
@@ -247,16 +287,16 @@
   </div>
 </template>
 
-<script setup name="RdScrapOrdersPage">
+<script setup name="RdStocktakeOrdersPage">
 import { ElMessage, ElMessageBox } from "element-plus";
 import { computed, onMounted, ref } from "vue";
 import {
-  createRdScrapOrder,
-  getRdScrapOrder,
+  createRdStocktakeOrder,
+  getRdStocktakeOrder,
+  listRdInventoryBalances,
   listRdMaterials,
-  listRdProcurementRequests,
-  listRdScrapOrders,
-  voidRdScrapOrder,
+  listRdStocktakeOrders,
+  voidRdStocktakeOrder,
 } from "@/api/rd-subwarehouse";
 import useUserStore from "@/store/modules/user";
 import { formatDateOnly, generateRdDocumentNo } from "@/utils/rd-documents";
@@ -265,13 +305,11 @@ const userStore = useUserStore();
 const loading = ref(false);
 const submitting = ref(false);
 const materialLoading = ref(false);
-const procurementSourceLoading = ref(false);
 const rows = ref([]);
 const total = ref(0);
 const pageNum = ref(1);
 const pageSize = ref(10);
 const materialOptions = ref([]);
-const procurementSourceOptions = ref([]);
 const createOpen = ref(false);
 const detailOpen = ref(false);
 const detailRow = ref(null);
@@ -286,21 +324,20 @@ const workshopLabel = computed(
 
 function createEmptyLine() {
   return {
-    sourceKey: "",
-    sourceDocumentType: "RdProcurementRequest",
-    sourceDocumentId: "",
-    sourceDocumentLineId: "",
     materialId: null,
-    quantity: 1,
-    unitPrice: 0,
+    bookQty: 0,
+    countedQty: 0,
+    reason: "盘点调整",
     remark: "",
   };
 }
 
 function createEmptyForm() {
   return {
-    documentNo: generateRdDocumentNo("RDSC"),
+    documentNo: generateRdDocumentNo("RDST"),
     bizDate: formatDateOnly(),
+    countedBy: "",
+    approvedBy: "",
     remark: "",
     lines: [createEmptyLine()],
   };
@@ -317,10 +354,23 @@ function formatQty(value) {
   return Number(value || 0).toFixed(6);
 }
 
-function calculateLineAmount(row) {
-  const quantity = Number(row.quantity || 0);
-  const unitPrice = Number(row.unitPrice || 0);
-  return (quantity * unitPrice).toFixed(2);
+function formatSignedQty(value) {
+  const amount = Number(value || 0);
+  return `${amount > 0 ? "+" : ""}${amount.toFixed(6)}`;
+}
+
+function getAdjustmentQty(row) {
+  return Number(row.countedQty || 0) - Number(row.bookQty || 0);
+}
+
+function differenceClass(value) {
+  if (Number(value || 0) > 0) {
+    return "qty-positive";
+  }
+  if (Number(value || 0) < 0) {
+    return "qty-negative";
+  }
+  return "qty-neutral";
 }
 
 async function searchMaterials(keyword) {
@@ -337,68 +387,27 @@ async function searchMaterials(keyword) {
   }
 }
 
-async function searchProcurementSources(keyword) {
-  procurementSourceLoading.value = true;
-  try {
-    const response = await listRdProcurementRequests({
-      keyword: keyword || undefined,
-      documentNo: keyword || undefined,
-      projectCode: keyword || undefined,
-      limit: 20,
-      offset: 0,
-    });
-    const requests = response.data?.items || [];
-    procurementSourceOptions.value = requests.flatMap((request) =>
-      (request.lines || [])
-        .filter((line) => Number(line.statusLedger?.handedOffQty || 0) > 0)
-        .map((line) => ({
-          key: `${request.id}:${line.id}`,
-          requestId: request.id,
-          requestLineId: line.id,
-          materialId: line.materialId,
-          materialCode: line.materialCodeSnapshot,
-          materialName: line.materialNameSnapshot,
-          label: `${request.documentNo} / 行${line.lineNo} / ${line.materialCodeSnapshot} ${line.materialNameSnapshot} / 可报废 ${formatQty(line.statusLedger?.handedOffQty)}`,
-        })),
-    );
-  } finally {
-    procurementSourceLoading.value = false;
+async function fetchBookQty(materialId) {
+  if (!materialId) {
+    return 0;
   }
+  const response = await listRdInventoryBalances({
+    materialId,
+    limit: 1,
+    offset: 0,
+  });
+  const row = response.data?.items?.[0];
+  return Number(row?.quantityOnHand || 0);
 }
 
-function handleProcurementSourceChange(value, row) {
-  if (!value) {
-    row.sourceKey = "";
-    row.sourceDocumentType = "RdProcurementRequest";
-    row.sourceDocumentId = "";
-    row.sourceDocumentLineId = "";
-    row.materialId = null;
-    return;
-  }
-  const selected = procurementSourceOptions.value.find(
-    (item) => item.key === value,
-  );
-  if (!selected) {
-    return;
-  }
-  row.sourceKey = selected.key;
-  row.sourceDocumentType = "RdProcurementRequest";
-  row.sourceDocumentId = selected.requestId;
-  row.sourceDocumentLineId = selected.requestLineId;
-  row.materialId = selected.materialId;
-  if (!materialOptions.value.some((item) => item.id === selected.materialId)) {
-    materialOptions.value.unshift({
-      id: selected.materialId,
-      materialCode: selected.materialCode,
-      materialName: selected.materialName,
-    });
-  }
+async function syncBookQty(row) {
+  row.bookQty = await fetchBookQty(row.materialId);
 }
 
 async function loadRows() {
   loading.value = true;
   try {
-    const response = await listRdScrapOrders({
+    const response = await listRdStocktakeOrders({
       documentNo: filters.value.documentNo || undefined,
       limit: pageSize.value,
       offset: (pageNum.value - 1) * pageSize.value,
@@ -445,43 +454,47 @@ function removeLine(index) {
 
 function openCreateDialog() {
   if (!userStore.workshopScope?.workshopId) {
-    ElMessage.error("当前账号未绑定研发小仓，无法创建报废单");
+    ElMessage.error("当前账号未绑定研发小仓，无法创建盘点调整单");
     return;
   }
   form.value = createEmptyForm();
-  searchProcurementSources("");
   createOpen.value = true;
 }
 
 async function openDetail(orderId) {
-  const response = await getRdScrapOrder(orderId);
+  const response = await getRdStocktakeOrder(orderId);
   detailRow.value = response.data || null;
   detailOpen.value = true;
 }
 
 function validateForm() {
   if (!form.value.documentNo || !form.value.bizDate) {
-    ElMessage.error("请先填写完整的报废单头信息");
+    ElMessage.error("请先填写完整的盘点单头信息");
     return false;
   }
-
   if (!Array.isArray(form.value.lines) || form.value.lines.length === 0) {
-    ElMessage.error("至少需要一条报废明细");
+    ElMessage.error("至少需要一条盘点明细");
     return false;
   }
+  const seenMaterialIds = new Set();
 
   for (let index = 0; index < form.value.lines.length; index += 1) {
     const line = form.value.lines[index];
-    if (!line.sourceDocumentId || !line.sourceDocumentLineId) {
-      ElMessage.error(`第 ${index + 1} 行请选择来源采购行`);
-      return false;
-    }
     if (!line.materialId) {
       ElMessage.error(`第 ${index + 1} 行物料不能为空`);
       return false;
     }
-    if (!line.quantity || Number(line.quantity) <= 0) {
-      ElMessage.error(`第 ${index + 1} 行数量必须大于 0`);
+    if (seenMaterialIds.has(line.materialId)) {
+      ElMessage.error(`第 ${index + 1} 行物料重复，请同一物料只保留一行`);
+      return false;
+    }
+    seenMaterialIds.add(line.materialId);
+    if (Number(line.countedQty) < 0) {
+      ElMessage.error(`第 ${index + 1} 行实盘数不能小于 0`);
+      return false;
+    }
+    if (!String(line.reason || "").trim()) {
+      ElMessage.error(`第 ${index + 1} 行必须填写调整原因`);
       return false;
     }
   }
@@ -496,23 +509,21 @@ async function submitCreate() {
 
   submitting.value = true;
   try {
-    await createRdScrapOrder({
+    await createRdStocktakeOrder({
       documentNo: form.value.documentNo,
-      orderType: "SCRAP",
       bizDate: form.value.bizDate,
       workshopId: userStore.workshopScope.workshopId,
+      countedBy: form.value.countedBy || undefined,
+      approvedBy: form.value.approvedBy || undefined,
       remark: form.value.remark || undefined,
       lines: form.value.lines.map((line) => ({
-        sourceDocumentType: line.sourceDocumentType,
-        sourceDocumentId: line.sourceDocumentId,
-        sourceDocumentLineId: line.sourceDocumentLineId,
         materialId: line.materialId,
-        quantity: String(line.quantity),
-        unitPrice: String(line.unitPrice || 0),
+        countedQty: String(line.countedQty || 0),
+        reason: line.reason,
         remark: line.remark || undefined,
       })),
     });
-    ElMessage.success("报废单已创建");
+    ElMessage.success("研发盘点调整单已创建");
     createOpen.value = false;
     loadRows();
   } finally {
@@ -522,15 +533,19 @@ async function submitCreate() {
 
 async function handleVoid(orderId) {
   try {
-    const result = await ElMessageBox.prompt("请输入作废原因", "作废报废单", {
-      confirmButtonText: "确认",
-      cancelButtonText: "取消",
-      inputValue: "研发小仓作废",
-    });
-    await voidRdScrapOrder(orderId, {
+    const result = await ElMessageBox.prompt(
+      "请输入作废原因",
+      "作废研发盘点调整单",
+      {
+        confirmButtonText: "确认",
+        cancelButtonText: "取消",
+        inputValue: "研发盘点调整作废",
+      },
+    );
+    await voidRdStocktakeOrder(orderId, {
       voidReason: result.value,
     });
-    ElMessage.success("报废单已作废");
+    ElMessage.success("研发盘点调整单已作废");
     loadRows();
   } catch {
     // User cancelled.
@@ -547,6 +562,18 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.page-subtitle {
+  margin-top: 6px;
+  color: #909399;
+  font-size: 13px;
 }
 
 .query-form {
@@ -577,5 +604,19 @@ onMounted(() => {
 
 .detail-descriptions {
   margin-bottom: 16px;
+}
+
+.qty-positive {
+  color: #67c23a;
+  font-weight: 600;
+}
+
+.qty-negative {
+  color: #f56c6c;
+  font-weight: 600;
+}
+
+.qty-neutral {
+  color: #909399;
 }
 </style>

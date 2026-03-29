@@ -11,9 +11,21 @@ import {
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
+import type {
+  ApplyRdProcurementStatusActionDto,
+  RdProcurementStatusActionType,
+} from "../dto/apply-rd-procurement-status-action.dto";
 import type { CreateRdProcurementRequestDto } from "../dto/create-rd-procurement-request.dto";
 import type { QueryRdProcurementRequestDto } from "../dto/query-rd-procurement-request.dto";
 import { RdProcurementRequestRepository } from "../infrastructure/rd-procurement-request.repository";
+import {
+  applyManualCancelStatus,
+  applyManualReturnStatus,
+  applyProcurementStartedStatus,
+  applyRequestVoidStatus,
+  getStatusLedgerProjection,
+  initializeRequestStatusTruth,
+} from "./rd-material-status.helper";
 
 const RD_SUBWAREHOUSE_CODE = "RD";
 
@@ -28,7 +40,7 @@ export class RdProcurementRequestService {
   async listRequests(query: QueryRdProcurementRequestDto) {
     const limit = Math.min(query.limit ?? 50, 100);
     const offset = query.offset ?? 0;
-    return this.repository.findRequests({
+    const result = await this.repository.findRequests({
       keyword: query.keyword,
       documentNo: query.documentNo,
       bizDateFrom: query.bizDateFrom ? new Date(query.bizDateFrom) : undefined,
@@ -43,6 +55,12 @@ export class RdProcurementRequestService {
       limit,
       offset,
     });
+    return {
+      ...result,
+      items: await Promise.all(
+        result.items.map((item) => this.withStatusProjection(item)),
+      ),
+    };
   }
 
   async getRequestById(id: number) {
@@ -50,7 +68,7 @@ export class RdProcurementRequestService {
     if (!request) {
       throw new NotFoundException(`RD 采购需求不存在: ${id}`);
     }
-    return request;
+    return this.withStatusProjection(request);
   }
 
   async createRequest(dto: CreateRdProcurementRequestDto, createdBy?: string) {
@@ -108,8 +126,8 @@ export class RdProcurementRequestService {
       new Prisma.Decimal(0),
     );
 
-    return this.prisma.runInTransaction(async (tx) =>
-      this.repository.createRequest(
+    return this.prisma.runInTransaction(async (tx) => {
+      const request = await this.repository.createRequest(
         {
           documentNo: dto.documentNo,
           bizDate,
@@ -135,8 +153,23 @@ export class RdProcurementRequestService {
           updatedBy: createdBy,
         })),
         tx,
-      ),
-    );
+      );
+
+      await initializeRequestStatusTruth(
+        {
+          requestId: request.id,
+          documentNo: request.documentNo,
+          lines: request.lines.map((line) => ({
+            id: line.id,
+            quantity: line.quantity,
+          })),
+          operatorId: createdBy,
+        },
+        tx,
+      );
+
+      return this.withStatusProjection(request, tx);
+    });
   }
 
   async voidRequest(id: number, voidReason?: string, voidedBy?: string) {
@@ -155,6 +188,20 @@ export class RdProcurementRequestService {
         throw new BadRequestException("该采购需求已关联有效验收单，不能作废");
       }
 
+      for (const line of request.lines) {
+        await applyRequestVoidStatus(
+          {
+            requestLineId: line.id,
+            requestId: request.id,
+            requestDocumentNo: request.documentNo,
+            operatorId: voidedBy,
+            note: voidReason,
+            reason: voidReason,
+          },
+          tx,
+        );
+      }
+
       await this.repository.updateRequest(
         id,
         {
@@ -167,7 +214,47 @@ export class RdProcurementRequestService {
         tx,
       );
 
-      return this.repository.findRequestById(id, tx);
+      const updated = await this.repository.findRequestById(id, tx);
+      if (!updated) {
+        throw new NotFoundException(`RD 采购需求不存在: ${id}`);
+      }
+      return this.withStatusProjection(updated, tx);
+    });
+  }
+
+  async applyStatusAction(
+    requestId: number,
+    dto: ApplyRdProcurementStatusActionDto,
+    operatorId?: string,
+  ) {
+    const request = await this.repository.findRequestById(requestId);
+    if (!request) {
+      throw new NotFoundException(`RD 采购需求不存在: ${requestId}`);
+    }
+    if (request.lifecycleStatus !== DocumentLifecycleStatus.EFFECTIVE) {
+      throw new BadRequestException("只有有效采购需求可以调整状态");
+    }
+
+    const requestLine = request.lines.find((line) => line.id === dto.lineId);
+    if (!requestLine) {
+      throw new BadRequestException("状态动作目标行不属于当前采购需求");
+    }
+
+    return this.prisma.runInTransaction(async (tx) => {
+      await this.applyLineStatusAction(
+        request.id,
+        request.documentNo,
+        requestLine.id,
+        dto,
+        operatorId,
+        tx,
+      );
+
+      const latest = await this.repository.findRequestById(request.id, tx);
+      if (!latest) {
+        throw new NotFoundException(`RD 采购需求不存在: ${request.id}`);
+      }
+      return this.withStatusProjection(latest, tx);
     });
   }
 
@@ -183,5 +270,93 @@ export class RdProcurementRequestService {
     const personnel =
       await this.masterDataService.getPersonnelById(handlerPersonnelId);
     return { handlerNameSnapshot: personnel.personnelName };
+  }
+
+  private async applyLineStatusAction(
+    requestId: number,
+    requestDocumentNo: string,
+    requestLineId: number,
+    dto: ApplyRdProcurementStatusActionDto,
+    operatorId: string | undefined,
+    tx: Prisma.TransactionClient,
+  ) {
+    switch (dto.actionType) {
+      case "PROCUREMENT_STARTED":
+        return applyProcurementStartedStatus(
+          {
+            requestId,
+            requestDocumentNo,
+            requestLineId,
+            quantity: dto.quantity,
+            note: dto.note,
+            operatorId,
+          },
+          tx,
+        );
+      case "MANUAL_CANCELLED":
+        return applyManualCancelStatus(
+          {
+            requestId,
+            requestDocumentNo,
+            requestLineId,
+            quantity: dto.quantity,
+            note: dto.note,
+            reason: dto.reason,
+            operatorId,
+          },
+          tx,
+        );
+      case "MANUAL_RETURNED":
+        if (!dto.referenceNo?.trim() || !dto.reason?.trim()) {
+          throw new BadRequestException(
+            "退回动作必须填写 referenceNo 和 reason",
+          );
+        }
+        return applyManualReturnStatus(
+          {
+            requestId,
+            requestDocumentNo,
+            requestLineId,
+            quantity: dto.quantity,
+            note: dto.note,
+            reason: dto.reason,
+            referenceNo: dto.referenceNo,
+            operatorId,
+          },
+          tx,
+        );
+      default:
+        return this.assertNeverAction(dto.actionType);
+    }
+  }
+
+  private async withStatusProjection<
+    T extends {
+      lines: Array<
+        {
+          id: number;
+          quantity: Prisma.Decimal;
+          statusLedger?: unknown;
+        } & Record<string, unknown>
+      >;
+    } & Record<string, unknown>,
+  >(request: T, tx?: Prisma.TransactionClient): Promise<T> {
+    const lines = await Promise.all(
+      request.lines.map(async (line) => ({
+        ...line,
+        statusLedger: line.statusLedger
+          ? line.statusLedger
+          : await getStatusLedgerProjection(line.id, tx ?? this.prisma),
+      })),
+    );
+
+    return {
+      ...request,
+      lines,
+    };
+  }
+
+  private assertNeverAction(actionType: never): never {
+    throw new BadRequestException(`不支持的 RD 状态动作: ${actionType}`);
   }
 }

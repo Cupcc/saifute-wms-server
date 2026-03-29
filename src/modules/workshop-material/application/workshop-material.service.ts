@@ -17,6 +17,11 @@ import {
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
+import {
+  applyScrapStatusesForOrder,
+  RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE,
+  reverseScrapStatusesForOrder,
+} from "../../rd-subwarehouse/application/rd-material-status.helper";
 import { WorkflowService } from "../../workflow/application/workflow.service";
 import type { CreateWorkshopMaterialOrderDto } from "../dto/create-workshop-material-order.dto";
 import type { CreateWorkshopMaterialOrderLineDto } from "../dto/create-workshop-material-order-line.dto";
@@ -25,6 +30,7 @@ import { WorkshopMaterialRepository } from "../infrastructure/workshop-material.
 
 const DOCUMENT_TYPE = "WorkshopMaterialOrder";
 const BUSINESS_MODULE = "workshop-material";
+const RD_SUBWAREHOUSE_CODE = "RD";
 
 function toOperationType(
   orderType: WorkshopMaterialOrderType,
@@ -161,11 +167,29 @@ export class WorkshopMaterialService {
     const workshop = await this.masterDataService.getWorkshopById(
       dto.workshopId,
     );
+    const isRdScrapOrder =
+      dto.orderType === WorkshopMaterialOrderType.SCRAP &&
+      workshop.workshopCode === RD_SUBWAREHOUSE_CODE;
+    const rdRequestCache = new Map<
+      number,
+      {
+        lifecycleStatus: DocumentLifecycleStatus;
+        lines: Array<{ id: number; materialId: number }>;
+      } | null
+    >();
 
     const linesWithSnapshots = await Promise.all(
-      dto.lines.map(async (line, idx) =>
-        this.buildLineWriteData(line, idx + 1),
-      ),
+      dto.lines.map(async (line, idx) => {
+        const lineWriteData = await this.buildLineWriteData(line, idx + 1);
+        if (isRdScrapOrder) {
+          await this.assertRdScrapSourceLine(
+            line,
+            lineWriteData.materialId,
+            rdRequestCache,
+          );
+        }
+        return lineWriteData;
+      }),
     );
 
     const totalQty = linesWithSnapshots.reduce(
@@ -203,7 +227,11 @@ export class WorkshopMaterialService {
           const lineDto = dto.lines[idx] as CreateWorkshopMaterialOrderLineDto;
           return {
             ...l,
-            sourceDocumentType: lineDto.sourceDocumentType ?? undefined,
+            sourceDocumentType:
+              lineDto.sourceDocumentType ??
+              (isRdScrapOrder
+                ? RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE
+                : undefined),
             sourceDocumentId: lineDto.sourceDocumentId ?? undefined,
             sourceDocumentLineId: lineDto.sourceDocumentLineId ?? undefined,
             createdBy,
@@ -214,13 +242,14 @@ export class WorkshopMaterialService {
       );
 
       const operationType = toOperationType(dto.orderType);
+      const logIdByLineId = new Map<number, number>();
 
       if (
         dto.orderType === WorkshopMaterialOrderType.PICK ||
         dto.orderType === WorkshopMaterialOrderType.SCRAP
       ) {
         for (const line of order.lines) {
-          await this.inventoryService.decreaseStock(
+          const log = await this.inventoryService.decreaseStock(
             {
               materialId: line.materialId,
               workshopId: order.workshopId,
@@ -236,6 +265,7 @@ export class WorkshopMaterialService {
             },
             tx,
           );
+          logIdByLineId.set(line.id, log.id);
           const lineDto = dto.lines[line.lineNo - 1];
           if (lineDto?.sourceLogId) {
             await this.inventoryService.allocateInventorySource(
@@ -250,6 +280,19 @@ export class WorkshopMaterialService {
               tx,
             );
           }
+        }
+
+        if (isRdScrapOrder) {
+          await applyScrapStatusesForOrder(
+            {
+              orderId: order.id,
+              documentNo: order.documentNo,
+              lines: order.lines,
+              operatorId: createdBy,
+              logIdByLineId,
+            },
+            tx,
+          );
         }
       } else {
         // Pre-validate cumulative return quantities before writing any relations.
@@ -620,6 +663,18 @@ export class WorkshopMaterialService {
         }
       }
 
+      if (orderType === WorkshopMaterialOrderType.SCRAP) {
+        await reverseScrapStatusesForOrder(
+          {
+            orderId: id,
+            documentNo: order.documentNo,
+            operatorId: voidedBy,
+            note: `作废报废单: ${order.documentNo}`,
+          },
+          tx,
+        );
+      }
+
       const logs = await this.inventoryService.getLogsForDocument(
         {
           businessDocumentType: DOCUMENT_TYPE,
@@ -797,5 +852,51 @@ export class WorkshopMaterialService {
       amount,
       remark: line.remark,
     };
+  }
+
+  private async assertRdScrapSourceLine(
+    line: CreateWorkshopMaterialOrderLineDto,
+    materialId: number,
+    requestCache: Map<
+      number,
+      {
+        lifecycleStatus: DocumentLifecycleStatus;
+        lines: Array<{ id: number; materialId: number }>;
+      } | null
+    >,
+  ) {
+    const sourceDocumentType =
+      line.sourceDocumentType ?? RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE;
+    if (sourceDocumentType !== RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE) {
+      throw new BadRequestException("RD 报废只能关联 RD 采购需求行");
+    }
+    if (!line.sourceDocumentId || !line.sourceDocumentLineId) {
+      throw new BadRequestException("RD 报废明细必须绑定采购需求行");
+    }
+
+    let request = requestCache.get(line.sourceDocumentId);
+    if (!request) {
+      request = await this.prisma.rdProcurementRequest.findUnique({
+        where: { id: line.sourceDocumentId },
+        include: { lines: true },
+      });
+      requestCache.set(line.sourceDocumentId, request);
+    }
+    if (
+      !request ||
+      request.lifecycleStatus === DocumentLifecycleStatus.VOIDED
+    ) {
+      throw new BadRequestException("RD 报废来源采购需求不存在或已作废");
+    }
+
+    const requestLine = request.lines.find(
+      (item) => item.id === line.sourceDocumentLineId,
+    );
+    if (!requestLine) {
+      throw new BadRequestException("RD 报废来源采购行不存在");
+    }
+    if (requestLine.materialId !== materialId) {
+      throw new BadRequestException("RD 报废物料必须与采购需求行一致");
+    }
   }
 }

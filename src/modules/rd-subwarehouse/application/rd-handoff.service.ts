@@ -18,6 +18,12 @@ import { MasterDataService } from "../../master-data/application/master-data.ser
 import type { CreateRdHandoffOrderDto } from "../dto/create-rd-handoff-order.dto";
 import type { QueryRdHandoffOrderDto } from "../dto/query-rd-handoff-order.dto";
 import { RdHandoffRepository } from "../infrastructure/rd-handoff.repository";
+import { RdProcurementRequestRepository } from "../infrastructure/rd-procurement-request.repository";
+import {
+  applyHandoffStatusesForOrder,
+  RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE,
+  reverseHandoffStatusesForOrder,
+} from "./rd-material-status.helper";
 
 const DOCUMENT_TYPE = "RdHandoffOrder";
 const BUSINESS_MODULE = "rd-subwarehouse";
@@ -29,6 +35,7 @@ export class RdHandoffService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly repository: RdHandoffRepository,
+    private readonly rdProcurementRequestRepository: RdProcurementRequestRepository,
     private readonly masterDataService: MasterDataService,
     private readonly inventoryService: InventoryService,
   ) {}
@@ -85,11 +92,38 @@ export class RdHandoffService {
       : { handlerNameSnapshot: null };
 
     const bizDate = new Date(dto.bizDate);
+    const requestCache = new Map<
+      number,
+      Awaited<ReturnType<RdProcurementRequestRepository["findRequestById"]>>
+    >();
     const linesWithSnapshots = await Promise.all(
       dto.lines.map(async (line, idx) => {
         const material = await this.masterDataService.getMaterialById(
           line.materialId,
         );
+        const sourceRequest = await this.resolveSourceRequest(
+          line.sourceDocumentId,
+          requestCache,
+        );
+        const sourceDocumentType =
+          line.sourceDocumentType ?? RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE;
+        if (sourceDocumentType !== RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE) {
+          throw new BadRequestException(
+            "RD 交接明细只能显式关联 RD 采购需求行",
+          );
+        }
+        if (!line.sourceDocumentLineId) {
+          throw new BadRequestException("RD 交接明细必须绑定采购需求行");
+        }
+        const requestLine = sourceRequest?.lines.find(
+          (item) => item.id === line.sourceDocumentLineId,
+        );
+        if (!requestLine) {
+          throw new BadRequestException("交接来源采购行不存在");
+        }
+        if (requestLine.materialId !== material.id) {
+          throw new BadRequestException("交接物料必须与采购需求行一致");
+        }
         const quantity = new Prisma.Decimal(line.quantity);
         const unitPrice = new Prisma.Decimal(line.unitPrice ?? "0");
         const amount = quantity.mul(unitPrice);
@@ -103,6 +137,9 @@ export class RdHandoffService {
           quantity,
           unitPrice,
           amount,
+          sourceDocumentType,
+          sourceDocumentId: sourceRequest?.id,
+          sourceDocumentLineId: requestLine.id,
           remark: line.remark,
         };
       }),
@@ -143,6 +180,7 @@ export class RdHandoffService {
         tx,
       );
 
+      const inboundLogIdByLineId = new Map<number, number>();
       for (const line of order.lines) {
         await this.inventoryService.decreaseStock(
           {
@@ -161,7 +199,7 @@ export class RdHandoffService {
           },
           tx,
         );
-        await this.inventoryService.increaseStock(
+        const inboundLog = await this.inventoryService.increaseStock(
           {
             materialId: line.materialId,
             workshopId: order.targetWorkshopId,
@@ -178,7 +216,19 @@ export class RdHandoffService {
           },
           tx,
         );
+        inboundLogIdByLineId.set(line.id, inboundLog.id);
       }
+
+      await applyHandoffStatusesForOrder(
+        {
+          orderId: order.id,
+          documentNo: order.documentNo,
+          lines: order.lines,
+          operatorId: createdBy,
+          logIdByLineId: inboundLogIdByLineId,
+        },
+        tx,
+      );
 
       return order;
     });
@@ -197,6 +247,16 @@ export class RdHandoffService {
     }
 
     return this.prisma.runInTransaction(async (tx) => {
+      await reverseHandoffStatusesForOrder(
+        {
+          orderId: id,
+          documentNo: order.documentNo,
+          operatorId: voidedBy,
+          note: `作废 RD 交接单: ${order.documentNo}`,
+        },
+        tx,
+      );
+
       const logs = await this.inventoryService.getLogsForDocument(
         {
           businessDocumentType: DOCUMENT_TYPE,
@@ -248,5 +308,31 @@ export class RdHandoffService {
     const personnel =
       await this.masterDataService.getPersonnelById(handlerPersonnelId);
     return { handlerNameSnapshot: personnel.personnelName };
+  }
+
+  private async resolveSourceRequest(
+    requestId: number | undefined,
+    cache: Map<
+      number,
+      Awaited<ReturnType<RdProcurementRequestRepository["findRequestById"]>>
+    >,
+  ) {
+    if (!requestId) {
+      throw new BadRequestException("RD 交接明细必须绑定采购需求单");
+    }
+    if (cache.has(requestId)) {
+      return cache.get(requestId) ?? null;
+    }
+
+    const request =
+      await this.rdProcurementRequestRepository.findRequestById(requestId);
+    if (!request) {
+      throw new BadRequestException(`采购需求不存在: ${requestId}`);
+    }
+    if (request.lifecycleStatus !== DocumentLifecycleStatus.EFFECTIVE) {
+      throw new BadRequestException("只能关联有效的 RD 采购需求");
+    }
+    cache.set(requestId, request);
+    return request;
   }
 }

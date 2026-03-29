@@ -12,7 +12,30 @@ import {
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { RdProcurementRequestRepository } from "../infrastructure/rd-procurement-request.repository";
+import {
+  applyRequestVoidStatus,
+  initializeRequestStatusTruth,
+} from "./rd-material-status.helper";
 import { RdProcurementRequestService } from "./rd-procurement-request.service";
+
+jest.mock("./rd-material-status.helper", () => ({
+  initializeRequestStatusTruth: jest.fn().mockResolvedValue(undefined),
+  applyRequestVoidStatus: jest.fn().mockResolvedValue(undefined),
+  applyProcurementStartedStatus: jest.fn().mockResolvedValue(undefined),
+  applyManualCancelStatus: jest.fn().mockResolvedValue(undefined),
+  applyManualReturnStatus: jest.fn().mockResolvedValue(undefined),
+  getStatusLedgerProjection: jest.fn().mockResolvedValue({
+    requestLineId: 11,
+    pendingQty: "5",
+    inProcurementQty: "0",
+    canceledQty: "0",
+    acceptedQty: "0",
+    handedOffQty: "0",
+    scrappedQty: "0",
+    returnedQty: "0",
+    lastEventAt: null,
+  }),
+}));
 
 describe("RdProcurementRequestService", () => {
   const mockRequest = {
@@ -54,6 +77,23 @@ describe("RdProcurementRequestService", () => {
         quantity: new Prisma.Decimal(5),
         unitPrice: new Prisma.Decimal(10),
         amount: new Prisma.Decimal(50),
+        statusLedger: {
+          id: 101,
+          requestLineId: 11,
+          pendingQty: new Prisma.Decimal(5),
+          inProcurementQty: new Prisma.Decimal(0),
+          canceledQty: new Prisma.Decimal(0),
+          acceptedQty: new Prisma.Decimal(0),
+          handedOffQty: new Prisma.Decimal(0),
+          scrappedQty: new Prisma.Decimal(0),
+          returnedQty: new Prisma.Decimal(0),
+          lastEventAt: null,
+          createdBy: "5",
+          createdAt: new Date(),
+          updatedBy: "5",
+          updatedAt: new Date(),
+        },
+        statusHistories: [],
         remark: null,
         createdBy: "5",
         createdAt: new Date(),
@@ -148,6 +188,7 @@ describe("RdProcurementRequestService", () => {
 
     expect(result).toEqual(mockRequest);
     expect(repository.createRequest).toHaveBeenCalled();
+    expect(initializeRequestStatusTruth).toHaveBeenCalled();
   });
 
   it("throws when documentNo already exists", async () => {
@@ -213,6 +254,7 @@ describe("RdProcurementRequestService", () => {
       }),
       expect.anything(),
     );
+    expect(applyRequestVoidStatus).toHaveBeenCalled();
     expect(result?.lifecycleStatus).toBe(DocumentLifecycleStatus.VOIDED);
   });
 

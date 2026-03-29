@@ -50,8 +50,32 @@ enum InventoryOperationType {
   PROJECT_CONSUMPTION_OUT
   RD_HANDOFF_OUT
   RD_HANDOFF_IN
+  RD_STOCKTAKE_IN
+  RD_STOCKTAKE_OUT
   REVERSAL_IN
   REVERSAL_OUT
+}
+
+enum RdMaterialStatus {
+  PENDING_PROCUREMENT
+  IN_PROCUREMENT
+  CANCELLED
+  ACCEPTED
+  HANDED_OFF
+  SCRAPPED
+  RETURNED
+}
+
+enum RdMaterialStatusEventType {
+  REQUEST_CREATED
+  PROCUREMENT_STARTED
+  MANUAL_CANCELLED
+  ACCEPTANCE_CONFIRMED
+  HANDOFF_CONFIRMED
+  SCRAP_CONFIRMED
+  MANUAL_RETURNED
+  FACT_ROLLBACK
+  REQUEST_VOIDED
 }
 
 enum SourceUsageStatus {
@@ -178,6 +202,7 @@ model Material {
   projectMaterialLines       ProjectMaterialLine[]
   rdHandoffOrderLines        RdHandoffOrderLine[]
   rdProcurementRequestLines  RdProcurementRequestLine[]
+  rdStocktakeOrderLines      RdStocktakeOrderLine[]
 
   @@index([categoryId])
   @@map("material")
@@ -265,6 +290,7 @@ model Workshop {
   rdHandoffSourceOrders     RdHandoffOrder[]           @relation("RdHandoffSourceWorkshop")
   rdHandoffTargetOrders     RdHandoffOrder[]           @relation("RdHandoffTargetWorkshop")
   rdProcurementRequests     RdProcurementRequest[]
+  rdStocktakeOrders         RdStocktakeOrder[]
 
   @@map("workshop")
 }
@@ -314,6 +340,8 @@ model InventoryLog {
   reversalOfLog          InventoryLog?          @relation("InventoryLogReversal", fields: [reversalOfLogId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   reversedByLogs         InventoryLog[]         @relation("InventoryLogReversal")
   allocatedSourceUsages  InventorySourceUsage[]
+  rdMaterialStatusHistories RdMaterialStatusHistory[]
+  rdStocktakeOrderLine      RdStocktakeOrderLine? @relation("RdStocktakeLineInventoryLog")
 
   @@index([balanceId])
   @@index([businessDocumentType, businessDocumentId])
@@ -709,6 +737,9 @@ model RdHandoffOrderLine {
   quantity             Decimal        @db.Decimal(18, 6)
   unitPrice            Decimal        @default(0) @db.Decimal(18, 2)
   amount               Decimal        @default(0) @db.Decimal(18, 2)
+  sourceDocumentType   String?        @db.VarChar(64)
+  sourceDocumentId     Int?
+  sourceDocumentLineId Int?
   remark               String?        @db.VarChar(500)
   createdBy            String?        @db.VarChar(64)
   createdAt            DateTime       @default(now())
@@ -719,6 +750,7 @@ model RdHandoffOrderLine {
 
   @@unique([orderId, lineNo])
   @@index([materialId])
+  @@index([sourceDocumentType, sourceDocumentId, sourceDocumentLineId])
   @@map("rd_handoff_order_line")
 }
 
@@ -781,10 +813,122 @@ model RdProcurementRequestLine {
   request              RdProcurementRequest @relation(fields: [requestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   material             Material             @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   acceptanceLines      StockInOrderLine[]
+  statusLedger         RdMaterialStatusLedger?
+  statusHistories      RdMaterialStatusHistory[]
 
   @@unique([requestId, lineNo])
   @@index([materialId])
   @@map("rd_procurement_request_line")
+}
+
+model RdMaterialStatusLedger {
+  id               Int                     @id @default(autoincrement())
+  requestLineId    Int                     @unique
+  pendingQty       Decimal                 @default(0) @db.Decimal(18, 6)
+  inProcurementQty Decimal                 @default(0) @db.Decimal(18, 6)
+  canceledQty      Decimal                 @default(0) @db.Decimal(18, 6)
+  acceptedQty      Decimal                 @default(0) @db.Decimal(18, 6)
+  handedOffQty     Decimal                 @default(0) @db.Decimal(18, 6)
+  scrappedQty      Decimal                 @default(0) @db.Decimal(18, 6)
+  returnedQty      Decimal                 @default(0) @db.Decimal(18, 6)
+  lastEventAt      DateTime?
+  createdBy        String?                 @db.VarChar(64)
+  createdAt        DateTime                @default(now())
+  updatedBy        String?                 @db.VarChar(64)
+  updatedAt        DateTime                @updatedAt
+  requestLine      RdProcurementRequestLine @relation(fields: [requestLineId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@map("rd_material_status_ledger")
+}
+
+model RdMaterialStatusHistory {
+  id                   Int                       @id @default(autoincrement())
+  requestLineId        Int
+  eventType            RdMaterialStatusEventType
+  fromStatus           RdMaterialStatus?
+  toStatus             RdMaterialStatus
+  quantity             Decimal                   @db.Decimal(18, 6)
+  sourceDocumentType   String?                   @db.VarChar(64)
+  sourceDocumentId     Int?
+  sourceDocumentLineId Int?
+  sourceDocumentNumber String?                   @db.VarChar(64)
+  referenceNo          String?                   @db.VarChar(128)
+  reason               String?                   @db.VarChar(500)
+  note                 String?                   @db.VarChar(500)
+  relatedInventoryLogId Int?
+  reversalOfHistoryId  Int?                      @unique
+  isReversed           Boolean                   @default(false)
+  reversedBy           String?                   @db.VarChar(64)
+  reversedAt           DateTime?
+  createdBy            String?                   @db.VarChar(64)
+  createdAt            DateTime                  @default(now())
+  requestLine          RdProcurementRequestLine  @relation(fields: [requestLineId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  relatedInventoryLog  InventoryLog?             @relation(fields: [relatedInventoryLogId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  reversalOfHistory    RdMaterialStatusHistory?  @relation("RdMaterialStatusHistoryReversal", fields: [reversalOfHistoryId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  reversedByHistories  RdMaterialStatusHistory[] @relation("RdMaterialStatusHistoryReversal")
+
+  @@index([requestLineId, createdAt])
+  @@index([sourceDocumentType, sourceDocumentId])
+  @@map("rd_material_status_history")
+}
+
+model RdStocktakeOrder {
+  id                    Int                     @id @default(autoincrement())
+  documentNo            String                  @unique @db.VarChar(64)
+  bizDate               DateTime                @db.Date
+  workshopId            Int
+  lifecycleStatus       DocumentLifecycleStatus @default(EFFECTIVE)
+  inventoryEffectStatus InventoryEffectStatus   @default(POSTED)
+  auditStatusSnapshot   AuditStatusSnapshot     @default(NOT_REQUIRED)
+  revisionNo            Int                     @default(1)
+  countedBy             String?                 @db.VarChar(128)
+  approvedBy            String?                 @db.VarChar(128)
+  totalBookQty          Decimal                 @default(0) @db.Decimal(18, 6)
+  totalCountQty         Decimal                 @default(0) @db.Decimal(18, 6)
+  totalAdjustmentQty    Decimal                 @default(0) @db.Decimal(18, 6)
+  remark                String?                 @db.VarChar(500)
+  voidReason            String?                 @db.VarChar(500)
+  voidedBy              String?                 @db.VarChar(64)
+  voidedAt              DateTime?
+  createdBy             String?                 @db.VarChar(64)
+  createdAt             DateTime                @default(now())
+  updatedBy             String?                 @db.VarChar(64)
+  updatedAt             DateTime                @updatedAt
+  workshop              Workshop                @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  lines                 RdStocktakeOrderLine[]
+
+  @@index([bizDate])
+  @@index([workshopId])
+  @@map("rd_stocktake_order")
+}
+
+model RdStocktakeOrderLine {
+  id                    Int              @id @default(autoincrement())
+  orderId               Int
+  lineNo                Int
+  materialId            Int
+  materialCodeSnapshot  String           @db.VarChar(64)
+  materialNameSnapshot  String           @db.VarChar(128)
+  materialSpecSnapshot  String?          @db.VarChar(128)
+  unitCodeSnapshot      String           @db.VarChar(32)
+  bookQty               Decimal          @db.Decimal(18, 6)
+  countedQty            Decimal          @db.Decimal(18, 6)
+  adjustmentQty         Decimal          @db.Decimal(18, 6)
+  inventoryLogId        Int?             @unique
+  reason                String?          @db.VarChar(500)
+  remark                String?          @db.VarChar(500)
+  createdBy             String?          @db.VarChar(64)
+  createdAt             DateTime         @default(now())
+  updatedBy             String?          @db.VarChar(64)
+  updatedAt             DateTime         @updatedAt
+  order                 RdStocktakeOrder @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  material              Material         @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  inventoryLog          InventoryLog?    @relation("RdStocktakeLineInventoryLog", fields: [inventoryLogId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@unique([orderId, lineNo])
+  @@unique([orderId, materialId])
+  @@index([materialId])
+  @@map("rd_stocktake_order_line")
 }
 
 model DocumentRelation {

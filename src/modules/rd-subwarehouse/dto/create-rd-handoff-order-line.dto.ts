@@ -13,6 +13,21 @@ export class CreateRdHandoffOrderLineDto {
   materialId!: number;
 
   @IsString()
+  @IsOptional()
+  @MaxLength(64)
+  sourceDocumentType?: string;
+
+  @IsInt()
+  @IsOptional()
+  @Min(1)
+  sourceDocumentId?: number;
+
+  @IsInt()
+  @IsOptional()
+  @Min(1)
+  sourceDocumentLineId?: number;
+
+  @IsString()
   @Matches(/^(?!0+(\.0+)?$)\d+(\.\d{1,6})?$/, {
     message: "quantity must be a positive decimal string",
   })

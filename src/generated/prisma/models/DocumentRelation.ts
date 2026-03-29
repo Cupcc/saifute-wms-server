@@ -640,10 +640,6 @@ export type EnumDocumentRelationTypeFieldUpdateOperationsInput = {
   set?: $Enums.DocumentRelationType;
 };
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean;
-};
-
 export type DocumentRelationSelect<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,

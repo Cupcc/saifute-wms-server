@@ -77,6 +77,10 @@ export const ModelName = {
   RdHandoffOrderLine: "RdHandoffOrderLine",
   RdProcurementRequest: "RdProcurementRequest",
   RdProcurementRequestLine: "RdProcurementRequestLine",
+  RdMaterialStatusLedger: "RdMaterialStatusLedger",
+  RdMaterialStatusHistory: "RdMaterialStatusHistory",
+  RdStocktakeOrder: "RdStocktakeOrder",
+  RdStocktakeOrderLine: "RdStocktakeOrderLine",
   DocumentRelation: "DocumentRelation",
   DocumentLineRelation: "DocumentLineRelation",
   LoginLog: "LoginLog",
@@ -574,6 +578,9 @@ export const RdHandoffOrderLineScalarFieldEnum = {
   quantity: "quantity",
   unitPrice: "unitPrice",
   amount: "amount",
+  sourceDocumentType: "sourceDocumentType",
+  sourceDocumentId: "sourceDocumentId",
+  sourceDocumentLineId: "sourceDocumentLineId",
   remark: "remark",
   createdBy: "createdBy",
   createdAt: "createdAt",
@@ -636,6 +643,103 @@ export const RdProcurementRequestLineScalarFieldEnum = {
 
 export type RdProcurementRequestLineScalarFieldEnum =
   (typeof RdProcurementRequestLineScalarFieldEnum)[keyof typeof RdProcurementRequestLineScalarFieldEnum];
+
+export const RdMaterialStatusLedgerScalarFieldEnum = {
+  id: "id",
+  requestLineId: "requestLineId",
+  pendingQty: "pendingQty",
+  inProcurementQty: "inProcurementQty",
+  canceledQty: "canceledQty",
+  acceptedQty: "acceptedQty",
+  handedOffQty: "handedOffQty",
+  scrappedQty: "scrappedQty",
+  returnedQty: "returnedQty",
+  lastEventAt: "lastEventAt",
+  createdBy: "createdBy",
+  createdAt: "createdAt",
+  updatedBy: "updatedBy",
+  updatedAt: "updatedAt",
+} as const;
+
+export type RdMaterialStatusLedgerScalarFieldEnum =
+  (typeof RdMaterialStatusLedgerScalarFieldEnum)[keyof typeof RdMaterialStatusLedgerScalarFieldEnum];
+
+export const RdMaterialStatusHistoryScalarFieldEnum = {
+  id: "id",
+  requestLineId: "requestLineId",
+  eventType: "eventType",
+  fromStatus: "fromStatus",
+  toStatus: "toStatus",
+  quantity: "quantity",
+  sourceDocumentType: "sourceDocumentType",
+  sourceDocumentId: "sourceDocumentId",
+  sourceDocumentLineId: "sourceDocumentLineId",
+  sourceDocumentNumber: "sourceDocumentNumber",
+  referenceNo: "referenceNo",
+  reason: "reason",
+  note: "note",
+  relatedInventoryLogId: "relatedInventoryLogId",
+  reversalOfHistoryId: "reversalOfHistoryId",
+  isReversed: "isReversed",
+  reversedBy: "reversedBy",
+  reversedAt: "reversedAt",
+  createdBy: "createdBy",
+  createdAt: "createdAt",
+} as const;
+
+export type RdMaterialStatusHistoryScalarFieldEnum =
+  (typeof RdMaterialStatusHistoryScalarFieldEnum)[keyof typeof RdMaterialStatusHistoryScalarFieldEnum];
+
+export const RdStocktakeOrderScalarFieldEnum = {
+  id: "id",
+  documentNo: "documentNo",
+  bizDate: "bizDate",
+  workshopId: "workshopId",
+  lifecycleStatus: "lifecycleStatus",
+  inventoryEffectStatus: "inventoryEffectStatus",
+  auditStatusSnapshot: "auditStatusSnapshot",
+  revisionNo: "revisionNo",
+  countedBy: "countedBy",
+  approvedBy: "approvedBy",
+  totalBookQty: "totalBookQty",
+  totalCountQty: "totalCountQty",
+  totalAdjustmentQty: "totalAdjustmentQty",
+  remark: "remark",
+  voidReason: "voidReason",
+  voidedBy: "voidedBy",
+  voidedAt: "voidedAt",
+  createdBy: "createdBy",
+  createdAt: "createdAt",
+  updatedBy: "updatedBy",
+  updatedAt: "updatedAt",
+} as const;
+
+export type RdStocktakeOrderScalarFieldEnum =
+  (typeof RdStocktakeOrderScalarFieldEnum)[keyof typeof RdStocktakeOrderScalarFieldEnum];
+
+export const RdStocktakeOrderLineScalarFieldEnum = {
+  id: "id",
+  orderId: "orderId",
+  lineNo: "lineNo",
+  materialId: "materialId",
+  materialCodeSnapshot: "materialCodeSnapshot",
+  materialNameSnapshot: "materialNameSnapshot",
+  materialSpecSnapshot: "materialSpecSnapshot",
+  unitCodeSnapshot: "unitCodeSnapshot",
+  bookQty: "bookQty",
+  countedQty: "countedQty",
+  adjustmentQty: "adjustmentQty",
+  inventoryLogId: "inventoryLogId",
+  reason: "reason",
+  remark: "remark",
+  createdBy: "createdBy",
+  createdAt: "createdAt",
+  updatedBy: "updatedBy",
+  updatedAt: "updatedAt",
+} as const;
+
+export type RdStocktakeOrderLineScalarFieldEnum =
+  (typeof RdStocktakeOrderLineScalarFieldEnum)[keyof typeof RdStocktakeOrderLineScalarFieldEnum];
 
 export const DocumentRelationScalarFieldEnum = {
   id: "id",
@@ -1027,6 +1131,7 @@ export const RdHandoffOrderLineOrderByRelevanceFieldEnum = {
   materialNameSnapshot: "materialNameSnapshot",
   materialSpecSnapshot: "materialSpecSnapshot",
   unitCodeSnapshot: "unitCodeSnapshot",
+  sourceDocumentType: "sourceDocumentType",
   remark: "remark",
   createdBy: "createdBy",
   updatedBy: "updatedBy",
@@ -1065,6 +1170,55 @@ export const RdProcurementRequestLineOrderByRelevanceFieldEnum = {
 
 export type RdProcurementRequestLineOrderByRelevanceFieldEnum =
   (typeof RdProcurementRequestLineOrderByRelevanceFieldEnum)[keyof typeof RdProcurementRequestLineOrderByRelevanceFieldEnum];
+
+export const RdMaterialStatusLedgerOrderByRelevanceFieldEnum = {
+  createdBy: "createdBy",
+  updatedBy: "updatedBy",
+} as const;
+
+export type RdMaterialStatusLedgerOrderByRelevanceFieldEnum =
+  (typeof RdMaterialStatusLedgerOrderByRelevanceFieldEnum)[keyof typeof RdMaterialStatusLedgerOrderByRelevanceFieldEnum];
+
+export const RdMaterialStatusHistoryOrderByRelevanceFieldEnum = {
+  sourceDocumentType: "sourceDocumentType",
+  sourceDocumentNumber: "sourceDocumentNumber",
+  referenceNo: "referenceNo",
+  reason: "reason",
+  note: "note",
+  reversedBy: "reversedBy",
+  createdBy: "createdBy",
+} as const;
+
+export type RdMaterialStatusHistoryOrderByRelevanceFieldEnum =
+  (typeof RdMaterialStatusHistoryOrderByRelevanceFieldEnum)[keyof typeof RdMaterialStatusHistoryOrderByRelevanceFieldEnum];
+
+export const RdStocktakeOrderOrderByRelevanceFieldEnum = {
+  documentNo: "documentNo",
+  countedBy: "countedBy",
+  approvedBy: "approvedBy",
+  remark: "remark",
+  voidReason: "voidReason",
+  voidedBy: "voidedBy",
+  createdBy: "createdBy",
+  updatedBy: "updatedBy",
+} as const;
+
+export type RdStocktakeOrderOrderByRelevanceFieldEnum =
+  (typeof RdStocktakeOrderOrderByRelevanceFieldEnum)[keyof typeof RdStocktakeOrderOrderByRelevanceFieldEnum];
+
+export const RdStocktakeOrderLineOrderByRelevanceFieldEnum = {
+  materialCodeSnapshot: "materialCodeSnapshot",
+  materialNameSnapshot: "materialNameSnapshot",
+  materialSpecSnapshot: "materialSpecSnapshot",
+  unitCodeSnapshot: "unitCodeSnapshot",
+  reason: "reason",
+  remark: "remark",
+  createdBy: "createdBy",
+  updatedBy: "updatedBy",
+} as const;
+
+export type RdStocktakeOrderLineOrderByRelevanceFieldEnum =
+  (typeof RdStocktakeOrderLineOrderByRelevanceFieldEnum)[keyof typeof RdStocktakeOrderLineOrderByRelevanceFieldEnum];
 
 export const DocumentRelationOrderByRelevanceFieldEnum = {
   upstreamDocumentType: "upstreamDocumentType",

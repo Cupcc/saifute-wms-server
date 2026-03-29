@@ -69,12 +69,42 @@ export const InventoryOperationType = {
   PROJECT_CONSUMPTION_OUT: "PROJECT_CONSUMPTION_OUT",
   RD_HANDOFF_OUT: "RD_HANDOFF_OUT",
   RD_HANDOFF_IN: "RD_HANDOFF_IN",
+  RD_STOCKTAKE_IN: "RD_STOCKTAKE_IN",
+  RD_STOCKTAKE_OUT: "RD_STOCKTAKE_OUT",
   REVERSAL_IN: "REVERSAL_IN",
   REVERSAL_OUT: "REVERSAL_OUT",
 } as const;
 
 export type InventoryOperationType =
   (typeof InventoryOperationType)[keyof typeof InventoryOperationType];
+
+export const RdMaterialStatus = {
+  PENDING_PROCUREMENT: "PENDING_PROCUREMENT",
+  IN_PROCUREMENT: "IN_PROCUREMENT",
+  CANCELLED: "CANCELLED",
+  ACCEPTED: "ACCEPTED",
+  HANDED_OFF: "HANDED_OFF",
+  SCRAPPED: "SCRAPPED",
+  RETURNED: "RETURNED",
+} as const;
+
+export type RdMaterialStatus =
+  (typeof RdMaterialStatus)[keyof typeof RdMaterialStatus];
+
+export const RdMaterialStatusEventType = {
+  REQUEST_CREATED: "REQUEST_CREATED",
+  PROCUREMENT_STARTED: "PROCUREMENT_STARTED",
+  MANUAL_CANCELLED: "MANUAL_CANCELLED",
+  ACCEPTANCE_CONFIRMED: "ACCEPTANCE_CONFIRMED",
+  HANDOFF_CONFIRMED: "HANDOFF_CONFIRMED",
+  SCRAP_CONFIRMED: "SCRAP_CONFIRMED",
+  MANUAL_RETURNED: "MANUAL_RETURNED",
+  FACT_ROLLBACK: "FACT_ROLLBACK",
+  REQUEST_VOIDED: "REQUEST_VOIDED",
+} as const;
+
+export type RdMaterialStatusEventType =
+  (typeof RdMaterialStatusEventType)[keyof typeof RdMaterialStatusEventType];
 
 export const SourceUsageStatus = {
   ALLOCATED: "ALLOCATED",

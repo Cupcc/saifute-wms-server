@@ -31,7 +31,7 @@
 | 需求文档                                                 | 状态                   | 说明                                                                                          |
 | ---------------------------------------------------- | -------------------- | ------------------------------------------------------------------------------------------- |
 
-当前无条目；后续若继续推进 `monthly-reporting` 或 `frontend-old-style-adaptation`，应从对应 `topics/*.md` 新开具体切片 requirement，而不是复用旧总入口。
+当前无条目；后续若继续推进 `rd-subwarehouse`、`monthly-reporting` 或 `frontend-old-style-adaptation`，应从对应 `topics/*.md` 新开具体切片 requirement，而不是复用旧总入口。
 
 ## 已归档（`archive/retained-completed/`）
 
@@ -40,6 +40,7 @@
 | `archive/retained-completed/req-20260328-1855-biome-lint-cleanup.md` | 已完成全仓 `pnpm lint` 收口：根目录 `pnpm lint` 返回 `0`，`web` Biome error 校验通过，closing review 已关闭日期范围守卫的 open finding 并达到 `reviewed-no-findings`；若后续要继续收口全仓 warnings / infos，需另开新 scope。 |
 | `archive/retained-completed/req-20260326-1900-frontend-old-style-adaptation.md` | 前端旧风格回归主题的已完成阶段基线：Phase 1 `shell integration` 与 Phase 2 `/index` 旧版图表首页回归已收口，长期约束与后续路线图见 `topics/frontend-old-style-adaptation.md`；继续推进时应另开新的前端切片。 |
 | `archive/retained-completed/req-20260323-0910-monthly-reporting.md` | 月度报表主题的口径确认记录：月报范围、生成方式、导出形式与补录重算追溯要求已确认，长期约束与阶段路线图见 `topics/monthly-reporting.md`；真正进入设计或实现时应另开新的月报切片。 |
+| `archive/retained-completed/req-20260330-0127-rd-subwarehouse-phase4-phase5.md` | `RD 小仓` 主题下已完成 `F4 + F5` 收口：RD 物料独立状态链与 RD 小仓盘点 / 库存调整能力已落地，并已完成 focused tests、全量测试、web build 与 `rd-operator` / `admin` browser smoke；若后续继续扩展 RD 流程，应另开新切片。 |
 | `archive/retained-completed/req-20260328-1831-rd-procurement-main-acceptance-linkage.md` | `RD 小仓` 主题下已完成 Phase 3 切片：RD 采购需求录入与主仓验收联动已落地，库存仍先入主仓；后续 RD 物料状态链、小仓盘点/调整与最终 smoke 需另开新切片。 |
 | `archive/retained-completed/req-20260321-1109-architecture-review-clarity.md` | 业务域与 shared core 架构 review 已按确认口径闭环；详细 findings 与 follow-up 见 `docs/tasks/archive/retained-completed/task-20260323-1100-architecture-review-clarity.md` 及同批归档 task。 |
 | `archive/retained-completed/req-20260328-1640-rd-subwarehouse-main-to-rd-handoff-foundation.md` | `RD 小仓` 主题下已完成 Phase 2 切片：主仓发料 / 调拨到 RD 后的自动交接能力已落地，小仓无需二次收货确认；后续采购链路、状态链与盘点/调整需另开新切片。 |
