@@ -14,6 +14,10 @@ import {
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
+import {
+  resolveStockScopeFromWorkshopIdentity,
+  type StockScopeCode,
+} from "../../session/domain/user-session";
 import type { CreateProjectDto } from "../dto/create-project.dto";
 import type { QueryProjectDto } from "../dto/query-project.dto";
 import type { UpdateProjectDto } from "../dto/update-project.dto";
@@ -76,6 +80,7 @@ export class ProjectService {
     const workshop = await this.masterDataService.getWorkshopById(
       dto.workshopId,
     );
+    const inventoryStockScope = this.resolveInventoryStockScope(workshop);
 
     const linesWithSnapshots = await Promise.all(
       dto.lines.map(async (line, idx) => {
@@ -144,7 +149,7 @@ export class ProjectService {
         await this.inventoryService.decreaseStock(
           {
             materialId: line.materialId,
-            workshopId: project.workshopId,
+            stockScope: inventoryStockScope,
             quantity: line.quantity,
             operationType: InventoryOperationType.PROJECT_CONSUMPTION_OUT,
             businessModule: BUSINESS_MODULE,
@@ -199,9 +204,10 @@ export class ProjectService {
     const managerSnapshot = finalManagerId
       ? await this.resolveManagerSnapshot(finalManagerId)
       : { managerNameSnapshot: existing.managerNameSnapshot };
-    const workshop = dto.workshopId
-      ? await this.masterDataService.getWorkshopById(dto.workshopId)
-      : { workshopName: existing.workshopNameSnapshot };
+    const workshop = await this.masterDataService.getWorkshopById(
+      dto.workshopId ?? existing.workshopId,
+    );
+    const inventoryStockScope = this.resolveInventoryStockScope(workshop);
 
     return this.prisma.runInTransaction(async (tx) => {
       const currentProject = await this.repository.findProjectById(id, tx);
@@ -316,7 +322,7 @@ export class ProjectService {
             await this.inventoryService.decreaseStock(
               {
                 materialId: updatedLine.materialId,
-                workshopId,
+                stockScope: inventoryStockScope,
                 quantity: updatedLine.quantity,
                 operationType: InventoryOperationType.PROJECT_CONSUMPTION_OUT,
                 businessModule: BUSINESS_MODULE,
@@ -357,7 +363,7 @@ export class ProjectService {
         await this.inventoryService.decreaseStock(
           {
             materialId: createdLine.materialId,
-            workshopId,
+            stockScope: inventoryStockScope,
             quantity: createdLine.quantity,
             operationType: InventoryOperationType.PROJECT_CONSUMPTION_OUT,
             businessModule: BUSINESS_MODULE,
@@ -569,5 +575,17 @@ export class ProjectService {
       amount,
       remark: line.remark,
     };
+  }
+
+  private resolveInventoryStockScope(workshop: {
+    workshopCode: string;
+    workshopName: string;
+  }): StockScopeCode {
+    return (
+      resolveStockScopeFromWorkshopIdentity({
+        workshopCode: workshop.workshopCode,
+        workshopName: workshop.workshopName,
+      }) ?? "MAIN"
+    );
   }
 }

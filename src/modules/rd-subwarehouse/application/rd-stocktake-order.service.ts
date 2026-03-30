@@ -79,7 +79,7 @@ export class RdStocktakeOrderService {
           const balance = await this.inventoryService.getBalanceSnapshot(
             {
               materialId: material.id,
-              workshopId: dto.workshopId,
+              stockScope: "RD_SUB",
             },
             tx,
           );
@@ -149,7 +149,7 @@ export class RdStocktakeOrderService {
           ? await this.inventoryService.increaseStock(
               {
                 materialId: line.materialId,
-                workshopId: order.workshopId,
+                stockScope: "RD_SUB",
                 quantity: adjustmentQty,
                 operationType: InventoryOperationType.RD_STOCKTAKE_IN,
                 businessModule: BUSINESS_MODULE,
@@ -166,7 +166,7 @@ export class RdStocktakeOrderService {
           : await this.inventoryService.decreaseStock(
               {
                 materialId: line.materialId,
-                workshopId: order.workshopId,
+                stockScope: "RD_SUB",
                 quantity: adjustmentQty.abs(),
                 operationType: InventoryOperationType.RD_STOCKTAKE_OUT,
                 businessModule: BUSINESS_MODULE,

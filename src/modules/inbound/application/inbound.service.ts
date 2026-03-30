@@ -185,7 +185,7 @@ export class InboundService {
         const log = await this.inventoryService.increaseStock(
           {
             materialId: line.materialId,
-            workshopId: order.workshopId,
+            stockScope: "MAIN",
             quantity: line.quantity,
             operationType,
             businessModule: BUSINESS_MODULE,
@@ -431,7 +431,7 @@ export class InboundService {
             const log = await this.inventoryService.increaseStock(
               {
                 materialId: updatedLine.materialId,
-                workshopId,
+                stockScope: "MAIN",
                 quantity: updatedLine.quantity,
                 operationType,
                 businessModule: BUSINESS_MODULE,
@@ -483,7 +483,7 @@ export class InboundService {
         const log = await this.inventoryService.increaseStock(
           {
             materialId: createdLine.materialId,
-            workshopId,
+            stockScope: "MAIN",
             quantity: createdLine.quantity,
             operationType,
             businessModule: BUSINESS_MODULE,

@@ -13,13 +13,17 @@ export class InventoryRepository {
 
   async findBalances(params: {
     materialId?: number;
-    workshopId?: number;
+    workshopIds?: number[];
     limit: number;
     offset: number;
   }) {
     const where: Prisma.InventoryBalanceWhereInput = {};
     if (params.materialId) where.materialId = params.materialId;
-    if (params.workshopId) where.workshopId = params.workshopId;
+    if (params.workshopIds?.length === 1) {
+      where.workshopId = params.workshopIds[0];
+    } else if (params.workshopIds?.length) {
+      where.workshopId = { in: params.workshopIds };
+    }
 
     const [items, total] = await Promise.all([
       this.prisma.inventoryBalance.findMany({
@@ -51,7 +55,7 @@ export class InventoryRepository {
 
   async findLogs(params: {
     materialId?: number;
-    workshopId?: number;
+    workshopIds?: number[];
     businessDocumentId?: number;
     businessDocumentType?: string;
     businessDocumentNumber?: string;
@@ -63,7 +67,11 @@ export class InventoryRepository {
   }) {
     const where: Prisma.InventoryLogWhereInput = {};
     if (params.materialId) where.materialId = params.materialId;
-    if (params.workshopId) where.workshopId = params.workshopId;
+    if (params.workshopIds?.length === 1) {
+      where.workshopId = params.workshopIds[0];
+    } else if (params.workshopIds?.length) {
+      where.workshopId = { in: params.workshopIds };
+    }
     if (params.businessDocumentId)
       where.businessDocumentId = params.businessDocumentId;
     if (params.businessDocumentType)
@@ -290,7 +298,7 @@ export class InventoryRepository {
   }
 
   async findFactoryNumberReservations(params: {
-    workshopId?: number;
+    workshopIds?: number[];
     businessDocumentType?: string;
     businessDocumentLineId?: number;
     startNumber?: string;
@@ -299,8 +307,10 @@ export class InventoryRepository {
     offset: number;
   }) {
     const where: Prisma.FactoryNumberReservationWhereInput = {};
-    if (params.workshopId) {
-      where.workshopId = params.workshopId;
+    if (params.workshopIds?.length === 1) {
+      where.workshopId = params.workshopIds[0];
+    } else if (params.workshopIds?.length) {
+      where.workshopId = { in: params.workshopIds };
     }
     if (params.businessDocumentType) {
       where.businessDocumentType = params.businessDocumentType;

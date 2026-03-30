@@ -23,11 +23,9 @@ export class ReportingController {
   @Permissions("reporting:home:view")
   @Get("home")
   async getHomeDashboard(@CurrentUser() user?: SessionUserSnapshot) {
-    const workshopScope =
-      await this.workshopScopeService.getResolvedScope(user);
-    return this.reportingService.getHomeDashboard(
-      workshopScope?.workshopId ?? undefined,
-    );
+    const inventoryScope =
+      await this.workshopScopeService.getResolvedStockScope(user);
+    return this.reportingService.getHomeDashboard(inventoryScope?.stockScope);
   }
 
   @Permissions("reporting:inventory-summary:view")
@@ -36,13 +34,14 @@ export class ReportingController {
     @Query() query: QueryInventorySummaryDto,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    const workshopId = await this.workshopScopeService.resolveQueryWorkshopId(
-      user,
-      query.workshopId,
-    );
+    const inventoryScope =
+      await this.workshopScopeService.resolveInventoryQueryScope(
+        user,
+        query.workshopId,
+      );
     return this.reportingService.getInventorySummary({
       ...query,
-      workshopId,
+      stockScope: inventoryScope?.stockScope,
     });
   }
 
@@ -52,13 +51,14 @@ export class ReportingController {
     @Query() query: QueryMaterialCategorySummaryDto,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    const workshopId = await this.workshopScopeService.resolveQueryWorkshopId(
-      user,
-      query.workshopId,
-    );
+    const inventoryScope =
+      await this.workshopScopeService.resolveInventoryQueryScope(
+        user,
+        query.workshopId,
+      );
     return this.reportingService.getMaterialCategorySummary({
       ...query,
-      workshopId,
+      stockScope: inventoryScope?.stockScope,
     });
   }
 
@@ -68,11 +68,11 @@ export class ReportingController {
     @Query() query: QueryTrendSeriesDto,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    const workshopScope =
-      await this.workshopScopeService.getResolvedScope(user);
+    const inventoryScope =
+      await this.workshopScopeService.getResolvedStockScope(user);
     return this.reportingService.getTrendSeries(
       query,
-      workshopScope?.workshopId ?? undefined,
+      inventoryScope?.stockScope,
     );
   }
 
@@ -84,17 +84,16 @@ export class ReportingController {
     @Query() query: ExportReportDto,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    const resolvedWorkshopId =
-      await this.workshopScopeService.resolveQueryWorkshopId(
+    const inventoryScope =
+      await this.workshopScopeService.resolveInventoryQueryScope(
         user,
         query.workshopId,
       );
     const exportResult = await this.reportingService.exportReport(
       {
         ...query,
-        workshopId: resolvedWorkshopId,
       },
-      resolvedWorkshopId,
+      inventoryScope?.stockScope,
     );
     return new StreamableFile(Buffer.from(exportResult.content, "utf8"), {
       disposition: `attachment; filename="${exportResult.fileName}"`,

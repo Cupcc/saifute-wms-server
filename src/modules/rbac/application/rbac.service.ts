@@ -1,6 +1,10 @@
 import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { MasterDataService } from "../../master-data/application/master-data.service";
-import type { SessionUserSnapshot } from "../../session/domain/user-session";
+import {
+  createAllSessionWorkshopScope,
+  type SessionUserSnapshot,
+  toSessionStockScopeSnapshotFromWorkshopScope,
+} from "../../session/domain/user-session";
 import type { RbacUserRecord, RouteNode } from "../domain/rbac.types";
 import { InMemoryRbacRepository } from "../infrastructure/in-memory-rbac.repository";
 
@@ -28,6 +32,10 @@ export class RbacService {
   }
 
   toSessionUser(user: RbacUserRecord): SessionUserSnapshot {
+    const workshopScope = user.workshopScope
+      ? { ...user.workshopScope }
+      : createAllSessionWorkshopScope();
+
     return {
       userId: user.userId,
       username: user.username,
@@ -37,14 +45,10 @@ export class RbacService {
       permissions: [...user.permissions],
       department: user.department ? { ...user.department } : null,
       consoleMode: user.consoleMode ?? "default",
-      workshopScope: user.workshopScope
-        ? { ...user.workshopScope }
-        : {
-            mode: "ALL",
-            workshopId: null,
-            workshopCode: null,
-            workshopName: null,
-          },
+      stockScope: user.stockScope
+        ? { ...user.stockScope }
+        : toSessionStockScopeSnapshotFromWorkshopScope(workshopScope),
+      workshopScope,
     };
   }
 
@@ -101,49 +105,73 @@ export class RbacService {
   async enrichSessionUser(
     user: SessionUserSnapshot,
   ): Promise<SessionUserSnapshot> {
+    const normalizedWorkshopScope =
+      user.workshopScope ?? createAllSessionWorkshopScope();
+    const normalizedStockScope =
+      user.stockScope ??
+      toSessionStockScopeSnapshotFromWorkshopScope(normalizedWorkshopScope);
+
     if (
-      user.workshopScope.mode !== "FIXED" ||
-      user.workshopScope.workshopId ||
-      !user.workshopScope.workshopCode
+      normalizedWorkshopScope.mode !== "FIXED" ||
+      normalizedWorkshopScope.workshopId ||
+      !normalizedWorkshopScope.workshopCode
     ) {
-      return user;
+      return {
+        ...user,
+        stockScope: normalizedStockScope,
+        workshopScope: normalizedWorkshopScope,
+      };
     }
 
     try {
       const workshop = await this.masterDataService.getWorkshopByCode(
-        user.workshopScope.workshopCode,
+        normalizedWorkshopScope.workshopCode,
       );
-      return {
-        ...user,
-        workshopScope: {
-          mode: "FIXED",
-          workshopId: workshop.id,
-          workshopCode: workshop.workshopCode,
-          workshopName: workshop.workshopName,
-        },
-      };
+      return this.withResolvedWorkshop(user, workshop);
     } catch {
-      if (!user.workshopScope.workshopName) {
-        return user;
+      if (!normalizedWorkshopScope.workshopName) {
+        return {
+          ...user,
+          stockScope: normalizedStockScope,
+          workshopScope: normalizedWorkshopScope,
+        };
       }
 
       try {
         const workshop = await this.masterDataService.getWorkshopByName(
-          user.workshopScope.workshopName,
+          normalizedWorkshopScope.workshopName,
         );
+        return this.withResolvedWorkshop(user, workshop);
+      } catch {
         return {
           ...user,
-          workshopScope: {
-            mode: "FIXED",
-            workshopId: workshop.id,
-            workshopCode: workshop.workshopCode,
-            workshopName: workshop.workshopName,
-          },
+          stockScope: normalizedStockScope,
+          workshopScope: normalizedWorkshopScope,
         };
-      } catch {
-        return user;
       }
     }
+  }
+
+  private withResolvedWorkshop(
+    user: SessionUserSnapshot,
+    workshop: {
+      id: number;
+      workshopCode: string;
+      workshopName: string;
+    },
+  ): SessionUserSnapshot {
+    const workshopScope = {
+      mode: "FIXED" as const,
+      workshopId: workshop.id,
+      workshopCode: workshop.workshopCode,
+      workshopName: workshop.workshopName,
+    };
+
+    return {
+      ...user,
+      stockScope: toSessionStockScopeSnapshotFromWorkshopScope(workshopScope),
+      workshopScope,
+    };
   }
 
   private filterRoutesByPermissions(

@@ -132,20 +132,21 @@
 
 | 目标表                 | 现在的作用                  |
 | ------------------- | ---------------------- |
-| `material_category` | 物料分类树                  |
-| `material`          | 物料主档；被库存、入库、出库、车间、项目复用 |
-| `customer`          | 客户主档；被客户收发和项目复用        |
-| `supplier`          | 供应商主档；被入库和项目复用         |
-| `personnel`         | 人员主档；承接经办人、负责人等角色      |
-| `workshop`          | 车间主档；是库存维度和单据归属维度      |
+| `material_category` | 物料分类树                         |
+| `material`          | 物料主档；被库存、入库、出库、车间、项目复用        |
+| `customer`          | 客户主档；被客户收发和项目复用               |
+| `supplier`          | 供应商主档；被入库和项目复用                |
+| `personnel`         | 人员主档；承接经办人、负责人等角色             |
+| `workshop`          | 车间主档；承接单据归属与成本核算，不再作为库存维度    |
+| `stock_scope`       | 库存范围主档；第一阶段真实库存范围仅主仓与 RD 小仓 |
 
 ### 4.2 库存核心表
 
 | 目标表                          | 现在的作用                              |
 | ---------------------------- | ---------------------------------- |
-| `inventory_balance`          | 按 `materialId + workshopId` 保存库存现值 |
-| `inventory_log`              | 保存不可变库存流水和业务来源                     |
-| `inventory_source_usage`     | 保存来源占用与释放，承接旧 `inventory_used` 语义  |
+| `inventory_balance`          | 按 `materialId + stockScopeId` 保存库存现值      |
+| `inventory_log`              | 保存不可变库存流水、库存范围和来源成本层                |
+| `inventory_source_usage`     | 保存来源占用、释放与成本分配，承接旧 `inventory_used` 语义 |
 | `factory_number_reservation` | 保存出厂编号区间占用与释放                      |
 
 ### 4.3 工作流投影表
@@ -195,7 +196,8 @@
 | `saifute_customer`                                       | 客户主档    | `customer`          | 客户主档    | 字段归一化迁移  | 已迁入，`184 / 184`                       |
 | `saifute_supplier`                                       | 供应商主档   | `supplier`          | 供应商主档   | 字段归一化迁移  | 已迁入，`93 / 93`                         |
 | `saifute_personnel`                                      | 人员主档    | `personnel`         | 人员主档    | 字段归一化迁移  | 已迁入，`51 / 51`                         |
-| `saifute_workshop`                                       | 车间主档    | `workshop`          | 车间主档    | 迁移并补默认车间 | 已迁入，`12` 个旧车间进入 `13` 个目标车间，额外生成历史默认车间 |
+| `saifute_workshop`                                       | 车间主档    | `workshop`          | 车间主档（归属 / 核算维度）    | 字段归一化迁移 | 已迁入；后续不再把 `workshop` 当成库存范围兜底 |
+| 无稳定旧业务真源（按已确认运行口径受控生成）                                | 库存范围    | `stock_scope`       | 主仓 / RD 小仓库存范围 | 受控生成     | 第一阶段固定 `MAIN` / `RD_SUB`，不复刻旧 `warehouse/location` 设计 |
 
 ### 5.2 入库域
 
@@ -317,7 +319,7 @@
 
 | 对象                                             | 原因                                                         | 当前承接方式                    |
 | ---------------------------------------------- | ---------------------------------------------------------- | ------------------------- |
-| `inventory_balance`                            | 新库以 `materialId + workshopId` 为唯一维度，旧库存是单维且有孤儿记录           | 基于 admitted 业务单据重放        |
+| `inventory_balance`                            | 新库以 `materialId + stockScopeId` 为唯一维度；旧库存是单维，且与“车间归属”不是同一语义 | 基于 admitted 业务单据重放        |
 | `inventory_log`                                | 新库存流水需要统一 `businessDocumentType`、`operationType`、幂等键和逆操作语义 | 基于 admitted 业务单据重放        |
 | `inventory_source_usage`                       | 旧 `inventory_used` 不能机械一对一回填，新模型要求消费行与来源流水精确对齐             | 按可证明关系转换；当前仍待补强           |
 | `workflow_audit_document`                      | 新库只保留当前有效审核投影，不复制旧审核全过程                                    | 对需要审核的 admitted 单据重建投影    |

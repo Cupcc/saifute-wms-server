@@ -232,7 +232,7 @@ describe("InboundService", () => {
       expect(inventoryService.increaseStock).toHaveBeenCalledWith(
         expect.objectContaining({
           materialId: 100,
-          workshopId: 1,
+          stockScope: "MAIN",
           businessDocumentType: "StockInOrder",
           businessDocumentId: 1,
           businessDocumentNumber: "SI-001",
@@ -292,7 +292,7 @@ describe("InboundService", () => {
       );
       expect(inventoryService.increaseStock).toHaveBeenCalledWith(
         expect.objectContaining({
-          workshopId: 1,
+          stockScope: "MAIN",
         }),
         expect.anything(),
       );

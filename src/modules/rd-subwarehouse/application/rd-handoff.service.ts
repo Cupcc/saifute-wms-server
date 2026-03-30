@@ -185,7 +185,7 @@ export class RdHandoffService {
         await this.inventoryService.decreaseStock(
           {
             materialId: line.materialId,
-            workshopId: order.sourceWorkshopId,
+            stockScope: "MAIN",
             quantity: line.quantity,
             operationType: InventoryOperationType.RD_HANDOFF_OUT,
             businessModule: BUSINESS_MODULE,
@@ -202,7 +202,7 @@ export class RdHandoffService {
         const inboundLog = await this.inventoryService.increaseStock(
           {
             materialId: line.materialId,
-            workshopId: order.targetWorkshopId,
+            stockScope: "RD_SUB",
             quantity: line.quantity,
             operationType: InventoryOperationType.RD_HANDOFF_IN,
             businessModule: BUSINESS_MODULE,

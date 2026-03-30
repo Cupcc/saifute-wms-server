@@ -48,6 +48,14 @@
 - 作废必须走逆操作，不允许直接改回库存结果
 - 审计日志允许异步，但主业务事实和库存副作用不能拆事务
 
+### 2.5 库存范围与归属分离原则
+
+- 实物库存范围与业务归属维度必须分离，不能让一个字段同时承担“货放在哪”和“算到谁头上”
+- 第一阶段真实库存范围只承接 `MAIN`（主仓）与 `RD_SUB`（研发小仓）
+- `workshop` 只承担主仓领料、退料、报废的归属与成本核算，不建立车间库存余额
+- `project` 只承担研发归集，不直接等同库存池
+- 同一物料不同入库批次允许存在不同成本层，出库、领料、退料必须按来源分配传递成本
+
 ## 3. 业务流程总览
 
 ```mermaid
@@ -72,7 +80,7 @@ flowchart TD
 
 | NestJS 模块           | 路由前缀                 | 覆盖对象   | 对应核心表                                                                                     | 说明                                     |
 | ------------------- | -------------------- | ------ | ----------------------------------------------------------------------------------------- | -------------------------------------- |
-| `master-data`       | `/master-data`       | 主数据    | `material_category`、`material`、`customer`、`supplier`、`personnel`、`workshop`               | 为事务单据提供主档与快照来源                         |
+| `master-data`       | `/master-data`       | 主数据    | `material_category`、`material`、`customer`、`supplier`、`personnel`、`workshop`、`stock_scope` | 为事务单据提供主档、归属维度与真实库存范围                  |
 | `inventory-core`    | `/inventory`         | 库存核心   | `inventory_balance`、`inventory_log`、`inventory_source_usage`、`factory_number_reservation` | 库存唯一写入口                                |
 | `workflow`          | `/workflow`          | 审核投影   | `workflow_audit_document`                                                                 | 单据表只保留审核快照                             |
 | `inbound`           | `/inbound`           | 入库家族   | `stock_in_order`、`stock_in_order_line`                                                    | `orders` 对应验收单，`into-orders` 对应生产入库单   |
@@ -92,7 +100,7 @@ flowchart TD
 
 主流程：
 
-1. 维护物料、客户、供应商、人员、车间主档
+1. 维护物料、客户、供应商、人员、车间、库存范围主档
 2. 为单据提供标准查询与快照能力
 3. 在被明确允许时，为历史兼容场景执行受控自动补建
 
@@ -107,9 +115,9 @@ flowchart TD
 
 主流程：
 
-1. 根据单据命令执行 `increaseStock()` 或 `decreaseStock()`
+1. 根据单据命令和目标 `stockScopeId` 执行 `increaseStock()` 或 `decreaseStock()`
 2. 同事务写入 `inventory_balance` 与 `inventory_log`
-3. 如涉及消耗来源，维护 `inventory_source_usage`
+3. 如涉及消耗来源，维护 `inventory_source_usage` 并记录来源成本层分配
 4. 如涉及出厂编号区间，维护 `factory_number_reservation`
 5. 作废时通过 `reverseStock()` 生成逆向流水并释放占用
 
@@ -118,6 +126,8 @@ flowchart TD
 - `inventory-core` 是库存唯一写入口
 - 库存现值与库存日志必须同时存在
 - `inventory_source_usage` 与逆操作补偿不可省略
+- 真实库存范围与 `workshop` / `project` 归属必须分离
+- 同一物料不同来源批次可保留不同成本层，出库成本必须通过来源分配传递
 - 幂等通过 `idempotencyKey` 保证，避免重复写库存
 
 ### 4.3 `workflow`
@@ -147,7 +157,7 @@ flowchart TD
 
 流程：
 
-1. 校验供应商、经办人、车间、物料等主数据
+1. 校验供应商、经办人、库存范围、车间、物料等主数据
 2. 写主表与明细
 3. 调用 `inventory-core.increaseStock()`
 4. 创建或刷新审核记录
@@ -159,6 +169,7 @@ NestJS `inbound` 模块映射补充：
 - `/inbound/orders` 对应 `StockInOrderType.ACCEPTANCE`，即验收单
 - `/inbound/into-orders` 对应 `StockInOrderType.PRODUCTION_RECEIPT`，即生产入库单
 - 两类单据共用 `stock_in_order` / `stock_in_order_line`，差异通过 `orderType`、权限前缀、应用服务入口区分
+- 第一阶段验收单与生产入库单默认写入主仓 `MAIN`；RD 采购到货在验收时也先入主仓，再由后续协同过账转入 RD 小仓
 
 ### 5.2 客户收发家族
 
@@ -184,6 +195,7 @@ NestJS `customer` 模块映射补充：
 - `/customer/sales-returns` 对应 `CustomerStockOrderType.SALES_RETURN`，即销售退货单
 - 两类单据共用 `customer_stock_order` / `customer_stock_order_line`
 - 销售退货与出库的来源关系优先通过 `document_relation`、`document_line_relation` 表达，而不是继续拆独立关系表
+- 第一阶段客户出库与销售退货默认作用于主仓 `MAIN`
 
 历史数据兼容补充：
 
@@ -199,11 +211,12 @@ NestJS `customer` 模块映射补充：
 
 流程：
 
-1. 领料、报废走 `decreaseStock()`
-2. 退料走 `increaseStock()`
-3. 对消耗类动作维护 `inventory_source_usage`
-4. 通过单据关系表表达退料对领料的回冲关系
-5. 作废时执行逆操作并释放来源占用
+1. 领料、报废走对主仓 `MAIN` 的 `decreaseStock()`
+2. 退料走对主仓 `MAIN` 的 `increaseStock()`
+3. `workshopId` 只用于归属与成本核算，不建立车间库存余额
+4. 对消耗类动作维护 `inventory_source_usage`
+5. 通过单据关系表表达退料对领料的回冲关系
+6. 作废时执行逆操作并释放来源占用
 
 历史数据兼容补充：
 
@@ -232,7 +245,7 @@ NestJS `workshop-material` 模块映射补充：
 流程：
 
 1. 创建项目主表与项目物料明细
-2. 根据物料差量调用 `inventory-core` 维护消耗或回补
+2. 与 RD 小仓有关的领用、退料、报废默认对 `RD_SUB` 调用 `inventory-core`，项目只承担归集
 3. 默认不接 `workflow`，`auditStatusSnapshot` 固定为 `NOT_REQUIRED`
 4. 作废项目时回补库存，并保留项目历史事实
 
@@ -253,7 +266,8 @@ NestJS `project` / `reporting` 模块映射补充：
 | `master-data`       | `customer`                     | 表   | 客户主档               |
 | `master-data`       | `supplier`                     | 表   | 供应商主档              |
 | `master-data`       | `personnel`                    | 表   | 人员主档               |
-| `master-data`       | `workshop`                     | 表   | 车间主档               |
+| `master-data`       | `workshop`                     | 表   | 车间主档（归属 / 核算维度）    |
+| `master-data`       | `stock_scope`                  | 表   | 库存范围主档（主仓 / RD 小仓） |
 | `inventory-core`    | `inventory_balance`            | 表   | 库存现值               |
 | `inventory-core`    | `inventory_log`                | 表   | 库存流水               |
 | `inventory-core`    | `inventory_source_usage`       | 表   | 来源分配 / 释放追踪        |
@@ -292,26 +306,32 @@ NestJS `project` / `reporting` 模块映射补充：
 | `supplier`          | 供应商主档 | `supplierCode`、`supplierName`、`status`                                                                     | `supplierCode` 唯一  |
 | `personnel`         | 人员主档  | `personnelCode`、`personnelName`、`status`                                                                   | `personnelCode` 唯一 |
 | `workshop`          | 车间主档  | `workshopCode`、`workshopName`、`status`                                                                     | `workshopCode` 唯一  |
+| `stock_scope`       | 库存范围  | `scopeCode`、`scopeName`、`scopeType`、`status`                                                               | `scopeCode` 唯一     |
 
 补充说明：
 
 - 自动补建不单独拆交易表，在主数据主表保留 `creationMode`、`sourceDocumentType`、`sourceDocumentId` 追溯来源
 - 物料分类与主数据字典分离，不把分类字段直接塞进 `material`
 - 客户、供应商、人员保持分表，不并表为通用主体
+- `stock_scope` 用于表达主仓、研发小仓等真实库存范围，不等同标准 WMS 的仓库 / 库位体系
+- `workshop` 只用于单据归属与成本核算，不承担库存余额维度
 
 ## 6.3 `inventory-core` 表
 
-| 表名                           | 说明       | 关键字段                                                                                                                                    | 关键约束                                                     |
-| ---------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| `inventory_balance`          | 物料库存现值   | `materialId`、`workshopId`、`quantityOnHand`、`rowVersion`                                                                                 | `materialId + workshopId` 唯一                             |
-| `inventory_log`              | 不可变库存流水  | `balanceId`、`direction`、`operationType`、`businessDocumentType`、`businessDocumentId`、`changeQty`、`beforeQty`、`afterQty`、`idempotencyKey` | `idempotencyKey` 唯一                                      |
-| `inventory_source_usage`     | 消耗来源追踪   | `materialId`、`sourceLogId`、`consumerDocumentType`、`consumerDocumentId`、`consumerLineId`、`allocatedQty`、`releasedQty`                    | `consumerDocumentType + consumerLineId + sourceLogId` 唯一 |
-| `factory_number_reservation` | 出厂编号区间占用 | `materialId`、`businessDocumentType`、`businessDocumentId`、`businessDocumentLineId`、`startNumber`、`endNumber`、`status`                    | 单据行与区间组合唯一                                               |
+| 表名                           | 说明       | 关键字段                                                                                                                                                                          | 关键约束                                                     |
+| ---------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `inventory_balance`          | 物料库存现值   | `materialId`、`stockScopeId`、`quantityOnHand`、`rowVersion`                                                                                                                     | `materialId + stockScopeId` 唯一                           |
+| `inventory_log`              | 不可变库存流水  | `balanceId`、`stockScopeId`、`direction`、`operationType`、`businessDocumentType`、`businessDocumentId`、`changeQty`、`beforeQty`、`afterQty`、`unitCost`、`totalCost`、`idempotencyKey` | `idempotencyKey` 唯一                                      |
+| `inventory_source_usage`     | 消耗来源追踪   | `materialId`、`sourceLogId`、`consumerDocumentType`、`consumerDocumentId`、`consumerLineId`、`allocatedQty`、`releasedQty`、`allocatedUnitCost`、`allocatedAmount`                    | `consumerDocumentType + consumerLineId + sourceLogId` 唯一 |
+| `factory_number_reservation` | 出厂编号区间占用 | `materialId`、`businessDocumentType`、`businessDocumentId`、`businessDocumentLineId`、`startNumber`、`endNumber`、`status`                                                          | 单据行与区间组合唯一                                               |
 
 补充说明：
 
-- 库存维度固定为 `materialId + workshopId`
-- 对历史上“没有明确车间”的单据，统一归档到默认车间
+- 第一阶段真实库存范围固定为 `MAIN` 与 `RD_SUB`
+- 对历史上无法明确判定库存范围的数据，默认归到 `MAIN`；确需留痕时使用受控历史兜底范围，而不是默认车间
+- `workshopId` 只用于主仓领退料的归属与成本核算，不参与库存余额唯一键
+- `projectId` 只用于研发归集，不直接等同库存池
+- 同一物料不同来源批次允许不同成本层；入库类成本写入来源流水，出库类成本由 `inventory_source_usage` 分配
 - `inventory_warning` 不落交易表，改为读模型视图 `vw_inventory_warning`
 
 ## 6.4 `workflow` 表
@@ -328,54 +348,58 @@ NestJS `project` / `reporting` 模块映射补充：
 
 ## 6.5 `inbound` 表
 
-| 表名                    | 说明          | 关键字段                                                                         | 关键约束                  |
-| --------------------- | ----------- | ---------------------------------------------------------------------------- | --------------------- |
-| `stock_in_order`      | 验收单、生产入库单主表 | `documentNo`、`orderType`、`supplierId`、`handlerPersonnelId`、`workshopId`、三轴状态 | `documentNo` 唯一       |
-| `stock_in_order_line` | 入库明细        | `orderId`、`lineNo`、`materialId`、`quantity`、`unitPrice`、`amount`              | `orderId + lineNo` 唯一 |
+| 表名                    | 说明          | 关键字段                                                                                        | 关键约束                  |
+| --------------------- | ----------- | ------------------------------------------------------------------------------------------- | --------------------- |
+| `stock_in_order`      | 验收单、生产入库单主表 | `documentNo`、`orderType`、`stockScopeId`、`supplierId`、`handlerPersonnelId`、`workshopId`、三轴状态 | `documentNo` 唯一       |
+| `stock_in_order_line` | 入库明细        | `orderId`、`lineNo`、`materialId`、`quantity`、`unitPrice`、`amount`                             | `orderId + lineNo` 唯一 |
 
 补充说明：
 
 - `StockInOrderType.ACCEPTANCE` 与 `StockInOrderType.PRODUCTION_RECEIPT` 共用同一套主从表
 - `inbound` 模块里的验收单与生产入库单只是在应用层入口不同，不再拆成两套独立表
+- 第一阶段验收单与生产入库单默认写入主仓 `MAIN`
 - 修改时必须按明细差量处理，不允许直接覆盖旧明细后忽略库存补偿
 
 ## 6.6 `customer` 表
 
 | 表名                          | 说明          | 关键字段                                                                                      | 关键约束                  |
 | --------------------------- | ----------- | ----------------------------------------------------------------------------------------- | --------------------- |
-| `customer_stock_order`      | 出库单、销售退货单主表 | `documentNo`、`orderType`、`customerId`、`handlerPersonnelId`、`workshopId`、三轴状态              | `documentNo` 唯一       |
+| `customer_stock_order`      | 出库单、销售退货单主表 | `documentNo`、`orderType`、`stockScopeId`、`customerId`、`handlerPersonnelId`、三轴状态            | `documentNo` 唯一       |
 | `customer_stock_order_line` | 客户收发明细      | `orderId`、`lineNo`、`materialId`、`quantity`、`unitPrice`、`amount`、`startNumber`、`endNumber` | `orderId + lineNo` 唯一 |
 
 补充说明：
 
 - `CustomerStockOrderType.OUTBOUND` 与 `CustomerStockOrderType.SALES_RETURN` 共用同一套主从表
 - 销售退货与出库的主关系优先通过关系表表达，不在主表持续堆砌特化字段
+- 第一阶段客户出库与销售退货默认作用于主仓 `MAIN`
 - 对历史迁移数据，行级 `sourceDocument*` 可作为可空增强字段
 
 ## 6.7 `workshop-material` 表
 
-| 表名                             | 说明         | 关键字段                                                            | 关键约束                  |
-| ------------------------------ | ---------- | --------------------------------------------------------------- | --------------------- |
-| `workshop_material_order`      | 领料、退料、报废主表 | `documentNo`、`orderType`、`workshopId`、`handlerPersonnelId`、三轴状态 | `documentNo` 唯一       |
-| `workshop_material_order_line` | 车间物料明细     | `orderId`、`lineNo`、`materialId`、`quantity`、`unitPrice`、`amount` | `orderId + lineNo` 唯一 |
+| 表名                             | 说明         | 关键字段                                                                           | 关键约束                  |
+| ------------------------------ | ---------- | ------------------------------------------------------------------------------ | --------------------- |
+| `workshop_material_order`      | 领料、退料、报废主表 | `documentNo`、`orderType`、`stockScopeId`、`workshopId`、`handlerPersonnelId`、三轴状态 | `documentNo` 唯一       |
+| `workshop_material_order_line` | 车间物料明细     | `orderId`、`lineNo`、`materialId`、`quantity`、`unitPrice`、`amount`                | `orderId + lineNo` 唯一 |
 
 补充说明：
 
 - `WorkshopMaterialOrderType.PICK`、`RETURN`、`SCRAP` 共用同一套主从表
 - 退料与领料的回冲关系优先通过关系表表达，不继续复制 Java 的零散关系设计
+- 第一阶段 `workshop-material` 的 `stockScopeId` 固定为主仓 `MAIN`；`workshopId` 只用于归属与成本核算，不代表车间库存
 - 对历史迁移数据，行级 `sourceDocument*` 可作为可空增强字段
 
 ## 6.8 `project` 表
 
-| 表名                      | 说明     | 关键字段                                                                            | 关键约束                    |
-| ----------------------- | ------ | ------------------------------------------------------------------------------- | ----------------------- |
-| `project`               | 项目主表   | `projectCode`、`projectName`、`customerId`、`supplierId`、`managerPersonnelId`、三轴状态 | `projectCode` 唯一        |
-| `project_material_line` | 项目物料明细 | `projectId`、`lineNo`、`materialId`、`quantity`、`unitPrice`、`amount`               | `projectId + lineNo` 唯一 |
+| 表名                      | 说明     | 关键字段                                                                             | 关键约束                    |
+| ----------------------- | ------ | -------------------------------------------------------------------------------- | ----------------------- |
+| `project`               | 项目主表   | `projectCode`、`projectName`、`customerId`、`supplierId`、`managerPersonnelId`、三轴状态  | `projectCode` 唯一        |
+| `project_material_line` | 项目物料明细 | `projectId`、`lineNo`、`materialId`、`stockScopeId`、`quantity`、`unitPrice`、`amount` | `projectId + lineNo` 唯一 |
 
 补充说明：
 
 - 项目域虽然是事务型领域，但默认不接 `workflow`
 - 项目消耗或回补库存仍必须走 `inventory-core`
+- 与 RD 小仓有关的项目库存动作默认来自 `RD_SUB`；项目本身不形成新的物理库存池
 
 ## 6.9 跨单据关系表
 
@@ -427,6 +451,7 @@ NestJS `project` / `reporting` 模块映射补充：
 - `materialCodeSnapshot`
 - `materialNameSnapshot`
 - `materialSpecSnapshot`
+- `stockScopeNameSnapshot`
 - `unitCodeSnapshot`
 
 有主体信息的表头按需保留：
@@ -451,7 +476,7 @@ NestJS `project` / `reporting` 模块映射补充：
 - 主数据编码唯一
 - 单据编号唯一
 - 主从表 `parentId + lineNo` 唯一
-- `inventory_balance(materialId, workshopId)` 唯一
+- `inventory_balance(materialId, stockScopeId)` 唯一
 - `inventory_log.idempotencyKey` 唯一
 - `workflow_audit_document(documentType, documentId)` 唯一
 
@@ -464,7 +489,7 @@ NestJS `project` / `reporting` 模块映射补充：
 
 ### 8.3 查询索引
 
-- 单据主表：`bizDate`、`orderType`、`customerId` 或 `supplierId`、`workshopId`
+- 单据主表：`bizDate`、`orderType`、`customerId` 或 `supplierId`、`stockScopeId`、`workshopId`
 - 单据明细：`materialId`
 - 库存流水：`businessDocumentType + businessDocumentId`、`occurredAt`
 - 关系表：`upstreamDocumentId`、`downstreamDocumentId`
@@ -477,6 +502,6 @@ NestJS `project` / `reporting` 模块映射补充：
 模型分组：
 
 - 枚举：主数据状态、单据状态、库存方向、操作类型、关系类型
-- 共享核心：`Material`、`InventoryBalance`、`WorkflowAuditDocument`
+- 共享核心：`Material`、`Workshop`、`StockScope`、`InventoryBalance`、`InventoryLog`、`InventorySourceUsage`、`WorkflowAuditDocument`
 - 单据家族：`StockInOrder`、`CustomerStockOrder`、`WorkshopMaterialOrder`、`Project`
 - 关系与只读协作：`DocumentRelation`、`DocumentLineRelation`

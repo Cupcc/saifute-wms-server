@@ -9,7 +9,7 @@
 **当前实现**：
 
 - 前端已形成 `default` 与 `rd-subwarehouse` 两种 `consoleMode`，通过 `/rd/*` 路由提供研发小仓专属入口。
-- 会话快照承载 `consoleMode` 与 `workshopScope`，RD 账号通过固定 `workshopId` 约束查询和写入范围。
+- 会话快照承载 `consoleMode` 与固定 RD 范围约束；当前实现仍以 `workshopScope` / `workshopId` 传递该约束，但目标语义应收敛为 `stockScope = RD_SUB`，避免把车间归属误当成库存池。
 - 后端已新增 `rd-subwarehouse` 独立交接文档：主仓管理员创建 `RD handoff` 业务事实后，系统同事务完成 `main - / RD +` 的 `inventory-core` 过账，并以该文档作为 RD 自动入库结果真源。
 - 已落地的 RD 页面与后端复用关系：
   - `研发工作台`：前端专属入口与导航壳层
@@ -18,7 +18,7 @@
   - `自动入库结果`：读取 `rd-subwarehouse` 自有交接结果，而不再复用 `inbound` 占位语义
   - `项目领用`：复用 `project`
   - `本仓报废`：复用 `workshop-material`
-- 当前是"受限子仓模型"首个切片，不是完整开放式多仓，也不是独立库存子系统。
+- 当前是"受限子仓模型"首个切片，不是完整开放式多仓，也不是用车间标签冒充小仓库存的简化方案。
 
 **目标范围**：
 
@@ -39,8 +39,8 @@
 | 协同模块 | 当前承担角色 | RD 方案中的职责 | 不该承担的职责 |
 |-----------|--------------|-----------------|----------------|
 | `web` 壳层 | 路由分组、首页、标签页、RD 专属入口 | 提供"大仓主视角 + RD 专属视角"的非镜像双视角体验 | 不在前端自行裁决真实业务权限，不绕过后端做数据隔离 |
-| `session` | 保存登录态快照 | 在会话里承载 `consoleMode` 与 `workshopScope`，作为视角和固定仓别约束真源 | 不直接决定业务权限，不直接改库存 |
-| `rbac` | 菜单树、权限、数据权限 | 输出主仓 / RD 路由树，维护系统管理员双视角可见，提供固定仓别约束辅助能力 | 不把 `consoleMode` 当成权限替身，不额外裁掉本应可见页面 |
+| `session` | 保存登录态快照 | 在会话里承载 `consoleMode` 与固定 RD 范围约束；当前实现名为 `workshopScope`，目标应收敛为 `stockScope` | 不直接决定业务权限，不直接改库存 |
+| `rbac` | 菜单树、权限、数据权限 | 输出主仓 / RD 路由树，维护系统管理员双视角可见，提供固定 RD 范围约束辅助能力 | 不把 `consoleMode` 当成权限替身，不额外裁掉本应可见页面 |
 | `inbound` | 验收单、入库单 | 继续承接主仓入库事实；后续可与 RD 采购链路做关联 | 不能在主仓验收时直接把库存写进 RD 小仓 |
 | `project` | 项目与项目物料消耗 | 承接 RD 项目领用 / 归集语义，要求小仓出库绑定项目或项目式归集项 | 不拥有主仓验收或本仓报废职责 |
 | `workshop-material` | 领料 / 退料 / 报废家族 | 当前复用其报废能力承接 RD 本仓报废 | 不承担 RD 退回主仓或公司级外部退货 |
@@ -57,13 +57,14 @@
 | RD 项目领用 | `project` + `inventory-core` | 继续由 `project` 承担 | 小仓减 | 必须绑定项目或项目式归集项 |
 | RD 本仓报废 | `workshop-material` + `inventory-core` | 继续由 `workshop-material` 承担 | 小仓减 | 属于小仓内部动作 |
 | RD 盘点 / 调整 | 后续切片 | `rd-subwarehouse` 库存编排 + `inventory-core` | 只调整本小仓 | 属于受限能力，不等于通用全仓盘点框架 |
-| RD 报表 / 查询 | `reporting` 等只读接口复用 | 继续保持只读聚合 | 不产生库存写入 | 查询必须受 `workshopScope` 约束 |
+| RD 报表 / 查询 | `reporting` 等只读接口复用 | 继续保持只读聚合 | 不产生库存写入 | 查询必须受固定 RD 范围约束；当前实现仍沿用 `workshopScope` 命名 |
 
 ## Domain 规则与约束
 
 - 货物进入公司、离开公司仍统一经过主仓；研发小仓第一阶段只与主仓对接。
 - RD 小仓不是简单项目视图，而是带固定仓别责任的小仓语义。
-- RD 账号固定仓别约束的当前技术承载是会话里的 `workshopScope`，并通过 `WorkshopScopeService` 施加到查询和命令。
+- 生产车间不是独立库存池；`workshop` 只承担主仓领退料归属与成本核算，不能替代 RD 小仓库存语义。
+- RD 账号固定仓别约束的当前技术承载是会话里的 `workshopScope`，并通过 `WorkshopScopeService` 施加到查询和命令；后续应向 `stockScope` 命名与语义收敛。
 - `consoleMode` 只负责视角壳层裁切，不等于真实权限；真实可见范围仍由 `rbac` 和接口权限控制。
 - `inventory-core` 是唯一库存写入口；任何协同单据都不能直接改库存底表。
 - `reporting` 只做只读聚合，不承接主仓到小仓的写编排。
@@ -76,8 +77,8 @@
 - 依赖 `workshop-material`：本仓报废
 - 后续依赖 `inbound`：主仓验收关联
 - 依赖 `reporting`：小仓只读报表
-- 依赖 `rbac`：路由树、权限、`WorkshopScopeService`
-- 依赖 `session`：`consoleMode`、`workshopScope` 承载
+- 依赖 `rbac`：路由树、权限、固定 RD 范围约束服务（当前实现为 `WorkshopScopeService`）
+- 依赖 `session`：`consoleMode`、固定 RD 范围约束承载（当前实现字段名为 `workshopScope`）
 - 依赖 `master-data`：物料、车间等基础查询
 
 ## 事务边界与一致性要求
@@ -89,7 +90,7 @@
 
 - RD 页面需要独立权限点，不能与主仓页面混用同一组权限码。
 - 当前主仓到 RD 交接 foundation 已使用独立权限点 `rd:handoff-order:*`，不再复用 `inbound:into-order:*`。
-- 查询和命令统一受 `workshopScope` 约束，固定仓别账号只能访问本小仓数据。
+- 查询和命令统一受固定 RD 范围约束，固定仓别账号只能访问本小仓数据；当前实现仍沿用 `workshopScope` 命名。
 - 新增、修改、作废、导出操作需记录审计；当前 `RD handoff` 已对 create / void 接入操作日志。
 
 ## 当前缺口 / 后续切片

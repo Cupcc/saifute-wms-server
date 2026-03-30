@@ -13,11 +13,17 @@ import {
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
+import {
+  resolveStockScopeFromWorkshopIdentity,
+  type StockScopeCode,
+} from "../../session/domain/user-session";
 import { InventoryRepository } from "../infrastructure/inventory.repository";
+import { StockScopeCompatibilityService } from "./stock-scope-compatibility.service";
 
 export interface IncreaseStockCommand {
   materialId: number;
-  workshopId: number;
+  stockScope?: StockScopeCode;
+  workshopId?: number;
   quantity: Prisma.Decimal | number | string;
   operationType: InventoryOperationTypeEnum;
   businessModule: string;
@@ -32,7 +38,8 @@ export interface IncreaseStockCommand {
 
 export interface DecreaseStockCommand {
   materialId: number;
-  workshopId: number;
+  stockScope?: StockScopeCode;
+  workshopId?: number;
   quantity: Prisma.Decimal | number | string;
   operationType: InventoryOperationTypeEnum;
   businessModule: string;
@@ -71,7 +78,8 @@ export interface ReleaseInventorySourceCommand {
 
 export interface ReserveFactoryNumberCommand {
   materialId: number;
-  workshopId: number;
+  stockScope?: StockScopeCode;
+  workshopId?: number;
   businessDocumentType: string;
   businessDocumentId: number;
   businessDocumentLineId: number;
@@ -93,6 +101,7 @@ export class InventoryService {
     private readonly masterDataService: MasterDataService,
     private readonly prisma: PrismaService,
     private readonly repository: InventoryRepository,
+    private readonly stockScopeCompatibilityService: StockScopeCompatibilityService,
   ) {}
 
   async increaseStock(
@@ -108,7 +117,11 @@ export class InventoryService {
     }
 
     const changeQty = this.toPositiveQuantityDecimal(cmd.quantity);
-    await this.ensureMasterDataExists(cmd.materialId, cmd.workshopId);
+    const scope = await this.stockScopeCompatibilityService.resolveRequired({
+      stockScope: cmd.stockScope,
+      workshopId: cmd.workshopId,
+    });
+    await this.ensureMasterDataExists(cmd.materialId, scope.workshopId);
 
     try {
       return await this.withTransaction(tx, async (db) => {
@@ -116,7 +129,7 @@ export class InventoryService {
           where: {
             materialId_workshopId: {
               materialId: cmd.materialId,
-              workshopId: cmd.workshopId,
+              workshopId: scope.workshopId,
             },
           },
         });
@@ -125,7 +138,7 @@ export class InventoryService {
           balance = await db.inventoryBalance.create({
             data: {
               materialId: cmd.materialId,
-              workshopId: cmd.workshopId,
+              workshopId: scope.workshopId,
               quantityOnHand: 0,
               createdBy: cmd.operatorId,
               updatedBy: cmd.operatorId,
@@ -149,7 +162,7 @@ export class InventoryService {
             data: {
               balanceId: balance.id,
               materialId: cmd.materialId,
-              workshopId: cmd.workshopId,
+              workshopId: scope.workshopId,
               direction: StockDirection.IN,
               operationType: cmd.operationType,
               businessModule: cmd.businessModule,
@@ -187,7 +200,11 @@ export class InventoryService {
     }
 
     const changeQty = this.toPositiveQuantityDecimal(cmd.quantity);
-    await this.ensureMasterDataExists(cmd.materialId, cmd.workshopId);
+    const scope = await this.stockScopeCompatibilityService.resolveRequired({
+      stockScope: cmd.stockScope,
+      workshopId: cmd.workshopId,
+    });
+    await this.ensureMasterDataExists(cmd.materialId, scope.workshopId);
 
     try {
       return await this.withTransaction(tx, async (db) => {
@@ -195,14 +212,14 @@ export class InventoryService {
           where: {
             materialId_workshopId: {
               materialId: cmd.materialId,
-              workshopId: cmd.workshopId,
+              workshopId: scope.workshopId,
             },
           },
         });
 
         if (!balance) {
           throw new BadRequestException(
-            `库存余额不存在: materialId=${cmd.materialId}, workshopId=${cmd.workshopId}`,
+            `库存余额不存在: materialId=${cmd.materialId}, workshopId=${scope.workshopId}`,
           );
         }
 
@@ -219,7 +236,7 @@ export class InventoryService {
           data: {
             balanceId: balance.id,
             materialId: cmd.materialId,
-            workshopId: cmd.workshopId,
+            workshopId: scope.workshopId,
             direction: StockDirection.OUT,
             operationType: cmd.operationType,
             businessModule: cmd.businessModule,
@@ -498,37 +515,50 @@ export class InventoryService {
 
   async listBalances(params: {
     materialId?: number;
+    stockScope?: StockScopeCode;
     workshopId?: number;
     limit?: number;
     offset?: number;
   }) {
     const limit = Math.min(params.limit ?? 50, 100);
     const offset = params.offset ?? 0;
-    return this.repository.findBalances({
+    const workshopIds = await this.resolveInventoryWorkshopIds(params);
+    const result = await this.repository.findBalances({
       materialId: params.materialId,
-      workshopId: params.workshopId,
+      workshopIds,
       limit,
       offset,
     });
+
+    return {
+      total: result.total,
+      items: result.items.map((item) => this.withStockScope(item)),
+    };
   }
 
   async getBalanceSnapshot(
     params: {
       materialId: number;
-      workshopId: number;
+      stockScope?: StockScopeCode;
+      workshopId?: number;
     },
     tx?: Prisma.TransactionClient,
   ) {
-    await this.ensureMasterDataExists(params.materialId, params.workshopId);
+    const scope = await this.stockScopeCompatibilityService.resolveRequired({
+      stockScope: params.stockScope,
+      workshopId: params.workshopId,
+    });
+    await this.ensureMasterDataExists(params.materialId, scope.workshopId);
     return this.repository.findBalanceByMaterialAndWorkshop(
       params.materialId,
-      params.workshopId,
+      scope.workshopId,
       tx,
     );
   }
 
   async listLogs(params: {
     materialId?: number;
+    stockScope?: StockScopeCode;
     workshopId?: number;
     businessDocumentId?: number;
     businessDocumentType?: string;
@@ -541,9 +571,10 @@ export class InventoryService {
   }) {
     const limit = Math.min(params.limit ?? 50, 100);
     const offset = params.offset ?? 0;
-    return this.repository.findLogs({
+    const workshopIds = await this.resolveInventoryWorkshopIds(params);
+    const result = await this.repository.findLogs({
       materialId: params.materialId,
-      workshopId: params.workshopId,
+      workshopIds,
       businessDocumentId: params.businessDocumentId,
       businessDocumentType: params.businessDocumentType,
       businessDocumentNumber: params.businessDocumentNumber,
@@ -557,6 +588,11 @@ export class InventoryService {
       limit,
       offset,
     });
+
+    return {
+      total: result.total,
+      items: result.items.map((item) => this.withStockScope(item)),
+    };
   }
 
   async getLogsForDocument(
@@ -573,12 +609,16 @@ export class InventoryService {
     cmd: ReserveFactoryNumberCommand,
     tx?: Prisma.TransactionClient,
   ) {
-    await this.ensureMasterDataExists(cmd.materialId, cmd.workshopId);
+    const scope = await this.stockScopeCompatibilityService.resolveRequired({
+      stockScope: cmd.stockScope,
+      workshopId: cmd.workshopId,
+    });
+    await this.ensureMasterDataExists(cmd.materialId, scope.workshopId);
     return this.withTransaction(tx, async (db) => {
       return this.repository.createFactoryNumberReservation(
         {
           materialId: cmd.materialId,
-          workshopId: cmd.workshopId,
+          workshopId: scope.workshopId,
           businessDocumentType: cmd.businessDocumentType,
           businessDocumentId: cmd.businessDocumentId,
           businessDocumentLineId: cmd.businessDocumentLineId,
@@ -635,6 +675,7 @@ export class InventoryService {
   }
 
   async listFactoryNumberReservations(params: {
+    stockScope?: StockScopeCode;
     workshopId?: number;
     businessDocumentType?: string;
     businessDocumentLineId?: number;
@@ -645,8 +686,9 @@ export class InventoryService {
   }) {
     const limit = Math.min(params.limit ?? 50, 100);
     const offset = params.offset ?? 0;
-    return this.repository.findFactoryNumberReservations({
-      workshopId: params.workshopId,
+    const workshopIds = await this.resolveInventoryWorkshopIds(params);
+    const result = await this.repository.findFactoryNumberReservations({
+      workshopIds,
       businessDocumentType: params.businessDocumentType,
       businessDocumentLineId: params.businessDocumentLineId,
       startNumber: params.startNumber,
@@ -654,6 +696,11 @@ export class InventoryService {
       limit,
       offset,
     });
+
+    return {
+      total: result.total,
+      items: result.items.map((item) => this.withStockScope(item)),
+    };
   }
 
   async getFactoryNumberReservationById(id: number) {
@@ -662,7 +709,7 @@ export class InventoryService {
     if (!reservation) {
       throw new NotFoundException(`编号区间不存在: ${id}`);
     }
-    return reservation;
+    return this.withStockScope(reservation);
   }
 
   private toPositiveQuantityDecimal(
@@ -754,6 +801,41 @@ export class InventoryService {
     }
 
     throw error;
+  }
+
+  private async resolveInventoryWorkshopIds(params: {
+    stockScope?: StockScopeCode;
+    workshopId?: number;
+  }) {
+    const scope = await this.stockScopeCompatibilityService.resolveOptional({
+      stockScope: params.stockScope,
+      workshopId: params.workshopId,
+    });
+    if (scope) {
+      return [scope.workshopId];
+    }
+
+    return this.stockScopeCompatibilityService.listRealStockWorkshopIds();
+  }
+
+  private withStockScope<
+    T extends {
+      workshop?: {
+        id: number;
+        workshopCode: string;
+        workshopName: string;
+      } | null;
+    },
+  >(item: T): T & { stockScope: StockScopeCode | null } {
+    return {
+      ...item,
+      stockScope: item.workshop
+        ? resolveStockScopeFromWorkshopIdentity({
+            workshopCode: item.workshop.workshopCode,
+            workshopName: item.workshop.workshopName,
+          })
+        : null,
+    };
   }
 
   private async ensureMasterDataExists(materialId: number, workshopId: number) {

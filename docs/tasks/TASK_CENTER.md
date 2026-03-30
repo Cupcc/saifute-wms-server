@@ -38,6 +38,7 @@
 
 | Task 文档 | 状态 | 说明 |
 | --- | --- | --- |
+| `docs/tasks/task-20260330-1419-stock-scope-alignment.md` | `planned` | 已确认 requirement 的活跃 implementation brief；先收敛运行时 `stockScope` 语义与兼容边界，暂不直接启动 `prisma/schema.prisma` 全量重构。 |
 
 ## 已完成但保留（归档至 `archive/retained-completed/`）
 

@@ -22,6 +22,10 @@ import {
   RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE,
   reverseScrapStatusesForOrder,
 } from "../../rd-subwarehouse/application/rd-material-status.helper";
+import {
+  resolveStockScopeFromWorkshopIdentity,
+  type StockScopeCode,
+} from "../../session/domain/user-session";
 import { WorkflowService } from "../../workflow/application/workflow.service";
 import type { CreateWorkshopMaterialOrderDto } from "../dto/create-workshop-material-order.dto";
 import type { CreateWorkshopMaterialOrderLineDto } from "../dto/create-workshop-material-order-line.dto";
@@ -167,6 +171,10 @@ export class WorkshopMaterialService {
     const workshop = await this.masterDataService.getWorkshopById(
       dto.workshopId,
     );
+    const inventoryStockScope = this.resolveInventoryStockScope(
+      dto.orderType,
+      workshop,
+    );
     const isRdScrapOrder =
       dto.orderType === WorkshopMaterialOrderType.SCRAP &&
       workshop.workshopCode === RD_SUBWAREHOUSE_CODE;
@@ -252,7 +260,7 @@ export class WorkshopMaterialService {
           const log = await this.inventoryService.decreaseStock(
             {
               materialId: line.materialId,
-              workshopId: order.workshopId,
+              stockScope: inventoryStockScope,
               quantity: line.quantity,
               operationType,
               businessModule: BUSINESS_MODULE,
@@ -364,7 +372,7 @@ export class WorkshopMaterialService {
           await this.inventoryService.increaseStock(
             {
               materialId: line.materialId,
-              workshopId: order.workshopId,
+              stockScope: inventoryStockScope,
               quantity: line.quantity,
               operationType,
               businessModule: BUSINESS_MODULE,
@@ -898,5 +906,21 @@ export class WorkshopMaterialService {
     if (requestLine.materialId !== materialId) {
       throw new BadRequestException("RD 报废物料必须与采购需求行一致");
     }
+  }
+
+  private resolveInventoryStockScope(
+    orderType: WorkshopMaterialOrderType,
+    workshop: { workshopCode: string; workshopName: string },
+  ): StockScopeCode {
+    if (orderType !== WorkshopMaterialOrderType.SCRAP) {
+      return "MAIN";
+    }
+
+    return (
+      resolveStockScopeFromWorkshopIdentity({
+        workshopCode: workshop.workshopCode,
+        workshopName: workshop.workshopName,
+      }) ?? "MAIN"
+    );
   }
 }

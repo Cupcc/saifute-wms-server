@@ -1,6 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { Prisma } from "../../../generated/prisma/client";
 import { AppConfigService } from "../../../shared/config/app-config.service";
+import { StockScopeCompatibilityService } from "../../inventory-core/application/stock-scope-compatibility.service";
+import {
+  resolveStockScopeFromWorkshopIdentity,
+  type StockScopeCode,
+} from "../../session/domain/user-session";
 import {
   ExportReportDto,
   type QueryInventorySummaryDto,
@@ -23,6 +28,7 @@ export interface InventorySummaryItem {
   categoryId: number | null;
   categoryCode: string | null;
   categoryName: string | null;
+  stockScope: StockScopeCode | null;
   workshopId: number;
   workshopCode: string;
   workshopName: string;
@@ -44,15 +50,17 @@ export class ReportingService {
   constructor(
     private readonly repository: ReportingRepository,
     private readonly appConfigService: AppConfigService,
+    private readonly stockScopeCompatibilityService: StockScopeCompatibilityService,
   ) {}
 
-  async getHomeDashboard(workshopId?: number) {
+  async getHomeDashboard(stockScope?: StockScopeCode) {
     const { start, end } = this.resolveTodayRange();
-    const metrics = await this.repository.getHomeMetrics(
-      start,
-      end,
-      workshopId,
-    );
+    const inventoryWorkshopIds =
+      await this.resolveInventoryWorkshopIds(stockScope);
+    const metrics = await this.repository.getHomeMetrics(start, end, {
+      stockScope,
+      inventoryWorkshopIds,
+    });
 
     return {
       generatedAt: new Date().toISOString(),
@@ -84,11 +92,16 @@ export class ReportingService {
     };
   }
 
-  async getInventorySummary(query: QueryInventorySummaryDto) {
+  async getInventorySummary(
+    query: QueryInventorySummaryDto & { stockScope?: StockScopeCode },
+  ) {
+    const inventoryWorkshopIds = await this.resolveInventoryWorkshopIds(
+      query.stockScope,
+    );
     const snapshots = await this.repository.findInventoryBalanceSnapshots({
       keyword: query.keyword,
       categoryId: query.categoryId,
-      workshopId: query.workshopId,
+      inventoryWorkshopIds,
     });
 
     const items = snapshots.map((item) => this.toInventorySummaryItem(item));
@@ -108,10 +121,15 @@ export class ReportingService {
     };
   }
 
-  async getMaterialCategorySummary(query: QueryMaterialCategorySummaryDto) {
+  async getMaterialCategorySummary(
+    query: QueryMaterialCategorySummaryDto & { stockScope?: StockScopeCode },
+  ) {
+    const inventoryWorkshopIds = await this.resolveInventoryWorkshopIds(
+      query.stockScope,
+    );
     const snapshots = await this.repository.findInventoryBalanceSnapshots({
       keyword: query.keyword,
-      workshopId: query.workshopId,
+      inventoryWorkshopIds,
     });
 
     const grouped = new Map<
@@ -176,7 +194,10 @@ export class ReportingService {
     };
   }
 
-  async getTrendSeries(query: QueryTrendSeriesDto, workshopId?: number) {
+  async getTrendSeries(
+    query: QueryTrendSeriesDto,
+    stockScope?: StockScopeCode,
+  ) {
     const { dateFrom, dateTo } = this.resolveDateRange(
       query.dateFrom,
       query.dateTo,
@@ -185,7 +206,7 @@ export class ReportingService {
     const documents = await this.repository.findTrendDocuments({
       dateFrom,
       dateTo,
-      workshopId,
+      stockScope,
     });
 
     const filtered = documents.filter(
@@ -238,13 +259,13 @@ export class ReportingService {
     };
   }
 
-  async exportReport(dto: ExportReportDto, workshopId?: number) {
+  async exportReport(dto: ExportReportDto, stockScope?: StockScopeCode) {
     switch (dto.reportType) {
       case ReportingExportType.INVENTORY_SUMMARY: {
         const result = await this.getInventorySummary({
           keyword: dto.keyword,
           categoryId: dto.categoryId,
-          workshopId: dto.workshopId,
+          stockScope,
           limit: 10000,
           offset: 0,
         });
@@ -264,7 +285,7 @@ export class ReportingService {
       case ReportingExportType.MATERIAL_CATEGORY_SUMMARY: {
         const result = await this.getMaterialCategorySummary({
           keyword: dto.keyword,
-          workshopId: dto.workshopId,
+          stockScope,
           limit: 10000,
           offset: 0,
         });
@@ -287,7 +308,7 @@ export class ReportingService {
             dateFrom: dto.dateFrom,
             dateTo: dto.dateTo,
           },
-          workshopId,
+          stockScope,
         );
         return this.buildCsvExport(
           dto.reportType,
@@ -314,6 +335,10 @@ export class ReportingService {
       categoryId: item.material.category?.id ?? null,
       categoryCode: item.material.category?.categoryCode ?? null,
       categoryName: item.material.category?.categoryName ?? null,
+      stockScope: resolveStockScopeFromWorkshopIdentity({
+        workshopCode: item.workshop.workshopCode,
+        workshopName: item.workshop.workshopName,
+      }),
       workshopId: item.workshop.id,
       workshopCode: item.workshop.workshopCode,
       workshopName: item.workshop.workshopName,
@@ -342,6 +367,18 @@ export class ReportingService {
 
   private toMoneyString(value: Prisma.Decimal | null | undefined) {
     return new Prisma.Decimal(value ?? 0).toFixed(2);
+  }
+
+  private async resolveInventoryWorkshopIds(stockScope?: StockScopeCode) {
+    if (stockScope) {
+      const scope =
+        await this.stockScopeCompatibilityService.resolveByStockScope(
+          stockScope,
+        );
+      return [scope.workshopId];
+    }
+
+    return this.stockScopeCompatibilityService.listRealStockWorkshopIds();
   }
 
   private resolveTodayRange() {

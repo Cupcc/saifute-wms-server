@@ -2,7 +2,7 @@
 
 ## 模块目标与职责
 
-作为所有事务型单据唯一可依赖的库存中心域，负责库存现值、库存日志、来源追踪、预警和编号区间。任何业务模块不得直接改库存底表。
+作为所有事务型单据唯一可依赖的库存中心域，负责主仓 / RD 小仓库存现值、库存日志、来源追踪、预警和编号区间。任何业务模块不得直接改库存底表。
 
 ## 原 Java 来源与映射范围
 
@@ -97,7 +97,9 @@
 ## 优化后表设计冻结
 
 - 对应核心表：`inventory_balance`、`inventory_log`、`inventory_source_usage`、`factory_number_reservation`
-- 第一阶段库存唯一维度固定为 `materialId + workshopId`
+- 第一阶段库存唯一维度固定为 `materialId + stockScopeId`，其中真实库存范围仅包含 `MAIN` 与 `RD_SUB`
+- `workshop` 只承担主仓领退料归属与成本核算，不参与库存余额唯一键
+- 同一物料不同入库批次可存在不同成本层；出库、领料、退料的成本必须通过来源分配传递
 - `inventory_warning` 收敛为只读视图 `vw_inventory_warning`，不单独落交易表
 - 单据模块必须通过 `businessDocumentType`、`businessDocumentId`、`businessDocumentLineId` 向库存中心传递来源语义
 - `inventory_log.reversalOfLogId` 应保持唯一，确保同一条原始流水只能被逆操作一次

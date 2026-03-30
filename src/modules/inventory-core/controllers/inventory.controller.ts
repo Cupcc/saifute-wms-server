@@ -24,13 +24,14 @@ export class InventoryController {
     @Query() query: QueryInventoryBalancesDto,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    const workshopId = await this.workshopScopeService.resolveQueryWorkshopId(
-      user,
-      query.workshopId,
-    );
+    const inventoryScope =
+      await this.workshopScopeService.resolveInventoryQueryScope(
+        user,
+        query.workshopId,
+      );
     return this.inventoryService.listBalances({
       materialId: query.materialId,
-      workshopId,
+      stockScope: inventoryScope?.stockScope,
       limit: query.limit,
       offset: query.offset,
     });
@@ -42,13 +43,14 @@ export class InventoryController {
     @Query() query: QueryInventoryLogsDto,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    const workshopId = await this.workshopScopeService.resolveQueryWorkshopId(
-      user,
-      query.workshopId,
-    );
+    const inventoryScope =
+      await this.workshopScopeService.resolveInventoryQueryScope(
+        user,
+        query.workshopId,
+      );
     return this.inventoryService.listLogs({
       materialId: query.materialId,
-      workshopId,
+      stockScope: inventoryScope?.stockScope,
       businessDocumentId: query.businessDocumentId,
       businessDocumentType: query.businessDocumentType,
       businessDocumentNumber: query.businessDocumentNumber,
@@ -78,12 +80,13 @@ export class InventoryController {
     @Query() query: QueryFactoryNumberReservationsDto,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    const workshopId = await this.workshopScopeService.resolveQueryWorkshopId(
-      user,
-      query.workshopId,
-    );
+    const inventoryScope =
+      await this.workshopScopeService.resolveInventoryQueryScope(
+        user,
+        query.workshopId,
+      );
     return this.inventoryService.listFactoryNumberReservations({
-      workshopId,
+      stockScope: inventoryScope?.stockScope,
       businessDocumentType: query.businessDocumentType,
       businessDocumentLineId: query.businessDocumentLineId,
       startNumber: query.startNumber,
@@ -101,7 +104,7 @@ export class InventoryController {
   ) {
     const reservation =
       await this.inventoryService.getFactoryNumberReservationById(id);
-    await this.workshopScopeService.assertWorkshopAccess(
+    await this.workshopScopeService.assertInventoryWorkshopAccess(
       user,
       reservation.workshopId,
     );

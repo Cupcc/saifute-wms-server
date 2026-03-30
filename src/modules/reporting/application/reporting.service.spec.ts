@@ -1,6 +1,7 @@
 import { Test } from "@nestjs/testing";
 import { Prisma } from "../../../generated/prisma/client";
 import { AppConfigService } from "../../../shared/config/app-config.service";
+import { StockScopeCompatibilityService } from "../../inventory-core/application/stock-scope-compatibility.service";
 import {
   ReportingExportType,
   ReportingTrendType,
@@ -11,6 +12,7 @@ import { ReportingService } from "./reporting.service";
 describe("ReportingService", () => {
   let service: ReportingService;
   let repository: jest.Mocked<ReportingRepository>;
+  let stockScopeCompatibilityService: jest.Mocked<StockScopeCompatibilityService>;
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -30,11 +32,28 @@ describe("ReportingService", () => {
             businessTimezone: "Asia/Shanghai",
           },
         },
+        {
+          provide: StockScopeCompatibilityService,
+          useValue: {
+            resolveByStockScope: jest
+              .fn()
+              .mockImplementation(async (stockScope) => ({
+                stockScope,
+                workshopId: stockScope === "RD_SUB" ? 9 : 1,
+                workshopCode: stockScope === "RD_SUB" ? "RD" : "MAIN",
+                workshopName: stockScope === "RD_SUB" ? "研发小仓" : "主仓",
+              })),
+            listRealStockWorkshopIds: jest.fn().mockResolvedValue([1, 9]),
+          },
+        },
       ],
     }).compile();
 
     service = moduleRef.get(ReportingService);
     repository = moduleRef.get(ReportingRepository);
+    stockScopeCompatibilityService = moduleRef.get(
+      StockScopeCompatibilityService,
+    );
   });
 
   it("should build the home dashboard metrics", async () => {
@@ -63,8 +82,14 @@ describe("ReportingService", () => {
     expect(repository.getHomeMetrics).toHaveBeenCalledWith(
       expect.any(Date),
       expect.any(Date),
-      undefined,
+      {
+        stockScope: undefined,
+        inventoryWorkshopIds: [1, 9],
+      },
     );
+    expect(
+      stockScopeCompatibilityService.listRealStockWorkshopIds,
+    ).toHaveBeenCalled();
   });
 
   it("should summarize inventory by material category", async () => {
@@ -89,8 +114,8 @@ describe("ReportingService", () => {
         },
         workshop: {
           id: 1,
-          workshopCode: "WS-01",
-          workshopName: "一车间",
+          workshopCode: "MAIN",
+          workshopName: "主仓",
         },
       },
       {
@@ -113,8 +138,8 @@ describe("ReportingService", () => {
         },
         workshop: {
           id: 1,
-          workshopCode: "WS-01",
-          workshopName: "一车间",
+          workshopCode: "MAIN",
+          workshopName: "主仓",
         },
       },
     ]);
@@ -152,7 +177,7 @@ describe("ReportingService", () => {
     expect(repository.findTrendDocuments).toHaveBeenCalledWith({
       dateFrom: new Date("2026-02-28T16:00:00.000Z"),
       dateTo: new Date("2026-03-02T15:59:59.999Z"),
-      workshopId: undefined,
+      stockScope: undefined,
     });
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.trendType).toBe("OUTBOUND");
@@ -177,8 +202,8 @@ describe("ReportingService", () => {
         },
         workshop: {
           id: 1,
-          workshopCode: "WS-01",
-          workshopName: "一车间",
+          workshopCode: "MAIN",
+          workshopName: "主仓",
         },
       },
     ]);
