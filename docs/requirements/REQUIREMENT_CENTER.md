@@ -23,7 +23,7 @@
 | 需求文档 | 状态 | 说明 |
 | --- | --- | --- |
 | `topics/inbound-business-module.md` | `needs-confirmation` | `inbound` 入库业务模块主题真源；长期保留验收单/生产入库单统一家族模型、主仓准入、`inventory-core` 过账、真实库存轴访问控制等约束，后续入库扩展或优化应从该 topic 新开切片。 |
-| `topics/system-management-module.md` | `confirmed` | `system-management` 系统管理模块主题真源；当前已确认 `V1` 组织与角色矩阵，以及“纳入在线用户 / 登录日志 / 操作日志、将调度 / AI 支持作为非核心平台能力顺延到 Phase 3 规划且当前暂不执行”的长期边界，后续持久化与邻接能力继续从该 topic 新开切片。 |
+| `topics/system-management-module.md` | `confirmed` | `system-management` 系统管理模块唯一主题真源；当前已确认 `V1` 组织与角色矩阵、`admin / operator / rd-operator / procurement` 代表账号口径，以及“纳入在线用户 / 登录日志 / 操作日志、将调度 / AI 支持作为非核心平台能力顺延到 Phase 3 规划且当前暂不执行”的长期边界；后续若继续推进平台表规范化或邻接能力扩展，应从该 topic 新开切片。 |
 | `topics/rd-subwarehouse.md` | `confirmed` | `RD 小仓` 主题真源；长期保留“同平台协同、受限子仓模型、库存统一走 inventory-core、RD 是真实库存范围而车间不是库存池、角色边界”等约束，并维护能力清单与阶段路线图。已完成切片统一挂到该主题下管理。 |
 | `topics/monthly-reporting.md` | `confirmed` | 月度报表主题真源；长期保留“固定正式月报 + 人工重算 + 日期范围报表”“整体 / 车间 / 销售域 / 研发项目四类视角”“系统查看 + Excel 导出”等约束，并维护后续实施路线图。 |
 | `topics/frontend-old-style-adaptation.md` | `confirmed` | 前端旧风格回归主题真源；长期保留“只回归表现层、不回退后端契约”“保留销售 / 车间 / RD 真实业务分组”“按阶段推进壳层、首页、业务页细化”等约束，并维护阶段路线图。 |
@@ -32,7 +32,9 @@
 
 | 需求文档 | 状态 | 说明 |
 | --- | --- | --- |
-| 当前无根目录 `req-*.md` 活跃切片 | — | 后续若继续推进 `rd-subwarehouse`、`monthly-reporting` 或 `frontend-old-style-adaptation` 等独立范围，应从对应 `topics/*.md` 新开具体切片 requirement，而不是复用旧总入口。 |
+| 当前无根目录 `req-*.md` 活跃切片 | — | 后续若继续推进 `system-management` 平台表规范化、`rd-subwarehouse`、`monthly-reporting` 或 `frontend-old-style-adaptation` 等独立范围，应从对应 `topics/*.md` 新开具体切片 requirement，而不是复用旧总入口。 |
+
+后续若继续推进 `system-management` 平台表规范化、`rd-subwarehouse`、`monthly-reporting` 或 `frontend-old-style-adaptation` 的其它独立范围，应从对应 `topics/*.md` 新开具体切片 requirement，而不是复用旧总入口。
 
 ## 已归档（`archive/retained-completed/`）
 
