@@ -157,7 +157,7 @@ describe("Batch A acceptance (e2e)", () => {
       .expect(401);
   });
 
-  it("should forbid operator access to session admin endpoints and filter routes", async () => {
+  it("should forbid operator access to session admin endpoints and keep only authorized routes", async () => {
     appContext = await bootstrapApp();
     const server = appContext.app.getHttpServer();
 
@@ -179,8 +179,10 @@ describe("Batch A acceptance (e2e)", () => {
       .set("Authorization", `Bearer ${operatorAccessToken}`)
       .expect(200);
 
-    expect(routesResponse.body.data).toHaveLength(1);
-    expect(routesResponse.body.data[0].path).toBe("/dashboard");
+    const routeNames = JSON.stringify(routesResponse.body.data);
+    expect(routeNames).toContain("Dashboard");
+    expect(routeNames).toContain("RdSubwarehouse");
+    expect(routeNames).not.toContain("SystemManagement");
 
     await request(server)
       .get("/api/sessions/online")

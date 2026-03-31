@@ -2,8 +2,21 @@
   "moduleFileExtensions": ["js", "json", "ts"],
   "rootDir": "../",
   "testEnvironment": "node",
+  "modulePathIgnorePatterns": ["<rootDir>/.claude/"],
+  "testPathIgnorePatterns": ["<rootDir>/.claude/"],
   "testRegex": ".*\\.e2e-spec\\.ts$",
   "transform": {
-    "^.+\\.(t|j)s$": "ts-jest"
+    "^.+\\.(t|j)s$": [
+      "ts-jest",
+      {
+        "astTransformers": {
+          "before": [
+            {
+              "path": "<rootDir>/test/nest-swagger-ast-transformer.js"
+            }
+          ]
+        }
+      }
+    ]
   }
 }

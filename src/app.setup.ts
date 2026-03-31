@@ -9,7 +9,6 @@ import { registerFileStorageStaticAssets } from "./modules/file-storage/infrastr
 import { HttpExceptionFilter } from "./shared/common/filters/http-exception.filter";
 import { ResponseEnvelopeInterceptor } from "./shared/common/interceptors/response-envelope.interceptor";
 import { AppConfigService } from "./shared/config/app-config.service";
-import swaggerMetadata from "./swagger-metadata";
 
 type SwaggerOperationMethod = "get" | "post" | "put" | "patch" | "delete";
 type SwaggerOperationDescriptor = {
@@ -50,8 +49,6 @@ const SKIP_RESPONSE_ENVELOPE_SWAGGER_OPERATIONS: ReadonlyArray<SwaggerOperationD
     { method: "post", path: "ai/chat" },
   ];
 
-let swaggerPluginMetadataLoaded = false;
-
 export async function setupApp(
   app: NestExpressApplication,
 ): Promise<AppConfigService> {
@@ -65,7 +62,7 @@ export async function setupApp(
       forbidNonWhitelisted: true,
     }),
   );
-  await setupSwagger(app, appConfigService);
+  setupSwagger(app, appConfigService);
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(app.get(ResponseEnvelopeInterceptor));
   await registerFileStorageStaticAssets(app, appConfigService);
@@ -73,17 +70,12 @@ export async function setupApp(
   return appConfigService;
 }
 
-async function setupSwagger(
+function setupSwagger(
   app: NestExpressApplication,
   appConfigService: AppConfigService,
-): Promise<void> {
+): void {
   if (!appConfigService.swaggerEnabled) {
     return;
-  }
-
-  if (!swaggerPluginMetadataLoaded) {
-    await SwaggerModule.loadPluginMetadata(swaggerMetadata);
-    swaggerPluginMetadataLoaded = true;
   }
 
   const swaggerConfig = new DocumentBuilder()
