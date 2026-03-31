@@ -38,13 +38,19 @@
 
 | Task 文档 | 状态 | 说明 |
 | --- | --- | --- |
-
 ## 已完成但保留（归档至 `archive/retained-completed/`）
 
 以下条目按生命周期已归为 `retained-completed`，并保留为稳定真源、执行 provenance 或后续切片依赖基线。
 
 | Task 文档 | 保留原因 |
 | --- | --- |
+| `docs/tasks/archive/retained-completed/task-20260331-0914-rbac-role-permission-restore.md` | 已完成当前 RBAC 角色权限恢复：`warehouse-manager` 重新获得主仓业务组与必要 RD 协同入口，`rd-operator` 仍保持 RD 专属视角，且通过 focused RBAC tests 与前端构建验证。 |
+| `docs/tasks/archive/retained-completed/task-20260331-0934-system-management-f4-persistence.md` | 已完成 `system-management` 主题 `F4`：当前 `rbac / system-management` 初始化状态已接入 Prisma 持久化快照，业务权限已切到菜单/角色数据驱动，并通过 Prisma 生成/校验、typecheck 与 focused RBAC tests。 |
+| `docs/tasks/archive/retained-completed/task-20260331-0051-system-management-runtime-alignment.md` | 已完成 `system-management` 运行态对齐：当前样例部门 / 角色 / 账号矩阵已按 `V1` 基线收敛，`在线用户 / 登录日志 / 操作日志` 已在前端导航中归入 `系统管理`，并通过 focused tests 与前端构建验证。 |
+| `docs/tasks/archive/retained-completed/task-20260331-0042-system-management-f2-f3-baseline.md` | 已完成 `system-management` 主题 `F2/F3` 收口：V1 组织与角色矩阵、平台审计与在线治理边界已正式同步到 topic、项目级需求、架构文档与 workspace 归档，后续 `F4/F5` 应另开新切片。 |
+| `docs/tasks/archive/retained-completed/task-20260330-2235-stock-scope-nonempty-rehearsal.md` | 已完成非空历史数据 rehearsal：目标库已灌入最小代表性样本，并重新跑通 `stock-scope-phase2` 的 `seed-rehearsal`、`dry-run / execute / validate`；当前不仅验证了空库路径，也验证了最小非空数据路径。 |
+| `docs/tasks/archive/retained-completed/task-20260330-2229-inbound-domain-fix.md` | 已完成 `inbound` review findings 修复：普通验收单/生产入库单现已强制归主仓，查询/详情/修改/作废按真实库存轴判断，对应测试已补齐，并通过 `swagger:metadata`、`typecheck`、`migration:typecheck` 与 `pnpm test`。 |
+| `docs/tasks/archive/retained-completed/task-20260330-2220-inbound-domain-review.md` | 已完成 `inbound` review-only 切片：当前识别出 `3` 类主要问题，包括普通入库/生产入库缺少“必须归主仓”的强约束、查询/详情/修改/作废仍沿旧 `workshopId` 轴判断，以及缺少对应测试覆盖；若要修复 findings，应另开新的 `inbound` 实现切片。 |
 | `docs/tasks/archive/retained-completed/task-20260330-2205-stock-scope-rd-persistence-followup.md` | 已完成 `rd-subwarehouse` 持久化轴补齐 follow-up：`rd_handoff_order`、`rd_procurement_request`、`rd_stocktake_order` 已补 `stockScope` 相关持久化字段、运行时代码与 tests，对应目标库 schema apply 和 `stock-scope-phase2` 的 `dry-run / execute / validate` 也已再次通过；若后续要验证非空历史数据回填，应另开新的 rehearsal scope。 |
 | `docs/tasks/archive/retained-completed/task-20260330-1616-stock-scope-phase2-cutover.md` | 已完成 `stockScope` Phase 2 首波实现：Prisma schema 已补 `StockScope` / `stockScopeId`，首波 runtime 与 `stock-scope-phase2` migration 脚本已落地，并已在目标库 `saifute-wsm` 上通过安全 schema apply 与 `dry-run / execute / validate`；当前目标库首波相关表为 `0` 行，若后续要验证非空历史数据回填，应另开新的 rehearsal scope。 |
 | `docs/tasks/archive/retained-completed/task-20260330-1419-stock-scope-alignment.md` | 已完成库存范围与归属口径对齐 Phase 1：canonical `stockScope` runtime contract、会话/RBAC 兼容边界、库存/报表/业务写路径收敛与 e2e stub 补齐已落地，并通过 `swagger:metadata`、`typecheck`、focused tests、`batch-d-slice.e2e`、`pnpm test` 与 closing review `No findings`；若后续继续推进真实库存维度切换，需另开 `Phase 2` cutover scope。 |

@@ -93,6 +93,7 @@ export class RbacService {
       userId,
       avatarUrl,
     );
+    await this.inMemoryRbacRepository.flushPersistence();
 
     return {
       currentUser: await this.enrichSessionUser(

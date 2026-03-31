@@ -88,6 +88,7 @@ export const ModelName = {
   OperLog: "OperLog",
   SchedulerJob: "SchedulerJob",
   SchedulerJobLog: "SchedulerJobLog",
+  SystemManagementSnapshot: "SystemManagementSnapshot",
 } as const;
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName];
@@ -880,12 +881,30 @@ export const SchedulerJobLogScalarFieldEnum = {
 export type SchedulerJobLogScalarFieldEnum =
   (typeof SchedulerJobLogScalarFieldEnum)[keyof typeof SchedulerJobLogScalarFieldEnum];
 
+export const SystemManagementSnapshotScalarFieldEnum = {
+  id: "id",
+  snapshotKey: "snapshotKey",
+  payload: "payload",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+} as const;
+
+export type SystemManagementSnapshotScalarFieldEnum =
+  (typeof SystemManagementSnapshotScalarFieldEnum)[keyof typeof SystemManagementSnapshotScalarFieldEnum];
+
 export const SortOrder = {
   asc: "asc",
   desc: "desc",
 } as const;
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull,
+} as const;
+
+export type JsonNullValueInput =
+  (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput];
 
 export const NullsOrder = {
   first: "first",
@@ -1324,3 +1343,26 @@ export const SchedulerJobLogOrderByRelevanceFieldEnum = {
 
 export type SchedulerJobLogOrderByRelevanceFieldEnum =
   (typeof SchedulerJobLogOrderByRelevanceFieldEnum)[keyof typeof SchedulerJobLogOrderByRelevanceFieldEnum];
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull,
+} as const;
+
+export type JsonNullValueFilter =
+  (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter];
+
+export const QueryMode = {
+  default: "default",
+  insensitive: "insensitive",
+} as const;
+
+export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode];
+
+export const SystemManagementSnapshotOrderByRelevanceFieldEnum = {
+  snapshotKey: "snapshotKey",
+} as const;
+
+export type SystemManagementSnapshotOrderByRelevanceFieldEnum =
+  (typeof SystemManagementSnapshotOrderByRelevanceFieldEnum)[keyof typeof SystemManagementSnapshotOrderByRelevanceFieldEnum];

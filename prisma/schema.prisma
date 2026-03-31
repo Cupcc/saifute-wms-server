@@ -1114,3 +1114,13 @@ model SchedulerJobLog {
   @@index([jobName, startedAt])
   @@map("sys_job_log")
 }
+
+model SystemManagementSnapshot {
+  id          Int      @id @default(autoincrement())
+  snapshotKey String   @unique @db.VarChar(64)
+  payload     Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("system_management_snapshot")
+}

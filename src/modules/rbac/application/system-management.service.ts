@@ -53,12 +53,14 @@ export class SystemManagementService {
   }
 
   async createUser(data: Record<string, unknown>) {
-    return this.wrapMutation(() => this.rbacRepository.createUser(data));
+    return this.wrapPersistentMutation(() =>
+      this.rbacRepository.createUser(data),
+    );
   }
 
   async updateUser(data: Record<string, unknown>) {
     const userId = this.requireNumber(data.userId);
-    const result = await this.wrapMutation(() =>
+    const result = await this.wrapPersistentMutation(() =>
       this.rbacRepository.updateUser(data),
     );
     await this.sessionService.invalidateSessionsByUserIds([userId]);
@@ -66,13 +68,15 @@ export class SystemManagementService {
   }
 
   async deleteUsers(userIds: number[]) {
-    await this.wrapMutation(() => this.rbacRepository.deleteUsers(userIds));
+    await this.wrapPersistentMutation(() =>
+      this.rbacRepository.deleteUsers(userIds),
+    );
     await this.sessionService.invalidateSessionsByUserIds(userIds);
     return { msg: "删除成功" };
   }
 
   async resetUserPassword(userId: number, password: string) {
-    await this.wrapMutation(() =>
+    await this.wrapPersistentMutation(() =>
       this.rbacRepository.resetUserPassword(userId, password),
     );
     await this.sessionService.invalidateSessionsByUserIds([userId]);
@@ -80,7 +84,7 @@ export class SystemManagementService {
   }
 
   async changeUserStatus(userId: number, status: "0" | "1") {
-    await this.wrapMutation(() =>
+    await this.wrapPersistentMutation(() =>
       this.rbacRepository.changeUserStatus(userId, status),
     );
     await this.sessionService.invalidateSessionsByUserIds([userId]);
@@ -94,7 +98,7 @@ export class SystemManagementService {
   }
 
   updateCurrentUserProfile(userId: number, data: Record<string, unknown>) {
-    return this.wrapMutation(() =>
+    return this.wrapPersistentMutation(() =>
       this.rbacRepository.updateCurrentUserProfile(userId, {
         nickName: String(data.nickName ?? ""),
         phonenumber: String(data.phonenumber ?? ""),
@@ -109,7 +113,7 @@ export class SystemManagementService {
     oldPassword: string,
     newPassword: string,
   ) {
-    await this.wrapMutation(() =>
+    await this.wrapPersistentMutation(() =>
       this.rbacRepository.updateCurrentUserPassword(
         userId,
         oldPassword,
@@ -127,7 +131,7 @@ export class SystemManagementService {
   async updateAuthRole(data: Record<string, string | undefined>) {
     const userId = this.requireNumber(data.userId);
     const roleIds = this.toIdList(data.roleIds);
-    await this.wrapMutation(() =>
+    await this.wrapPersistentMutation(() =>
       this.rbacRepository.updateUserRoles(userId, roleIds),
     );
     await this.sessionService.invalidateSessionsByUserIds([userId]);
@@ -167,12 +171,14 @@ export class SystemManagementService {
   }
 
   async createRole(data: Record<string, unknown>) {
-    return this.wrapMutation(() => this.rbacRepository.createRole(data));
+    return this.wrapPersistentMutation(() =>
+      this.rbacRepository.createRole(data),
+    );
   }
 
   async updateRole(data: Record<string, unknown>) {
     const roleId = this.requireNumber(data.roleId);
-    const result = await this.wrapMutation(() =>
+    const result = await this.wrapPersistentMutation(() =>
       this.rbacRepository.updateRole(data),
     );
     await this.invalidateRoleSessions([roleId]);
@@ -181,7 +187,7 @@ export class SystemManagementService {
 
   async updateRoleDataScope(data: Record<string, unknown>) {
     const roleId = this.requireNumber(data.roleId);
-    await this.wrapMutation(() =>
+    await this.wrapPersistentMutation(() =>
       this.rbacRepository.updateRoleDataScope(data),
     );
     await this.invalidateRoleSessions([roleId]);
@@ -189,7 +195,7 @@ export class SystemManagementService {
   }
 
   async changeRoleStatus(roleId: number, status: "0" | "1") {
-    await this.wrapMutation(() =>
+    await this.wrapPersistentMutation(() =>
       this.rbacRepository.changeRoleStatus(roleId, status),
     );
     await this.invalidateRoleSessions([roleId]);
@@ -197,7 +203,9 @@ export class SystemManagementService {
   }
 
   async deleteRoles(roleIds: number[]) {
-    await this.wrapMutation(() => this.rbacRepository.deleteRoles(roleIds));
+    await this.wrapPersistentMutation(() =>
+      this.rbacRepository.deleteRoles(roleIds),
+    );
     await this.invalidateRoleSessions(roleIds);
     return { msg: "删除成功" };
   }
@@ -213,7 +221,7 @@ export class SystemManagementService {
   async cancelAuthUser(data: Record<string, unknown>) {
     const roleId = this.requireNumber(data.roleId);
     const userId = this.requireNumber(data.userId);
-    await this.wrapMutation(() =>
+    await this.wrapPersistentMutation(() =>
       this.rbacRepository.cancelAuthUsers(roleId, [userId]),
     );
     await this.sessionService.invalidateSessionsByUserIds([userId]);
@@ -223,7 +231,7 @@ export class SystemManagementService {
   async cancelAuthUserAll(query: Record<string, string | undefined>) {
     const roleId = this.requireNumber(query.roleId);
     const userIds = this.toIdList(query.userIds);
-    await this.wrapMutation(() =>
+    await this.wrapPersistentMutation(() =>
       this.rbacRepository.cancelAuthUsers(roleId, userIds),
     );
     await this.sessionService.invalidateSessionsByUserIds(userIds);
@@ -233,7 +241,7 @@ export class SystemManagementService {
   async selectUsersToRole(query: Record<string, string | undefined>) {
     const roleId = this.requireNumber(query.roleId);
     const userIds = this.toIdList(query.userIds);
-    await this.wrapMutation(() =>
+    await this.wrapPersistentMutation(() =>
       this.rbacRepository.assignUsersToRole(roleId, userIds),
     );
     await this.sessionService.invalidateSessionsByUserIds(userIds);
@@ -267,11 +275,13 @@ export class SystemManagementService {
   }
 
   async createMenu(data: Record<string, unknown>) {
-    return this.wrapMutation(() => this.rbacRepository.createMenu(data));
+    return this.wrapPersistentMutation(() =>
+      this.rbacRepository.createMenu(data),
+    );
   }
 
   async updateMenu(data: Record<string, unknown>) {
-    const result = await this.wrapMutation(() =>
+    const result = await this.wrapPersistentMutation(() =>
       this.rbacRepository.updateMenu(data),
     );
     await this.invalidateAllRoleSessions();
@@ -279,7 +289,9 @@ export class SystemManagementService {
   }
 
   async deleteMenus(menuIds: number[]) {
-    await this.wrapMutation(() => this.rbacRepository.deleteMenus(menuIds));
+    await this.wrapPersistentMutation(() =>
+      this.rbacRepository.deleteMenus(menuIds),
+    );
     await this.invalidateAllRoleSessions();
     return { msg: "删除成功" };
   }
@@ -304,16 +316,20 @@ export class SystemManagementService {
     };
   }
 
-  createDept(data: Record<string, unknown>) {
-    return this.wrapMutation(() => this.rbacRepository.createDept(data));
+  async createDept(data: Record<string, unknown>) {
+    return this.wrapPersistentMutation(() =>
+      this.rbacRepository.createDept(data),
+    );
   }
 
-  updateDept(data: Record<string, unknown>) {
-    return this.wrapMutation(() => this.rbacRepository.updateDept(data));
+  async updateDept(data: Record<string, unknown>) {
+    return this.wrapPersistentMutation(() =>
+      this.rbacRepository.updateDept(data),
+    );
   }
 
-  deleteDepts(deptIds: number[]) {
-    return this.wrapMutation(() => {
+  async deleteDepts(deptIds: number[]) {
+    return this.wrapPersistentMutation(() => {
       this.rbacRepository.deleteDepts(deptIds);
       return { msg: "删除成功" };
     });
@@ -345,16 +361,20 @@ export class SystemManagementService {
     };
   }
 
-  createPost(data: Record<string, unknown>) {
-    return this.wrapMutation(() => this.rbacRepository.createPost(data));
+  async createPost(data: Record<string, unknown>) {
+    return this.wrapPersistentMutation(() =>
+      this.rbacRepository.createPost(data),
+    );
   }
 
-  updatePost(data: Record<string, unknown>) {
-    return this.wrapMutation(() => this.rbacRepository.updatePost(data));
+  async updatePost(data: Record<string, unknown>) {
+    return this.wrapPersistentMutation(() =>
+      this.rbacRepository.updatePost(data),
+    );
   }
 
-  deletePosts(postIds: number[]) {
-    return this.wrapMutation(() => {
+  async deletePosts(postIds: number[]) {
+    return this.wrapPersistentMutation(() => {
       this.rbacRepository.deletePosts(postIds);
       return { msg: "删除成功" };
     });
@@ -385,16 +405,20 @@ export class SystemManagementService {
     };
   }
 
-  createDictType(data: Record<string, unknown>) {
-    return this.wrapMutation(() => this.rbacRepository.createDictType(data));
+  async createDictType(data: Record<string, unknown>) {
+    return this.wrapPersistentMutation(() =>
+      this.rbacRepository.createDictType(data),
+    );
   }
 
-  updateDictType(data: Record<string, unknown>) {
-    return this.wrapMutation(() => this.rbacRepository.updateDictType(data));
+  async updateDictType(data: Record<string, unknown>) {
+    return this.wrapPersistentMutation(() =>
+      this.rbacRepository.updateDictType(data),
+    );
   }
 
-  deleteDictTypes(dictIds: number[]) {
-    return this.wrapMutation(() => {
+  async deleteDictTypes(dictIds: number[]) {
+    return this.wrapPersistentMutation(() => {
       this.rbacRepository.deleteDictTypes(dictIds);
       return { msg: "删除成功" };
     });
@@ -446,16 +470,20 @@ export class SystemManagementService {
     };
   }
 
-  createDictData(data: Record<string, unknown>) {
-    return this.wrapMutation(() => this.rbacRepository.createDictData(data));
+  async createDictData(data: Record<string, unknown>) {
+    return this.wrapPersistentMutation(() =>
+      this.rbacRepository.createDictData(data),
+    );
   }
 
-  updateDictData(data: Record<string, unknown>) {
-    return this.wrapMutation(() => this.rbacRepository.updateDictData(data));
+  async updateDictData(data: Record<string, unknown>) {
+    return this.wrapPersistentMutation(() =>
+      this.rbacRepository.updateDictData(data),
+    );
   }
 
-  deleteDictData(dictCodes: number[]) {
-    return this.wrapMutation(() => {
+  async deleteDictData(dictCodes: number[]) {
+    return this.wrapPersistentMutation(() => {
       this.rbacRepository.deleteDictData(dictCodes);
       return { msg: "删除成功" };
     });
@@ -496,16 +524,20 @@ export class SystemManagementService {
     };
   }
 
-  createConfig(data: Record<string, unknown>) {
-    return this.wrapMutation(() => this.rbacRepository.createConfig(data));
+  async createConfig(data: Record<string, unknown>) {
+    return this.wrapPersistentMutation(() =>
+      this.rbacRepository.createConfig(data),
+    );
   }
 
-  updateConfig(data: Record<string, unknown>) {
-    return this.wrapMutation(() => this.rbacRepository.updateConfig(data));
+  async updateConfig(data: Record<string, unknown>) {
+    return this.wrapPersistentMutation(() =>
+      this.rbacRepository.updateConfig(data),
+    );
   }
 
-  deleteConfigs(configIds: number[]) {
-    return this.wrapMutation(() => {
+  async deleteConfigs(configIds: number[]) {
+    return this.wrapPersistentMutation(() => {
       this.rbacRepository.deleteConfigs(configIds);
       return { msg: "删除成功" };
     });
@@ -525,16 +557,20 @@ export class SystemManagementService {
     };
   }
 
-  createNotice(data: Record<string, unknown>) {
-    return this.wrapMutation(() => this.rbacRepository.createNotice(data));
+  async createNotice(data: Record<string, unknown>) {
+    return this.wrapPersistentMutation(() =>
+      this.rbacRepository.createNotice(data),
+    );
   }
 
-  updateNotice(data: Record<string, unknown>) {
-    return this.wrapMutation(() => this.rbacRepository.updateNotice(data));
+  async updateNotice(data: Record<string, unknown>) {
+    return this.wrapPersistentMutation(() =>
+      this.rbacRepository.updateNotice(data),
+    );
   }
 
-  deleteNotices(noticeIds: number[]) {
-    return this.wrapMutation(() => {
+  async deleteNotices(noticeIds: number[]) {
+    return this.wrapPersistentMutation(() => {
       this.rbacRepository.deleteNotices(noticeIds);
       return { msg: "删除成功" };
     });
@@ -570,6 +606,12 @@ export class SystemManagementService {
     } catch (error) {
       throw this.toHttpException(error);
     }
+  }
+
+  private async wrapPersistentMutation<T>(action: () => T): Promise<T> {
+    const result = this.wrapMutation(action);
+    await this.rbacRepository.flushPersistence();
+    return result;
   }
 
   private toHttpException(error: unknown) {

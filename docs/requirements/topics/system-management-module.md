@@ -58,7 +58,7 @@
 | `F1` | 系统管理八类核心能力收口 | `用户 / 角色 / 部门 / 菜单 / 岗位 / 字典 / 参数 / 通知` 的前端 `/api/system/*` 与当前 NestJS 承接对齐，且 `admin` / 代表性非 `admin` 冒烟通过 | Phase 1 | `已完成` | `docs/requirements/archive/retained-completed/req-20260327-1604-rbac-implementation.md` |
 | `F2` | 组织与角色矩阵澄清    | 明确真实部门、主角色、预留查看角色与账号维护职责，形成后续 system-management 切片的长期基线                                                   | Phase 2 | `已完成` | `docs/requirements/archive/retained-completed/req-20260331-0042-system-management-f2-f3-baseline.md` |
 | `F3` | 平台审计与在线治理边界  | 明确 `在线用户 / 登录日志 / 操作日志` 在 system-management topic 下的长期归属与验收口径                                             | Phase 2 | `已完成` | `docs/requirements/archive/retained-completed/req-20260331-0042-system-management-f2-f3-baseline.md` |
-| `F4` | 平台初始化与持久化方案  | 明确哪些系统管理数据继续允许内存/样例承接，哪些需要正式持久化与初始化流程                                                                     | Phase 2 | `待规划` | `-`                                                                                     |
+| `F4` | 平台初始化与持久化方案  | 明确哪些系统管理数据继续允许内存/样例承接，哪些需要正式持久化与初始化流程                                                                     | Phase 2 | `已完成` | `docs/requirements/archive/retained-completed/req-20260331-0934-system-management-f4-persistence.md` |
 | `F5` | 系统运维邻接能力边界   | 明确 `调度 / AI 支持` 等非核心平台能力是否保持 topic 外邻接管理                                                                  | Phase 2 | `待规划` | `-`                                                                                     |
 
 ## 阶段路线图

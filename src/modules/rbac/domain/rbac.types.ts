@@ -137,3 +137,15 @@ export interface ManagedNoticeRecord {
   remark: string;
   createTime: string;
 }
+
+export interface SystemManagementStateSnapshot {
+  depts: ManagedDeptRecord[];
+  posts: ManagedPostRecord[];
+  menus: ManagedMenuRecord[];
+  roles: ManagedRoleRecord[];
+  dictTypes: ManagedDictTypeRecord[];
+  dictData: ManagedDictDataRecord[];
+  configs: ManagedConfigRecord[];
+  notices: ManagedNoticeRecord[];
+  users: ManagedUserRecord[];
+}

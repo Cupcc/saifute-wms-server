@@ -1,8 +1,10 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, type OnModuleInit, Optional } from "@nestjs/common";
+import type { Prisma } from "../../../generated/prisma/client";
 import {
   compareHash,
   hashText,
 } from "../../../shared/common/security/hash.util";
+import { PrismaService } from "../../../shared/prisma/prisma.service";
 import type {
   ManagedConfigRecord,
   ManagedDeptRecord,
@@ -15,17 +17,97 @@ import type {
   ManagedUserRecord,
   RbacUserRecord,
   RouteNode,
+  SystemManagementStateSnapshot,
 } from "../domain/rbac.types";
 
 const ALL_PERMISSION = "*:*:*";
-const SYSTEM_ROLE_MENU_IDS = [
-  1900, 2000, 2100, 2110, 2120, 2130, 2140, 2200, 2210, 2220, 2230, 2300, 2310,
-  2320, 2330, 2400, 2410, 2420, 2430, 2500, 2510, 2520, 2530, 2600, 2610, 2620,
-  2630, 2700, 2710, 2720, 2730, 2800, 2810, 2820, 2830,
+const SYSTEM_MANAGEMENT_SNAPSHOT_KEY = "default";
+
+const WAREHOUSE_MANAGER_PERMISSION_PRESET = [
+  "dashboard:view",
+  "master:material:list",
+  "master:customer:list",
+  "master:supplier:list",
+  "master:personnel:list",
+  "master:workshop:list",
+  "inbound:order:list",
+  "inbound:order:create",
+  "inbound:order:update",
+  "inbound:order:void",
+  "inbound:into-order:list",
+  "inbound:into-order:create",
+  "inbound:into-order:update",
+  "inbound:into-order:void",
+  "workshop-material:pick-order:list",
+  "workshop-material:pick-order:create",
+  "workshop-material:pick-order:void",
+  "workshop-material:return-order:list",
+  "workshop-material:return-order:create",
+  "workshop-material:return-order:void",
+  "workshop-material:scrap-order:list",
+  "workshop-material:scrap-order:create",
+  "workshop-material:scrap-order:void",
+  "inventory:balance:list",
+  "inventory:factory-number:list",
+  "inventory:log:list",
+  "inventory:source-usage:list",
+  "customer:order:list",
+  "customer:order:create",
+  "customer:order:update",
+  "customer:order:void",
+  "customer:sales-return:list",
+  "customer:sales-return:create",
+  "customer:sales-return:void",
+  "rd:procurement-request:list",
+  "rd:procurement-request:return-action",
+  "rd:handoff-order:list",
 ];
 
+const RD_OPERATOR_PERMISSION_PRESET = [
+  "dashboard:view",
+  "rd:procurement-request:list",
+  "rd:procurement-request:create",
+  "rd:procurement-request:void",
+  "rd:procurement-request:status-action",
+  "rd:workbench:view",
+  "reporting:home:view",
+  "reporting:inventory-summary:view",
+  "reporting:material-category-summary:view",
+  "inventory:balance:list",
+  "inventory:log:list",
+  "rd:handoff-order:list",
+  "rd:stocktake-order:list",
+  "rd:stocktake-order:create",
+  "rd:stocktake-order:void",
+  "project:list",
+  "project:get",
+  "project:create",
+  "project:void",
+  "workshop-material:scrap-order:list",
+  "workshop-material:scrap-order:create",
+  "workshop-material:scrap-order:void",
+  "master:material:list",
+];
+
+const PROCUREMENT_PERMISSION_PRESET = [
+  "dashboard:view",
+  "ai:chat",
+  "ai:tools:list",
+  "rd:procurement-request:list",
+  "rd:procurement-request:status-action",
+  "master:supplier:list",
+  "inbound:order:list",
+];
+
+// 这些只用于首次初始化默认角色授权；运行态权限真源仍由角色菜单关系承接。
+const DEFAULT_ROLE_PERMISSION_ASSIGNMENTS: Record<string, string[]> = {
+  "warehouse-manager": WAREHOUSE_MANAGER_PERMISSION_PRESET,
+  "rd-operator": RD_OPERATOR_PERMISSION_PRESET,
+  procurement: PROCUREMENT_PERMISSION_PRESET,
+};
+
 @Injectable()
-export class InMemoryRbacRepository {
+export class InMemoryRbacRepository implements OnModuleInit {
   private readonly routes: RouteNode[] = [
     {
       name: "Dashboard",
@@ -399,7 +481,7 @@ export class InMemoryRbacRepository {
     },
   ];
 
-  private readonly depts: ManagedDeptRecord[] = [
+  private depts: ManagedDeptRecord[] = [
     {
       deptId: 100,
       parentId: 0,
@@ -438,7 +520,7 @@ export class InMemoryRbacRepository {
     },
   ];
 
-  private readonly posts: ManagedPostRecord[] = [
+  private posts: ManagedPostRecord[] = [
     {
       postId: 1,
       postCode: "SYS_ADMIN",
@@ -477,7 +559,7 @@ export class InMemoryRbacRepository {
     },
   ];
 
-  private readonly menus: ManagedMenuRecord[] = [
+  private menus: ManagedMenuRecord[] = [
     {
       menuId: 1900,
       parentId: 0,
@@ -1073,9 +1155,1590 @@ export class InMemoryRbacRepository {
       isFrame: "1",
       isCache: "0",
     },
+    {
+      menuId: 2145,
+      parentId: 2100,
+      menuName: "用户导出",
+      orderNum: 5,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "system:user:export",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2235,
+      parentId: 2200,
+      menuName: "角色导出",
+      orderNum: 4,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "system:role:export",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2535,
+      parentId: 2500,
+      menuName: "岗位导出",
+      orderNum: 4,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "system:post:export",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2635,
+      parentId: 2600,
+      menuName: "字典导出",
+      orderNum: 4,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "system:dict:export",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2735,
+      parentId: 2700,
+      menuName: "参数导出",
+      orderNum: 4,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "system:config:export",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2900,
+      parentId: 0,
+      menuName: "平台能力",
+      orderNum: 9,
+      path: "/platform",
+      component: "Layout",
+      routeName: "PlatformCapabilities",
+      menuType: "M",
+      visible: "0",
+      status: "0",
+      perms: "",
+      icon: "monitor",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2910,
+      parentId: 2900,
+      menuName: "首页报表",
+      orderNum: 1,
+      path: "reporting/home",
+      component: "reporting/home/index",
+      routeName: "ReportingHome",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "reporting:home:view",
+      icon: "dashboard",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2911,
+      parentId: 2900,
+      menuName: "库存汇总报表",
+      orderNum: 2,
+      path: "reporting/inventory-summary",
+      component: "reporting/inventory-summary/index",
+      routeName: "InventorySummary",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "reporting:inventory-summary:view",
+      icon: "chart",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2912,
+      parentId: 2900,
+      menuName: "物料类别汇总",
+      orderNum: 3,
+      path: "reporting/material-category-summary",
+      component: "reporting/material-category-summary/index",
+      routeName: "MaterialCategorySummary",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "reporting:material-category-summary:view",
+      icon: "chart",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2913,
+      parentId: 2900,
+      menuName: "趋势报表",
+      orderNum: 4,
+      path: "reporting/trends",
+      component: "reporting/trends/index",
+      routeName: "ReportingTrends",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "reporting:trends:view",
+      icon: "chart",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2914,
+      parentId: 2900,
+      menuName: "报表导出",
+      orderNum: 5,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "reporting:export",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2920,
+      parentId: 2900,
+      menuName: "在线用户",
+      orderNum: 6,
+      path: "online",
+      component: "monitor/online/index",
+      routeName: "OnlineUsers",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "monitor:online:list",
+      icon: "user",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2921,
+      parentId: 2920,
+      menuName: "强退在线用户",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "monitor:online:forceLogout",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2930,
+      parentId: 2900,
+      menuName: "登录日志",
+      orderNum: 7,
+      path: "logininfor",
+      component: "monitor/logininfor/index",
+      routeName: "LoginLogs",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "audit:login-log:list",
+      icon: "form",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2931,
+      parentId: 2930,
+      menuName: "删除登录日志",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "audit:login-log:delete",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2940,
+      parentId: 2900,
+      menuName: "操作日志",
+      orderNum: 8,
+      path: "operlog",
+      component: "monitor/operlog/index",
+      routeName: "OperLogs",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "audit:oper-log:list",
+      icon: "form",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 2941,
+      parentId: 2940,
+      menuName: "删除操作日志",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "audit:oper-log:delete",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3000,
+      parentId: 0,
+      menuName: "基础资料权限",
+      orderNum: 10,
+      path: "/base-auth",
+      component: "Layout",
+      routeName: "MasterDataPermissions",
+      menuType: "M",
+      visible: "0",
+      status: "0",
+      perms: "",
+      icon: "tree-table",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3010,
+      parentId: 3000,
+      menuName: "物料资料",
+      orderNum: 1,
+      path: "material",
+      component: "base/material/index",
+      routeName: "BaseMaterial",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "master:material:list",
+      icon: "list",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3011,
+      parentId: 3010,
+      menuName: "物料新增",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "master:material:create",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3012,
+      parentId: 3010,
+      menuName: "物料修改",
+      orderNum: 2,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "master:material:update",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3020,
+      parentId: 3000,
+      menuName: "客户资料",
+      orderNum: 2,
+      path: "customer",
+      component: "base/customer/index",
+      routeName: "BaseCustomer",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "master:customer:list",
+      icon: "peoples",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3030,
+      parentId: 3000,
+      menuName: "供应商资料",
+      orderNum: 3,
+      path: "supplier",
+      component: "base/supplier/index",
+      routeName: "BaseSupplier",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "master:supplier:list",
+      icon: "peoples",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3040,
+      parentId: 3000,
+      menuName: "人员资料",
+      orderNum: 4,
+      path: "personnel",
+      component: "base/personnel/index",
+      routeName: "BasePersonnel",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "master:personnel:list",
+      icon: "user",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3050,
+      parentId: 3000,
+      menuName: "车间资料",
+      orderNum: 5,
+      path: "workshop",
+      component: "base/workshop/index",
+      routeName: "BaseWorkshop",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "master:workshop:list",
+      icon: "tree",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3100,
+      parentId: 0,
+      menuName: "入库业务权限",
+      orderNum: 11,
+      path: "/entry-auth",
+      component: "Layout",
+      routeName: "InboundPermissions",
+      menuType: "M",
+      visible: "0",
+      status: "0",
+      perms: "",
+      icon: "edit",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3110,
+      parentId: 3100,
+      menuName: "普通入库",
+      orderNum: 1,
+      path: "order",
+      component: "entry/order/index",
+      routeName: "EntryOrder",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "inbound:order:list",
+      icon: "edit",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3111,
+      parentId: 3110,
+      menuName: "普通入库新增",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "inbound:order:create",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3112,
+      parentId: 3110,
+      menuName: "普通入库修改",
+      orderNum: 2,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "inbound:order:update",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3113,
+      parentId: 3110,
+      menuName: "普通入库作废",
+      orderNum: 3,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "inbound:order:void",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3120,
+      parentId: 3100,
+      menuName: "生产入库",
+      orderNum: 2,
+      path: "intoOrder",
+      component: "entry/intoOrder/index",
+      routeName: "EntryIntoOrder",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "inbound:into-order:list",
+      icon: "edit",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3121,
+      parentId: 3120,
+      menuName: "生产入库新增",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "inbound:into-order:create",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3122,
+      parentId: 3120,
+      menuName: "生产入库修改",
+      orderNum: 2,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "inbound:into-order:update",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3123,
+      parentId: 3120,
+      menuName: "生产入库作废",
+      orderNum: 3,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "inbound:into-order:void",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3200,
+      parentId: 0,
+      menuName: "车间物料权限",
+      orderNum: 12,
+      path: "/take-auth",
+      component: "Layout",
+      routeName: "WorkshopMaterialPermissions",
+      menuType: "M",
+      visible: "0",
+      status: "0",
+      perms: "",
+      icon: "list",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3210,
+      parentId: 3200,
+      menuName: "领料单",
+      orderNum: 1,
+      path: "pickOrder",
+      component: "take/pickOrder/index",
+      routeName: "TakePickOrder",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "workshop-material:pick-order:list",
+      icon: "list",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3211,
+      parentId: 3210,
+      menuName: "领料单新增",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "workshop-material:pick-order:create",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3212,
+      parentId: 3210,
+      menuName: "领料单作废",
+      orderNum: 2,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "workshop-material:pick-order:void",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3220,
+      parentId: 3200,
+      menuName: "退料单",
+      orderNum: 2,
+      path: "returnOrder",
+      component: "take/returnOrder/index",
+      routeName: "TakeReturnOrder",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "workshop-material:return-order:list",
+      icon: "list",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3221,
+      parentId: 3220,
+      menuName: "退料单新增",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "workshop-material:return-order:create",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3222,
+      parentId: 3220,
+      menuName: "退料单作废",
+      orderNum: 2,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "workshop-material:return-order:void",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3230,
+      parentId: 3200,
+      menuName: "报废单",
+      orderNum: 3,
+      path: "scrapOrder",
+      component: "stock/scrapOrder/index",
+      routeName: "StockScrapOrder",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "workshop-material:scrap-order:list",
+      icon: "list",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3231,
+      parentId: 3230,
+      menuName: "报废单新增",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "workshop-material:scrap-order:create",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3232,
+      parentId: 3230,
+      menuName: "报废单作废",
+      orderNum: 2,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "workshop-material:scrap-order:void",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3300,
+      parentId: 0,
+      menuName: "库存管理权限",
+      orderNum: 13,
+      path: "/stock-auth",
+      component: "Layout",
+      routeName: "InventoryPermissions",
+      menuType: "M",
+      visible: "0",
+      status: "0",
+      perms: "",
+      icon: "chart",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3310,
+      parentId: 3300,
+      menuName: "库存余额",
+      orderNum: 1,
+      path: "inventory",
+      component: "stock/inventory/index",
+      routeName: "StockInventory",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "inventory:balance:list",
+      icon: "chart",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3320,
+      parentId: 3300,
+      menuName: "库存流水",
+      orderNum: 2,
+      path: "log",
+      component: "stock/log/index",
+      routeName: "StockLog",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "inventory:log:list",
+      icon: "chart",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3330,
+      parentId: 3300,
+      menuName: "来源追踪",
+      orderNum: 3,
+      path: "used",
+      component: "stock/used/index",
+      routeName: "StockUsed",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "inventory:source-usage:list",
+      icon: "chart",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3340,
+      parentId: 3300,
+      menuName: "厂编区间",
+      orderNum: 4,
+      path: "interval",
+      component: "stock/interval/index",
+      routeName: "StockInterval",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "inventory:factory-number:list",
+      icon: "chart",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3400,
+      parentId: 0,
+      menuName: "销售管理权限",
+      orderNum: 14,
+      path: "/customer-auth",
+      component: "Layout",
+      routeName: "CustomerPermissions",
+      menuType: "M",
+      visible: "0",
+      status: "0",
+      perms: "",
+      icon: "peoples",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3410,
+      parentId: 3400,
+      menuName: "客户出库",
+      orderNum: 1,
+      path: "order",
+      component: "customer/order/index",
+      routeName: "CustomerOrder",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "customer:order:list",
+      icon: "peoples",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3411,
+      parentId: 3410,
+      menuName: "客户出库新增",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "customer:order:create",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3412,
+      parentId: 3410,
+      menuName: "客户出库修改",
+      orderNum: 2,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "customer:order:update",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3413,
+      parentId: 3410,
+      menuName: "客户出库作废",
+      orderNum: 3,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "customer:order:void",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3420,
+      parentId: 3400,
+      menuName: "销售退货",
+      orderNum: 2,
+      path: "salesReturnOrder",
+      component: "customer/salesReturnOrder/index",
+      routeName: "CustomerSalesReturnOrder",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "customer:sales-return:list",
+      icon: "peoples",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3421,
+      parentId: 3420,
+      menuName: "销售退货新增",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "customer:sales-return:create",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3422,
+      parentId: 3420,
+      menuName: "销售退货作废",
+      orderNum: 2,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "customer:sales-return:void",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3500,
+      parentId: 0,
+      menuName: "研发协同权限",
+      orderNum: 15,
+      path: "/rd-auth",
+      component: "Layout",
+      routeName: "RdPermissions",
+      menuType: "M",
+      visible: "0",
+      status: "0",
+      perms: "",
+      icon: "list",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3510,
+      parentId: 3500,
+      menuName: "RD 工作台",
+      orderNum: 1,
+      path: "workbench",
+      component: "rd/workbench/index",
+      routeName: "RdWorkbench",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "rd:workbench:view",
+      icon: "dashboard",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3520,
+      parentId: 3500,
+      menuName: "RD 采购需求",
+      orderNum: 2,
+      path: "procurement-requests",
+      component: "rd/procurement-requests/index",
+      routeName: "RdProcurementRequests",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "rd:procurement-request:list",
+      icon: "edit",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3521,
+      parentId: 3520,
+      menuName: "RD 采购需求新增",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "rd:procurement-request:create",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3522,
+      parentId: 3520,
+      menuName: "RD 采购需求作废",
+      orderNum: 2,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "rd:procurement-request:void",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3523,
+      parentId: 3520,
+      menuName: "RD 采购状态动作",
+      orderNum: 3,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "rd:procurement-request:status-action",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3524,
+      parentId: 3520,
+      menuName: "RD 采购退回动作",
+      orderNum: 4,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "rd:procurement-request:return-action",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3530,
+      parentId: 3500,
+      menuName: "RD 交接结果",
+      orderNum: 3,
+      path: "handoff-results",
+      component: "rd/inbound-results/index",
+      routeName: "RdInboundResults",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "rd:handoff-order:list",
+      icon: "list",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3531,
+      parentId: 3530,
+      menuName: "RD 交接新增",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "rd:handoff-order:create",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3532,
+      parentId: 3530,
+      menuName: "RD 交接作废",
+      orderNum: 2,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "rd:handoff-order:void",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3540,
+      parentId: 3500,
+      menuName: "RD 盘点单",
+      orderNum: 4,
+      path: "stocktake-orders",
+      component: "rd/stocktake-orders/index",
+      routeName: "RdStocktakeOrders",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "rd:stocktake-order:list",
+      icon: "list",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3541,
+      parentId: 3540,
+      menuName: "RD 盘点单新增",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "rd:stocktake-order:create",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3542,
+      parentId: 3540,
+      menuName: "RD 盘点单作废",
+      orderNum: 2,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "rd:stocktake-order:void",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3600,
+      parentId: 0,
+      menuName: "项目管理权限",
+      orderNum: 16,
+      path: "/project-auth",
+      component: "Layout",
+      routeName: "ProjectPermissions",
+      menuType: "M",
+      visible: "0",
+      status: "0",
+      perms: "",
+      icon: "tree-table",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3610,
+      parentId: 3600,
+      menuName: "项目台账",
+      orderNum: 1,
+      path: "projects",
+      component: "rd/project-consumption/index",
+      routeName: "RdProjectConsumption",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "project:list",
+      icon: "tree-table",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3611,
+      parentId: 3610,
+      menuName: "项目详情",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "project:get",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3612,
+      parentId: 3610,
+      menuName: "项目新增",
+      orderNum: 2,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "project:create",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3613,
+      parentId: 3610,
+      menuName: "项目修改",
+      orderNum: 3,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "project:update",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3614,
+      parentId: 3610,
+      menuName: "项目作废",
+      orderNum: 4,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "project:void",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3700,
+      parentId: 0,
+      menuName: "工作流权限",
+      orderNum: 17,
+      path: "/workflow-auth",
+      component: "Layout",
+      routeName: "WorkflowPermissions",
+      menuType: "M",
+      visible: "0",
+      status: "0",
+      perms: "",
+      icon: "edit",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3710,
+      parentId: 3700,
+      menuName: "审核状态",
+      orderNum: 1,
+      path: "audit-status",
+      component: "",
+      routeName: "",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "workflow:audit:status",
+      icon: "edit",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3711,
+      parentId: 3700,
+      menuName: "审核列表",
+      orderNum: 2,
+      path: "audits",
+      component: "",
+      routeName: "",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "workflow:audit:list",
+      icon: "edit",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3712,
+      parentId: 3711,
+      menuName: "发起审核",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "workflow:audit:create",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3713,
+      parentId: 3711,
+      menuName: "审核通过",
+      orderNum: 2,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "workflow:audit:approve",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3714,
+      parentId: 3711,
+      menuName: "审核驳回",
+      orderNum: 3,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "workflow:audit:reject",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3715,
+      parentId: 3711,
+      menuName: "审核重置",
+      orderNum: 4,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "workflow:audit:reset",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3900,
+      parentId: 0,
+      menuName: "调度中心权限",
+      orderNum: 18,
+      path: "/scheduler-auth",
+      component: "Layout",
+      routeName: "SchedulerPermissions",
+      menuType: "M",
+      visible: "0",
+      status: "0",
+      perms: "",
+      icon: "clock",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3910,
+      parentId: 3900,
+      menuName: "调度任务",
+      orderNum: 1,
+      path: "jobs",
+      component: "scheduler/jobs/index",
+      routeName: "SchedulerJobs",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "scheduler:job:list",
+      icon: "clock",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3911,
+      parentId: 3910,
+      menuName: "新增任务",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "scheduler:job:create",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3912,
+      parentId: 3910,
+      menuName: "修改任务",
+      orderNum: 2,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "scheduler:job:update",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3913,
+      parentId: 3910,
+      menuName: "立即执行",
+      orderNum: 3,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "scheduler:job:run",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3914,
+      parentId: 3910,
+      menuName: "暂停恢复",
+      orderNum: 4,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "scheduler:job:pause",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3915,
+      parentId: 3900,
+      menuName: "调度日志",
+      orderNum: 2,
+      path: "job-logs",
+      component: "scheduler/job-logs/index",
+      routeName: "SchedulerLogs",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "scheduler:job:log:list",
+      icon: "clock",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3950,
+      parentId: 0,
+      menuName: "AI 助手权限",
+      orderNum: 19,
+      path: "/ai-auth",
+      component: "Layout",
+      routeName: "AiPermissions",
+      menuType: "M",
+      visible: "0",
+      status: "0",
+      perms: "",
+      icon: "message",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3951,
+      parentId: 3950,
+      menuName: "AI 对话",
+      orderNum: 1,
+      path: "chat",
+      component: "ai/assistant/index",
+      routeName: "AiAssistant",
+      menuType: "C",
+      visible: "0",
+      status: "0",
+      perms: "ai:chat",
+      icon: "message",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
+    {
+      menuId: 3952,
+      parentId: 3951,
+      menuName: "AI 工具列表",
+      orderNum: 1,
+      path: "",
+      component: "",
+      routeName: "",
+      menuType: "F",
+      visible: "0",
+      status: "0",
+      perms: "ai:tools:list",
+      icon: "",
+      query: "",
+      isFrame: "1",
+      isCache: "0",
+    },
   ];
 
-  private readonly roles: ManagedRoleRecord[] = [
+  private roles: ManagedRoleRecord[] = [
     {
       roleId: 1,
       roleName: "系统管理员",
@@ -1085,7 +2748,7 @@ export class InMemoryRbacRepository {
       dataScope: "1",
       menuCheckStrictly: true,
       deptCheckStrictly: true,
-      menuIds: [...SYSTEM_ROLE_MENU_IDS],
+      menuIds: [],
       deptIds: [100, 200, 300],
       remark: "超级管理员角色",
       createTime: "2026-03-01T09:00:00.000Z",
@@ -1099,7 +2762,7 @@ export class InMemoryRbacRepository {
       dataScope: "3",
       menuCheckStrictly: true,
       deptCheckStrictly: true,
-      menuIds: [1900],
+      menuIds: [],
       deptIds: [300],
       remark: "主仓与公司级实物流转角色",
       createTime: "2026-03-01T09:00:00.000Z",
@@ -1113,7 +2776,7 @@ export class InMemoryRbacRepository {
       dataScope: "3",
       menuCheckStrictly: true,
       deptCheckStrictly: true,
-      menuIds: [1900],
+      menuIds: [],
       deptIds: [100],
       remark: "研发小仓专属角色",
       createTime: "2026-03-01T09:00:00.000Z",
@@ -1127,14 +2790,14 @@ export class InMemoryRbacRepository {
       dataScope: "3",
       menuCheckStrictly: true,
       deptCheckStrictly: true,
-      menuIds: [1900],
+      menuIds: [],
       deptIds: [200],
       remark: "采购执行与验收回看角色",
       createTime: "2026-03-01T09:00:00.000Z",
     },
   ];
 
-  private readonly dictTypes: ManagedDictTypeRecord[] = [
+  private dictTypes: ManagedDictTypeRecord[] = [
     {
       dictId: 1,
       dictName: "通用状态",
@@ -1177,7 +2840,7 @@ export class InMemoryRbacRepository {
     },
   ];
 
-  private readonly dictData: ManagedDictDataRecord[] = [
+  private dictData: ManagedDictDataRecord[] = [
     {
       dictCode: 1,
       dictSort: 1,
@@ -1323,7 +2986,7 @@ export class InMemoryRbacRepository {
     },
   ];
 
-  private readonly configs: ManagedConfigRecord[] = [
+  private configs: ManagedConfigRecord[] = [
     {
       configId: 1,
       configName: "用户默认密码",
@@ -1344,7 +3007,7 @@ export class InMemoryRbacRepository {
     },
   ];
 
-  private readonly notices: ManagedNoticeRecord[] = [
+  private notices: ManagedNoticeRecord[] = [
     {
       noticeId: 1,
       noticeTitle: "RBAC 骨架已切换到新系统真源",
@@ -1367,7 +3030,7 @@ export class InMemoryRbacRepository {
     },
   ];
 
-  private readonly users: ManagedUserRecord[] = [
+  private users: ManagedUserRecord[] = [
     {
       userId: 1,
       deptId: 300,
@@ -1495,11 +3158,7 @@ export class InMemoryRbacRepository {
         workshopCode: null,
         workshopName: null,
       },
-      extraPermissions: [
-        "dashboard:view",
-        "rd:procurement-request:list",
-        "rd:procurement-request:return-action",
-      ],
+      extraPermissions: [],
     },
     {
       userId: 3,
@@ -1524,7 +3183,7 @@ export class InMemoryRbacRepository {
         workshopCode: null,
         workshopName: null,
       },
-      extraPermissions: ["dashboard:view"],
+      extraPermissions: [],
     },
     {
       userId: 4,
@@ -1549,15 +3208,7 @@ export class InMemoryRbacRepository {
         workshopCode: null,
         workshopName: null,
       },
-      extraPermissions: [
-        "dashboard:view",
-        "ai:chat",
-        "ai:tools:list",
-        "rd:procurement-request:list",
-        "rd:procurement-request:status-action",
-        "master:supplier:list",
-        "inbound:order:list",
-      ],
+      extraPermissions: [],
     },
     {
       userId: 5,
@@ -1582,33 +3233,141 @@ export class InMemoryRbacRepository {
         workshopCode: "RD",
         workshopName: "研发小仓",
       },
-      extraPermissions: [
-        "dashboard:view",
-        "rd:procurement-request:list",
-        "rd:procurement-request:create",
-        "rd:procurement-request:void",
-        "rd:procurement-request:status-action",
-        "rd:workbench:view",
-        "reporting:home:view",
-        "reporting:inventory-summary:view",
-        "reporting:material-category-summary:view",
-        "inventory:balance:list",
-        "inventory:log:list",
-        "rd:handoff-order:list",
-        "rd:stocktake-order:list",
-        "rd:stocktake-order:create",
-        "rd:stocktake-order:void",
-        "project:list",
-        "project:get",
-        "project:create",
-        "project:void",
-        "workshop-material:scrap-order:list",
-        "workshop-material:scrap-order:create",
-        "workshop-material:scrap-order:void",
-        "master:material:list",
-      ],
+      extraPermissions: [],
     },
   ];
+
+  private persistenceQueue: Promise<void> = Promise.resolve();
+
+  constructor(@Optional() private readonly prisma?: PrismaService) {
+    this.applyDefaultRoleMenuAssignments();
+  }
+
+  async onModuleInit(): Promise<void> {
+    if (!this.prisma) {
+      return;
+    }
+
+    await this.restoreOrSeedState();
+  }
+
+  async flushPersistence(): Promise<void> {
+    await this.persistenceQueue;
+  }
+
+  private async restoreOrSeedState(): Promise<void> {
+    const snapshot = await this.prisma?.systemManagementSnapshot.findUnique({
+      where: { snapshotKey: SYSTEM_MANAGEMENT_SNAPSHOT_KEY },
+    });
+    if (!snapshot) {
+      await this.persistState();
+      return;
+    }
+
+    this.applySnapshot(
+      snapshot.payload as unknown as SystemManagementStateSnapshot,
+    );
+  }
+
+  private async persistState(): Promise<void> {
+    if (!this.prisma) {
+      return;
+    }
+
+    const payload =
+      this.toSnapshotPayload() as unknown as Prisma.InputJsonValue;
+    await this.prisma.systemManagementSnapshot.upsert({
+      where: { snapshotKey: SYSTEM_MANAGEMENT_SNAPSHOT_KEY },
+      update: { payload },
+      create: {
+        snapshotKey: SYSTEM_MANAGEMENT_SNAPSHOT_KEY,
+        payload,
+      },
+    });
+  }
+
+  private queuePersistence(): void {
+    if (!this.prisma) {
+      return;
+    }
+
+    const persistOperation = async () => {
+      await this.persistState();
+    };
+    this.persistenceQueue = this.persistenceQueue.then(
+      persistOperation,
+      persistOperation,
+    );
+  }
+
+  private toSnapshotPayload(): SystemManagementStateSnapshot {
+    return {
+      depts: structuredClone(this.depts),
+      posts: structuredClone(this.posts),
+      menus: structuredClone(this.menus),
+      roles: structuredClone(this.roles),
+      dictTypes: structuredClone(this.dictTypes),
+      dictData: structuredClone(this.dictData),
+      configs: structuredClone(this.configs),
+      notices: structuredClone(this.notices),
+      users: structuredClone(this.users),
+    };
+  }
+
+  private applySnapshot(snapshot: SystemManagementStateSnapshot): void {
+    this.depts = this.cloneSnapshotRows(snapshot.depts, this.depts);
+    this.posts = this.cloneSnapshotRows(snapshot.posts, this.posts);
+    this.menus = this.cloneSnapshotRows(snapshot.menus, this.menus);
+    this.roles = this.cloneSnapshotRows(snapshot.roles, this.roles);
+    this.dictTypes = this.cloneSnapshotRows(snapshot.dictTypes, this.dictTypes);
+    this.dictData = this.cloneSnapshotRows(snapshot.dictData, this.dictData);
+    this.configs = this.cloneSnapshotRows(snapshot.configs, this.configs);
+    this.notices = this.cloneSnapshotRows(snapshot.notices, this.notices);
+    this.users = this.cloneSnapshotRows(snapshot.users, this.users);
+  }
+
+  private cloneSnapshotRows<T>(rows: unknown, fallback: T[]): T[] {
+    return Array.isArray(rows)
+      ? structuredClone(rows as T[])
+      : structuredClone(fallback);
+  }
+
+  private applyDefaultRoleMenuAssignments(): void {
+    const permissionToMenuIds = new Map<string, number[]>();
+    this.menus.forEach((menu) => {
+      if (!menu.perms) {
+        return;
+      }
+      const menuIds = permissionToMenuIds.get(menu.perms) ?? [];
+      menuIds.push(menu.menuId);
+      permissionToMenuIds.set(menu.perms, menuIds);
+    });
+
+    this.roles = this.roles.map((role) => {
+      if (role.roleKey === "admin") {
+        return {
+          ...role,
+          menuIds: this.menus.map((menu) => menu.menuId),
+        };
+      }
+
+      const permissionKeys = DEFAULT_ROLE_PERMISSION_ASSIGNMENTS[role.roleKey];
+      if (!permissionKeys) {
+        return role;
+      }
+
+      return {
+        ...role,
+        menuIds: [
+          ...new Set(
+            permissionKeys.flatMap(
+              (permissionKey) => permissionToMenuIds.get(permissionKey) ?? [],
+            ),
+          ),
+        ],
+      };
+    });
+  }
 
   async findUserByUsername(username: string): Promise<RbacUserRecord | null> {
     const user = this.users.find((item) => item.userName === username);
@@ -1638,6 +3397,7 @@ export class InMemoryRbacRepository {
 
     const previousAvatarUrl = user.avatarUrl ?? null;
     user.avatarUrl = avatarUrl;
+    this.queuePersistence();
 
     return {
       user: this.buildRbacUserRecord(user),
@@ -1724,6 +3484,7 @@ export class InMemoryRbacRepository {
       extraPermissions: [],
     };
     this.users.push(user);
+    this.queuePersistence();
     return this.toUserRow(user);
   }
 
@@ -1751,6 +3512,7 @@ export class InMemoryRbacRepository {
     user.remark = String(data.remark ?? user.remark);
     user.postIds = this.normalizeNumberList(data.postIds);
     user.roleIds = this.normalizeNumberList(data.roleIds);
+    this.queuePersistence();
     return this.toUserRow(user);
   }
 
@@ -1764,16 +3526,19 @@ export class InMemoryRbacRepository {
         user.deleted = true;
       }
     });
+    this.queuePersistence();
   }
 
   resetUserPassword(userId: number, password: string) {
     const user = this.requireUser(userId);
     user.passwordHash = hashText(password);
+    this.queuePersistence();
   }
 
   changeUserStatus(userId: number, status: "0" | "1") {
     const user = this.requireUser(userId);
     user.status = status;
+    this.queuePersistence();
   }
 
   getCurrentUserProfile(userId: number) {
@@ -1806,6 +3571,7 @@ export class InMemoryRbacRepository {
     user.phonenumber = String(data.phonenumber ?? user.phonenumber).trim();
     user.email = String(data.email ?? user.email).trim();
     user.sex = this.normalizeSex(data.sex ?? user.sex);
+    this.queuePersistence();
     return this.toUserRow(user);
   }
 
@@ -1819,6 +3585,7 @@ export class InMemoryRbacRepository {
       throw new Error("旧密码错误");
     }
     user.passwordHash = hashText(newPassword);
+    this.queuePersistence();
   }
 
   getAuthRole(userId: number) {
@@ -1839,6 +3606,7 @@ export class InMemoryRbacRepository {
   updateUserRoles(userId: number, roleIds: number[]) {
     const user = this.requireUser(userId);
     user.roleIds = [...new Set(roleIds)];
+    this.queuePersistence();
   }
 
   findUserIdsByRoleIds(roleIds: number[]) {
@@ -1891,6 +3659,7 @@ export class InMemoryRbacRepository {
       createTime: new Date().toISOString(),
     };
     this.roles.push(role);
+    this.queuePersistence();
     return structuredClone(role);
   }
 
@@ -1910,6 +3679,7 @@ export class InMemoryRbacRepository {
     role.menuIds = this.normalizeNumberList(data.menuIds ?? role.menuIds);
     role.deptIds = this.normalizeNumberList(data.deptIds ?? role.deptIds);
     role.remark = String(data.remark ?? role.remark);
+    this.queuePersistence();
     return structuredClone(role);
   }
 
@@ -1917,11 +3687,13 @@ export class InMemoryRbacRepository {
     const role = this.requireRole(this.requireNumber(data.roleId));
     role.dataScope = this.normalizeDataScope(data.dataScope ?? role.dataScope);
     role.deptIds = this.normalizeNumberList(data.deptIds ?? role.deptIds);
+    this.queuePersistence();
   }
 
   changeRoleStatus(roleId: number, status: "0" | "1") {
     const role = this.requireRole(roleId);
     role.status = status;
+    this.queuePersistence();
   }
 
   deleteRoles(roleIds: number[]) {
@@ -1940,6 +3712,7 @@ export class InMemoryRbacRepository {
         this.roles.splice(index, 1);
       }
     });
+    this.queuePersistence();
   }
 
   listAllocatedUsers(query: Record<string, string | undefined>) {
@@ -1965,6 +3738,7 @@ export class InMemoryRbacRepository {
       const user = this.requireUser(userId);
       user.roleIds = user.roleIds.filter((item) => item !== roleId);
     });
+    this.queuePersistence();
   }
 
   assignUsersToRole(roleId: number, userIds: number[]) {
@@ -1974,6 +3748,7 @@ export class InMemoryRbacRepository {
         user.roleIds.push(roleId);
       }
     });
+    this.queuePersistence();
   }
 
   listMenus(query: Record<string, string | undefined>) {
@@ -2018,6 +3793,7 @@ export class InMemoryRbacRepository {
       isCache: this.normalizeYesNoFlag(data.isCache, "0"),
     };
     this.menus.push(menu);
+    this.queuePersistence();
     return structuredClone(menu);
   }
 
@@ -2037,6 +3813,7 @@ export class InMemoryRbacRepository {
     menu.query = String(data.query ?? menu.query);
     menu.isFrame = this.normalizeYesNoFlag(data.isFrame ?? menu.isFrame, "1");
     menu.isCache = this.normalizeYesNoFlag(data.isCache ?? menu.isCache, "0");
+    this.queuePersistence();
     return structuredClone(menu);
   }
 
@@ -2054,6 +3831,7 @@ export class InMemoryRbacRepository {
         this.menus.splice(index, 1);
       }
     });
+    this.queuePersistence();
   }
 
   getRoleMenuTree(roleId: number) {
@@ -2114,6 +3892,7 @@ export class InMemoryRbacRepository {
       createTime: new Date().toISOString(),
     };
     this.depts.push(dept);
+    this.queuePersistence();
     return structuredClone(dept);
   }
 
@@ -2148,6 +3927,7 @@ export class InMemoryRbacRepository {
       }
     });
 
+    this.queuePersistence();
     return structuredClone(dept);
   }
 
@@ -2168,6 +3948,7 @@ export class InMemoryRbacRepository {
         this.depts.splice(index, 1);
       }
     });
+    this.queuePersistence();
   }
 
   getDeptTree(roleId?: number) {
@@ -2219,6 +4000,7 @@ export class InMemoryRbacRepository {
       createTime: new Date().toISOString(),
     };
     this.posts.push(post);
+    this.queuePersistence();
     return structuredClone(post);
   }
 
@@ -2229,6 +4011,7 @@ export class InMemoryRbacRepository {
     post.postSort = this.requireNumber(data.postSort ?? post.postSort);
     post.status = this.normalizeStatus(data.status ?? post.status);
     post.remark = String(data.remark ?? post.remark);
+    this.queuePersistence();
     return structuredClone(post);
   }
 
@@ -2245,6 +4028,7 @@ export class InMemoryRbacRepository {
         this.posts.splice(index, 1);
       }
     });
+    this.queuePersistence();
   }
 
   listDictTypes(query: Record<string, string | undefined>) {
@@ -2279,6 +4063,7 @@ export class InMemoryRbacRepository {
       createTime: new Date().toISOString(),
     };
     this.dictTypes.push(record);
+    this.queuePersistence();
     return structuredClone(record);
   }
 
@@ -2296,6 +4081,7 @@ export class InMemoryRbacRepository {
         }
       });
     }
+    this.queuePersistence();
     return structuredClone(record);
   }
 
@@ -2318,6 +4104,7 @@ export class InMemoryRbacRepository {
         this.dictTypes.splice(index, 1);
       }
     }
+    this.queuePersistence();
   }
 
   listDictTypeOptions() {
@@ -2371,6 +4158,7 @@ export class InMemoryRbacRepository {
       createTime: new Date().toISOString(),
     };
     this.dictData.push(record);
+    this.queuePersistence();
     return structuredClone(record);
   }
 
@@ -2388,6 +4176,7 @@ export class InMemoryRbacRepository {
     );
     record.status = this.normalizeStatus(data.status ?? record.status);
     record.remark = String(data.remark ?? record.remark);
+    this.queuePersistence();
     return structuredClone(record);
   }
 
@@ -2400,6 +4189,7 @@ export class InMemoryRbacRepository {
         this.dictData.splice(index, 1);
       }
     });
+    this.queuePersistence();
   }
 
   listConfigs(query: Record<string, string | undefined>) {
@@ -2441,6 +4231,7 @@ export class InMemoryRbacRepository {
       createTime: new Date().toISOString(),
     };
     this.configs.push(record);
+    this.queuePersistence();
     return structuredClone(record);
   }
 
@@ -2454,6 +4245,7 @@ export class InMemoryRbacRepository {
       "N",
     );
     record.remark = String(data.remark ?? record.remark);
+    this.queuePersistence();
     return structuredClone(record);
   }
 
@@ -2466,6 +4258,7 @@ export class InMemoryRbacRepository {
         this.configs.splice(index, 1);
       }
     });
+    this.queuePersistence();
   }
 
   listNotices(query: Record<string, string | undefined>) {
@@ -2504,6 +4297,7 @@ export class InMemoryRbacRepository {
       createTime: new Date().toISOString(),
     };
     this.notices.push(record);
+    this.queuePersistence();
     return structuredClone(record);
   }
 
@@ -2516,6 +4310,7 @@ export class InMemoryRbacRepository {
     record.noticeContent = String(data.noticeContent ?? record.noticeContent);
     record.status = this.normalizeStatus(data.status ?? record.status);
     record.remark = String(data.remark ?? record.remark);
+    this.queuePersistence();
     return structuredClone(record);
   }
 
@@ -2528,6 +4323,7 @@ export class InMemoryRbacRepository {
         this.notices.splice(index, 1);
       }
     });
+    this.queuePersistence();
   }
 
   private buildRbacUserRecord(user: ManagedUserRecord): RbacUserRecord {
@@ -2558,6 +4354,17 @@ export class InMemoryRbacRepository {
   }
 
   private getUserPermissions(user: ManagedUserRecord) {
+    if (user.userId === 1) {
+      return [
+        ...new Set([
+          ...this.menus
+            .map((menu) => menu.perms)
+            .filter((permission): permission is string => Boolean(permission)),
+          ...user.extraPermissions,
+        ]),
+      ];
+    }
+
     const rolePermissions = user.roleIds.flatMap((roleId) => {
       const role = this.roles.find((item) => item.roleId === roleId);
       if (!role) {
