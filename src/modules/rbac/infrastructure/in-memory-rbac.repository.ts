@@ -3244,7 +3244,7 @@ export class InMemoryRbacRepository implements OnModuleInit {
   }
 
   async onModuleInit(): Promise<void> {
-    if (!this.prisma) {
+    if (!this.prisma?.systemManagementSnapshot) {
       return;
     }
 
@@ -3256,7 +3256,12 @@ export class InMemoryRbacRepository implements OnModuleInit {
   }
 
   private async restoreOrSeedState(): Promise<void> {
-    const snapshot = await this.prisma?.systemManagementSnapshot.findUnique({
+    const snapshotDelegate = this.prisma?.systemManagementSnapshot;
+    if (!snapshotDelegate) {
+      return;
+    }
+
+    const snapshot = await snapshotDelegate.findUnique({
       where: { snapshotKey: SYSTEM_MANAGEMENT_SNAPSHOT_KEY },
     });
     if (!snapshot) {
@@ -3270,13 +3275,14 @@ export class InMemoryRbacRepository implements OnModuleInit {
   }
 
   private async persistState(): Promise<void> {
-    if (!this.prisma) {
+    const snapshotDelegate = this.prisma?.systemManagementSnapshot;
+    if (!snapshotDelegate) {
       return;
     }
 
     const payload =
       this.toSnapshotPayload() as unknown as Prisma.InputJsonValue;
-    await this.prisma.systemManagementSnapshot.upsert({
+    await snapshotDelegate.upsert({
       where: { snapshotKey: SYSTEM_MANAGEMENT_SNAPSHOT_KEY },
       update: { payload },
       create: {
@@ -3287,7 +3293,7 @@ export class InMemoryRbacRepository implements OnModuleInit {
   }
 
   private queuePersistence(): void {
-    if (!this.prisma) {
+    if (!this.prisma?.systemManagementSnapshot) {
       return;
     }
 
