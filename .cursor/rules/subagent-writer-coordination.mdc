@@ -6,8 +6,9 @@ alwaysApply: false
 # Writer Coordination
 
 - Multiple writer subagents allowed only when writable scopes are explicitly disjoint; never run writers in background.
-- Shared files stay parent-owned unless one worker is explicitly assigned sole owner. Shared files: `src/app.module.ts`, `src/main.ts`, `src/shared/**`, `prisma/schema.prisma`, route/permission registries, active `docs/tasks/*.md`, cross-module tests.
+- Shared files stay parent-owned unless one worker is explicitly assigned sole owner. Shared files: `src/app.module.ts`, `src/main.ts`, `src/shared/**`, `prisma/schema.prisma`, route/permission registries, active `docs/tasks/*.md`, active `docs/requirements/*.md`, `docs/acceptance-tests/**`, cross-module tests.
 - Every writer handoff must list: owned files/dirs, forbidden shared files, expected validation commands.
-- Task docs default to single-owner sequence: `planner` creates → `coder` reads → `code-reviewer` updates review status.
+- Task docs default to single-owner sequence: `planner` creates → `coder` reads → `code-reviewer` updates review status → `acceptance-qa` writes acceptance state when the chosen mode requires it.
+- `acceptance-qa` owns writes under `docs/acceptance-tests/**` when full-mode acceptance is active.
 - After parallel writers finish, parent must re-read latest content before editing any shared file.
 - Overlapping changes attributable to child writers: merge. Unknown source or frozen boundary: stop and ask user.

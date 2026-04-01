@@ -1,6 +1,6 @@
 # 需求文档说明
 
-`docs/requirements/**` 用于保存面向用户的需求真源与简洁进展说明。这里记录“要做什么、为什么做、做到哪了”；详细执行方案、验证过程和 review 结论继续放在 `docs/tasks/*.md`。
+`docs/requirements/**` 用于保存面向用户的需求真源与简洁进展说明。这里记录“要做什么、为什么做、做到哪了”；详细执行方案、验证过程和 review 结论继续放在 `docs/tasks/*.md`。当任务进入验收阶段时，requirement 只保留聚合后的 `验收状态`，不承载详细测试证据。
 
 ## 目录职责
 
@@ -8,7 +8,7 @@
 | --- | --- | --- |
 | `PROJECT_REQUIREMENTS.md` | 项目级、长期稳定、跨任务持续生效的需求与背景 | 单次切片交付、当前回合进展 |
 | `topics/*.md` | 某个长期业务主题的约束、能力清单、阶段路线图 | 单次切片进展、执行日志 |
-| `req-*.md` | 单次任务、切片或会话级需求，以及简洁 `当前进展` | 长期主题边界、项目级总则 |
+| `req-*.md` | 单次任务、切片或会话级需求，以及简洁 `当前进展` 与 requirement 级 `验收状态` | 长期主题边界、执行日志、详细测试步骤 |
 | `REQUIREMENT_CENTER.md` | 需求索引看板 | 正文细节 |
 | `_template.md` | `req-*.md` 模板 | 主题模板职责 |
 | `topics/_template.md` | `topics/*.md` 模板 | 切片模板职责 |
@@ -20,7 +20,7 @@
 - 主题级长期边界，不写进切片 `req-*.md`。
 - 单次切片交付，不写进 `topics/*.md`。
 - 单次任务进展，不写进 `PROJECT_REQUIREMENTS.md`。
-- 详细执行计划、验证记录、review 结论，不写进 `docs/requirements/**`。
+- 详细执行计划、review 结论、验收步骤、浏览器实测记录，不写进 `docs/requirements/**`。
 - 文档机制、归档规则、命名约定，统一写在本 `README.md`，不要分散写进需求正文。
 
 ## 目录布局
@@ -45,7 +45,7 @@ docs/requirements/
 - 如果这条需求会跨很多轮交付、长期生效，并影响多个主题，写进 `PROJECT_REQUIREMENTS.md`。
 - 如果这条需求只属于某个长期业务主题，但会拆成多个阶段推进，写进 `topics/*.md`。
 - 如果这条需求描述的是“本次要交付什么”，写进 `req-*.md`。
-- 如果内容是在说明怎么做、怎么验、review 结论如何，不写进 requirement，写进 `docs/tasks/*.md`。
+- 如果内容是在说明怎么做、怎么验、review 结论如何，不写进 requirement，写进 `docs/tasks/*.md` 或 `docs/acceptance-tests/**`。
 
 ## 每层怎么写
 
@@ -53,7 +53,7 @@ docs/requirements/
 | --- | --- | --- |
 | 项目级 | 长期背景、长期目标、统一业务口径 | 直接维护 `PROJECT_REQUIREMENTS.md` |
 | 主题级 | 长期约束、能力清单、阶段路线图 | `topics/_template.md` |
-| 切片级 | 本次交付范围、当前进展、待确认 | `_template.md` |
+| 切片级 | 本次交付范围、当前进展、聚合验收状态、待确认 | `_template.md` |
 
 补充约束：
 
@@ -67,9 +67,16 @@ docs/requirements/
 - 内容保持简洁，优先把用户需求讲清楚，不擅自展开实现方案。
 - `当前进展` 只写关键阶段状态，不写成长执行日志。
 - `req-*.md` 建议固定使用 `用户需求`、`当前进展`、`待确认` 三段。
-- `当前进展` 建议固定为 `阶段进度`、`当前状态`、`阻塞项`、`下一步` 四行。
-- `需求矩阵（已确认）` 不是必填项；仅当某份切片文档需要作为后续工作的稳定基线时才保留。
+- `当前进展` 建议固定为 `阶段进度`、`当前状态`、`验收状态`、`阻塞项`、`下一步` 五行。
+- `需求矩阵（可选）` 不是必填项；仅当某份切片文档需要作为后续工作的稳定基线时才保留。
 - 若某个已归档切片文档仍承担后续切片复用的稳定基线，可保留必要的矩阵或边界说明；不要为了统一格式强行删空。
+
+## 验收文档关系
+
+- `none` 模式：requirement 只写 `验收状态: 已跳过` 或保持未进入验收，不创建独立验收资产。
+- `light` 模式：详细验收证据通常留在 task doc 的 `## Acceptance`，requirement 只保留聚合结果。
+- `full` 模式：详细验收证据主要留在 `docs/acceptance-tests/specs/**` 与 `docs/acceptance-tests/runs/**`，requirement 只保留聚合结果。
+- requirement 的 `验收状态` 必须反映 linked tasks 的聚合结论，不能用某一个 task 的最后一次写入覆盖事实。
 
 ## 命名与模板
 
@@ -98,7 +105,7 @@ docs/requirements/
 - `active`：文件位于 `docs/requirements/` 根目录，仍参与当前交互或执行。
 - `retained-completed`：文件位于 `archive/retained-completed/`，需求已闭环但需保留溯源。
 - `cleanup-candidate`：文件位于 `archive/cleanup-candidate/`，后续经用户确认后可删除。
-- 若需求已客观完成且没有真实活跃 follow-up，不得继续留在根目录充当 resume 占位；应在同一轮同步归档 requirement / task / workspace。
+- 若需求已客观完成且没有真实活跃 follow-up，不得继续留在根目录充当 resume 占位；应在同一轮同步归档 requirement、task、acceptance run、workspace。
 
 ## 使用流程
 
@@ -107,12 +114,13 @@ docs/requirements/
 3. 新建主题文档时，用 `topics/_template.md` 起稿；新建切片文档时，用根目录 `_template.md` 起稿。
 4. 任务需求若尚未获用户确认，`Status` 设为 `needs-confirmation`；确认后改为 `confirmed`。
 5. 在关键阶段推进、进入阻塞或准备结束当前回合前，同步简洁 `当前进展`。
-6. 需求闭环后优先归档而不是删除；归档时同步更新 `REQUIREMENT_CENTER.md`、相关 task 的 `Related requirement`，以及需求内的 `Related tasks`。
-7. 恢复旧对话或处理 `continue` 时，先以 `REQUIREMENT_CENTER.md` 的 lifecycle 分类判断是否仍属活跃需求；归档需求默认只作溯源，不直接当作当前执行锚点。
-8. 若某个归档切片既属于某个主题、又保留了可复用的关键矩阵，允许“主题真源 + 切片基线”并存；主题文档负责长期分类，切片文档负责历史与细节基线。
+6. 根据任务风险选择 `Acceptance mode: none | light | full`，并同步 requirement 侧 `验收状态`。
+7. 需求闭环后优先归档而不是删除；归档时同步更新 `REQUIREMENT_CENTER.md`、相关 task 的 `Related requirement`，以及需求内的 `Related tasks`。
+8. 恢复旧对话或处理 `continue` 时，先以 `REQUIREMENT_CENTER.md` 的 lifecycle 分类判断是否仍属活跃需求；归档需求默认只作溯源，不直接当作当前执行锚点。
 
 ## 与任务文档的关系
 
-- `docs/tasks/*.md` 承接详细执行计划、验证过程、review 结论与运行时上下文。
+- `docs/tasks/*.md` 承接详细执行计划、验证过程、review 结论与 light-mode acceptance 记录。
+- `docs/acceptance-tests/**` 承接 full-mode acceptance 的长期 specs 与单次 runs。
 - 根目录活跃 `task-*.md` 应绑定仍存在且 `Lifecycle disposition = active` 的 `req-*.md`。
 - 归档 task 若继续引用 requirement，应改为归档后的完整路径。

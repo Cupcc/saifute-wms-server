@@ -3,15 +3,20 @@
 ## Metadata
 
 - Scope:
-- Related requirement:（根目录活跃 task：须为仍存在的 `docs/requirements/req-*.md` 根路径，且该需求 `Lifecycle disposition` 为 `active`。已归档 task 可写 `docs/requirements/archive/**/req-*.md` 全路径。需求文件若从仓库移除而非归档，请勿将本 task 留在根目录）
+- Related requirement: （根目录活跃 task：须为仍存在的 `docs/requirements/req-*.md` 根路径，且该需求 `Lifecycle disposition` 为 `active`。已归档 task 可写 `docs/requirements/archive/**/req-*.md` 全路径。需求文件若从仓库移除而非归档，请勿将本 task 留在根目录）
 - Status: `planned`
 - Review status: `not-reviewed`
+- Acceptance mode: `none` | `light` | `full`
+- Acceptance status: `not-assessed`
 - Lifecycle disposition: `active`
 - Planner:
 - Coder:
 - Reviewer:
+- Acceptance QA:
 - Last updated:
 - Related checklist:
+- Related acceptance spec:
+- Related acceptance run:
 - Related files:
 
 ## Requirement Alignment
@@ -25,6 +30,7 @@
 
 - Req-facing phase progress:
 - Req-facing current state:
+- Req-facing acceptance state:
 - Req-facing blockers:
 - Req-facing next step:
 - Requirement doc sync owner:
@@ -33,6 +39,8 @@
 
 - Goal:
 - Acceptance criteria:
+  - `[AC-1]`
+  - `[AC-2]`
 
 ## Scope And Ownership
 
@@ -64,6 +72,22 @@
 - Final validation gate:
 - Required doc updates:
 
+### Acceptance Evidence Package
+
+- Covered criteria:
+- Evidence pointers:
+- Evidence gaps, if any:
+
+### Acceptance Test Expectations
+
+- Acceptance mode: `none` | `light` | `full`
+- Browser test required: `yes` | `no`
+- Related acceptance spec:
+- Separate acceptance run required: `yes` | `no`
+- Required regression / high-risk tags:
+- Suggested environment / accounts:
+- Environment owner / setup source:
+
 ## Parallelization Safety
 
 - Status: `not-assessed`
@@ -75,6 +99,25 @@
 - Validation results:
 - Findings:
 - Follow-up action:
+
+## Acceptance
+
+- Acceptance status: `not-assessed` | `skipped` | `accepted` | `rejected` | `conditionally-accepted` | `blocked`
+- Acceptance QA:
+- Acceptance date:
+
+### Acceptance Checklist
+
+> Acceptance QA 在验收时逐条填写。每条应对应 requirement doc 的用户需求或 task doc 的 `[AC-*]` 条目。
+
+- [ ] `[AC-1]` criterion text — Evidence: ... — Verdict: `✓ met` | `✗ not met` | `△ partially met`
+
+### Acceptance Notes
+
+- Acceptance path used: `none` | `light` | `full`
+- Acceptance summary:
+- If rejected or blocked: root cause（`requirement-misunderstanding` | `implementation-gap` | `evidence-gap` | `environment-gap`）+ 精确修复指引 / 环境修复指引
+- If conditionally accepted: follow-up requirement / task:
 
 ## Final Status
 

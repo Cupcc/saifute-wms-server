@@ -19,6 +19,10 @@ If hidden complexity surfaces or shared files / frozen contracts are touched, es
 - `当前进展` may legitimately say `阻塞项: None` and `下一步: None / 归档 / 等待新需求`; do not invent fake blockers, fake confirmations, or placeholder next steps just to satisfy the template.
 - New requirements default to `needs-confirmation`; mark `confirmed` only after explicit user approval. Progress-only updates do not downgrade status.
 - Task docs record linked requirement path and inherit confirmed requirement understanding.
+- For non-trivial runtime work, choose `Acceptance mode: none | light | full` instead of assuming one fixed path.
+- Use `none` only when there is no meaningful runtime behavior change, the user explicitly says skip, or the work is docs-only / rule-only / formatting-only.
+- Use `light` as the default for low-risk runtime changes where direct evidence in the task doc is enough.
+- Use `full` for UI, multi-role, cross-page, high-risk, release-gating, or explicitly strict acceptance scopes; `full` may use `docs/acceptance-tests/**` and `acceptance-qa`.
 - Sync concise progress back to requirement at key milestones, on blockers, or before ending conversation.
 - When a workflow has a `docs/workspace/<workflow>/` folder, sync decision-relevant findings (trade-offs, options, human-intervention needs) plus discovery-stage draft material (intent hypotheses, brainstorm summaries, concise dialogue traces) to workspace; parent orchestrator owns workspace writes.
 - Refined user-facing confirmation items belong in `docs/requirements/*.md`; workspace `draft.md` is the discovery layer, not the confirmation truth source.
