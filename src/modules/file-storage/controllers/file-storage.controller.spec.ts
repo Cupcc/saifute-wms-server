@@ -7,7 +7,11 @@ import { Test } from "@nestjs/testing";
 import * as request from "supertest";
 import { ResponseEnvelopeInterceptor } from "../../../shared/common/interceptors/response-envelope.interceptor";
 import { AppConfigService } from "../../../shared/config/app-config.service";
+import { PrismaService } from "../../../shared/prisma/prisma.service";
+import { RedisStoreService } from "../../../shared/redis/redis-store.service";
 import { SharedConfigModule } from "../../../shared/config/shared-config.module";
+import { PrismaE2eStub } from "../../../../test/prisma-e2e-stub";
+import { RedisStoreE2eStub } from "../../../../test/redis-store.e2e-stub";
 import { AuditLogModule } from "../../audit-log/audit-log.module";
 import { AuditLogRepository } from "../../audit-log/infrastructure/audit-log.repository";
 import { FileStorageModule } from "../file-storage.module";
@@ -56,6 +60,10 @@ describe("FileStorageController", () => {
     })
       .overrideProvider(AuditLogRepository)
       .useValue(auditLogRepository)
+      .overrideProvider(PrismaService)
+      .useClass(PrismaE2eStub)
+      .overrideProvider(RedisStoreService)
+      .useClass(RedisStoreE2eStub)
       .overrideProvider(AppConfigService)
       .useValue({
         apiGlobalPrefix: "api",
