@@ -39,8 +39,8 @@ Keep those layers separate so the board stays short, the README stays stable, an
 - `planner` creates or updates the task doc and owns planning-phase edits.
 - `coder` reads the task doc as the execution brief and treats it as read-only unless documentation ownership is explicitly reassigned.
 - `code-reviewer` updates the task doc with review status, validation results, follow-up state, and the acceptance-ready evidence handoff.
-- `acceptance-qa` is invoked when `light` or `full` acceptance adds value; in `full` mode it maintains acceptance specs, executes acceptance runs, and writes the acceptance result back to task and requirement docs.
-- The parent orchestrator decides whether to continue the fix loop, invoke `acceptance-qa`, or create a commit; default delivery mode is to auto-commit validated work unless the user explicitly says `no-commit`.
+- `acceptance-qa` is invoked when `light` or `full` acceptance adds value; in `full` mode it maintains acceptance specs, executes acceptance runs, and writes the acceptance result back to task and requirement docs. The acceptance run is the complete test report for that slice.
+- The parent orchestrator decides whether to continue the fix loop, invoke `acceptance-qa`, or create a commit; commit remains a parent-owned action and should follow the current user ask or workflow policy.
 
 ## Lifecycle Guidance
 
@@ -76,7 +76,7 @@ Maintain the live directory-wide classification in `TASK_CENTER.md`, not in this
 1. Create a new task doc from `docs/tasks/_template.md` when the task is not trivially small.
 2. Update `TASK_CENTER.md` when a new active task doc is introduced or when a task clearly changes lifecycle bucket.
 3. Have `planner` fill the goal, requirement alignment, scope, implementation plan, coder handoff fields, validation expectations, and parallelization safety.
-4. Have `planner` or `parent` choose `Acceptance mode: none | light | full` based on runtime impact, user risk, auditability need, and workflow cost.
+4. Have `planner` or `parent` choose `Acceptance mode: none | light | full` based on runtime impact, user risk, auditability need, and workflow cost. If the linked requirement is in autonomous-delivery mode, or the user asked for a complete test report, default to `full` unless the scope is trivially small and docs-only.
 5. If `Acceptance mode = full`, have `acceptance-qa` prepare or update the relevant acceptance spec early, ensuring each in-scope `[AC-*]` maps to at least one acceptance case.
 6. If `Acceptance mode = light`, keep the default path lightweight and defer separate spec or run unless reuse, auditability, or complexity justifies them.
 7. Have `coder` implement from the task doc instead of inventing a new execution scope.
@@ -84,7 +84,7 @@ Maintain the live directory-wide classification in `TASK_CENTER.md`, not in this
 9. If review finds open `[blocking]` or `[important]` items, route the work back to `coder` and keep the task doc current.
 10. If review passes and `Acceptance mode = none`, write `skipped` with rationale and close the task.
 11. If review passes and `Acceptance mode = light`, prefer the lightest sufficient path: fill the task doc `## Acceptance`, add direct evidence, and only create spec or run if the work has already crossed into full-mode complexity.
-12. If review passes and `Acceptance mode = full`, have `acceptance-qa` create or update an acceptance run from the relevant spec, freeze the selected case snapshot, and verify the minimum coverage baseline.
+12. If review passes and `Acceptance mode = full`, have `acceptance-qa` create or update an acceptance run from the relevant spec, freeze the selected case snapshot, verify the minimum coverage baseline, and treat that run as the complete test report for the slice.
 13. In `full` mode, have `acceptance-qa` verify environment readiness before execution. If required accounts, data, permissions, endpoints, or dependencies are not ready, mark the run `blocked`, record `environment-gap`, and route to the parent or environment owner without consuming a rejection round.
 14. Have `acceptance-qa` execute acceptance testing, verify requirement alignment, fill the task doc `## Acceptance`, and update the requirement doc acceptance state using the aggregate rule set.
 15. If `acceptance-qa` rejects, route to `planner` (`requirement-misunderstanding`), `coder` (`implementation-gap`), or `code-reviewer` or parent (`evidence-gap`) and repeat from the appropriate step.
@@ -95,19 +95,34 @@ Maintain the live directory-wide classification in `TASK_CENTER.md`, not in this
 ## Task-Doc Field Expectations
 
 - `## Metadata` should include an explicit `Review status` field so repair loops can tell whether the latest review passed, failed, or is blocked.
-- `## Metadata` should include `Acceptance mode` with `none | light | full`, plus optional `Related acceptance spec` and `Related acceptance run` references.
+- `## Metadata` should include `Delivery mode`, `Acceptance mode` with `none | light | full`, whether a complete test report is required, plus optional `Related acceptance spec` and `Related acceptance run` references.
 - `## Metadata` should include `Lifecycle disposition`, which starts as `active` and should move to `retained-completed` or `cleanup-candidate` when the task is no longer active.
 - `## Coder Handoff` should record `owned paths`, `forbidden shared files`, and the `validation command for that scope`.
-- `## Reviewer Handoff` should record the `Acceptance evidence package` and `Acceptance test expectations`.
+- `## Reviewer Handoff` should record the `Acceptance evidence package`, whether a complete test report is required, and the `Acceptance test expectations`.
 - `## Acceptance` should record the chosen path, criterion-by-criterion evidence, and the final acceptance verdict.
 - If the planner marks `## Parallelization Safety` as safe, the task doc should add one handoff subsection per writer with those same fields.
 - `## Final Status` should explain why a completed task should stay retained or become a cleanup candidate.
+
+## Autonomous Delivery Mode
+
+Use this mode when the user wants AI to finish a scope end-to-end and judge completion with a durable report rather than an informal summary.
+
+Rules:
+
+1. The linked requirement must already be `confirmed`.
+2. The requirement must state `In scope`, `Out of scope / non-goals`, `[AC-*]`, evidence expectations, and a completion definition.
+3. The task should default to `Acceptance mode = full` unless the scope is truly trivial and docs-only.
+4. `acceptance-qa` must maintain or create an acceptance spec if reusable coverage is needed.
+5. `acceptance-qa` must produce an acceptance run. That run is the complete test report for sign-off.
+6. A task is not complete until every in-scope `[AC-*]` has one of: `met`, `not met`, `partially met`, or an explicit `blocked` explanation in the acceptance report.
+
+Reference SOP: `docs/playbooks/orchestration/ai-autonomous-delivery-sop.md`
 
 ## Maintenance Rules
 
 - Keep durable repository rules in `.cursor/rules/*.mdc`.
 - Keep per-task plans, status, review updates, and light-mode acceptance evidence in `docs/tasks/*.md` (root for active, `archive/` for historical).
-- Use `docs/acceptance-tests/**` only when the task is `full` or when a `light` task has crossed into clear reuse or auditability needs.
+- Use `docs/acceptance-tests/**` only when the task is `full` or when a `light` task has crossed into clear reuse or auditability needs. In autonomous-delivery mode, `full` should be the default for non-trivial scopes.
 - Keep the live cross-task inventory and cleanup-candidate list only in `TASK_CENTER.md`.
 - Use `docs/fix-checklists/*.md` only when the review needs a standalone checklist artifact in addition to the task doc.
 - Do not treat task-doc creation by itself as task completion.

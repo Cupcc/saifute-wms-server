@@ -12,12 +12,35 @@
 - Status: `draft` | `confirmed` | `needs-confirmation`
 - Lifecycle disposition: `active` | `retained-completed` | `cleanup-candidate`（非 `active` 时文件应在 `docs/requirements/archive/<bucket>/`）
 - Owner:
+- Delivery mode: `standard` | `autonomous`
+- Desired acceptance mode: `none` | `light` | `full`
 - Topic requirement: （可选；若当前切片属于已有主题，填写 `docs/requirements/topics/*.md` 路径）
 - Related tasks:（列出 `docs/tasks/**/*.md`，归档需求或归档 task 时同步更新路径）
 
 ## 用户需求
 
 - [ ] 用简洁中文描述用户需求。
+
+## 交付范围
+
+- In scope:
+- Out of scope / non-goals:
+
+## 验收标准
+
+- `[AC-1]`
+- `[AC-2]`
+
+## 验收证据要求
+
+- `[AC-1]` 需要的证据类型：
+- `[AC-2]` 需要的证据类型：
+
+## 完成定义
+
+- 本切片何时可以算“完成”：
+- 哪些情况只能算“有条件通过”：
+- 哪些情况必须判定为“阻塞 / 未完成”：
 
 ## 当前进展
 
@@ -37,10 +60,14 @@
 - 记录 AI 的疑问、需要用户确认的问题、以及需要用户做决定的事项
 - 如果没有待确定项，写 `None`
 
-`当前进展` 面向用户保持简洁，只写关键阶段状态，不展开详细执行日志。  
-`验收状态` 用于 requirement 级聚合结论，不承载详细测试步骤或浏览器执行记录。  
-`待确认` 用于承载尚未定稿的需求边界与决策点；一旦用户已明确答复，应及时并回 `用户需求` 或 `当前进展`。  
-如果该切片属于某个长期主题，优先把长期约束写入 `docs/requirements/topics/*.md`，当前文档只保留本次交付范围；但若某份已归档切片仍是后续工作反复引用的关键基线，可保留必要矩阵，不必为了“瘦身”强行删除。  
-如果这是新建或刚修改且准备发给用户确认的需求文档，默认将 `Status` 设为 `needs-confirmation`；只有用户明确同意后，才能改为 `confirmed` 并进入规划或编码。  
-如果只是同步 `当前进展`，且没有改写用户需求理解，可继续保持 `confirmed`。  
+`当前进展` 面向用户保持简洁，只写关键阶段状态，不展开详细执行日志。
+`验收状态` 用于 requirement 级聚合结论，不承载详细测试步骤或浏览器执行记录。
+`验收证据要求` 只写“需要哪类证据”，不在 requirement 中展开执行步骤；详细 case、环境、步骤与结果统一写入 task doc 或 `docs/acceptance-tests/**`。
+如果 `Delivery mode = autonomous`，则 `验收标准` 必须使用 `[AC-*]` 编号，且每条标准至少声明一种证据类型。
+如果用户要求“AI 自主完成并证明完成”，默认将 `Desired acceptance mode` 设为 `full`；若不是 `full`，应在 `待确认` 或 task doc 中明确解释原因。
+`完成定义` 要服务于交付判定，不写实现方案；实现步骤、测试命令、review 结论仍属于 task 或 acceptance 文档。
+`待确认` 用于承载尚未定稿的需求边界与决策点；一旦用户已明确答复，应及时并回 `用户需求` 或 `当前进展`。
+如果该切片属于某个长期主题，优先把长期约束写入 `docs/requirements/topics/*.md`，当前文档只保留本次交付范围；但若某份已归档切片仍是后续工作反复引用的关键基线，可保留必要矩阵，不必为了“瘦身”强行删除。
+如果这是新建或刚修改且准备发给用户确认的需求文档，默认将 `Status` 设为 `needs-confirmation`；只有用户明确同意后，才能改为 `confirmed` 并进入规划或编码。
+如果只是同步 `当前进展`，且没有改写用户需求理解，可继续保持 `confirmed`。
 新建需求默认 `Lifecycle disposition` 为 `active`；闭环归档时改为 `retained-completed` 或 `cleanup-candidate` 并移动文件到 `docs/requirements/archive/<bucket>/`，同时更新关联 task 与 `REQUIREMENT_CENTER.md`。

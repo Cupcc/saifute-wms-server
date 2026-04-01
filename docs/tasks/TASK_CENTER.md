@@ -46,8 +46,11 @@
 
 | Task 文档 | 保留原因 |
 | --- | --- |
+| `docs/tasks/archive/retained-completed/task-20260402-0048-ai-autonomous-delivery-governance.md` | 已完成“AI 自主交付 + 完整测试报告”治理落地：requirement / task / acceptance 模板、README 与 `autonomous-delivery` SOP 已同步升级，后续新切片可直接按 `[AC-*]` + `full` acceptance run 作为完整测试报告推进。 |
 | `docs/tasks/archive/retained-completed/task-20260331-0914-rbac-role-permission-restore.md` | 已完成当前 RBAC 角色权限恢复：`warehouse-manager` 重新获得主仓业务组与必要 RD 协同入口，`rd-operator` 仍保持 RD 专属视角，且通过 focused RBAC tests 与前端构建验证。 |
-| `docs/tasks/archive/retained-completed/task-20260331-0934-system-management-f4-persistence.md` | 已完成 `system-management` 主题 `F4`：当前 `rbac / system-management` 初始化状态已接入 Prisma 持久化快照，业务权限已切到菜单/角色数据驱动，并通过 Prisma 生成/校验、typecheck 与 focused RBAC tests。 |
+| `docs/tasks/archive/retained-completed/task-20260331-0934-system-management-f4-persistence.md` | 记录旧 `system-management` `F4` snapshot 桥接方案的实现与验证；该方案现已废弃，保留为后续真实落库持久化重定义前的历史 provenance。 |
+| `docs/tasks/archive/retained-completed/task-20260401-system-management-browser-repair.md` | 已完成一轮真实浏览器回归缺口修复：补齐 `system_management_snapshot` 缺表自愈、canonical `stock_scope / workshop` bootstrap，以及首页 `department` 展示对齐；保留为 `system-management` 运行态回归证据。 |
+| `docs/tasks/archive/retained-completed/task-20260401-main-into-dev-merge-review.md` | 记录 `origin/main -> dev` 合并时的冲突判断、文件级处理原则与验证结果；保留为该次主线同步的执行 provenance。 |
 | `docs/tasks/archive/retained-completed/task-20260331-0051-system-management-runtime-alignment.md` | 已完成 `system-management` 运行态对齐：当前样例部门 / 角色 / 账号矩阵已按 `V1` 基线收敛，`在线用户 / 登录日志 / 操作日志` 已在前端导航中归入 `系统管理`，并通过 focused tests 与前端构建验证。 |
 | `docs/tasks/archive/retained-completed/task-20260331-0042-system-management-f2-f3-baseline.md` | 已完成 `system-management` 主题 `F2/F3` 收口：V1 组织与角色矩阵、平台审计与在线治理边界已正式同步到 topic、项目级需求、架构文档与 workspace 归档，后续 `F4/F5` 应另开新切片。 |
 | `docs/tasks/archive/retained-completed/task-20260330-2235-stock-scope-nonempty-rehearsal.md` | 已完成非空历史数据 rehearsal：目标库已灌入最小代表性样本，并重新跑通 `stock-scope-phase2` 的 `seed-rehearsal`、`dry-run / execute / validate`；当前不仅验证了空库路径，也验证了最小非空数据路径。 |

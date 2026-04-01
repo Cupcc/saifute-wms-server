@@ -6,8 +6,10 @@
 - Related requirement: （根目录活跃 task：须为仍存在的 `docs/requirements/req-*.md` 根路径，且该需求 `Lifecycle disposition` 为 `active`。已归档 task 可写 `docs/requirements/archive/**/req-*.md` 全路径。需求文件若从仓库移除而非归档，请勿将本 task 留在根目录）
 - Status: `planned`
 - Review status: `not-reviewed`
+- Delivery mode: `standard` | `autonomous`
 - Acceptance mode: `none` | `light` | `full`
 - Acceptance status: `not-assessed`
+- Complete test report required: `yes` | `no`
 - Lifecycle disposition: `active`
 - Planner:
 - Coder:
@@ -24,6 +26,7 @@
 - Requirement doc:
 - User intent summary:
 - Acceptance criteria carried into this task:
+- Requirement evidence expectations:
 - Open questions requiring user confirmation:
 
 ## Requirement Sync
@@ -77,6 +80,7 @@
 - Covered criteria:
 - Evidence pointers:
 - Evidence gaps, if any:
+- Complete test report requirement: `yes` | `no`
 
 ### Acceptance Test Expectations
 
@@ -84,6 +88,7 @@
 - Browser test required: `yes` | `no`
 - Related acceptance spec:
 - Separate acceptance run required: `yes` | `no`
+- Complete test report required: `yes` | `no`
 - Required regression / high-risk tags:
 - Suggested environment / accounts:
 - Environment owner / setup source:
@@ -105,6 +110,7 @@
 - Acceptance status: `not-assessed` | `skipped` | `accepted` | `rejected` | `conditionally-accepted` | `blocked`
 - Acceptance QA:
 - Acceptance date:
+- Complete test report:
 
 ### Acceptance Checklist
 
@@ -116,6 +122,7 @@
 
 - Acceptance path used: `none` | `light` | `full`
 - Acceptance summary:
+- Report completeness check:
 - If rejected or blocked: root cause（`requirement-misunderstanding` | `implementation-gap` | `evidence-gap` | `environment-gap`）+ 精确修复指引 / 环境修复指引
 - If conditionally accepted: follow-up requirement / task:
 

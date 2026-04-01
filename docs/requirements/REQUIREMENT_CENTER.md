@@ -16,17 +16,17 @@
 
 | 需求文档                      | 状态          | 说明                                                                                                                                                                                               |
 | ------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `PROJECT_REQUIREMENTS.md` | `confirmed` | 固定项目需求真源；当前核心需求已收敛为“清晰易维护的 NestJS WMS、贴合小型仓库场景、按业务域迁移、保证库存与追溯语义正确”，并已补充真实环境、流程与统计口径：约 `3` 人、`Excel + 手工记账`、职责未分化、审核不阻塞落库、人工月盘，以及“主仓 + 研发小仓”是真实库存范围、车间只做领退料归属与成本核算、同物料不同入库批次可能不同单价且需按来源层追踪成本等长期口径。 |
+| `PROJECT_REQUIREMENTS.md` | `confirmed` | 固定项目需求真源；当前核心需求已收敛为"清晰易维护的 NestJS WMS、贴合小型仓库场景、按业务域迁移、保证库存与追溯语义正确"，并已补充真实环境、流程与统计口径：约 `3` 人、`Excel + 手工记账`、职责未分化、审核不阻塞落库、人工月盘，以及"主仓 + 研发小仓"是真实库存范围、车间只做领退料归属与成本核算、同物料不同入库批次可能不同单价且需按来源层追踪成本等长期口径。 |
 
 ## 主题需求
 
 | 需求文档 | 状态 | 说明 |
 | --- | --- | --- |
 | `topics/inbound-business-module.md` | `needs-confirmation` | `inbound` 入库业务模块主题真源；长期保留验收单/生产入库单统一家族模型、主仓准入、`inventory-core` 过账、真实库存轴访问控制等约束，后续入库扩展或优化应从该 topic 新开切片。 |
-| `topics/system-management-module.md` | `confirmed` | `system-management` 系统管理模块唯一主题真源；当前已确认 `V1` 组织与角色矩阵、`admin / operator / rd-operator / procurement` 代表账号口径，以及“纳入在线用户 / 登录日志 / 操作日志、将调度 / AI 支持作为非核心平台能力顺延到 Phase 3 规划且当前暂不执行”的长期边界；后续若继续推进平台表规范化或邻接能力扩展，应从该 topic 新开切片。 |
-| `topics/rd-subwarehouse.md` | `confirmed` | `RD 小仓` 主题真源；长期保留“同平台协同、受限子仓模型、库存统一走 inventory-core、RD 是真实库存范围而车间不是库存池、角色边界”等约束，并维护能力清单与阶段路线图。已完成切片统一挂到该主题下管理。 |
-| `topics/monthly-reporting.md` | `confirmed` | 月度报表主题真源；长期保留“固定正式月报 + 人工重算 + 日期范围报表”“整体 / 车间 / 销售域 / 研发项目四类视角”“系统查看 + Excel 导出”等约束，并维护后续实施路线图。 |
-| `topics/frontend-old-style-adaptation.md` | `confirmed` | 前端旧风格回归主题真源；长期保留“只回归表现层、不回退后端契约”“保留销售 / 车间 / RD 真实业务分组”“按阶段推进壳层、首页、业务页细化”等约束，并维护阶段路线图。 |
+| `topics/system-management-module.md` | `confirmed` | `system-management` 系统管理模块唯一主题真源；V1 组织与角色矩阵、代表账号口径、审计与在线治理边界已确认，系统管理主数据必须以规范化数据库表真实落库（C11），旧 snapshot 方案已废弃；V1 唯一剩余交付项为 F4 真实落库持久化；后续推进应从该 topic 新开切片。 |
+| `topics/rd-subwarehouse.md` | `confirmed` | `RD 小仓` 主题真源；长期保留"同平台协同、受限子仓模型、库存统一走 inventory-core、RD 是真实库存范围而车间不是库存池、角色边界"等约束，并维护能力清单与阶段路线图。已完成切片统一挂到该主题下管理。 |
+| `topics/monthly-reporting.md` | `confirmed` | 月度报表主题真源；长期保留"固定正式月报 + 人工重算 + 日期范围报表""整体 / 车间 / 销售域 / 研发项目四类视角""系统查看 + Excel 导出"等约束，并维护后续实施路线图。 |
+| `topics/frontend-old-style-adaptation.md` | `confirmed` | 前端旧风格回归主题真源；长期保留"只回归表现层、不回退后端契约""保留销售 / 车间 / RD 真实业务分组""按阶段推进壳层、首页、业务页细化"等约束，并维护阶段路线图。 |
 
 ## 活跃需求
 
@@ -40,13 +40,14 @@
 
 | 需求文档 | 保留原因 |
 | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `archive/retained-completed/req-20260402-0048-ai-autonomous-delivery-governance.md` | 已完成“AI 自主交付 + 完整测试报告”治理切片：requirement / task / acceptance 模板、README 与 autonomous-delivery SOP 已同步升级；后续新需求可直接按 `[AC-*]` + `full` acceptance run 作为完整测试报告推进。 |
 | `archive/retained-completed/req-20260331-0914-rbac-role-permission-restore.md` | 已完成当前 RBAC 角色权限恢复：`warehouse-manager` 不再被误收窄到只剩研发协同入口，业务权限已按角色预设重新收口，`rd-operator` 的 RD 专属视角保持不变，并通过 focused RBAC tests 与前端构建验证。 |
-| `archive/retained-completed/req-20260331-0934-system-management-f4-persistence.md` | 已完成 `system-management` 主题 `F4` 收口：当前 `rbac / system-management` 初始化状态已迁到 Prisma 持久化快照，业务权限已切到菜单/角色数据驱动，并通过 Prisma 生成/校验、typecheck 与 focused RBAC tests。 |
+| `archive/retained-completed/req-20260331-0934-system-management-f4-persistence.md` | 旧 `F4` snapshot 桥接方案的历史记录；该方案已废弃，F4 已重新定义为规范化数据库表真实落库（见 `topics/system-management-module.md` C11）。 |
 | `archive/retained-completed/req-20260331-0051-system-management-runtime-alignment.md` | 已完成 `system-management` 运行态对齐：当前样例部门 / 角色 / 账号矩阵已按 `V1` 基线收敛，`在线用户 / 登录日志 / 操作日志` 已在前端导航中归入 `系统管理`，并通过 focused tests 与前端构建验证。 |
 | `archive/retained-completed/req-20260331-0042-system-management-f2-f3-baseline.md` | 已完成 `system-management` 主题 `F2/F3` 收口：真实部门、主角色、预留查看角色、账号维护职责，以及 `在线用户 / 登录日志 / 操作日志` 的主题归属与验收口径已正式沉淀到 topic、项目级需求、架构文档与归档 workspace。 |
 | `archive/retained-completed/req-20260330-2235-stock-scope-nonempty-rehearsal.md` | 已完成非空历史数据 rehearsal：目标库已灌入最小代表性样本，并重新跑通 `stock-scope-phase2` 的 `seed-rehearsal`、`dry-run / execute / validate`；当前不仅验证了空库路径，也验证了最小非空数据路径。 |
 | `archive/retained-completed/req-20260330-2229-inbound-domain-fix.md` | 已完成 `inbound` review findings 修复：普通验收单/生产入库单现已强制归主仓，查询/详情/修改/作废按真实库存轴判断，对应测试已补齐，并通过 `swagger:metadata`、`typecheck`、`migration:typecheck` 与 `pnpm test`。 |
-| `archive/retained-completed/req-20260330-2220-inbound-domain-review.md` | 已完成 `inbound` review：当前识别出 `3` 类主要问题，包括普通入库/生产入库缺少“必须归主仓”的强约束、查询/详情/修改/作废仍沿旧 `workshopId` 轴判断，以及缺少对应测试覆盖；若要修复 findings，应另开新的 `inbound` 实现切片。 |
+| `archive/retained-completed/req-20260330-2220-inbound-domain-review.md` | 已完成 `inbound` review：当前识别出 `3` 类主要问题，包括普通入库/生产入库缺少"必须归主仓"的强约束、查询/详情/修改/作废仍沿旧 `workshopId` 轴判断，以及缺少对应测试覆盖；若要修复 findings，应另开新的 `inbound` 实现切片。 |
 | `archive/retained-completed/req-20260330-2205-stock-scope-rd-persistence-followup.md` | 已完成 `rd-subwarehouse` 持久化轴补齐 follow-up：`rd_handoff_order`、`rd_procurement_request`、`rd_stocktake_order` 已补 `stockScope` 相关持久化字段、运行时代码与 tests，对应目标库 schema apply 和 `stock-scope-phase2` 的 `dry-run / execute / validate` 也已再次通过；若后续要验证非空历史数据回填，应另开新的 rehearsal scope。 |
 | `archive/retained-completed/req-20260330-1616-stock-scope-phase2-cutover.md` | 已完成 `stockScope` Phase 2 首波实现：Prisma schema 已补 `StockScope` / `stockScopeId`，首波 runtime 与 `stock-scope-phase2` migration 脚本已落地，并已在目标库 `saifute-wsm` 上通过安全 schema apply 与 `dry-run / execute / validate`；当前目标库首波相关表为 `0` 行，若后续要验证非空历史数据回填，应另开新的 rehearsal scope。 |
 | `archive/retained-completed/req-20260330-1419-stock-scope-alignment.md` | 已完成库存范围与归属口径对齐 Phase 1：canonical `stockScope` runtime contract、会话/RBAC 兼容边界、库存/报表/业务写路径收敛与 e2e stub 补齐已落地，并通过 `swagger:metadata`、`typecheck`、focused tests、`batch-d-slice.e2e`、`pnpm test` 与 closing review `No findings`；若后续继续推进真实库存维度切换，需另开 `Phase 2` cutover requirement。 |
@@ -76,7 +77,7 @@
 
 ## 维护
 
-- 新增或调整 `PROJECT_REQUIREMENTS.md` 的项目级主题时，同步更新“固定项目需求”说明。
-- 新增或调整 `topics/*.md` 的主题级真源时，同步更新“主题需求”说明。
+- 新增或调整 `PROJECT_REQUIREMENTS.md` 的项目级主题时，同步更新"固定项目需求"说明。
+- 新增或调整 `topics/*.md` 的主题级真源时，同步更新"主题需求"说明。
 - 新增、归档、迁移或删除需求时，同步更新对应看板行。
 - task 绑定、归档与命名等规则统一以 `docs/requirements/README.md` 为准。
