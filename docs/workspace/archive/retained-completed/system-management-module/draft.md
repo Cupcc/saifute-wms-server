@@ -1,7 +1,7 @@
 # 草稿
 
 关联需求: `docs/requirements/archive/retained-completed/req-20260331-0042-system-management-f2-f3-baseline.md`
-最后更新: 2026-03-31
+最后更新: 2026-04-01
 状态: 已收敛
 文档说明: 保留 `system-management` 主题 `F2 / F3` 收口前的探索事实、V1 角色矩阵草案和对话留痕。正式长期口径以 `docs/requirements/topics/system-management-module.md`、`docs/requirements/PROJECT_REQUIREMENTS.md` 与相关架构文档为准。
 
@@ -84,6 +84,21 @@
 - `F3` 最终结论：`在线用户 / 登录日志 / 操作日志` 纳入 `system-management` 第一版长期主题，作为平台治理、排障与审计能力统一规划；`调度 / AI 支持` 仅保持邻接关系，不纳入当前长期主题边界。
 - 上述结论已在 2026-03-31 同步收口到 topic、项目级需求、架构文档、需求/任务中心与 workspace dashboard。
 
+## 后续追记
+
+### 2026-04-01 运行态修复与浏览器回归
+
+- 真实 Chrome 回归曾暴露出 3 个实现缺口：
+  - 本地启动路径依赖 `system_management_snapshot` 表已存在，缺表时会直接失败。
+  - 首页基础概览未把 `/api/auth/me` 返回的 `department` 正确接入前端用户态，导致“所属部门”固定回退为 `未绑定部门`。
+  - 本地基础数据缺少 canonical `stock_scope / workshop`，先后触发 `库存范围不存在: MAIN/RD_SUB` 与 `车间不存在: MAIN`。
+- 后续修复已完成并通过 focused tests、前端构建与真实 Chrome smoke：
+  - `system_management_snapshot` 改为启动时先做缺表自愈，再恢复或写入系统管理快照。
+  - `master-data` 启动时会幂等补齐 `stock_scope(MAIN / RD_SUB)` 与 `workshop(MAIN / RD)`。
+  - 前端 `userStore` 已承接 `department`，`operator / procurement` 首页“所属部门”会显示真实部门。
+  - `admin / operator / rd-operator / procurement` 四类账号再次验证通过，`system/*` 对非管理员仍保持 404 收口。
+- 这轮修复对应的执行记录见：`docs/tasks/task-20260401-system-management-browser-repair.md`
+
 ## 对话留痕
 
 | 时间 | 来源 | 关键信息 |
@@ -96,3 +111,5 @@
 | 2026-03-30 | AI 建议 | 建议 `system-management` 第一版纳入 `在线用户 / 登录日志 / 操作日志`，暂不纳入 `调度 / AI 支持` |
 | 2026-03-31 | 用户 | 直接要求“实现 F2 F3，使用最优策略自主决策，自动 commit” |
 | 2026-03-31 | 文档说明 | `F2 / F3` 已被正式收口到归档 requirement / task、topic、架构文档与归档 workspace |
+| 2026-04-01 | Chrome 实测 | 暴露 `system_management_snapshot` 缺表、首页部门展示漂移、以及 canonical `stock_scope / workshop` 缺失导致的启动与页面告警 |
+| 2026-04-01 | 修复结果 | 已补齐启动自愈、基础数据 bootstrap 与首页 `department` 映射，四类主账号真实浏览器回归通过 |

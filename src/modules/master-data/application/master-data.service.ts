@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  type OnModuleInit,
 } from "@nestjs/common";
 import type { CreateMaterialDto } from "../dto/create-material.dto";
 import type { QueryMasterDataDto } from "../dto/query-master-data.dto";
@@ -9,8 +10,13 @@ import type { UpdateMaterialDto } from "../dto/update-material.dto";
 import { MasterDataRepository } from "../infrastructure/master-data.repository";
 
 @Injectable()
-export class MasterDataService {
+export class MasterDataService implements OnModuleInit {
   constructor(private readonly repository: MasterDataRepository) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.repository.ensureCanonicalWorkshops();
+    await this.repository.ensureCanonicalStockScopes();
+  }
 
   async listMaterials(query: QueryMasterDataDto) {
     const limit = Math.min(query.limit ?? 50, 100);

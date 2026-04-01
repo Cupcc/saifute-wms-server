@@ -2,9 +2,57 @@ import { Injectable } from "@nestjs/common";
 import type { Prisma } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 
+const CANONICAL_WORKSHOPS: Prisma.WorkshopCreateManyInput[] = [
+  {
+    workshopCode: "MAIN",
+    workshopName: "主仓",
+    status: "ACTIVE",
+    createdBy: "system-bootstrap",
+    updatedBy: "system-bootstrap",
+  },
+  {
+    workshopCode: "RD",
+    workshopName: "研发小仓",
+    status: "ACTIVE",
+    createdBy: "system-bootstrap",
+    updatedBy: "system-bootstrap",
+  },
+];
+
+const CANONICAL_STOCK_SCOPES: Prisma.StockScopeCreateManyInput[] = [
+  {
+    scopeCode: "MAIN",
+    scopeName: "主仓",
+    status: "ACTIVE",
+    createdBy: "system-bootstrap",
+    updatedBy: "system-bootstrap",
+  },
+  {
+    scopeCode: "RD_SUB",
+    scopeName: "研发小仓",
+    status: "ACTIVE",
+    createdBy: "system-bootstrap",
+    updatedBy: "system-bootstrap",
+  },
+];
+
 @Injectable()
 export class MasterDataRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  async ensureCanonicalWorkshops() {
+    await this.prisma.workshop.createMany({
+      data: CANONICAL_WORKSHOPS,
+      skipDuplicates: true,
+    });
+  }
+
+  async ensureCanonicalStockScopes() {
+    await this.prisma.stockScope.createMany({
+      data: CANONICAL_STOCK_SCOPES,
+      skipDuplicates: true,
+    });
+  }
 
   async findMaterials(params: {
     keyword?: string;

@@ -22,6 +22,17 @@ import type {
 
 const ALL_PERMISSION = "*:*:*";
 const SYSTEM_MANAGEMENT_SNAPSHOT_KEY = "default";
+const SYSTEM_MANAGEMENT_SNAPSHOT_TABLE_SQL = `
+CREATE TABLE IF NOT EXISTS \`system_management_snapshot\` (
+  \`id\` INTEGER NOT NULL AUTO_INCREMENT,
+  \`snapshotKey\` VARCHAR(64) NOT NULL,
+  \`payload\` JSON NOT NULL,
+  \`createdAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+  \`updatedAt\` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+  UNIQUE INDEX \`system_management_snapshot_snapshotKey_key\` (\`snapshotKey\`),
+  PRIMARY KEY (\`id\`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci
+`;
 
 const WAREHOUSE_MANAGER_PERMISSION_PRESET = [
   "dashboard:view",
@@ -3248,11 +3259,16 @@ export class InMemoryRbacRepository implements OnModuleInit {
       return;
     }
 
+    await this.ensureSnapshotStorageReady();
     await this.restoreOrSeedState();
   }
 
   async flushPersistence(): Promise<void> {
     await this.persistenceQueue;
+  }
+
+  private async ensureSnapshotStorageReady(): Promise<void> {
+    await this.prisma?.$executeRawUnsafe(SYSTEM_MANAGEMENT_SNAPSHOT_TABLE_SQL);
   }
 
   private async restoreOrSeedState(): Promise<void> {

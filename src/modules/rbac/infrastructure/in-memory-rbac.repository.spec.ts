@@ -1,3 +1,4 @@
+import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InMemoryRbacRepository } from "./in-memory-rbac.repository";
 
 describe("InMemoryRbacRepository", () => {
@@ -102,5 +103,32 @@ describe("InMemoryRbacRepository", () => {
     expect(user?.permissions).not.toEqual(
       expect.arrayContaining(["inbound:order:list", "customer:order:list"]),
     );
+  });
+
+  it("bootstraps snapshot storage before restoring persisted state", async () => {
+    const findUnique = jest.fn().mockResolvedValue(null);
+    const upsert = jest.fn().mockResolvedValue({
+      snapshotKey: "default",
+    });
+    const executeRawUnsafe = jest.fn().mockResolvedValue(0);
+    const persistentRepository = new InMemoryRbacRepository({
+      systemManagementSnapshot: {
+        findUnique,
+        upsert,
+      },
+      $executeRawUnsafe: executeRawUnsafe,
+    } as unknown as PrismaService);
+
+    await persistentRepository.onModuleInit();
+
+    expect(executeRawUnsafe).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "CREATE TABLE IF NOT EXISTS `system_management_snapshot`",
+      ),
+    );
+    expect(executeRawUnsafe.mock.invocationCallOrder[0]).toBeLessThan(
+      findUnique.mock.invocationCallOrder[0],
+    );
+    expect(upsert).toHaveBeenCalledTimes(1);
   });
 });

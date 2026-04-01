@@ -17,6 +17,7 @@ const useUserStore = defineStore("user", {
     roles: [],
     permissions: [],
     consoleMode: "default",
+    department: null,
     workshopScope: {
       mode: "ALL",
       workshopId: null,
@@ -76,6 +77,7 @@ const useUserStore = defineStore("user", {
             this.nickName = user.displayName || user.username || "";
             this.avatar = avatar;
             this.consoleMode = user.consoleMode || "default";
+            this.department = user.department || null;
             this.workshopScope = user.workshopScope || {
               mode: "ALL",
               workshopId: null,
@@ -116,6 +118,7 @@ const useUserStore = defineStore("user", {
             this.roles = [];
             this.permissions = [];
             this.consoleMode = "default";
+            this.department = null;
             this.workshopScope = {
               mode: "ALL",
               workshopId: null,
