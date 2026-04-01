@@ -47,7 +47,7 @@ docs/acceptance-tests/
 - `full` 模式下，run 必须冻结 `Selected Case Snapshot`，不能只引用一个会继续演化的 spec。
 - 环境不就绪时，将 run 标记为 `blocked`，并记录 `environment-gap`，不要误判成实现缺陷。
 - case 选择必须满足最小覆盖基线，不能随意挑顺手的 case。
-- 只要 agent 验收或测试需要真实浏览器操作，统一使用 `Agent Browser`；不要混用其他临时浏览器通道，避免执行证据与操作口径漂移。
+- 只要 agent 验收或测试需要真实浏览器操作，统一使用 `agent-browser`；不要混用其他临时浏览器通道，避免执行证据与操作口径漂移。
 - 需要实际操作步骤、证据写法或故障排查时，优先参考 `docs/playbooks/orchestration/agent-browser-reference.md`。
 - 如果用户要求“完整测试报告”，默认通过 `runs/run-*.md` 交付，不另起一套平行格式。
 
