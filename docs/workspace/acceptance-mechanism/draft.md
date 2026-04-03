@@ -581,7 +581,7 @@ code-reviewer ──→ 技术审查
 - `code-reviewer` updates the task doc with review status, validation results, and follow-up state.
 - `code-reviewer` must leave an acceptance-ready evidence handoff when review passes.
 - `acceptance-qa` is invoked when `light` or `full` acceptance adds value; in `full` mode it maintains acceptance specs, freezes run snapshots, executes acceptance runs, and writes the aggregated acceptance result back to task / requirement docs.
-- The parent orchestrator decides whether to continue the fix loop, invoke `acceptance-qa`, or create a commit.
+- The parent orchestrator decides whether to continue the fix loop, invoke `acceptance-qa`, or close and archive the scope.
 ```
 
 ### 6.9 task doc Workflow (`docs/tasks/README.md`)
@@ -687,6 +687,14 @@ When invoked after review passes:
 11. Fill the task doc `## Acceptance`.
 12. Update the requirement doc `验收状态` using the requirement-level aggregate rule.
 13. If rejected or blocked, clearly state whether the issue is `requirement-misunderstanding`, `implementation-gap`, `evidence-gap`, or `environment-gap`, and route it accordingly.
+
+## Validation Environment
+
+- For local acceptance, manual verification, browser checks, and any flow that should match `pnpm dev`, use the repository root `.env.dev` as the default runtime environment.
+- If the command does not load `.env.dev` by itself, inject it explicitly before verification. In bash or zsh, use `set -a && source .env.dev && set +a && <command>` or an equivalent explicit env-file mechanism.
+- Record the exact env source in the acceptance evidence. Do not treat an implicit or unknown env state as representative.
+- Before labeling an auth or login failure as a product issue, rule out missing `.env.dev` injection first. This is especially important for switches such as `CAPTCHA_ENABLED`.
+- If a repo test intentionally clears or overrides env vars to exercise a stub path, follow that test's own execution contract and record the override explicitly.
 
 ## What You Do NOT Do
 

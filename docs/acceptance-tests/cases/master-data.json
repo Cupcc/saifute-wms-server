@@ -1,0 +1,28 @@
+{
+  "module": "master-data",
+  "description": "未代码化的验收用例（browser smoke 等）",
+  "cases": [
+    {
+      "id": "F4-BROWSER-1",
+      "name": "供应商管理页与下拉消费者冒烟",
+      "capability": "F4",
+      "covers": ["AC-1", "AC-2", "AC-3", "AC-6"],
+      "surface": "browser",
+      "precondition": "pnpm dev + web dev running; admin logged in; .env.dev",
+      "steps": [
+        "访问 /base/supplier",
+        "新增供应商(code+name) → 确认 POST 201",
+        "停用供应商 → 确认 PATCH 200",
+        "列表确认已停用供应商消失",
+        "访问 /entry/order → 供应商下拉搜索已停用编码 → 确认 items=[] total=0"
+      ],
+      "expected": "全部操作无JS报错；停用后下拉不含该供应商",
+      "lastRun": {
+        "date": "2026-04-03",
+        "tool": "agent-browser",
+        "target": "http://localhost:90",
+        "result": "pass"
+      }
+    }
+  ]
+}

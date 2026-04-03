@@ -1,0 +1,27 @@
+{
+  "module": "system-management",
+  "description": "未代码化的验收用例（browser smoke 等）",
+  "cases": [
+    {
+      "id": "F4-BROWSER-1",
+      "name": "代表账号浏览器冒烟（admin/operator/rd-operator/procurement）",
+      "capability": "F4",
+      "covers": ["AC-3", "AC-5"],
+      "surface": "browser",
+      "precondition": "frontend(localhost:90) + backend(.env.dev) running; 4个代表账号可登录",
+      "steps": [
+        "admin登录 → 验证系统管理菜单可见 → 进入用户管理页无报错",
+        "operator登录 → 验证系统管理菜单不可见",
+        "rd-operator登录 → 验证进入rd-subwarehouse控制台，系统管理不可见",
+        "procurement登录 → 验证只可见采购/供应商/入库相关路由"
+      ],
+      "expected": "每个账号菜单边界与 auth/routes 一致；无权限放宽或误裁剪",
+      "lastRun": {
+        "date": "2026-04-02",
+        "tool": "headless-chrome",
+        "target": "http://127.0.0.1:90",
+        "result": "pass"
+      }
+    }
+  ]
+}

@@ -66,7 +66,6 @@
 
 ## 文档关系（可选）
 
-- 项目级长期背景：`docs/requirements/PROJECT_REQUIREMENTS.md`
 - 执行任务：`docs/tasks/*.md` 或 `docs/tasks/archive/**/task-*.md`（Metadata 中 `Related requirement` 指向本 topic `Fx`）
 - 执行与验证记录：`docs/tasks/*.md` 或 `docs/tasks/archive/**/task-*.md`
 

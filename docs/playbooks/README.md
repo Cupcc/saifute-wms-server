@@ -54,6 +54,8 @@ docs/playbooks/
 
 ## Entry format
 
+Playbook 条目默认使用中文撰写。命令、路径、代码标识、外部系统原文名称可保留原文；只有在引用英文报错、协议字段、或不可直译的专有名词时才混用英文。
+
 Each entry in `playbook.md` follows this structure:
 
 ```markdown

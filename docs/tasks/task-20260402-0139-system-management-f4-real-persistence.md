@@ -17,7 +17,7 @@
 - Acceptance QA: `acceptance-qa`
 - Last updated: `2026-04-02`
 - Related checklist: `None`
-- Related acceptance spec: `docs/acceptance-tests/specs/system-management-f4-real-persistence.md`
+- Related acceptance spec: `docs/acceptance-tests/specs/system-management.md`
 - Related acceptance run: `None`
 - Related files:
   - `docs/requirements/topics/system-management-module.md`
@@ -92,7 +92,7 @@
 - Separate acceptance run expected: `optional`
 - Complete test report required: `yes`
 - Existing acceptance spec:
-  - `None`；由 `acceptance-qa` 先创建 `docs/acceptance-tests/specs/system-management-f4-real-persistence.md`
+  - `None`；由 `acceptance-qa` 先创建 `docs/acceptance-tests/specs/system-management.md`
 - Existing acceptance run:
   - `None`；仅在需要独立冻结报告时由 `acceptance-qa` 额外创建
 
@@ -242,7 +242,7 @@
   - `test/app.e2e-spec.ts`
   - `test/batch-d-slice.e2e-spec.ts`
   - `test/redis-real-integration.e2e-spec.ts`
-  - `docs/acceptance-tests/specs/system-management-f4-real-persistence.md`
+  - `docs/acceptance-tests/specs/system-management.md`
 - Evidence gaps, if any:
   - review 阶段无阻塞性证据缺口；schema relation/FK、mixed-state 启动保护、legacy snapshot backfill 覆盖已补齐。`[AC-5]` 的完整测试报告仍待 `acceptance-qa` 在 `spec` 的 `Latest Verification` 中收口，必要时再附 `run`。
 - Complete test report requirement: `yes`
@@ -252,7 +252,7 @@
 - Acceptance mode: `full`
 - Browser test required: `yes`
 - Related acceptance spec:
-  - `docs/acceptance-tests/specs/system-management-f4-real-persistence.md`
+  - `docs/acceptance-tests/specs/system-management.md`
 - Separate acceptance run required: `optional`
 - Complete test report required: `yes`
 - Required regression / high-risk tags:
@@ -299,7 +299,7 @@
 - Runtime regression commands:
   - `pnpm test:e2e -- test/app.e2e-spec.ts test/batch-d-slice.e2e-spec.ts test/redis-real-integration.e2e-spec.ts`
 - Full acceptance gate:
-  - `acceptance-qa` 创建 / 更新 `docs/acceptance-tests/specs/system-management-f4-real-persistence.md`
+  - `acceptance-qa` 创建 / 更新 `docs/acceptance-tests/specs/system-management.md`
   - `acceptance-qa` 更新 spec 中的 `Latest Verification`
   - 如需独立冻结报告，再额外创建 `docs/acceptance-tests/runs/run-*.md`
   - 浏览器验收优先使用 Agent Browser skill；当前运行面若不可用则直接执行 `agent-browser` CLI，覆盖 `admin / operator / rd-operator / procurement` 的登录、菜单、`/api/auth/me`、`/api/auth/routes` 与系统管理页面 reachability 证据。
@@ -338,7 +338,7 @@
 - Acceptance QA: `acceptance-qa`
 - Acceptance date: `2026-04-02`
 - Complete test report:
-  - `docs/acceptance-tests/specs/system-management-f4-real-persistence.md`（`Latest Verification`）
+  - `docs/acceptance-tests/specs/system-management.md`（`Latest Verification`）
 
 ### Acceptance Checklist
 
@@ -354,7 +354,7 @@
 - Acceptance summary:
   - F4 核心实现已达到 `accepted`。schema validate / generate / db push、typecheck、focused unit tests（7 cases）、e2e API + real-Redis session tests 全部 PASS；code review `reviewed-clean`；浏览器 smoke 已补跑通过。四代表账号在真实 UI 中均可登录成功，admin 可达 `system/user`，operator 直达 `system/user` 返回 404，rd-operator 默认进入 `rd/workbench`，procurement 可达采购需求、供应商与验收入库页面。
 - Report completeness check:
-  - 完整测试报告已收口到：`docs/acceptance-tests/specs/system-management-f4-real-persistence.md` 的 `Latest Verification`
+  - 完整测试报告已收口到：`docs/acceptance-tests/specs/system-management.md` 的 `Latest Verification`
 - If conditionally accepted:
   - None.
 

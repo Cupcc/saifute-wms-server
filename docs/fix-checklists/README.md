@@ -8,7 +8,7 @@ Purpose:
 - Supplement the primary task doc under `docs/tasks/**` with durable review findings when a standalone checklist artifact is useful.
 - Keep one markdown file per review scope or repair loop, then reuse and update that file until the loop is closed.
 
-In requested-scope delivery orchestration, generating a checklist is not a terminal state. The orchestrator should route actionable items back to `coder`, rerun review as needed, then update the task doc and checklist with evidence before final sign-off and commit.
+In requested-scope delivery orchestration, generating a checklist is not a terminal state. The orchestrator should route actionable items back to `coder`, rerun review as needed, then update the task doc and checklist with evidence before final sign-off and closure.
 
 Recommended filename pattern:
 
@@ -32,4 +32,4 @@ Checklist rules:
 
 Lifecycle:
 
-- When every checklist item is closed and the repair loop is done, the standalone `review-*.md` file may be deleted to reduce noise. Findings that matter long term should already live in the linked `docs/tasks/**` brief (and commit history still holds the removed checklist).
+- When every checklist item is closed and the repair loop is done, the standalone `review-*.md` file may be deleted to reduce noise. Findings that matter long term should already live in the linked `docs/tasks/**` brief, and version history still preserves the removed checklist when needed.
