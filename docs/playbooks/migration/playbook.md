@@ -4,4 +4,4 @@ Accumulated execution experience for data migration, backfill, reconciliation, a
 
 ---
 
-<!-- Append new entries below in reverse chronological order. -->
+<!-- Append new entries below. Keep the most reusable items near the top. -->
