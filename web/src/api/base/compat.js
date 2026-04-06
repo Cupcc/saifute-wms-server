@@ -49,6 +49,23 @@ export function buildDataResponse(data, mapper) {
   };
 }
 
+export function normalizeOptionalId(value, { allowNull = false } = {}) {
+  if (value === "" || typeof value === "undefined") {
+    return allowNull ? null : undefined;
+  }
+
+  if (value === null) {
+    return allowNull ? null : undefined;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return allowNull ? null : undefined;
+  }
+
+  return parsed;
+}
+
 function toNumberOrNull(value) {
   if (value === null || typeof value === "undefined" || value === "") {
     return null;
@@ -86,6 +103,7 @@ export function mapCustomer(item) {
     contactPhone: "",
     address: "",
     remark: "",
+    status: item.status ?? "ACTIVE",
     children: [],
   };
 }
@@ -122,8 +140,18 @@ export function mapWorkshop(item) {
     workshopId: item.id,
     workshopCode: item.workshopCode,
     workshopName: item.workshopName,
+    status: item.status ?? "ACTIVE",
     contactPerson: "",
     chargeBy: "",
+  };
+}
+
+export function mapStockScope(item) {
+  return {
+    stockScopeId: item.id,
+    scopeCode: item.scopeCode,
+    scopeName: item.scopeName,
+    status: item.status ?? "ACTIVE",
   };
 }
 

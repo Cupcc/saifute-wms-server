@@ -14,11 +14,7 @@ export function listWorkshop(query = {}) {
     url: "/api/master-data/workshops",
     method: "get",
     params: {
-      keyword: pickKeyword(query, [
-        "workshopName",
-        "contactPerson",
-        "chargeBy",
-      ]),
+      keyword: pickKeyword(query, ["workshopCode", "workshopName"]),
       includeDisabled: query.includeDisabled || undefined,
       limit,
       offset,

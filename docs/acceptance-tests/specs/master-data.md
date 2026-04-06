@@ -56,6 +56,7 @@
 | 2026-04-06 | task-20260402-1758（F4 browser QA 复验） | `.env.dev`；backend `:8112` + web `:90`；`agent-browser` | `passed` |
 | 2026-04-06 | task-20260402-1802（F2 browser QA 补证） | `.env.dev`；backend `:8112` + web `:90`；`agent-browser`；补最小 `material-category` fixture | `passed` |
 | 2026-04-06 | task-20260406-0106（F1/F2 对齐修复复验） | `.env.dev`；backend `:8112` + web `:90`；`agent-browser`；真实登录 `admin` | `passed` |
+| 2026-04-06 | task-20260406-0134（F1-F8 browser verification fix loop） | `.env.dev`；backend `:8112` + web `:90`；`agent-browser`；`pnpm --dir web build:prod`；master-data 三层回归 `3 suites / 80 tests` | `passed` |
 
 
 ---
@@ -196,6 +197,19 @@
 ### 证据索引
 
 - 同上；`web/src/api/base/customer.js` → `/api/master-data/customers`
+- `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md`
+
+### 验证摘要
+
+| 时间 | 关联 task | 环境 | 结果 |
+| ---- | ---- | ---- | ---- |
+| 2026-04-06 | `task-20260406-0134` | `.env.dev`; backend `:8112`; web `:90`; `agent-browser`; `admin` 已登录 | `passed` |
+
+### Browser 补充说明
+
+- 本轮在 `/base/customer` 完成新增、编辑与停用复验，编辑时编码字段保持只读。
+- 客户名称修改后列表回显新值，停用后 active 列表不再展示该客户。
+- 本轮 browser 证据与 run 冻结见 `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md`。
 
 
 ---
@@ -215,6 +229,19 @@
 ### 证据索引
 
 - `web/src/api/base/personnel.js`；master-data specs
+- `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md`
+
+### 验证摘要
+
+| 时间 | 关联 task | 环境 | 结果 |
+| ---- | ---- | ---- | ---- |
+| 2026-04-06 | `task-20260406-0134` | `.env.dev`; backend `:8112`; web `:90`; `agent-browser`; `admin` 已登录 | `passed` |
+
+### Browser 补充说明
+
+- 本轮在 `/base/personnel` 完成新增与停用复验，停用接口已切换为 `deactivate`。
+- 停用后 active 列表中不再显示该人员。
+- 本轮 browser 证据与 run 冻结见 `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md`。
 
 
 ---
@@ -234,6 +261,19 @@
 ### 证据索引
 
 - `web/src/api/base/workshop.js`；service/repository specs
+- `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md`
+
+### 验证摘要
+
+| 时间 | 关联 task | 环境 | 结果 |
+| ---- | ---- | ---- | ---- |
+| 2026-04-06 | `task-20260406-0134` | `.env.dev`; backend `:8112`; web `:90`; `agent-browser`; `admin` 已登录 | `passed` |
+
+### Browser 补充说明
+
+- 本轮在 `/base/workshop` 完成新增、编辑与停用复验，编码字段保持只读。
+- 页面契约已对齐到主数据主档，停用接口返回 `200`。
+- 本轮 browser 证据与 run 冻结见 `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md`。
 
 
 ---
@@ -253,6 +293,19 @@
 ### 证据索引
 
 - master-data specs；停用守卫与 canonical code lookup（DISABLED 拒绝）见 service 单测
+- `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md`
+
+### 验证摘要
+
+| 时间 | 关联 task | 环境 | 结果 |
+| ---- | ---- | ---- | ---- |
+| 2026-04-06 | `task-20260406-0134` | `.env.dev`; backend `:8112`; web `:90`; `agent-browser`; `admin` 已登录 | `passed` |
+
+### Browser 补充说明
+
+- 本轮在 `/base/stock-scope` 完成新增、编辑与停用复验，菜单“库存范围管理”已可见。
+- 停用接口返回 `200`，编码字段保持只读。
+- 本轮 browser 证据与 run 冻结见 `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md`。
 
 
 ---
@@ -271,6 +324,19 @@
 ### 证据索引
 
 - `MasterDataService` 与消费者模块单测；controller 列表/详情 active 过滤
+- `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md`
+
+### 验证摘要
+
+| 时间 | 关联 task | 环境 | 结果 |
+| ---- | ---- | ---- | ---- |
+| 2026-04-06 | `task-20260406-0134` | `.env.dev`; backend `:8112`; web `:90`; `agent-browser`; `admin` 已登录 | `passed` |
+
+### Browser 补充说明
+
+- 本轮在 `/entry/order` 的新增验收单弹窗中复验了车间下拉的 active-only 语义。
+- 搜索已停用车间“浏览器车间0202-改”时，下拉返回无数据，网络响应 `GET /api/master-data/workshops?keyword=浏览器车间0202-改&limit=100&offset=0` 为 `200` 且 `items=[]`。
+- 本轮 browser 证据与 run 冻结见 `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md`。
 
 
 ---

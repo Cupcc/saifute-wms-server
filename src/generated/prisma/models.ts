@@ -50,7 +50,6 @@ export type * from "./models/SysPost";
 export type * from "./models/SysRole";
 export type * from "./models/SysRoleDept";
 export type * from "./models/SysRoleMenu";
-export type * from "./models/SystemManagementSnapshot";
 export type * from "./models/SysUser";
 export type * from "./models/SysUserPost";
 export type * from "./models/SysUserRole";

@@ -74,7 +74,7 @@
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['base:personnel:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['base:personnel:remove']">作废</el-button>
+          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['base:personnel:remove']">停用</el-button>
         </template>
       </el-table-column>
     </adaptive-table>
@@ -118,32 +118,6 @@
         </div>
       </template>
     </el-dialog>
-	
-	<!-- 作废人员信息对话框 -->
-    <el-dialog title="作废" v-model="cancelOpen" width="500px" append-to-body draggable>
-      <el-form ref="cancelRef" :model="cancelForm" :rules="cancelRules" label-width="80px">
-        <el-form-item label="作废理由" prop="voidDescription">
-          <el-input
-            v-model="cancelForm.voidDescription"
-            type="textarea"
-            placeholder="请输入作废理由"
-            maxlength="200"
-            show-word-limit
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button
-            type="primary"
-            @click="confirmCancel"
-            :disabled="!cancelForm.voidDescription || cancelForm.voidDescription.trim() === ''">
-            确 定
-          </el-button>
-          <el-button @click="cancelOpen = false">取 消</el-button>
-        </div>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
@@ -161,7 +135,6 @@ const { related_order_type } = proxy.useDict("related_order_type");
 
 const personnelList = ref([]);
 const open = ref(false);
-const cancelOpen = ref(false); // 添加作废对话框控制变量
 const loading = ref(true);
 const dialogLoading = ref(false);
 const showSearch = ref(true);
@@ -173,7 +146,6 @@ const title = ref("");
 
 const data = reactive({
   form: {},
-  cancelForm: {}, // 添加作废表单数据
   queryParams: {
     pageNum: 1,
     pageSize: 30,
@@ -188,15 +160,7 @@ const data = reactive({
   },
 });
 
-// 添加作废表单规则
-const cancelRules = ref({
-  voidDescription: [
-    { required: true, message: "作废理由不能为空", trigger: "blur" },
-  ],
-});
-
 const { queryParams, form, rules } = toRefs(data);
-const { cancelForm } = toRefs(data); // 添加对cancelForm的引用
 
 // 添加columns数组定义（已删除 personnelId 列）
 const columns = ref([
@@ -304,41 +268,17 @@ function submitForm() {
 }
 
 /** 作废按钮操作 */
-function handleDelete(row) {
-  // 重置作废表单
-  cancelForm.value = {
-    voidDescription: "",
-    personnelId: null,
-  };
-  // 打开作废对话框
-  cancelOpen.value = true;
-  // 保存当前要作废的人员ID
-  const _personnelId = row.personnelId || ids.value;
-  cancelForm.value.personnelId = _personnelId;
-}
+async function handleDelete(row) {
+  const personnelId = row.personnelId || ids.value;
 
-/** 确认作废操作 */
-function confirmCancel() {
-  proxy.$refs["cancelRef"].validate((valid) => {
-    if (valid) {
-      // 构造作废数据
-      const updateData = {
-        personnelId: cancelForm.value.personnelId,
-        voidDescription: cancelForm.value.voidDescription,
-        delFlag: 2,
-      };
-      // 调用作废接口
-      updatePersonnel(updateData)
-        .then(() => {
-          getList();
-          cancelOpen.value = false;
-          proxy.$modal.msgSuccess("作废成功");
-        })
-        .catch(() => {
-          cancelOpen.value = false;
-        });
-    }
-  });
+  try {
+    await proxy.$modal.confirm(`确认停用人员「${row.name}」吗？`);
+    await delPersonnel(personnelId);
+    proxy.$modal.msgSuccess("停用成功");
+    getList();
+  } catch {
+    // 用户取消确认时保持页面静默。
+  }
 }
 
 getList();

@@ -7,19 +7,19 @@
       v-show="showSearch"
       label-width="84px"
     >
-      <el-form-item label="车间编码" prop="workshopCode">
+      <el-form-item label="范围编码" prop="scopeCode">
         <el-input
-          v-model="queryParams.workshopCode"
-          placeholder="请输入车间编码"
+          v-model="queryParams.scopeCode"
+          placeholder="请输入范围编码"
           clearable
           style="width: 240px"
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="车间名称" prop="workshopName">
+      <el-form-item label="范围名称" prop="scopeName">
         <el-input
-          v-model="queryParams.workshopName"
-          placeholder="请输入车间名称"
+          v-model="queryParams.scopeName"
+          placeholder="请输入范围名称"
           clearable
           style="width: 240px"
           @keyup.enter="handleQuery"
@@ -40,7 +40,7 @@
           plain
           icon="Plus"
           @click="handleAdd"
-          v-hasPermi="['base:workshop:add']"
+          v-hasPermi="['base:stockScope:add']"
         >
           新增
         </el-button>
@@ -52,23 +52,23 @@
       />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="workshopList">
+    <adaptive-table border stripe v-loading="loading" :data="stockScopeList">
       <el-table-column type="index" width="50" align="center" />
       <el-table-column
         v-if="columns[0].visible"
         sortable
         show-overflow-tooltip
-        label="车间编码"
+        label="范围编码"
         align="center"
-        prop="workshopCode"
+        prop="scopeCode"
       />
       <el-table-column
         v-if="columns[1].visible"
         sortable
         show-overflow-tooltip
-        label="车间名称"
+        label="范围名称"
         align="center"
-        prop="workshopName"
+        prop="scopeName"
       />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
@@ -77,7 +77,7 @@
             type="primary"
             icon="Edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['base:workshop:edit']"
+            v-hasPermi="['base:stockScope:edit']"
           >
             修改
           </el-button>
@@ -86,7 +86,7 @@
             type="primary"
             icon="Delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['base:workshop:remove']"
+            v-hasPermi="['base:stockScope:remove']"
           >
             停用
           </el-button>
@@ -110,16 +110,21 @@
       draggable
       v-loading="dialogLoading"
     >
-      <el-form ref="workshopRef" :model="form" :rules="rules" label-width="92px">
-        <el-form-item label="车间编码" prop="workshopCode">
+      <el-form
+        ref="stockScopeRef"
+        :model="form"
+        :rules="rules"
+        label-width="92px"
+      >
+        <el-form-item label="范围编码" prop="scopeCode">
           <el-input
-            v-model="form.workshopCode"
-            :disabled="Boolean(form.workshopId)"
-            placeholder="请输入车间编码"
+            v-model="form.scopeCode"
+            :disabled="Boolean(form.stockScopeId)"
+            placeholder="请输入范围编码"
           />
         </el-form-item>
-        <el-form-item label="车间名称" prop="workshopName">
-          <el-input v-model="form.workshopName" placeholder="请输入车间名称" />
+        <el-form-item label="范围名称" prop="scopeName">
+          <el-input v-model="form.scopeName" placeholder="请输入范围名称" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -132,19 +137,19 @@
   </div>
 </template>
 
-<script setup name="Workshop">
+<script setup name="StockScope">
 import {
-  addWorkshop,
-  delWorkshop,
-  getWorkshop,
-  listWorkshop,
-  updateWorkshop,
-} from "@/api/base/workshop";
+  addStockScope,
+  delStockScope,
+  getStockScope,
+  listStockScope,
+  updateStockScope,
+} from "@/api/base/stock-scope";
 
 const { proxy } = getCurrentInstance();
 
-const workshopRef = ref();
-const workshopList = ref([]);
+const stockScopeRef = ref();
+const stockScopeList = ref([]);
 const open = ref(false);
 const loading = ref(true);
 const dialogLoading = ref(false);
@@ -157,15 +162,15 @@ const data = reactive({
   queryParams: {
     pageNum: 1,
     pageSize: 30,
-    workshopCode: null,
-    workshopName: null,
+    scopeCode: null,
+    scopeName: null,
   },
   rules: {
-    workshopCode: [
-      { required: true, message: "车间编码不能为空", trigger: "blur" },
+    scopeCode: [
+      { required: true, message: "范围编码不能为空", trigger: "blur" },
     ],
-    workshopName: [
-      { required: true, message: "车间名称不能为空", trigger: "blur" },
+    scopeName: [
+      { required: true, message: "范围名称不能为空", trigger: "blur" },
     ],
   },
 });
@@ -173,15 +178,15 @@ const data = reactive({
 const { queryParams, form, rules } = toRefs(data);
 
 const columns = ref([
-  { key: 0, label: "车间编码", visible: true },
-  { key: 1, label: "车间名称", visible: true },
+  { key: 0, label: "范围编码", visible: true },
+  { key: 1, label: "范围名称", visible: true },
 ]);
 
 function getList() {
   loading.value = true;
-  listWorkshop(queryParams.value)
+  listStockScope(queryParams.value)
     .then((response) => {
-      workshopList.value = response.rows;
+      stockScopeList.value = response.rows;
       total.value = response.total;
     })
     .finally(() => {
@@ -196,11 +201,11 @@ function cancel() {
 
 function reset() {
   form.value = {
-    workshopId: null,
-    workshopCode: null,
-    workshopName: null,
+    stockScopeId: null,
+    scopeCode: null,
+    scopeName: null,
   };
-  proxy.resetForm("workshopRef");
+  proxy.resetForm("stockScopeRef");
 }
 
 function handleQuery() {
@@ -215,16 +220,16 @@ function resetQuery() {
 
 function handleAdd() {
   reset();
-  title.value = "添加车间";
+  title.value = "添加库存范围";
   open.value = true;
 }
 
 function handleUpdate(row) {
   reset();
-  title.value = "修改车间";
+  title.value = "修改库存范围";
   open.value = true;
   dialogLoading.value = true;
-  getWorkshop(row.workshopId)
+  getStockScope(row.stockScopeId)
     .then((response) => {
       form.value = response.data;
     })
@@ -234,29 +239,29 @@ function handleUpdate(row) {
 }
 
 async function submitForm() {
-  const valid = await workshopRef.value?.validate().catch(() => false);
+  const valid = await stockScopeRef.value?.validate().catch(() => false);
   if (!valid) {
     return;
   }
 
-  const request = form.value.workshopId
-    ? updateWorkshop(form.value)
-    : addWorkshop(form.value);
+  const request = form.value.stockScopeId
+    ? updateStockScope(form.value)
+    : addStockScope(form.value);
 
   await request;
-  proxy.$modal.msgSuccess(form.value.workshopId ? "修改成功" : "新增成功");
+  proxy.$modal.msgSuccess(form.value.stockScopeId ? "修改成功" : "新增成功");
   open.value = false;
   getList();
 }
 
 async function handleDelete(row) {
   try {
-    await proxy.$modal.confirm(`确认停用车间「${row.workshopName}」吗？`);
-    await delWorkshop(row.workshopId);
+    await proxy.$modal.confirm(`确认停用库存范围「${row.scopeName}」吗？`);
+    await delStockScope(row.stockScopeId);
     proxy.$modal.msgSuccess("停用成功");
     getList();
   } catch {
-    // 用户取消确认时保持页面静默。
+    // 用户取消确认或接口返回错误时保持页面静默。
   }
 }
 

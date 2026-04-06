@@ -4,6 +4,7 @@ import {
   buildPageQuery,
   buildRowsResponse,
   mapCustomer,
+  normalizeOptionalId,
   pickKeyword,
 } from "./compat";
 
@@ -71,7 +72,7 @@ export function addCustomer(data) {
     data: {
       customerCode: data.customerCode,
       customerName: data.customerName,
-      parentId: data.parentId || undefined,
+      parentId: normalizeOptionalId(data.parentId),
     },
   });
 }
@@ -83,7 +84,7 @@ export function updateCustomer(data) {
     method: "patch",
     data: {
       customerName: data.customerName,
-      parentId: data.parentId ?? undefined,
+      parentId: normalizeOptionalId(data.parentId, { allowNull: true }),
     },
   });
 }

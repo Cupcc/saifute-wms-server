@@ -191,18 +191,18 @@
 ## 能力清单
 
 
-| 编号    | 能力           | 验收口径                                  | 阶段      | 状态    | 关联任务                                                            |
-| ----- | ------------ | ------------------------------------- | ------- | ----- | --------------------------------------------------------------- |
-| `F1`  | 物料分类 CRUD    | 支持新增、修改、停用、树形查询，停用时校验下属物料             | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md` |
-| `F2`  | 物料 CRUD      | 支持新增、修改、停用，停用时校验库存余额与未完成引用            | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md` |
-| `F3`  | 客户 CRUD      | 支持新增、修改、停用、树形查询                       | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md` |
+| 编号    | 能力           | 验收口径                                  | 阶段      | 状态    | 关联任务                                                                                                                        |
+| ----- | ------------ | ------------------------------------- | ------- | ----- | --------------------------------------------------------------------------------------------------------------------------- |
+| `F1`  | 物料分类 CRUD    | 支持新增、修改、停用、树形查询，停用时校验下属物料             | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md`                                 |
+| `F2`  | 物料 CRUD      | 支持新增、修改、停用，停用时校验库存余额与未完成引用            | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md`                                 |
+| `F3`  | 客户 CRUD      | 支持新增、修改、停用、树形查询                       | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md`                                 |
 | `F4`  | 供应商 CRUD     | 支持新增、修改、停用、列表查询                       | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1758-master-data-f4-supplier-crud.md`；Phase 1 收口见 `task-20260402-1802` |
-| `F5`  | 人员 CRUD      | 支持新增、修改、停用、列表查询                       | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md` |
-| `F6`  | 车间 CRUD      | 支持新增、修改、停用、列表查询                       | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md` |
-| `F7`  | 库存范围 CRUD    | 支持新增、修改、停用；停用前校验余额为零                  | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md` |
-| `F8`  | 主数据下拉与快照查询服务 | 各业务模块均通过统一服务获取主数据下拉列表和快照 DTO          | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md` |
-| `F9`  | 物料库存预警配置     | 支持按库存范围为物料分别配置库存上下限，达到阈值时在报表或仪表盘中给出提示 | Phase 2 | `未开始` | `-`                                                             |
-| `F10` | 主数据批量导入      | 支持通过 Excel 模板批量导入物料、客户、供应商等主数据        | Phase 3 | `未开始` | `-`                                                             |
+| `F5`  | 人员 CRUD      | 支持新增、修改、停用、列表查询                       | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md`                                 |
+| `F6`  | 车间 CRUD      | 支持新增、修改、停用、列表查询                       | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md`                                 |
+| `F7`  | 库存范围 CRUD    | 支持新增、修改、停用；停用前校验余额为零                  | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md`                                 |
+| `F8`  | 主数据下拉与快照查询服务 | 各业务模块均通过统一服务获取主数据下拉列表和快照 DTO          | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md`                                 |
+| `F9`  | 物料库存预警配置     | 支持按库存范围为物料分别配置库存上下限，达到阈值时在报表或仪表盘中给出提示 | Phase 2 | `未开始` | `-`                                                                                                                         |
+| `F10` | 主数据批量导入      | 支持通过 Excel 模板批量导入物料、客户、供应商等主数据        | Phase 3 | `未开始` | `-`                                                                                                                         |
 
 
 ## 能力合同
@@ -402,14 +402,14 @@
 ## 阶段路线图
 
 
-| 阶段      | 目标                                     | 当前状态  |
-| ------- | -------------------------------------- | ----- |
+| 阶段      | 目标                                     | 当前状态                                                                                 |
+| ------- | -------------------------------------- | ------------------------------------------------------------------------------------ |
 | Phase 1 | 全部主数据实体完成新增、修改、停用、查询的完整写路径，并对外提供统一查询服务 | `已完成`（验收：`docs/acceptance-tests/specs/master-data.md`；遗留：仓库级 lint 卫生、可选自动化 UI smoke） |
-| Phase 2 | 按库存范围的物料库存预警配置上线，报表侧接入预警数据展示           | `未开始` |
-| Phase 3 | 批量导入能力落地，减少初始数据录入成本                    | `未开始` |
+| Phase 2 | 按库存范围的物料库存预警配置上线，报表侧接入预警数据展示           | `未开始`                                                                                |
+| Phase 3 | 批量导入能力落地，减少初始数据录入成本                    | `未开始`                                                                                |
 
-**Phase 1 进展（2026-04-04）**：F1–F8 已按 `docs/acceptance-tests/specs/master-data.md` **`accepted`** 收口；`F4` 既有已验收基线保留。全量 `pnpm test:e2e` 已通过；供应商负向权限 e2e 使用 `rd-operator`。非交付阻塞项：仓库级 `pnpm lint`（既有文件）、本轮未采集自动化 browser 证据（本地已可启动）。
 
+**Phase 1 进展（2026-04-04）**：F1–F8 已按 `docs/acceptance-tests/specs/master-data.md` `**accepted`** 收口；`F4` 既有已验收基线保留。全量 `pnpm test:e2e` 已通过；供应商负向权限 e2e 使用 `rd-operator`。非交付阻塞项：仓库级 `pnpm lint`（既有文件）、本轮未采集自动化 browser 证据（本地已可启动）。
 
 ## 待确认
 
@@ -423,3 +423,4 @@
 - 架构设计：`docs/architecture/modules/master-data.md`
 - 数据库 Schema：`docs/architecture/20-wms-database-tables-and-schema.md`（第 4.1 节）
 - 后续交付时，直接从本 domain 能力合同创建 `docs/tasks/task-*.md`（`Related requirement` 指向本 domain 对应 `Fx`）。
+

@@ -15,7 +15,7 @@
 范围说明：
 
 - 本文件聚焦 `master-data`、`inventory-core`、`workflow` 与各事务单据家族的运行态数据库表。
-- 不覆盖平台层辅助持久化表，例如 `system-management` 在 `F4` 引入的 `system_management_snapshot`；这类表应在对应模块架构文档中说明，而不是混入业务表基线。
+- 不覆盖平台层辅助持久化表；这类表应在对应模块架构文档中说明，而不是混入业务表基线。
 
 ## 2. 设计原则
 

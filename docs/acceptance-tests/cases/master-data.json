@@ -25,6 +25,28 @@
       }
     },
     {
+      "id": "F3-BROWSER-1",
+      "name": "客户管理页新增/编辑/停用冒烟",
+      "capability": "F3",
+      "covers": ["TC-1", "TC-2", "TC-3"],
+      "surface": "browser",
+      "precondition": "pnpm dev + web dev running; admin logged in; .env.dev",
+      "steps": [
+        "访问 /base/customer",
+        "新增客户(code+name) → 确认 POST 201",
+        "编辑客户时确认 code 字段 disabled，修改名称后列表回显新值",
+        "停用客户 → 确认 PATCH /api/master-data/customers/{id}/deactivate 200",
+        "按编码搜索已停用客户 → 确认 active-only 列表无该条"
+      ],
+      "expected": "全部操作无 JS 报错；编辑仅允许改名称等可变字段；停用后 active-only 列表不再展示该客户",
+      "lastRun": {
+        "date": "2026-04-06",
+        "tool": "agent-browser",
+        "target": "http://localhost:90",
+        "result": "pass"
+      }
+    },
+    {
       "id": "F4-BROWSER-1",
       "name": "供应商管理页与下拉消费者冒烟",
       "capability": "F4",
@@ -39,6 +61,90 @@
         "访问 /entry/order → 供应商下拉搜索已停用编码 → 确认 items=[] total=0"
       ],
       "expected": "全部操作无JS报错；停用后下拉不含该供应商",
+      "lastRun": {
+        "date": "2026-04-06",
+        "tool": "agent-browser",
+        "target": "http://localhost:90",
+        "result": "pass"
+      }
+    },
+    {
+      "id": "F5-BROWSER-1",
+      "name": "人员管理页停用改为 deactivate 冒烟",
+      "capability": "F5",
+      "covers": ["TC-1", "TC-2"],
+      "surface": "browser",
+      "precondition": "pnpm dev + web dev running; admin logged in; .env.dev",
+      "steps": [
+        "访问 /base/personnel",
+        "新增人员(code+name) → 确认 POST 201",
+        "停用人员 → 确认 PATCH /api/master-data/personnel/{id}/deactivate 200",
+        "返回 active 列表 → 确认该人员不再显示"
+      ],
+      "expected": "全部操作无 JS 报错；停用接口已切换为 deactivate；active-only 列表不再展示该人员",
+      "lastRun": {
+        "date": "2026-04-06",
+        "tool": "agent-browser",
+        "target": "http://localhost:90",
+        "result": "pass"
+      }
+    },
+    {
+      "id": "F6-BROWSER-1",
+      "name": "车间管理页契约对齐与停用冒烟",
+      "capability": "F6",
+      "covers": ["TC-1", "TC-2"],
+      "surface": "browser",
+      "precondition": "pnpm dev + web dev running; admin logged in; .env.dev",
+      "steps": [
+        "访问 /base/workshop",
+        "新增车间(code+name) → 确认 POST 201",
+        "编辑车间时确认 code 字段 disabled，修改名称后列表回显新值",
+        "停用车间 → 确认 PATCH /api/master-data/workshops/{id}/deactivate 200"
+      ],
+      "expected": "全部操作无 JS 报错；编码字段保持只读；停用接口返回 200",
+      "lastRun": {
+        "date": "2026-04-06",
+        "tool": "agent-browser",
+        "target": "http://localhost:90",
+        "result": "pass"
+      }
+    },
+    {
+      "id": "F7-BROWSER-1",
+      "name": "库存范围管理页新增/编辑/停用冒烟",
+      "capability": "F7",
+      "covers": ["TC-1", "TC-2", "TC-3"],
+      "surface": "browser",
+      "precondition": "pnpm dev + web dev running; admin logged in; .env.dev",
+      "steps": [
+        "通过菜单进入库存范围管理页",
+        "新增库存范围(code+name) → 确认 POST 201",
+        "编辑库存范围时确认 code 字段 disabled，修改名称后列表回显新值",
+        "停用库存范围 → 确认 PATCH /api/master-data/stock-scopes/{id}/deactivate 200"
+      ],
+      "expected": "全部操作无 JS 报错；菜单“库存范围管理”可见；停用接口返回 200",
+      "lastRun": {
+        "date": "2026-04-06",
+        "tool": "agent-browser",
+        "target": "http://localhost:90",
+        "result": "pass"
+      }
+    },
+    {
+      "id": "F8-BROWSER-1",
+      "name": "验收单车间下拉 active-only 冒烟",
+      "capability": "F8",
+      "covers": ["TC-1"],
+      "surface": "browser",
+      "precondition": "pnpm dev + web dev running; admin logged in; .env.dev; 已存在一条已停用车间“浏览器车间0202-改”",
+      "steps": [
+        "访问 /entry/order",
+        "打开新增验收单弹窗并搜索已停用车间“浏览器车间0202-改”",
+        "确认 tooltip 显示“无数据”",
+        "确认网络请求 GET /api/master-data/workshops?keyword=浏览器车间0202-改&limit=100&offset=0 返回 200 且 items=[]"
+      ],
+      "expected": "停用车间不出现在 active-only 下拉中；查询语义与快照消费保持稳定",
       "lastRun": {
         "date": "2026-04-06",
         "tool": "agent-browser",

@@ -26,11 +26,9 @@ import type {
   ManagedUserRecord,
   RbacUserRecord,
   RouteNode,
-  SystemManagementStateSnapshot,
 } from "../domain/rbac.types";
 
 const ALL_PERMISSION = "*:*:*";
-const SYSTEM_MANAGEMENT_SNAPSHOT_KEY = "default";
 
 const WAREHOUSE_MANAGER_PERMISSION_PRESET = [
   "dashboard:view",
@@ -3701,25 +3699,6 @@ export class InMemoryRbacRepository implements OnModuleInit {
       return;
     }
 
-    const snapshotDelegate = this.prisma.systemManagementSnapshot;
-    if (snapshotDelegate) {
-      try {
-        const snapshot = await snapshotDelegate.findUnique({
-          where: { snapshotKey: SYSTEM_MANAGEMENT_SNAPSHOT_KEY },
-        });
-        if (snapshot) {
-          this.applySnapshot(
-            snapshot.payload as unknown as SystemManagementStateSnapshot,
-          );
-          this.logger.log("Backfilled from legacy system_management_snapshot");
-        }
-      } catch {
-        this.logger.warn(
-          "Legacy snapshot table not readable; using default seed",
-        );
-      }
-    }
-
     await this.persistState();
     this.logger.log("Persisted initial seed to normalized tables");
   }
@@ -4179,24 +4158,6 @@ export class InMemoryRbacRepository implements OnModuleInit {
       persistOperation,
       persistOperation,
     );
-  }
-
-  private applySnapshot(snapshot: SystemManagementStateSnapshot): void {
-    this.depts = this.cloneSnapshotRows(snapshot.depts, this.depts);
-    this.posts = this.cloneSnapshotRows(snapshot.posts, this.posts);
-    this.menus = this.cloneSnapshotRows(snapshot.menus, this.menus);
-    this.roles = this.cloneSnapshotRows(snapshot.roles, this.roles);
-    this.dictTypes = this.cloneSnapshotRows(snapshot.dictTypes, this.dictTypes);
-    this.dictData = this.cloneSnapshotRows(snapshot.dictData, this.dictData);
-    this.configs = this.cloneSnapshotRows(snapshot.configs, this.configs);
-    this.notices = this.cloneSnapshotRows(snapshot.notices, this.notices);
-    this.users = this.cloneSnapshotRows(snapshot.users, this.users);
-  }
-
-  private cloneSnapshotRows<T>(rows: unknown, fallback: T[]): T[] {
-    return Array.isArray(rows)
-      ? structuredClone(rows as T[])
-      : structuredClone(fallback);
   }
 
   private applyDefaultRoleMenuAssignments(): void {

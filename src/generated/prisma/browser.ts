@@ -200,11 +200,6 @@ export type SchedulerJob = Prisma.SchedulerJobModel;
  */
 export type SchedulerJobLog = Prisma.SchedulerJobLogModel;
 /**
- * Model SystemManagementSnapshot
- *
- */
-export type SystemManagementSnapshot = Prisma.SystemManagementSnapshotModel;
-/**
  * Model SysDept
  *
  */

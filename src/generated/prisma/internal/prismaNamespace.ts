@@ -450,7 +450,6 @@ export const ModelName = {
   OperLog: "OperLog",
   SchedulerJob: "SchedulerJob",
   SchedulerJobLog: "SchedulerJobLog",
-  SystemManagementSnapshot: "SystemManagementSnapshot",
   SysDept: "SysDept",
   SysPost: "SysPost",
   SysMenu: "SysMenu",
@@ -522,7 +521,6 @@ export type TypeMap<
       | "operLog"
       | "schedulerJob"
       | "schedulerJobLog"
-      | "systemManagementSnapshot"
       | "sysDept"
       | "sysPost"
       | "sysMenu"
@@ -2987,74 +2985,6 @@ export type TypeMap<
         };
       };
     };
-    SystemManagementSnapshot: {
-      payload: Prisma.$SystemManagementSnapshotPayload<ExtArgs>;
-      fields: Prisma.SystemManagementSnapshotFieldRefs;
-      operations: {
-        findUnique: {
-          args: Prisma.SystemManagementSnapshotFindUniqueArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemManagementSnapshotPayload> | null;
-        };
-        findUniqueOrThrow: {
-          args: Prisma.SystemManagementSnapshotFindUniqueOrThrowArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemManagementSnapshotPayload>;
-        };
-        findFirst: {
-          args: Prisma.SystemManagementSnapshotFindFirstArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemManagementSnapshotPayload> | null;
-        };
-        findFirstOrThrow: {
-          args: Prisma.SystemManagementSnapshotFindFirstOrThrowArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemManagementSnapshotPayload>;
-        };
-        findMany: {
-          args: Prisma.SystemManagementSnapshotFindManyArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemManagementSnapshotPayload>[];
-        };
-        create: {
-          args: Prisma.SystemManagementSnapshotCreateArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemManagementSnapshotPayload>;
-        };
-        createMany: {
-          args: Prisma.SystemManagementSnapshotCreateManyArgs<ExtArgs>;
-          result: BatchPayload;
-        };
-        delete: {
-          args: Prisma.SystemManagementSnapshotDeleteArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemManagementSnapshotPayload>;
-        };
-        update: {
-          args: Prisma.SystemManagementSnapshotUpdateArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemManagementSnapshotPayload>;
-        };
-        deleteMany: {
-          args: Prisma.SystemManagementSnapshotDeleteManyArgs<ExtArgs>;
-          result: BatchPayload;
-        };
-        updateMany: {
-          args: Prisma.SystemManagementSnapshotUpdateManyArgs<ExtArgs>;
-          result: BatchPayload;
-        };
-        upsert: {
-          args: Prisma.SystemManagementSnapshotUpsertArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$SystemManagementSnapshotPayload>;
-        };
-        aggregate: {
-          args: Prisma.SystemManagementSnapshotAggregateArgs<ExtArgs>;
-          result: runtime.Types.Utils.Optional<Prisma.AggregateSystemManagementSnapshot>;
-        };
-        groupBy: {
-          args: Prisma.SystemManagementSnapshotGroupByArgs<ExtArgs>;
-          result: runtime.Types.Utils.Optional<Prisma.SystemManagementSnapshotGroupByOutputType>[];
-        };
-        count: {
-          args: Prisma.SystemManagementSnapshotCountArgs<ExtArgs>;
-          result:
-            | runtime.Types.Utils.Optional<Prisma.SystemManagementSnapshotCountAggregateOutputType>
-            | number;
-        };
-      };
-    };
     SysDept: {
       payload: Prisma.$SysDeptPayload<ExtArgs>;
       fields: Prisma.SysDeptFieldRefs;
@@ -4812,17 +4742,6 @@ export const SchedulerJobLogScalarFieldEnum = {
 export type SchedulerJobLogScalarFieldEnum =
   (typeof SchedulerJobLogScalarFieldEnum)[keyof typeof SchedulerJobLogScalarFieldEnum];
 
-export const SystemManagementSnapshotScalarFieldEnum = {
-  id: "id",
-  snapshotKey: "snapshotKey",
-  payload: "payload",
-  createdAt: "createdAt",
-  updatedAt: "updatedAt",
-} as const;
-
-export type SystemManagementSnapshotScalarFieldEnum =
-  (typeof SystemManagementSnapshotScalarFieldEnum)[keyof typeof SystemManagementSnapshotScalarFieldEnum];
-
 export const SysDeptScalarFieldEnum = {
   deptId: "deptId",
   parentId: "parentId",
@@ -5018,13 +4937,6 @@ export const SortOrder = {
 } as const;
 
 export type SortOrder = (typeof SortOrder)[keyof typeof SortOrder];
-
-export const JsonNullValueInput = {
-  JsonNull: JsonNull,
-} as const;
-
-export type JsonNullValueInput =
-  (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput];
 
 export const NullableJsonNullValueInput = {
   DbNull: DbNull,
@@ -5492,29 +5404,6 @@ export const SchedulerJobLogOrderByRelevanceFieldEnum = {
 export type SchedulerJobLogOrderByRelevanceFieldEnum =
   (typeof SchedulerJobLogOrderByRelevanceFieldEnum)[keyof typeof SchedulerJobLogOrderByRelevanceFieldEnum];
 
-export const JsonNullValueFilter = {
-  DbNull: DbNull,
-  JsonNull: JsonNull,
-  AnyNull: AnyNull,
-} as const;
-
-export type JsonNullValueFilter =
-  (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter];
-
-export const QueryMode = {
-  default: "default",
-  insensitive: "insensitive",
-} as const;
-
-export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode];
-
-export const SystemManagementSnapshotOrderByRelevanceFieldEnum = {
-  snapshotKey: "snapshotKey",
-} as const;
-
-export type SystemManagementSnapshotOrderByRelevanceFieldEnum =
-  (typeof SystemManagementSnapshotOrderByRelevanceFieldEnum)[keyof typeof SystemManagementSnapshotOrderByRelevanceFieldEnum];
-
 export const SysDeptOrderByRelevanceFieldEnum = {
   ancestors: "ancestors",
   deptName: "deptName",
@@ -5565,6 +5454,22 @@ export const SysRoleOrderByRelevanceFieldEnum = {
 
 export type SysRoleOrderByRelevanceFieldEnum =
   (typeof SysRoleOrderByRelevanceFieldEnum)[keyof typeof SysRoleOrderByRelevanceFieldEnum];
+
+export const JsonNullValueFilter = {
+  DbNull: DbNull,
+  JsonNull: JsonNull,
+  AnyNull: AnyNull,
+} as const;
+
+export type JsonNullValueFilter =
+  (typeof JsonNullValueFilter)[keyof typeof JsonNullValueFilter];
+
+export const QueryMode = {
+  default: "default",
+  insensitive: "insensitive",
+} as const;
+
+export type QueryMode = (typeof QueryMode)[keyof typeof QueryMode];
 
 export const SysUserOrderByRelevanceFieldEnum = {
   userName: "userName",
@@ -5991,7 +5896,6 @@ export type GlobalOmitConfig = {
   operLog?: Prisma.OperLogOmit;
   schedulerJob?: Prisma.SchedulerJobOmit;
   schedulerJobLog?: Prisma.SchedulerJobLogOmit;
-  systemManagementSnapshot?: Prisma.SystemManagementSnapshotOmit;
   sysDept?: Prisma.SysDeptOmit;
   sysPost?: Prisma.SysPostOmit;
   sysMenu?: Prisma.SysMenuOmit;

@@ -199,6 +199,13 @@ const SUPPORTED_BACKEND_ROUTE_META = {
     title: "车间管理",
     icon: "education",
   },
+  BaseStockScope: {
+    group: "base",
+    path: "stock-scope",
+    component: "base/stock-scope/index",
+    title: "库存范围管理",
+    icon: "guide",
+  },
   EntryOrder: {
     group: "entry",
     path: "order",

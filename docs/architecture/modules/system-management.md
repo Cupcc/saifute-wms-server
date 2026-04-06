@@ -11,7 +11,7 @@
 - `src/modules/rbac` 已通过 `SystemManagementService` 与 `system/`* 控制器承接八类核心系统页，前端系统管理菜单也已落到 `/system/`* 路由。
 - `在线用户` 当前由 `session` 暴露管理接口；`登录日志 / 操作日志` 当前由 `audit-log` 承接，`sys_logininfor` 与 `sys_oper_log` 已有规范化 Prisma model 与独立 repository，是审计数据的落库真源。
 - 当前样例数据已收敛到 `研发部 / 采购部 / 仓库` 三个一级部门，并提供 `admin / operator / rd-operator / procurement` 四类代表性账号来承接当前登录、权限、RD 视角与采购协同测试口径；其中 `operator` 仍保留兼容用户名，但其业务含义已对齐为 `仓库管理员`。
-- 八类核心系统管理对象（用户/角色/部门/菜单/岗位/字典/参数/通知）当前仍以 `InMemoryRbacRepository` + `system_management_snapshot` JSON 快照为运行态；该方案已废弃，V1 F4 目标是将其迁移到规范化数据库表真实落库。
+- 八类核心系统管理对象（用户/角色/部门/菜单/岗位/字典/参数/通知）已切换到规范化数据库表作为运行态真源；历史 `system_management_snapshot` 快照桥接方案已下线。
 
 **目标范围**：
 
@@ -115,13 +115,6 @@
 - 在线用户列表继续基于 Redis 会话扫描构建；强退以删除会话为准。
 - 系统管理初始化应作为"新系统平台初始化"单独准备，不与旧业务数据迁移混为同一条导入链路。
 
-### `system_management_snapshot`（已废弃）
-
-- 表名：`system_management_snapshot`
-- 历史定位：曾作为 `InMemoryRbacRepository` 跨进程重启保留状态的 JSON 快照桥接表
-- 废弃原因：系统管理主数据必须以规范化数据库表真实落库（C11），JSON 快照不满足标准 CRUD、平台级审计与细粒度查询需求
-- 处置：F4 完成规范化表落库后，该表与相关 `InMemoryRbacRepository` 快照逻辑将移除
-
 ## 与其他模块的依赖关系
 
 - 依赖 `rbac`：用户、角色、部门、菜单、权限字符串、数据权限、路由树真源（规范化数据库表）
@@ -146,7 +139,6 @@
 
 ## 当前缺口 / 后续切片
 
-- `F4` 真实落库持久化未完成：八类核心系统管理对象需从 `InMemoryRbacRepository` + `system_management_snapshot` 迁移到规范化数据库表；这是 V1 唯一剩余交付项。
 - `老板 / 财务` 两类查看型角色尚未细化到报表与字段边界。
 - 若后续需要"次级系统管理员"或更细颗粒度授权，应新开切片，不在本轮直接膨胀角色层次。
 

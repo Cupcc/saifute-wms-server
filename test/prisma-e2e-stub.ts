@@ -403,7 +403,6 @@ export class PrismaE2eStub {
   sysUserPost = createModelStub();
   sysRoleMenu = createModelStub();
   sysRoleDept = createModelStub();
-  systemManagementSnapshot = createModelStub();
 
   async $connect(): Promise<void> {}
   async $disconnect(): Promise<void> {}
