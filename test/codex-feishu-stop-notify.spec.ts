@@ -12,7 +12,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
 const repoRoot = join(__dirname, "..");
-const hookScript = join(repoRoot, ".codex", "hooks", "feishu-stop-notify.py");
+const hookScript = join(repoRoot, ".codex", "hooks", "feishu-stop-notify.js");
 
 function createTempProjectDir() {
   return mkdtempSync(join(tmpdir(), "codex-feishu-hook-"));
@@ -43,7 +43,7 @@ async function runHook(
   },
 ): Promise<{ status: number | null; stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
-    const child = spawn("python3", [hookScript], {
+    const child = spawn(process.execPath, [hookScript], {
       cwd: options?.cwd ?? repoRoot,
       env: {
         ...process.env,
@@ -155,14 +155,14 @@ describe("codex feishu stop hook", () => {
 
       const state = readJson(statePath) as {
         turnId: string;
-        sessionId: string;
+        taskId: string;
         startedAtMs: number;
         startedAtIso: string;
         promptSummary: string;
       };
 
       expect(state.turnId).toBe("turn-abc");
-      expect(state.sessionId).toBe("sess-abc");
+      expect(state.taskId).toBe("sess-abc");
       expect(state.promptSummary).toBe("修复飞书通知耗时");
       expect(state.startedAtMs).toBeGreaterThan(1_000_000_000_000);
       expect(state.startedAtIso).toMatch(
@@ -177,14 +177,14 @@ describe("codex feishu stop hook", () => {
         const twoMinAgo = Date.now() - 120_000;
         writeJson(getTurnStatePath(projectDir, "turn-stop"), {
           turnId: "turn-stop",
-          sessionId: "sess-stop",
+          taskId: "sess-stop",
           startedAtMs: twoMinAgo,
           startedAtIso: new Date(twoMinAgo).toISOString(),
           promptSummary: "修复飞书通知耗时",
         });
         writeJson(join(getStateDir(projectDir), "current-turn.json"), {
           turnId: "turn-stop",
-          sessionId: "sess-stop",
+          taskId: "sess-stop",
           startedAtMs: twoMinAgo,
         });
 
@@ -215,12 +215,12 @@ describe("codex feishu stop hook", () => {
           type: string;
         };
 
-        expect(payload.event).toBe("session_complete");
+        expect(payload.event).toBe("task_complete");
         expect(payload.type).toBe("info");
         expect(payload.msg).toContain("Codex 已完成：已经修复飞书通知耗时。");
         expect(payload.msg).toContain("本轮对话运行：2分钟");
         expect(payload.msg).toContain(`项目：${projectDir.split("/").pop()}`);
-        expect(payload.msg).toContain("session_id：sess-s");
+        expect(payload.msg).toContain("task_id：sess-s");
         expect(payload.msg).toContain("turn_id：turn-s");
       });
     });
@@ -230,12 +230,12 @@ describe("codex feishu stop hook", () => {
         const oneMinAgo = Date.now() - 60_000;
         writeJson(getTurnStatePath(projectDir, "turn-cleanup"), {
           turnId: "turn-cleanup",
-          sessionId: "sess-cleanup",
+          taskId: "sess-cleanup",
           startedAtMs: oneMinAgo,
         });
         writeJson(join(getStateDir(projectDir), "current-turn.json"), {
           turnId: "turn-cleanup",
-          sessionId: "sess-cleanup",
+          taskId: "sess-cleanup",
           startedAtMs: oneMinAgo,
         });
 
