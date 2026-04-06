@@ -172,7 +172,7 @@
   - `src/modules/project/**`
   - `web/src/router/**`
 - Constraints and non-goals:
-  - 不引入新的跨模块写路径，不改 `inventory-core`、`workflow`、`rbac` 语义。
+  - 不引入新的跨模块写路径，不改 `inventory-core`、`audit`、`rbac` 语义。
   - 不扩 scope 去改所有历史页面，只处理本 task 明确涉及的物料分类真源和 F1/F2 用户流。
   - 不修改 task doc；如需文档更新，由 parent 处理。
   - 若页面接入必须依赖后端当前未暴露的字段或接口，先报告阻塞，不要擅自扩控制器协议。

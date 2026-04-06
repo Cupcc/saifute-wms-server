@@ -7,7 +7,7 @@ This directory is the canonical home for all Saifute WMS NestJS repository archi
 | Path | Purpose |
 | ---- | ------- |
 | `00-architecture-overview.md` | Module inventory, target tech stack, code structure conventions, shared infrastructure map, frozen semantic constraints, and module dependency graph. Start here before touching any module. |
-| `20-wms-database-tables-and-schema.md` | Frozen database-table and schema baseline for shared core plus transaction families, together with the related domain-flow and state semantics. Read this before implementing or migrating any document-flow, inventory, or workflow surface. |
+| `20-wms-database-tables-and-schema.md` | Frozen database-table and schema baseline for shared core plus transaction families, together with the related domain-flow and state semantics. Read this before implementing or migrating any document-flow, inventory, or audit surface. |
 | `21-database-field-dictionary.md` | Complete field-level dictionary for every database table — column name, data type, nullability, default, and business meaning. Companion to `20-*` for implementation-time reference. |
 | `30-java-to-nestjs-data-migration-reference.md` | Canonical legacy Java -> NestJS migration reference. Explains old table groups, target table groups, domain-by-domain mapping, replay-vs-copy rules, staging/archive handling, and cutover terminology. |
 | `modules/` | Per-module architecture references — one file per NestJS module. Each file describes the module's boundaries, responsibilities, data access rules, and cross-module constraints. |

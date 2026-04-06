@@ -153,7 +153,7 @@
 
 | 目标表                       | 现在的作用               |
 | ------------------------- | ------------------- |
-| `workflow_audit_document` | 保存当前有效审核投影，不替代业务主状态 |
+| `audit_document` | 保存当前有效审核投影，不替代业务主状态 |
 
 ### 4.4 四类事务单据表
 
@@ -297,7 +297,7 @@
 | `saifute_inventory_log`                                    | 旧库存流水         | `inventory_log`                                     | 新库存流水                       | 重放/重建，不直拷         | 当前已重放出 `733` 条流水                      |
 | `saifute_inventory_used`                                   | 旧来源占用         | `inventory_source_usage`                            | 来源占用与释放                     | 转换迁移，不直拷          | 当前仍为 `0`；本地迁移完成口径接受该受控留白，线上切换前需复核 |
 | `saifute_interval`                                         | 旧区间、编号、批次混合语义 | `factory_number_reservation` + `archived_intervals` | 编号区间 live reservation 与归档区间 | 按 `order_type` 分流 | 已部分完成                                 |
-| `saifute_audit_document`                                   | 旧审核投影         | `workflow_audit_document`                           | 当前有效审核投影                    | 投影重建              | 当前已生成 `360` 条审核投影                     |
+| `saifute_audit_document`                                   | 旧审核投影         | `audit_document`                           | 当前有效审核投影                    | 投影重建              | 当前已生成 `360` 条审核投影                     |
 | 旧头表 `source_id/source_type` + `saifute_inventory_used` 等线索 | 旧上下游关系证据      | `document_relation` + `document_line_relation`      | 新上下游关系模型                    | 恢复式构造，不强造关系       | 当前仍为 `0`；本地迁移完成口径接受该受控留白，线上切换前需复核 |
 | `saifute_inventory_warning`                                | 旧库存预警结果表      | `vw_inventory_warning`                              | 只读预警视图                      | 视图替代              | 不做表对表迁移                               |
 | `saifute_change_record`                                    | 旧变更记录         | 无稳定同名业务表                                            | 作为历史辅助信息保留                  | 归档或旧库留存           | 当前无正式目标表                              |
@@ -322,7 +322,7 @@
 | `inventory_balance`                            | 新库以 `materialId + stockScopeId` 为唯一维度；旧库存是单维，且与“车间归属”不是同一语义 | 基于 admitted 业务单据重放        |
 | `inventory_log`                                | 新库存流水需要统一 `businessDocumentType`、`operationType`、幂等键和逆操作语义 | 基于 admitted 业务单据重放        |
 | `inventory_source_usage`                       | 旧 `inventory_used` 不能机械一对一回填，新模型要求消费行与来源流水精确对齐             | 按可证明关系转换；当前仍待补强           |
-| `workflow_audit_document`                      | 新库只保留当前有效审核投影，不复制旧审核全过程                                    | 对需要审核的 admitted 单据重建投影    |
+| `audit_document`                      | 新库只保留当前有效审核投影，不复制旧审核全过程                                    | 对需要审核的 admitted 单据重建投影    |
 | `document_relation` / `document_line_relation` | 新关系模型比旧头表 `source_id/source_type` 更严格                      | 依据可证明证据恢复                 |
 | `factory_number_reservation`                   | 旧 `saifute_interval` 混合了多类区间，不都属于 live reservation         | 按 `order_type` 分流，非目标部分归档 |
 | `material_category`                            | 旧库没有独立分类表，分类挂在字典中                                          | 从字典拆分生成新表                 |
@@ -428,7 +428,7 @@
 - `inventory_balance`
 - `inventory_log`
 - `inventory_source_usage`
-- `workflow_audit_document`
+- `audit_document`
 - `document_relation`
 - `document_line_relation`
 - `factory_number_reservation`

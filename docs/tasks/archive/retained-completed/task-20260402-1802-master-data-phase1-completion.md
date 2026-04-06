@@ -89,7 +89,7 @@
   - `docs/acceptance-tests/**`（仅由 acceptance 写入）
   - `src/shared/**`
   - `src/modules/inventory-core/**`
-  - `src/modules/workflow/**`
+  - `src/modules/audit/**`
   - `web/src/views/**`
 - Contracts preserved:
   - `inventory-core` 仍是唯一库存写入口。

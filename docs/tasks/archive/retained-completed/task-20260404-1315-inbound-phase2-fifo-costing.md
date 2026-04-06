@@ -101,7 +101,7 @@
   - `docs/requirements/**` 冻结，不因实现细节回写需求真源。
   - `docs/architecture/**` 冻结，本 task 不能顺手改架构口径替代实现。
   - `docs/workspace/**` 作为探索 provenance 保留，不在本交付中当作执行面维护。
-  - `src/shared/**`、`src/modules/workflow/**`、`src/modules/master-data/**` 为共享面，除非实现被现有合同阻塞，否则不应扩写。
+  - `src/shared/**`、`src/modules/audit/**`、`src/modules/master-data/**` 为共享面，除非实现被现有合同阻塞，否则不应扩写。
 - Task doc owner:
   - `parent orchestrator`
 - Contracts that must not change silently:

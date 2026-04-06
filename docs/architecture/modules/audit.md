@@ -1,4 +1,4 @@
-# `workflow` 模块设计
+# `audit` 模块设计
 
 ## 模块目标与职责
 
@@ -28,15 +28,17 @@
 
 ## Controller 接口草案
 
-- `GET /workflow/audits`
-- `POST /workflow/audits`
-- `POST /workflow/audits/:id/approve`
-- `POST /workflow/audits/:id/reject`
-- `POST /workflow/audits/:id/reset`
+- `GET /audit/documents/status`
+- `GET /audit/documents/detail`
+- `GET /audit/documents`
+- `POST /audit/documents`
+- `POST /audit/documents/:id/approve`
+- `POST /audit/documents/:id/reject`
+- `POST /audit/documents/:id/reset`
 
 说明：
 
-- 业务模块不直接访问审核底表，统一通过 `WorkflowService` 协作
+- 业务模块不直接访问审核底表，统一通过 `AuditService` 协作
 
 ## Application 层编排
 
@@ -49,7 +51,7 @@
 ## Domain 规则与约束
 
 - 第一阶段只兼容当前三态：待审、通过、拒绝
-- 单据修改后是否重置审核由业务规则决定，但统一经 `workflow` 执行
+- 单据修改后是否重置审核由业务规则决定，但统一经 `audit` 执行
 - 审核记录是单据的横切投影，不替代业务单据主状态
 - 下游依赖校验结果必须明确失败原因
 
@@ -70,7 +72,7 @@
 - 单据创建与审核记录创建优先保持同事务
 - 单据修改触发审核重置时，改单与重置必须同事务提交
 - 作废前的下游依赖校验必须发生在命令执行前
-- `approve`、`reject`、`reset` 默认作为独立审核动作执行；若业务模块需要与单据写入同事务完成，应由业务模块应用层显式包裹事务并编排 `workflow`
+- `approve`、`reject`、`reset` 默认作为独立审核动作执行；若业务模块需要与单据写入同事务完成，应由业务模块应用层显式包裹事务并编排 `audit`
 
 ## 权限点、数据权限、审计要求
 
@@ -80,10 +82,10 @@
 
 ## 优化后表设计冻结
 
-- 对应核心表：`workflow_audit_document`
+- 对应核心表：`audit_document`
 - 审核表保存当前有效审核投影，不替代业务单据主状态
-- 单据表仅保留 `auditStatusSnapshot` 方便列表查询，真实审核状态以 `workflow` 为准
-- `workflow` 不直接建立指向各单据表的多态外键，避免共享核心反向耦合业务模块
+- 单据表仅保留 `auditStatusSnapshot` 方便列表查询，真实审核状态以 `audit` 为准
+- `audit` 不直接建立指向各单据表的多态外键，避免共享核心反向耦合业务模块
 - 详细业务流程与字段建议见 `docs/architecture/20-wms-database-tables-and-schema.md`
 
 ## 待补测试清单

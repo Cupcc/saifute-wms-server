@@ -106,7 +106,7 @@
   - `prisma/schema.prisma` 与迁移文件默认冻结；除非 browser defect 证明现有 `F1`~`F8` 交付无法在不改 schema 的前提下修复，否则不得触碰
   - `src/shared/**`
   - `src/modules/inventory-core/**`
-  - `src/modules/workflow/**`
+  - `src/modules/audit/**`
   - `web/src/router/**`
   - `web/src/layout/**`
   - `web/src/views/base/customer/index.vue`、`web/src/views/base/material/index.vue`、`web/src/views/base/personnel/index.vue` 为 pre-dirty shared surfaces；如需编辑，先读现状并保留既有修改
@@ -163,7 +163,7 @@
   - `prisma/schema.prisma`（默认禁止）
   - `src/shared/**`
   - `src/modules/inventory-core/**`
-  - `src/modules/workflow/**`
+  - `src/modules/audit/**`
   - `web/src/router/**`
 - Constraints and non-goals:
   - 不得把 `F9/F10` 混入实现。

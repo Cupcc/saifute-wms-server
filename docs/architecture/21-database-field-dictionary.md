@@ -13,7 +13,7 @@
 
 ### 2.1 通用审计字段
 
-除特殊说明外，所有业务核心表（`master-data`、`inventory-core`、`workflow`、四大单据家族、R&D）统一包含以下审计字段，后续各表不再重复列出：
+除特殊说明外，所有业务核心表（`master-data`、`inventory-core`、`audit`、四大单据家族、R&D）统一包含以下审计字段，后续各表不再重复列出：
 
 
 | 字段名         | 数据类型        | 必填  | 默认值     | 说明      |
@@ -44,7 +44,7 @@
 | 字段名                     | 数据类型                                                    | 必填  | 默认值         | 说明                                         |
 | ----------------------- | ------------------------------------------------------- | --- | ----------- | ------------------------------------------ |
 | `lifecycleStatus`       | ENUM(`EFFECTIVE`, `VOIDED`)                             | 是   | `EFFECTIVE` | 单据生命周期状态                                   |
-| `auditStatusSnapshot`   | ENUM(`NOT_REQUIRED`, `PENDING`, `APPROVED`, `REJECTED`) | 是   | 按单据类型       | 审核状态快照（实际状态以 `workflow_audit_document` 为准） |
+| `auditStatusSnapshot`   | ENUM(`NOT_REQUIRED`, `PENDING`, `APPROVED`, `REJECTED`) | 是   | 按单据类型       | 审核状态快照（实际状态以 `audit_document` 为准） |
 | `inventoryEffectStatus` | ENUM(`POSTED`, `REVERSED`)                              | 是   | `POSTED`    | 库存副作用状态                                    |
 
 
@@ -215,6 +215,7 @@
 | `materialId`             | INT               | 是   | —       | —   | 物料 ID → `material.id`              |
 | `stockScopeId`           | INT               | 否   | —       | —   | 库存范围 ID → `stock_scope.id`         |
 | `workshopId`             | INT               | 是   | —       | —   | 车间 ID → `workshop.id`              |
+| `allocationTargetId`     | INT               | 否   | —       | —   | 统一归集对象 ID → `allocation_target.id` |
 | `direction`              | ENUM(`IN`, `OUT`) | 是   | —       | —   | 库存方向：入库 / 出库                       |
 | `operationType`          | ENUM(见下文)         | 是   | —       | —   | 操作类型，标识具体业务动作                      |
 | `businessModule`         | VARCHAR(64)       | 是   | —       | —   | 来源业务模块标识（如 `inbound`、`customer`）   |
@@ -304,9 +305,9 @@
 
 ---
 
-## 5. `workflow` 审核投影表
+## 5. `audit` 审核投影表
 
-### 5.1 `workflow_audit_document` — 审核投影
+### 5.1 `audit_document` — 审核投影
 
 
 | 字段名              | 数据类型                                                               | 必填  | 默认值       | 唯一  | 说明                              |
@@ -513,12 +514,14 @@
 
 承载领料单（`PICK`）、退料单（`RETURN`）和报废单（`SCRAP`）。
 
+> `SCRAP` 在车间物料域中按独立真实事务处理，不默认视为 `PICK` 的附属结果；车间净耗用与成本汇总应在读模型层按 `领料 - 退料 + 报废` 统一计算，不回写本表字段。
+
 
 | 字段名                    | 数据类型                            | 必填  | 默认值 | 唯一  | 说明                                         |
 | ---------------------- | ------------------------------- | --- | --- | --- | ------------------------------------------ |
 | `id`                   | INT                             | 是   | 自增  | PK  | 主键                                         |
 | `documentNo`           | VARCHAR(64)                     | 是   | —   | 是   | 单据编号，全局唯一                                  |
-| `orderType`            | ENUM(`PICK`, `RETURN`, `SCRAP`) | 是   | —   | —   | 单据类型                                       |
+| `orderType`            | ENUM(`PICK`, `RETURN`, `SCRAP`) | 是   | —   | —   | 单据类型；`SCRAP` 为独立报废事务，不默认附属于 `PICK` |
 | `bizDate`              | DATE                            | 是   | —   | —   | 业务日期                                       |
 | `handlerPersonnelId`   | INT                             | 否   | —   | —   | 经办人 ID → `personnel.id`                    |
 | `stockScopeId`         | INT                             | 否   | —   | —   | 库存范围 ID → `stock_scope.id`（第一阶段固定为主仓 MAIN） |
@@ -549,13 +552,13 @@
 | `amount`               | DECIMAL(18,2) | 是   | `0` | —   | 金额                                             |
 | `costUnitPrice`        | DECIMAL(18,2) | 否   | —   | —   | 成本单价（由来源分配计算填入）                                |
 | `costAmount`           | DECIMAL(18,2) | 否   | —   | —   | 成本金额                                           |
-| `sourceDocumentType`   | VARCHAR(64)   | 否   | —   | —   | 来源单据类型（退料时指向领料单类型）                             |
-| `sourceDocumentId`     | INT           | 否   | —   | —   | 来源单据主表 ID                                      |
-| `sourceDocumentLineId` | INT           | 否   | —   | —   | 来源单据明细行 ID                                     |
+| `sourceDocumentType`   | VARCHAR(64)   | 否   | —   | —   | 来源单据类型；退料时通常指向领料单，报废也可选填上游单据用于追溯 |
+| `sourceDocumentId`     | INT           | 否   | —   | —   | 来源单据主表 ID；仅用于来源追溯、责任分析与成本回溯                    |
+| `sourceDocumentLineId` | INT           | 否   | —   | —   | 来源单据明细行 ID；不改变报废为独立事务的统计口径                 |
 | `remark`               | VARCHAR(500)  | 否   | —   | —   | 备注                                             |
 
 
-> 物料快照字段、审计字段参见第 2 节。
+> 物料快照字段、审计字段参见第 2 节。退料在线运行时应优先回指原领料关系；报废允许不绑定领料而独立发生，若填写 `sourceDocument*` 仅表示追溯关系，不表示“报废属于领料”。
 
 唯一约束：`orderId + lineNo`
 
@@ -579,6 +582,7 @@
 | `managerPersonnelId`   | INT           | 否   | —   | —   | 项目负责人 ID → `personnel.id`  |
 | `stockScopeId`         | INT           | 否   | —   | —   | 库存范围 ID → `stock_scope.id` |
 | `workshopId`           | INT           | 是   | —   | —   | 车间 ID → `workshop.id`      |
+| `allocationTargetId`   | INT           | 否   | —   | 是   | 统一归集对象 ID → `allocation_target.id` |
 | `revisionNo`           | INT           | 是   | `1` | —   | 修订版本号                      |
 | `customerCodeSnapshot` | VARCHAR(64)   | 否   | —   | —   | 客户编码快照                     |
 | `customerNameSnapshot` | VARCHAR(128)  | 否   | —   | —   | 客户名称快照                     |
@@ -591,7 +595,9 @@
 | `remark`               | VARCHAR(500)  | 否   | —   | —   | 备注                         |
 
 
-> 三轴状态、作废字段、审计字段参见第 2 节。`auditStatusSnapshot` 默认值为 `NOT_REQUIRED`（项目默认不接审核）。
+> 系统生命周期字段、作废字段、审计字段参见第 2 节。这里的 `lifecycleStatus` / `auditStatusSnapshot` / `inventoryEffectStatus` 用于系统控制与追溯，不代表项目业务阶段。`auditStatusSnapshot` 默认值为 `NOT_REQUIRED`（项目默认不接审核）。
+
+> 当前最小实现中，项目主档会自动生成一条 `allocation_target(targetType = RD_PROJECT)` 并通过 `allocationTargetId` 一对一绑定；不引入自由 `label` 作为核算真源。
 
 索引：`bizDate`、`customerId`、`supplierId`、`stockScopeId`、`workshopId`
 

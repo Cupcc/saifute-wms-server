@@ -4,6 +4,8 @@
 
 作为所有事务型单据唯一可依赖的库存中心域，负责主仓 / RD 小仓库存现值、库存日志、来源追踪、预警和编号区间。任何业务模块不得直接改库存底表。
 
+当前已确认的 `F5` 第一版范围：预警只保留只读视图 / 报表提示；出厂编号区间能力只服务 `customer` 出库链路，不扩成多业务家族统一平台。
+
 ## 原 Java 来源与映射范围
 
 - `business/src/main/java/com/saifute/stock`
@@ -81,7 +83,7 @@
 
 - 依赖 `master-data` 获取物料等基础快照
 - 被 `inbound`、`customer`、`workshop-material`、`project` 依赖
-- 与 `workflow` 只通过业务模块协作，不直接耦合审核表
+- 与 `audit` 只通过业务模块协作，不直接耦合审核表
 
 ## 事务边界与一致性要求
 
@@ -89,6 +91,7 @@
 - 业务单据与库存副作用原则上同事务完成
 - 不允许只写主表不写日志，或只回滚主表不释放来源占用
 - `increaseStock()`、`decreaseStock()`、`reverseStock()`、`allocateInventorySource()`、`releaseInventorySource()` 默认可独立开启事务执行；若调用方已持有事务，应复用同一个事务上下文完成组合编排
+- `factory_number_reservation` 第一版仅支持 `customer` 出库链路的占用、释放与查询；其他业务家族如需接入，后续单独扩 scope
 
 ## 权限点、数据权限、审计要求
 
@@ -103,6 +106,7 @@
 - `workshop` 只承担主仓领退料归属与成本核算，不参与库存余额唯一键
 - 同一物料不同入库批次可存在不同成本层；出库、领料、退料的成本必须通过来源分配传递
 - `inventory_warning` 收敛为只读视图 `vw_inventory_warning`，不单独落交易表
+- `inventory_warning` 第一版只承担读模型 / 报表提示职责，不派生独立预警处理流
 - 单据模块必须通过 `businessDocumentType`、`businessDocumentId`、`businessDocumentLineId` 向库存中心传递来源语义
 - `inventory_log.reversalOfLogId` 应保持唯一，确保同一条原始流水只能被逆操作一次
 - 详细业务流程与字段建议见 `docs/architecture/20-wms-database-tables-and-schema.md`
@@ -128,4 +132,6 @@
 
 - 标准 WMS 仓库/库位/批次模型升级
 - 冻结库存
-- 移库和盘点
+- 移库
+- 主仓盘点 / 通用盘点单独切片；当前不并入 `inventory-core`
+- `RD` 小仓盘点 / 调整继续由 `rd-subwarehouse` 承接
