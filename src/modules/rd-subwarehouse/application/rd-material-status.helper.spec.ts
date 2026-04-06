@@ -62,7 +62,8 @@ describe("rd-material-status.helper", () => {
         }),
       }),
     );
-    const updateCall = db.rdMaterialStatusLedger.update.mock.calls[0]?.[0];
+    const updateCall = (db.rdMaterialStatusLedger.update as jest.Mock).mock
+      .calls[0]?.[0];
     expect(updateCall.data.pendingQty.toString()).toBe("6");
     expect(updateCall.data.inProcurementQty.toString()).toBe("4");
     expect(db.rdMaterialStatusHistory.create).toHaveBeenCalledWith(
@@ -133,7 +134,8 @@ describe("rd-material-status.helper", () => {
       db,
     );
 
-    const updateCall = db.rdMaterialStatusLedger.update.mock.calls[0]?.[0];
+    const updateCall = (db.rdMaterialStatusLedger.update as jest.Mock).mock
+      .calls[0]?.[0];
     expect(updateCall.data.pendingQty.toString()).toBe("10");
     expect(updateCall.data.inProcurementQty.toString()).toBe("0");
     expect(db.rdMaterialStatusHistory.update).toHaveBeenCalledWith(
