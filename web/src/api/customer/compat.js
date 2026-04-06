@@ -129,7 +129,7 @@ function mapCustomerOrder(order, audit = null) {
 
 async function fetchAuditDocument(documentId) {
   const response = await request({
-    url: "/api/workflow/audits/document",
+    url: "/api/audit/documents/detail",
     method: "get",
     params: {
       documentType: CUSTOMER_DOCUMENT_TYPE,

@@ -319,7 +319,7 @@ export class PrismaE2eStub {
   inventoryLog = createModelStub();
   inventorySourceUsage = createModelStub();
   factoryNumberReservation = createModelStub();
-  workflowAuditDocument = createModelStub();
+  auditDocument = createModelStub();
   stockInOrder = createModelStub();
   stockInOrderLine = createModelStub();
   customerStockOrder = createModelStub();

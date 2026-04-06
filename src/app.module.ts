@@ -4,6 +4,7 @@ import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ScheduleModule } from "@nestjs/schedule";
 import { AppController } from "./app.controller";
 import { AiAssistantModule } from "./modules/ai-assistant/ai-assistant.module";
+import { AuditModule } from "./modules/audit/audit.module";
 import { AuditLogModule } from "./modules/audit-log/audit-log.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { CustomerModule } from "./modules/customer/customer.module";
@@ -17,7 +18,6 @@ import { RdSubwarehouseModule } from "./modules/rd-subwarehouse/rd-subwarehouse.
 import { ReportingModule } from "./modules/reporting/reporting.module";
 import { SchedulerModule } from "./modules/scheduler/scheduler.module";
 import { SessionModule } from "./modules/session/session.module";
-import { WorkflowModule } from "./modules/workflow/workflow.module";
 import { WorkshopMaterialModule } from "./modules/workshop-material/workshop-material.module";
 import { ResponseEnvelopeInterceptor } from "./shared/common/interceptors/response-envelope.interceptor";
 import { SharedConfigModule } from "./shared/config/shared-config.module";
@@ -42,7 +42,7 @@ import { RedisModule } from "./shared/redis/redis.module";
     FileStorageModule,
     MasterDataModule,
     InventoryCoreModule,
-    WorkflowModule,
+    AuditModule,
     InboundModule,
     CustomerModule,
     WorkshopMaterialModule,

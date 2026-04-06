@@ -422,10 +422,11 @@ export const ModelName = {
   Workshop: "Workshop",
   StockScope: "StockScope",
   InventoryBalance: "InventoryBalance",
+  AllocationTarget: "AllocationTarget",
   InventoryLog: "InventoryLog",
   InventorySourceUsage: "InventorySourceUsage",
   FactoryNumberReservation: "FactoryNumberReservation",
-  WorkflowAuditDocument: "WorkflowAuditDocument",
+  AuditDocument: "AuditDocument",
   StockInOrder: "StockInOrder",
   StockInOrderLine: "StockInOrderLine",
   CustomerStockOrder: "CustomerStockOrder",
@@ -493,10 +494,11 @@ export type TypeMap<
       | "workshop"
       | "stockScope"
       | "inventoryBalance"
+      | "allocationTarget"
       | "inventoryLog"
       | "inventorySourceUsage"
       | "factoryNumberReservation"
-      | "workflowAuditDocument"
+      | "auditDocument"
       | "stockInOrder"
       | "stockInOrderLine"
       | "customerStockOrder"
@@ -1081,6 +1083,74 @@ export type TypeMap<
         };
       };
     };
+    AllocationTarget: {
+      payload: Prisma.$AllocationTargetPayload<ExtArgs>;
+      fields: Prisma.AllocationTargetFieldRefs;
+      operations: {
+        findUnique: {
+          args: Prisma.AllocationTargetFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AllocationTargetPayload> | null;
+        };
+        findUniqueOrThrow: {
+          args: Prisma.AllocationTargetFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AllocationTargetPayload>;
+        };
+        findFirst: {
+          args: Prisma.AllocationTargetFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AllocationTargetPayload> | null;
+        };
+        findFirstOrThrow: {
+          args: Prisma.AllocationTargetFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AllocationTargetPayload>;
+        };
+        findMany: {
+          args: Prisma.AllocationTargetFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AllocationTargetPayload>[];
+        };
+        create: {
+          args: Prisma.AllocationTargetCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AllocationTargetPayload>;
+        };
+        createMany: {
+          args: Prisma.AllocationTargetCreateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        delete: {
+          args: Prisma.AllocationTargetDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AllocationTargetPayload>;
+        };
+        update: {
+          args: Prisma.AllocationTargetUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AllocationTargetPayload>;
+        };
+        deleteMany: {
+          args: Prisma.AllocationTargetDeleteManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        updateMany: {
+          args: Prisma.AllocationTargetUpdateManyArgs<ExtArgs>;
+          result: BatchPayload;
+        };
+        upsert: {
+          args: Prisma.AllocationTargetUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AllocationTargetPayload>;
+        };
+        aggregate: {
+          args: Prisma.AllocationTargetAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAllocationTarget>;
+        };
+        groupBy: {
+          args: Prisma.AllocationTargetGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AllocationTargetGroupByOutputType>[];
+        };
+        count: {
+          args: Prisma.AllocationTargetCountArgs<ExtArgs>;
+          result:
+            | runtime.Types.Utils.Optional<Prisma.AllocationTargetCountAggregateOutputType>
+            | number;
+        };
+      };
+    };
     InventoryLog: {
       payload: Prisma.$InventoryLogPayload<ExtArgs>;
       fields: Prisma.InventoryLogFieldRefs;
@@ -1285,70 +1355,70 @@ export type TypeMap<
         };
       };
     };
-    WorkflowAuditDocument: {
-      payload: Prisma.$WorkflowAuditDocumentPayload<ExtArgs>;
-      fields: Prisma.WorkflowAuditDocumentFieldRefs;
+    AuditDocument: {
+      payload: Prisma.$AuditDocumentPayload<ExtArgs>;
+      fields: Prisma.AuditDocumentFieldRefs;
       operations: {
         findUnique: {
-          args: Prisma.WorkflowAuditDocumentFindUniqueArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowAuditDocumentPayload> | null;
+          args: Prisma.AuditDocumentFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload> | null;
         };
         findUniqueOrThrow: {
-          args: Prisma.WorkflowAuditDocumentFindUniqueOrThrowArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowAuditDocumentPayload>;
+          args: Prisma.AuditDocumentFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload>;
         };
         findFirst: {
-          args: Prisma.WorkflowAuditDocumentFindFirstArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowAuditDocumentPayload> | null;
+          args: Prisma.AuditDocumentFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload> | null;
         };
         findFirstOrThrow: {
-          args: Prisma.WorkflowAuditDocumentFindFirstOrThrowArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowAuditDocumentPayload>;
+          args: Prisma.AuditDocumentFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload>;
         };
         findMany: {
-          args: Prisma.WorkflowAuditDocumentFindManyArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowAuditDocumentPayload>[];
+          args: Prisma.AuditDocumentFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload>[];
         };
         create: {
-          args: Prisma.WorkflowAuditDocumentCreateArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowAuditDocumentPayload>;
+          args: Prisma.AuditDocumentCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload>;
         };
         createMany: {
-          args: Prisma.WorkflowAuditDocumentCreateManyArgs<ExtArgs>;
+          args: Prisma.AuditDocumentCreateManyArgs<ExtArgs>;
           result: BatchPayload;
         };
         delete: {
-          args: Prisma.WorkflowAuditDocumentDeleteArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowAuditDocumentPayload>;
+          args: Prisma.AuditDocumentDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload>;
         };
         update: {
-          args: Prisma.WorkflowAuditDocumentUpdateArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowAuditDocumentPayload>;
+          args: Prisma.AuditDocumentUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload>;
         };
         deleteMany: {
-          args: Prisma.WorkflowAuditDocumentDeleteManyArgs<ExtArgs>;
+          args: Prisma.AuditDocumentDeleteManyArgs<ExtArgs>;
           result: BatchPayload;
         };
         updateMany: {
-          args: Prisma.WorkflowAuditDocumentUpdateManyArgs<ExtArgs>;
+          args: Prisma.AuditDocumentUpdateManyArgs<ExtArgs>;
           result: BatchPayload;
         };
         upsert: {
-          args: Prisma.WorkflowAuditDocumentUpsertArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WorkflowAuditDocumentPayload>;
+          args: Prisma.AuditDocumentUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload>;
         };
         aggregate: {
-          args: Prisma.WorkflowAuditDocumentAggregateArgs<ExtArgs>;
-          result: runtime.Types.Utils.Optional<Prisma.AggregateWorkflowAuditDocument>;
+          args: Prisma.AuditDocumentAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAuditDocument>;
         };
         groupBy: {
-          args: Prisma.WorkflowAuditDocumentGroupByArgs<ExtArgs>;
-          result: runtime.Types.Utils.Optional<Prisma.WorkflowAuditDocumentGroupByOutputType>[];
+          args: Prisma.AuditDocumentGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AuditDocumentGroupByOutputType>[];
         };
         count: {
-          args: Prisma.WorkflowAuditDocumentCountArgs<ExtArgs>;
+          args: Prisma.AuditDocumentCountArgs<ExtArgs>;
           result:
-            | runtime.Types.Utils.Optional<Prisma.WorkflowAuditDocumentCountAggregateOutputType>
+            | runtime.Types.Utils.Optional<Prisma.AuditDocumentCountAggregateOutputType>
             | number;
         };
       };
@@ -4042,12 +4112,31 @@ export const InventoryBalanceScalarFieldEnum = {
 export type InventoryBalanceScalarFieldEnum =
   (typeof InventoryBalanceScalarFieldEnum)[keyof typeof InventoryBalanceScalarFieldEnum];
 
+export const AllocationTargetScalarFieldEnum = {
+  id: "id",
+  targetType: "targetType",
+  targetCode: "targetCode",
+  targetName: "targetName",
+  sourceDocumentType: "sourceDocumentType",
+  sourceDocumentId: "sourceDocumentId",
+  isSystemDefault: "isSystemDefault",
+  remark: "remark",
+  createdBy: "createdBy",
+  createdAt: "createdAt",
+  updatedBy: "updatedBy",
+  updatedAt: "updatedAt",
+} as const;
+
+export type AllocationTargetScalarFieldEnum =
+  (typeof AllocationTargetScalarFieldEnum)[keyof typeof AllocationTargetScalarFieldEnum];
+
 export const InventoryLogScalarFieldEnum = {
   id: "id",
   balanceId: "balanceId",
   materialId: "materialId",
   stockScopeId: "stockScopeId",
   workshopId: "workshopId",
+  allocationTargetId: "allocationTargetId",
   direction: "direction",
   operationType: "operationType",
   businessModule: "businessModule",
@@ -4111,7 +4200,7 @@ export const FactoryNumberReservationScalarFieldEnum = {
 export type FactoryNumberReservationScalarFieldEnum =
   (typeof FactoryNumberReservationScalarFieldEnum)[keyof typeof FactoryNumberReservationScalarFieldEnum];
 
-export const WorkflowAuditDocumentScalarFieldEnum = {
+export const AuditDocumentScalarFieldEnum = {
   id: "id",
   documentFamily: "documentFamily",
   documentType: "documentType",
@@ -4131,8 +4220,8 @@ export const WorkflowAuditDocumentScalarFieldEnum = {
   updatedAt: "updatedAt",
 } as const;
 
-export type WorkflowAuditDocumentScalarFieldEnum =
-  (typeof WorkflowAuditDocumentScalarFieldEnum)[keyof typeof WorkflowAuditDocumentScalarFieldEnum];
+export type AuditDocumentScalarFieldEnum =
+  (typeof AuditDocumentScalarFieldEnum)[keyof typeof AuditDocumentScalarFieldEnum];
 
 export const StockInOrderScalarFieldEnum = {
   id: "id",
@@ -4370,6 +4459,7 @@ export const ProjectScalarFieldEnum = {
   managerPersonnelId: "managerPersonnelId",
   stockScopeId: "stockScopeId",
   workshopId: "workshopId",
+  allocationTargetId: "allocationTargetId",
   lifecycleStatus: "lifecycleStatus",
   auditStatusSnapshot: "auditStatusSnapshot",
   inventoryEffectStatus: "inventoryEffectStatus",
@@ -5037,6 +5127,18 @@ export const InventoryBalanceOrderByRelevanceFieldEnum = {
 export type InventoryBalanceOrderByRelevanceFieldEnum =
   (typeof InventoryBalanceOrderByRelevanceFieldEnum)[keyof typeof InventoryBalanceOrderByRelevanceFieldEnum];
 
+export const AllocationTargetOrderByRelevanceFieldEnum = {
+  targetCode: "targetCode",
+  targetName: "targetName",
+  sourceDocumentType: "sourceDocumentType",
+  remark: "remark",
+  createdBy: "createdBy",
+  updatedBy: "updatedBy",
+} as const;
+
+export type AllocationTargetOrderByRelevanceFieldEnum =
+  (typeof AllocationTargetOrderByRelevanceFieldEnum)[keyof typeof AllocationTargetOrderByRelevanceFieldEnum];
+
 export const InventoryLogOrderByRelevanceFieldEnum = {
   businessModule: "businessModule",
   businessDocumentType: "businessDocumentType",
@@ -5069,7 +5171,7 @@ export const FactoryNumberReservationOrderByRelevanceFieldEnum = {
 export type FactoryNumberReservationOrderByRelevanceFieldEnum =
   (typeof FactoryNumberReservationOrderByRelevanceFieldEnum)[keyof typeof FactoryNumberReservationOrderByRelevanceFieldEnum];
 
-export const WorkflowAuditDocumentOrderByRelevanceFieldEnum = {
+export const AuditDocumentOrderByRelevanceFieldEnum = {
   documentType: "documentType",
   documentNumber: "documentNumber",
   submittedBy: "submittedBy",
@@ -5079,8 +5181,8 @@ export const WorkflowAuditDocumentOrderByRelevanceFieldEnum = {
   updatedBy: "updatedBy",
 } as const;
 
-export type WorkflowAuditDocumentOrderByRelevanceFieldEnum =
-  (typeof WorkflowAuditDocumentOrderByRelevanceFieldEnum)[keyof typeof WorkflowAuditDocumentOrderByRelevanceFieldEnum];
+export type AuditDocumentOrderByRelevanceFieldEnum =
+  (typeof AuditDocumentOrderByRelevanceFieldEnum)[keyof typeof AuditDocumentOrderByRelevanceFieldEnum];
 
 export const StockInOrderOrderByRelevanceFieldEnum = {
   documentNo: "documentNo",
@@ -5586,6 +5688,20 @@ export type EnumDataCreationModeFieldRefInput<$PrismaModel> = FieldRefInputType<
 >;
 
 /**
+ * Reference to a field of type 'AllocationTargetType'
+ */
+export type EnumAllocationTargetTypeFieldRefInput<$PrismaModel> =
+  FieldRefInputType<$PrismaModel, "AllocationTargetType">;
+
+/**
+ * Reference to a field of type 'Boolean'
+ */
+export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<
+  $PrismaModel,
+  "Boolean"
+>;
+
+/**
  * Reference to a field of type 'StockDirection'
  */
 export type EnumStockDirectionFieldRefInput<$PrismaModel> = FieldRefInputType<
@@ -5669,14 +5785,6 @@ export type EnumRdMaterialStatusEventTypeFieldRefInput<$PrismaModel> =
 export type EnumRdMaterialStatusFieldRefInput<$PrismaModel> = FieldRefInputType<
   $PrismaModel,
   "RdMaterialStatus"
->;
-
-/**
- * Reference to a field of type 'Boolean'
- */
-export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<
-  $PrismaModel,
-  "Boolean"
 >;
 
 /**
@@ -5868,10 +5976,11 @@ export type GlobalOmitConfig = {
   workshop?: Prisma.WorkshopOmit;
   stockScope?: Prisma.StockScopeOmit;
   inventoryBalance?: Prisma.InventoryBalanceOmit;
+  allocationTarget?: Prisma.AllocationTargetOmit;
   inventoryLog?: Prisma.InventoryLogOmit;
   inventorySourceUsage?: Prisma.InventorySourceUsageOmit;
   factoryNumberReservation?: Prisma.FactoryNumberReservationOmit;
-  workflowAuditDocument?: Prisma.WorkflowAuditDocumentOmit;
+  auditDocument?: Prisma.AuditDocumentOmit;
   stockInOrder?: Prisma.StockInOrderOmit;
   stockInOrderLine?: Prisma.StockInOrderLineOmit;
   customerStockOrder?: Prisma.CustomerStockOrderOmit;

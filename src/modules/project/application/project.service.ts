@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import {
+  AllocationTargetType,
   AuditStatusSnapshot,
   DocumentLifecycleStatus,
   InventoryEffectStatus,
@@ -150,6 +151,11 @@ export class ProjectService {
         })),
         tx,
       );
+      const allocationTargetId = await this.ensureProjectAllocationTarget(
+        project,
+        createdBy,
+        tx,
+      );
 
       const projectSourceTypes =
         inventoryStockScope === "RD_SUB"
@@ -168,6 +174,7 @@ export class ProjectService {
             businessDocumentId: project.id,
             businessDocumentNumber: project.projectCode,
             businessDocumentLineId: line.id,
+            allocationTargetId,
             operatorId: createdBy,
             idempotencyKey: `Project:${project.id}:line:${line.id}`,
             consumerLineId: line.id,
@@ -185,7 +192,7 @@ export class ProjectService {
         );
       }
 
-      return project;
+      return this.repository.findProjectById(project.id, tx);
     });
   }
 
@@ -259,6 +266,11 @@ export class ProjectService {
       );
       const currentLinesById = new Map(
         currentProject.materialLines.map((line) => [line.id, line]),
+      );
+      const allocationTargetId = await this.ensureProjectAllocationTarget(
+        currentProject,
+        updatedBy,
+        tx,
       );
       const seenLineIds = new Set<number>();
       const workshopId = dto.workshopId ?? currentProject.workshopId;
@@ -388,6 +400,7 @@ export class ProjectService {
                   businessDocumentId: id,
                   businessDocumentNumber: existing.projectCode,
                   businessDocumentLineId: updatedLine.id,
+                  allocationTargetId,
                   operatorId: updatedBy,
                   idempotencyKey: `Project:${id}:rev:${nextRevision}:line:${updatedLine.id}`,
                   consumerLineId: updatedLine.id,
@@ -443,6 +456,7 @@ export class ProjectService {
             businessDocumentId: id,
             businessDocumentNumber: existing.projectCode,
             businessDocumentLineId: createdLine.id,
+            allocationTargetId,
             operatorId: updatedBy,
             idempotencyKey: `Project:${id}:rev:${nextRevision}:line:${createdLine.id}`,
             consumerLineId: createdLine.id,
@@ -668,6 +682,75 @@ export class ProjectService {
       amount,
       remark: line.remark,
     };
+  }
+
+  private async ensureProjectAllocationTarget(
+    project: {
+      id: number;
+      projectCode: string;
+      projectName: string;
+      allocationTargetId?: number | null;
+    },
+    updatedBy: string | undefined,
+    tx: Prisma.TransactionClient,
+  ) {
+    if (project.allocationTargetId) {
+      return project.allocationTargetId;
+    }
+
+    const existing = await this.repository.findAllocationTargetBySource(
+      {
+        targetType: AllocationTargetType.RD_PROJECT,
+        sourceDocumentType: DOCUMENT_TYPE,
+        sourceDocumentId: project.id,
+      },
+      tx,
+    );
+
+    if (existing) {
+      const target =
+        existing.targetCode !== project.projectCode ||
+        existing.targetName !== project.projectName
+          ? await this.repository.updateAllocationTarget(
+              existing.id,
+              {
+                targetCode: project.projectCode,
+                targetName: project.projectName,
+                updatedBy,
+              },
+              tx,
+            )
+          : existing;
+
+      await this.repository.attachAllocationTargetToProject(
+        project.id,
+        target.id,
+        updatedBy,
+        tx,
+      );
+      return target.id;
+    }
+
+    const created = await this.repository.createAllocationTarget(
+      {
+        targetType: AllocationTargetType.RD_PROJECT,
+        targetCode: project.projectCode,
+        targetName: project.projectName,
+        sourceDocumentType: DOCUMENT_TYPE,
+        sourceDocumentId: project.id,
+        createdBy: updatedBy,
+        updatedBy,
+      },
+      tx,
+    );
+
+    await this.repository.attachAllocationTargetToProject(
+      project.id,
+      created.id,
+      updatedBy,
+      tx,
+    );
+    return created.id;
   }
 
   private resolveInventoryStockScope(workshop: {

@@ -57,7 +57,7 @@ interface ExcludedDocumentRow {
 export interface ForbiddenTableCounts {
   document_relation: number;
   document_line_relation: number;
-  workflow_audit_document: number;
+  audit_document: number;
   inventory_balance: number;
   inventory_log: number;
   inventory_source_usage: number;
@@ -324,7 +324,7 @@ async function getForbiddenTableCounts(connection: {
     Array<{
       document_relation: number;
       document_line_relation: number;
-      workflow_audit_document: number;
+      audit_document: number;
       inventory_balance: number;
       inventory_log: number;
       inventory_source_usage: number;
@@ -335,7 +335,7 @@ async function getForbiddenTableCounts(connection: {
       SELECT
         (SELECT COUNT(*) FROM document_relation)              AS document_relation,
         (SELECT COUNT(*) FROM document_line_relation)         AS document_line_relation,
-        (SELECT COUNT(*) FROM workflow_audit_document)        AS workflow_audit_document,
+        (SELECT COUNT(*) FROM audit_document)        AS audit_document,
         (SELECT COUNT(*) FROM inventory_balance)              AS inventory_balance,
         (SELECT COUNT(*) FROM inventory_log)                  AS inventory_log,
         (SELECT COUNT(*) FROM inventory_source_usage)         AS inventory_source_usage,
@@ -346,7 +346,7 @@ async function getForbiddenTableCounts(connection: {
   const row = rows[0] ?? {
     document_relation: 0,
     document_line_relation: 0,
-    workflow_audit_document: 0,
+    audit_document: 0,
     inventory_balance: 0,
     inventory_log: 0,
     inventory_source_usage: 0,
@@ -356,7 +356,7 @@ async function getForbiddenTableCounts(connection: {
   return {
     document_relation: Number(row.document_relation),
     document_line_relation: Number(row.document_line_relation),
-    workflow_audit_document: Number(row.workflow_audit_document),
+    audit_document: Number(row.audit_document),
     inventory_balance: Number(row.inventory_balance),
     inventory_log: Number(row.inventory_log),
     inventory_source_usage: Number(row.inventory_source_usage),

@@ -1,5 +1,6 @@
 import type { MigrationConnectionLike, QueryResultWithInsertId } from "../db";
 import type {
+  AuditDocumentInsert,
   DocumentLineRelationInsert,
   DocumentRelationInsert,
   InventoryLogInsert,
@@ -8,7 +9,6 @@ import type {
   PostAdmissionMigrationPlan,
   SourceBackfillRecord,
   StaleClearRecord,
-  WorkflowAuditDocumentInsert,
 } from "./types";
 
 async function applySourceBackfill(
@@ -120,10 +120,10 @@ async function clearInventoryTables(
   await connection.query(`DELETE FROM inventory_balance`);
 }
 
-async function clearWorkflowAuditDocuments(
+async function clearAuditDocuments(
   connection: MigrationConnectionLike,
 ): Promise<void> {
-  await connection.query(`DELETE FROM workflow_audit_document`);
+  await connection.query(`DELETE FROM audit_document`);
 }
 
 async function clearDocumentRelations(
@@ -281,13 +281,13 @@ async function upsertInventorySourceUsage(
   );
 }
 
-async function upsertWorkflowAuditDocument(
+async function upsertAuditDocument(
   connection: MigrationConnectionLike,
-  doc: WorkflowAuditDocumentInsert,
+  doc: AuditDocumentInsert,
 ): Promise<void> {
   await connection.query(
     `
-      INSERT INTO workflow_audit_document (
+      INSERT INTO audit_document (
         documentFamily,
         documentType,
         documentId,
@@ -391,14 +391,14 @@ export async function executePostAdmissionPlan(
   let inventoryBalancesInserted = 0;
   let inventoryLogsInserted = 0;
   let sourceUsageInserted = 0;
-  let workflowDocumentsInserted = 0;
+  let auditDocumentsInserted = 0;
 
   await connection.beginTransaction();
 
   try {
     await clearDocumentRelations(connection);
     await clearInventoryTables(connection);
-    await clearWorkflowAuditDocuments(connection);
+    await clearAuditDocuments(connection);
 
     staleSourceFieldsCleared = await clearStaleReturnLineSourceFields(
       connection,
@@ -597,9 +597,9 @@ export async function executePostAdmissionPlan(
       sourceUsageInserted += 1;
     }
 
-    for (const doc of plan.workflow.workflowDocumentInserts) {
-      await upsertWorkflowAuditDocument(connection, doc);
-      workflowDocumentsInserted += 1;
+    for (const doc of plan.audit.auditDocumentInserts) {
+      await upsertAuditDocument(connection, doc);
+      auditDocumentsInserted += 1;
     }
 
     await connection.commit();
@@ -616,6 +616,6 @@ export async function executePostAdmissionPlan(
     inventoryBalancesInserted,
     inventoryLogsInserted,
     sourceUsageInserted,
-    workflowDocumentsInserted,
+    auditDocumentsInserted,
   };
 }

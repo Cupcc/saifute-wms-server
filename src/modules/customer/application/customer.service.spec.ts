@@ -14,9 +14,9 @@ import {
   Prisma,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
+import { AuditService } from "../../audit/application/audit.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
-import { WorkflowService } from "../../workflow/application/workflow.service";
 import { CustomerRepository } from "../infrastructure/customer.repository";
 import { CustomerService } from "./customer.service";
 
@@ -131,7 +131,7 @@ describe("CustomerService", () => {
   let repository: jest.Mocked<CustomerRepository>;
   let masterDataService: jest.Mocked<MasterDataService>;
   let inventoryService: jest.Mocked<InventoryService>;
-  let workflowService: jest.Mocked<WorkflowService>;
+  let auditService: jest.Mocked<AuditService>;
   let prisma: {
     runInTransaction: jest.Mock;
     stockInPriceCorrectionOrderLine: { findMany: jest.Mock };
@@ -232,7 +232,7 @@ describe("CustomerService", () => {
           },
         },
         {
-          provide: WorkflowService,
+          provide: AuditService,
           useValue: {
             createOrRefreshAuditDocument: jest.fn().mockResolvedValue({}),
             markAuditNotRequired: jest.fn().mockResolvedValue({ count: 1 }),
@@ -245,7 +245,7 @@ describe("CustomerService", () => {
     repository = moduleRef.get(CustomerRepository);
     masterDataService = moduleRef.get(MasterDataService);
     inventoryService = moduleRef.get(InventoryService);
-    workflowService = moduleRef.get(WorkflowService);
+    auditService = moduleRef.get(AuditService);
 
     (masterDataService.getMaterialById as jest.Mock).mockResolvedValue(
       mockMaterial,
@@ -311,7 +311,7 @@ describe("CustomerService", () => {
         }),
         expect.anything(),
       );
-      expect(workflowService.createOrRefreshAuditDocument).toHaveBeenCalledWith(
+      expect(auditService.createOrRefreshAuditDocument).toHaveBeenCalledWith(
         expect.objectContaining({
           documentFamily: DocumentFamily.CUSTOMER_STOCK,
           documentType: "CustomerStockOrder",
@@ -605,7 +605,7 @@ describe("CustomerService", () => {
         }),
         expect.anything(),
       );
-      expect(workflowService.markAuditNotRequired).toHaveBeenCalledWith(
+      expect(auditService.markAuditNotRequired).toHaveBeenCalledWith(
         "CustomerStockOrder",
         1,
         "1",

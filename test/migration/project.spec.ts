@@ -1321,7 +1321,7 @@ describe("project cutover readiness — structural exclusion sign-off", () => {
   }
 
   const emptyConsumers = {
-    workflow_audit_document: 0,
+    audit_document: 0,
     document_relation: 0,
     document_line_relation: 0,
     inventory_log: 0,

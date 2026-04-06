@@ -3,7 +3,7 @@
 // biome-ignore-all lint: generated file
 // @ts-nocheck
 /*
- * This file exports the `WorkflowAuditDocument` model and its related types.
+ * This file exports the `AuditDocument` model and its related types.
  *
  * 🟢 You can import this file directly.
  */
@@ -12,53 +12,33 @@ import type * as $Enums from "../enums";
 import type * as Prisma from "../internal/prismaNamespace";
 
 /**
- * Model WorkflowAuditDocument
+ * Model AuditDocument
  *
  */
-export type WorkflowAuditDocumentModel =
-  runtime.Types.Result.DefaultSelection<Prisma.$WorkflowAuditDocumentPayload>;
+export type AuditDocumentModel =
+  runtime.Types.Result.DefaultSelection<Prisma.$AuditDocumentPayload>;
 
-export type AggregateWorkflowAuditDocument = {
-  _count: WorkflowAuditDocumentCountAggregateOutputType | null;
-  _avg: WorkflowAuditDocumentAvgAggregateOutputType | null;
-  _sum: WorkflowAuditDocumentSumAggregateOutputType | null;
-  _min: WorkflowAuditDocumentMinAggregateOutputType | null;
-  _max: WorkflowAuditDocumentMaxAggregateOutputType | null;
+export type AggregateAuditDocument = {
+  _count: AuditDocumentCountAggregateOutputType | null;
+  _avg: AuditDocumentAvgAggregateOutputType | null;
+  _sum: AuditDocumentSumAggregateOutputType | null;
+  _min: AuditDocumentMinAggregateOutputType | null;
+  _max: AuditDocumentMaxAggregateOutputType | null;
 };
 
-export type WorkflowAuditDocumentAvgAggregateOutputType = {
+export type AuditDocumentAvgAggregateOutputType = {
   id: number | null;
   documentId: number | null;
   resetCount: number | null;
 };
 
-export type WorkflowAuditDocumentSumAggregateOutputType = {
+export type AuditDocumentSumAggregateOutputType = {
   id: number | null;
   documentId: number | null;
   resetCount: number | null;
 };
 
-export type WorkflowAuditDocumentMinAggregateOutputType = {
-  id: number | null;
-  documentFamily: $Enums.DocumentFamily | null;
-  documentType: string | null;
-  documentId: number | null;
-  documentNumber: string | null;
-  auditStatus: $Enums.AuditStatusSnapshot | null;
-  submittedBy: string | null;
-  submittedAt: Date | null;
-  decidedBy: string | null;
-  decidedAt: Date | null;
-  rejectReason: string | null;
-  resetCount: number | null;
-  lastResetAt: Date | null;
-  createdBy: string | null;
-  createdAt: Date | null;
-  updatedBy: string | null;
-  updatedAt: Date | null;
-};
-
-export type WorkflowAuditDocumentMaxAggregateOutputType = {
+export type AuditDocumentMinAggregateOutputType = {
   id: number | null;
   documentFamily: $Enums.DocumentFamily | null;
   documentType: string | null;
@@ -78,7 +58,27 @@ export type WorkflowAuditDocumentMaxAggregateOutputType = {
   updatedAt: Date | null;
 };
 
-export type WorkflowAuditDocumentCountAggregateOutputType = {
+export type AuditDocumentMaxAggregateOutputType = {
+  id: number | null;
+  documentFamily: $Enums.DocumentFamily | null;
+  documentType: string | null;
+  documentId: number | null;
+  documentNumber: string | null;
+  auditStatus: $Enums.AuditStatusSnapshot | null;
+  submittedBy: string | null;
+  submittedAt: Date | null;
+  decidedBy: string | null;
+  decidedAt: Date | null;
+  rejectReason: string | null;
+  resetCount: number | null;
+  lastResetAt: Date | null;
+  createdBy: string | null;
+  createdAt: Date | null;
+  updatedBy: string | null;
+  updatedAt: Date | null;
+};
+
+export type AuditDocumentCountAggregateOutputType = {
   id: number;
   documentFamily: number;
   documentType: number;
@@ -99,39 +99,19 @@ export type WorkflowAuditDocumentCountAggregateOutputType = {
   _all: number;
 };
 
-export type WorkflowAuditDocumentAvgAggregateInputType = {
+export type AuditDocumentAvgAggregateInputType = {
   id?: true;
   documentId?: true;
   resetCount?: true;
 };
 
-export type WorkflowAuditDocumentSumAggregateInputType = {
+export type AuditDocumentSumAggregateInputType = {
   id?: true;
   documentId?: true;
   resetCount?: true;
 };
 
-export type WorkflowAuditDocumentMinAggregateInputType = {
-  id?: true;
-  documentFamily?: true;
-  documentType?: true;
-  documentId?: true;
-  documentNumber?: true;
-  auditStatus?: true;
-  submittedBy?: true;
-  submittedAt?: true;
-  decidedBy?: true;
-  decidedAt?: true;
-  rejectReason?: true;
-  resetCount?: true;
-  lastResetAt?: true;
-  createdBy?: true;
-  createdAt?: true;
-  updatedBy?: true;
-  updatedAt?: true;
-};
-
-export type WorkflowAuditDocumentMaxAggregateInputType = {
+export type AuditDocumentMinAggregateInputType = {
   id?: true;
   documentFamily?: true;
   documentType?: true;
@@ -151,7 +131,27 @@ export type WorkflowAuditDocumentMaxAggregateInputType = {
   updatedAt?: true;
 };
 
-export type WorkflowAuditDocumentCountAggregateInputType = {
+export type AuditDocumentMaxAggregateInputType = {
+  id?: true;
+  documentFamily?: true;
+  documentType?: true;
+  documentId?: true;
+  documentNumber?: true;
+  auditStatus?: true;
+  submittedBy?: true;
+  submittedAt?: true;
+  decidedBy?: true;
+  decidedAt?: true;
+  rejectReason?: true;
+  resetCount?: true;
+  lastResetAt?: true;
+  createdBy?: true;
+  createdAt?: true;
+  updatedBy?: true;
+  updatedAt?: true;
+};
+
+export type AuditDocumentCountAggregateInputType = {
   id?: true;
   documentFamily?: true;
   documentType?: true;
@@ -172,106 +172,104 @@ export type WorkflowAuditDocumentCountAggregateInputType = {
   _all?: true;
 };
 
-export type WorkflowAuditDocumentAggregateArgs<
+export type AuditDocumentAggregateArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Filter which WorkflowAuditDocument to aggregate.
+   * Filter which AuditDocument to aggregate.
    */
-  where?: Prisma.WorkflowAuditDocumentWhereInput;
+  where?: Prisma.AuditDocumentWhereInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    *
-   * Determine the order of WorkflowAuditDocuments to fetch.
+   * Determine the order of AuditDocuments to fetch.
    */
   orderBy?:
-    | Prisma.WorkflowAuditDocumentOrderByWithRelationInput
-    | Prisma.WorkflowAuditDocumentOrderByWithRelationInput[];
+    | Prisma.AuditDocumentOrderByWithRelationInput
+    | Prisma.AuditDocumentOrderByWithRelationInput[];
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    *
    * Sets the start position
    */
-  cursor?: Prisma.WorkflowAuditDocumentWhereUniqueInput;
+  cursor?: Prisma.AuditDocumentWhereUniqueInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Take `±n` WorkflowAuditDocuments from the position of the cursor.
+   * Take `±n` AuditDocuments from the position of the cursor.
    */
   take?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Skip the first `n` WorkflowAuditDocuments.
+   * Skip the first `n` AuditDocuments.
    */
   skip?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    *
-   * Count returned WorkflowAuditDocuments
+   * Count returned AuditDocuments
    **/
-  _count?: true | WorkflowAuditDocumentCountAggregateInputType;
+  _count?: true | AuditDocumentCountAggregateInputType;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    *
    * Select which fields to average
    **/
-  _avg?: WorkflowAuditDocumentAvgAggregateInputType;
+  _avg?: AuditDocumentAvgAggregateInputType;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    *
    * Select which fields to sum
    **/
-  _sum?: WorkflowAuditDocumentSumAggregateInputType;
+  _sum?: AuditDocumentSumAggregateInputType;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    *
    * Select which fields to find the minimum value
    **/
-  _min?: WorkflowAuditDocumentMinAggregateInputType;
+  _min?: AuditDocumentMinAggregateInputType;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    *
    * Select which fields to find the maximum value
    **/
-  _max?: WorkflowAuditDocumentMaxAggregateInputType;
+  _max?: AuditDocumentMaxAggregateInputType;
 };
 
-export type GetWorkflowAuditDocumentAggregateType<
-  T extends WorkflowAuditDocumentAggregateArgs,
+export type GetAuditDocumentAggregateType<
+  T extends AuditDocumentAggregateArgs,
 > = {
-  [P in keyof T & keyof AggregateWorkflowAuditDocument]: P extends
-    | "_count"
-    | "count"
+  [P in keyof T & keyof AggregateAuditDocument]: P extends "_count" | "count"
     ? T[P] extends true
       ? number
-      : Prisma.GetScalarType<T[P], AggregateWorkflowAuditDocument[P]>
-    : Prisma.GetScalarType<T[P], AggregateWorkflowAuditDocument[P]>;
+      : Prisma.GetScalarType<T[P], AggregateAuditDocument[P]>
+    : Prisma.GetScalarType<T[P], AggregateAuditDocument[P]>;
 };
 
-export type WorkflowAuditDocumentGroupByArgs<
+export type AuditDocumentGroupByArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
-  where?: Prisma.WorkflowAuditDocumentWhereInput;
+  where?: Prisma.AuditDocumentWhereInput;
   orderBy?:
-    | Prisma.WorkflowAuditDocumentOrderByWithAggregationInput
-    | Prisma.WorkflowAuditDocumentOrderByWithAggregationInput[];
+    | Prisma.AuditDocumentOrderByWithAggregationInput
+    | Prisma.AuditDocumentOrderByWithAggregationInput[];
   by:
-    | Prisma.WorkflowAuditDocumentScalarFieldEnum[]
-    | Prisma.WorkflowAuditDocumentScalarFieldEnum;
-  having?: Prisma.WorkflowAuditDocumentScalarWhereWithAggregatesInput;
+    | Prisma.AuditDocumentScalarFieldEnum[]
+    | Prisma.AuditDocumentScalarFieldEnum;
+  having?: Prisma.AuditDocumentScalarWhereWithAggregatesInput;
   take?: number;
   skip?: number;
-  _count?: WorkflowAuditDocumentCountAggregateInputType | true;
-  _avg?: WorkflowAuditDocumentAvgAggregateInputType;
-  _sum?: WorkflowAuditDocumentSumAggregateInputType;
-  _min?: WorkflowAuditDocumentMinAggregateInputType;
-  _max?: WorkflowAuditDocumentMaxAggregateInputType;
+  _count?: AuditDocumentCountAggregateInputType | true;
+  _avg?: AuditDocumentAvgAggregateInputType;
+  _sum?: AuditDocumentSumAggregateInputType;
+  _min?: AuditDocumentMinAggregateInputType;
+  _max?: AuditDocumentMaxAggregateInputType;
 };
 
-export type WorkflowAuditDocumentGroupByOutputType = {
+export type AuditDocumentGroupByOutputType = {
   id: number;
   documentFamily: $Enums.DocumentFamily;
   documentType: string;
@@ -289,90 +287,67 @@ export type WorkflowAuditDocumentGroupByOutputType = {
   createdAt: Date;
   updatedBy: string | null;
   updatedAt: Date;
-  _count: WorkflowAuditDocumentCountAggregateOutputType | null;
-  _avg: WorkflowAuditDocumentAvgAggregateOutputType | null;
-  _sum: WorkflowAuditDocumentSumAggregateOutputType | null;
-  _min: WorkflowAuditDocumentMinAggregateOutputType | null;
-  _max: WorkflowAuditDocumentMaxAggregateOutputType | null;
+  _count: AuditDocumentCountAggregateOutputType | null;
+  _avg: AuditDocumentAvgAggregateOutputType | null;
+  _sum: AuditDocumentSumAggregateOutputType | null;
+  _min: AuditDocumentMinAggregateOutputType | null;
+  _max: AuditDocumentMaxAggregateOutputType | null;
 };
 
-type GetWorkflowAuditDocumentGroupByPayload<
-  T extends WorkflowAuditDocumentGroupByArgs,
-> = Prisma.PrismaPromise<
-  Array<
-    Prisma.PickEnumerable<WorkflowAuditDocumentGroupByOutputType, T["by"]> & {
-      [P in keyof T &
-        keyof WorkflowAuditDocumentGroupByOutputType]: P extends "_count"
-        ? T[P] extends boolean
-          ? number
-          : Prisma.GetScalarType<
-              T[P],
-              WorkflowAuditDocumentGroupByOutputType[P]
-            >
-        : Prisma.GetScalarType<T[P], WorkflowAuditDocumentGroupByOutputType[P]>;
-    }
-  >
->;
+type GetAuditDocumentGroupByPayload<T extends AuditDocumentGroupByArgs> =
+  Prisma.PrismaPromise<
+    Array<
+      Prisma.PickEnumerable<AuditDocumentGroupByOutputType, T["by"]> & {
+        [P in keyof T &
+          keyof AuditDocumentGroupByOutputType]: P extends "_count"
+          ? T[P] extends boolean
+            ? number
+            : Prisma.GetScalarType<T[P], AuditDocumentGroupByOutputType[P]>
+          : Prisma.GetScalarType<T[P], AuditDocumentGroupByOutputType[P]>;
+      }
+    >
+  >;
 
-export type WorkflowAuditDocumentWhereInput = {
-  AND?:
-    | Prisma.WorkflowAuditDocumentWhereInput
-    | Prisma.WorkflowAuditDocumentWhereInput[];
-  OR?: Prisma.WorkflowAuditDocumentWhereInput[];
-  NOT?:
-    | Prisma.WorkflowAuditDocumentWhereInput
-    | Prisma.WorkflowAuditDocumentWhereInput[];
-  id?: Prisma.IntFilter<"WorkflowAuditDocument"> | number;
+export type AuditDocumentWhereInput = {
+  AND?: Prisma.AuditDocumentWhereInput | Prisma.AuditDocumentWhereInput[];
+  OR?: Prisma.AuditDocumentWhereInput[];
+  NOT?: Prisma.AuditDocumentWhereInput | Prisma.AuditDocumentWhereInput[];
+  id?: Prisma.IntFilter<"AuditDocument"> | number;
   documentFamily?:
-    | Prisma.EnumDocumentFamilyFilter<"WorkflowAuditDocument">
+    | Prisma.EnumDocumentFamilyFilter<"AuditDocument">
     | $Enums.DocumentFamily;
-  documentType?: Prisma.StringFilter<"WorkflowAuditDocument"> | string;
-  documentId?: Prisma.IntFilter<"WorkflowAuditDocument"> | number;
-  documentNumber?: Prisma.StringFilter<"WorkflowAuditDocument"> | string;
+  documentType?: Prisma.StringFilter<"AuditDocument"> | string;
+  documentId?: Prisma.IntFilter<"AuditDocument"> | number;
+  documentNumber?: Prisma.StringFilter<"AuditDocument"> | string;
   auditStatus?:
-    | Prisma.EnumAuditStatusSnapshotFilter<"WorkflowAuditDocument">
+    | Prisma.EnumAuditStatusSnapshotFilter<"AuditDocument">
     | $Enums.AuditStatusSnapshot;
-  submittedBy?:
-    | Prisma.StringNullableFilter<"WorkflowAuditDocument">
-    | string
-    | null;
+  submittedBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
   submittedAt?:
-    | Prisma.DateTimeNullableFilter<"WorkflowAuditDocument">
+    | Prisma.DateTimeNullableFilter<"AuditDocument">
     | Date
     | string
     | null;
-  decidedBy?:
-    | Prisma.StringNullableFilter<"WorkflowAuditDocument">
-    | string
-    | null;
+  decidedBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
   decidedAt?:
-    | Prisma.DateTimeNullableFilter<"WorkflowAuditDocument">
+    | Prisma.DateTimeNullableFilter<"AuditDocument">
     | Date
     | string
     | null;
-  rejectReason?:
-    | Prisma.StringNullableFilter<"WorkflowAuditDocument">
-    | string
-    | null;
-  resetCount?: Prisma.IntFilter<"WorkflowAuditDocument"> | number;
+  rejectReason?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
+  resetCount?: Prisma.IntFilter<"AuditDocument"> | number;
   lastResetAt?:
-    | Prisma.DateTimeNullableFilter<"WorkflowAuditDocument">
+    | Prisma.DateTimeNullableFilter<"AuditDocument">
     | Date
     | string
     | null;
-  createdBy?:
-    | Prisma.StringNullableFilter<"WorkflowAuditDocument">
-    | string
-    | null;
-  createdAt?: Prisma.DateTimeFilter<"WorkflowAuditDocument"> | Date | string;
-  updatedBy?:
-    | Prisma.StringNullableFilter<"WorkflowAuditDocument">
-    | string
-    | null;
-  updatedAt?: Prisma.DateTimeFilter<"WorkflowAuditDocument"> | Date | string;
+  createdBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
+  createdAt?: Prisma.DateTimeFilter<"AuditDocument"> | Date | string;
+  updatedBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
+  updatedAt?: Prisma.DateTimeFilter<"AuditDocument"> | Date | string;
 };
 
-export type WorkflowAuditDocumentOrderByWithRelationInput = {
+export type AuditDocumentOrderByWithRelationInput = {
   id?: Prisma.SortOrder;
   documentFamily?: Prisma.SortOrder;
   documentType?: Prisma.SortOrder;
@@ -390,72 +365,53 @@ export type WorkflowAuditDocumentOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder;
   updatedBy?: Prisma.SortOrderInput | Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
-  _relevance?: Prisma.WorkflowAuditDocumentOrderByRelevanceInput;
+  _relevance?: Prisma.AuditDocumentOrderByRelevanceInput;
 };
 
-export type WorkflowAuditDocumentWhereUniqueInput = Prisma.AtLeast<
+export type AuditDocumentWhereUniqueInput = Prisma.AtLeast<
   {
     id?: number;
-    documentType_documentId?: Prisma.WorkflowAuditDocumentDocumentTypeDocumentIdCompoundUniqueInput;
-    AND?:
-      | Prisma.WorkflowAuditDocumentWhereInput
-      | Prisma.WorkflowAuditDocumentWhereInput[];
-    OR?: Prisma.WorkflowAuditDocumentWhereInput[];
-    NOT?:
-      | Prisma.WorkflowAuditDocumentWhereInput
-      | Prisma.WorkflowAuditDocumentWhereInput[];
+    documentType_documentId?: Prisma.AuditDocumentDocumentTypeDocumentIdCompoundUniqueInput;
+    AND?: Prisma.AuditDocumentWhereInput | Prisma.AuditDocumentWhereInput[];
+    OR?: Prisma.AuditDocumentWhereInput[];
+    NOT?: Prisma.AuditDocumentWhereInput | Prisma.AuditDocumentWhereInput[];
     documentFamily?:
-      | Prisma.EnumDocumentFamilyFilter<"WorkflowAuditDocument">
+      | Prisma.EnumDocumentFamilyFilter<"AuditDocument">
       | $Enums.DocumentFamily;
-    documentType?: Prisma.StringFilter<"WorkflowAuditDocument"> | string;
-    documentId?: Prisma.IntFilter<"WorkflowAuditDocument"> | number;
-    documentNumber?: Prisma.StringFilter<"WorkflowAuditDocument"> | string;
+    documentType?: Prisma.StringFilter<"AuditDocument"> | string;
+    documentId?: Prisma.IntFilter<"AuditDocument"> | number;
+    documentNumber?: Prisma.StringFilter<"AuditDocument"> | string;
     auditStatus?:
-      | Prisma.EnumAuditStatusSnapshotFilter<"WorkflowAuditDocument">
+      | Prisma.EnumAuditStatusSnapshotFilter<"AuditDocument">
       | $Enums.AuditStatusSnapshot;
-    submittedBy?:
-      | Prisma.StringNullableFilter<"WorkflowAuditDocument">
-      | string
-      | null;
+    submittedBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
     submittedAt?:
-      | Prisma.DateTimeNullableFilter<"WorkflowAuditDocument">
+      | Prisma.DateTimeNullableFilter<"AuditDocument">
       | Date
       | string
       | null;
-    decidedBy?:
-      | Prisma.StringNullableFilter<"WorkflowAuditDocument">
-      | string
-      | null;
+    decidedBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
     decidedAt?:
-      | Prisma.DateTimeNullableFilter<"WorkflowAuditDocument">
+      | Prisma.DateTimeNullableFilter<"AuditDocument">
       | Date
       | string
       | null;
-    rejectReason?:
-      | Prisma.StringNullableFilter<"WorkflowAuditDocument">
-      | string
-      | null;
-    resetCount?: Prisma.IntFilter<"WorkflowAuditDocument"> | number;
+    rejectReason?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
+    resetCount?: Prisma.IntFilter<"AuditDocument"> | number;
     lastResetAt?:
-      | Prisma.DateTimeNullableFilter<"WorkflowAuditDocument">
+      | Prisma.DateTimeNullableFilter<"AuditDocument">
       | Date
       | string
       | null;
-    createdBy?:
-      | Prisma.StringNullableFilter<"WorkflowAuditDocument">
-      | string
-      | null;
-    createdAt?: Prisma.DateTimeFilter<"WorkflowAuditDocument"> | Date | string;
-    updatedBy?:
-      | Prisma.StringNullableFilter<"WorkflowAuditDocument">
-      | string
-      | null;
-    updatedAt?: Prisma.DateTimeFilter<"WorkflowAuditDocument"> | Date | string;
+    createdBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
+    createdAt?: Prisma.DateTimeFilter<"AuditDocument"> | Date | string;
+    updatedBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
+    updatedAt?: Prisma.DateTimeFilter<"AuditDocument"> | Date | string;
   },
   "id" | "documentType_documentId"
 >;
 
-export type WorkflowAuditDocumentOrderByWithAggregationInput = {
+export type AuditDocumentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder;
   documentFamily?: Prisma.SortOrder;
   documentType?: Prisma.SortOrder;
@@ -473,82 +429,78 @@ export type WorkflowAuditDocumentOrderByWithAggregationInput = {
   createdAt?: Prisma.SortOrder;
   updatedBy?: Prisma.SortOrderInput | Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
-  _count?: Prisma.WorkflowAuditDocumentCountOrderByAggregateInput;
-  _avg?: Prisma.WorkflowAuditDocumentAvgOrderByAggregateInput;
-  _max?: Prisma.WorkflowAuditDocumentMaxOrderByAggregateInput;
-  _min?: Prisma.WorkflowAuditDocumentMinOrderByAggregateInput;
-  _sum?: Prisma.WorkflowAuditDocumentSumOrderByAggregateInput;
+  _count?: Prisma.AuditDocumentCountOrderByAggregateInput;
+  _avg?: Prisma.AuditDocumentAvgOrderByAggregateInput;
+  _max?: Prisma.AuditDocumentMaxOrderByAggregateInput;
+  _min?: Prisma.AuditDocumentMinOrderByAggregateInput;
+  _sum?: Prisma.AuditDocumentSumOrderByAggregateInput;
 };
 
-export type WorkflowAuditDocumentScalarWhereWithAggregatesInput = {
+export type AuditDocumentScalarWhereWithAggregatesInput = {
   AND?:
-    | Prisma.WorkflowAuditDocumentScalarWhereWithAggregatesInput
-    | Prisma.WorkflowAuditDocumentScalarWhereWithAggregatesInput[];
-  OR?: Prisma.WorkflowAuditDocumentScalarWhereWithAggregatesInput[];
+    | Prisma.AuditDocumentScalarWhereWithAggregatesInput
+    | Prisma.AuditDocumentScalarWhereWithAggregatesInput[];
+  OR?: Prisma.AuditDocumentScalarWhereWithAggregatesInput[];
   NOT?:
-    | Prisma.WorkflowAuditDocumentScalarWhereWithAggregatesInput
-    | Prisma.WorkflowAuditDocumentScalarWhereWithAggregatesInput[];
-  id?: Prisma.IntWithAggregatesFilter<"WorkflowAuditDocument"> | number;
+    | Prisma.AuditDocumentScalarWhereWithAggregatesInput
+    | Prisma.AuditDocumentScalarWhereWithAggregatesInput[];
+  id?: Prisma.IntWithAggregatesFilter<"AuditDocument"> | number;
   documentFamily?:
-    | Prisma.EnumDocumentFamilyWithAggregatesFilter<"WorkflowAuditDocument">
+    | Prisma.EnumDocumentFamilyWithAggregatesFilter<"AuditDocument">
     | $Enums.DocumentFamily;
-  documentType?:
-    | Prisma.StringWithAggregatesFilter<"WorkflowAuditDocument">
-    | string;
-  documentId?: Prisma.IntWithAggregatesFilter<"WorkflowAuditDocument"> | number;
-  documentNumber?:
-    | Prisma.StringWithAggregatesFilter<"WorkflowAuditDocument">
-    | string;
+  documentType?: Prisma.StringWithAggregatesFilter<"AuditDocument"> | string;
+  documentId?: Prisma.IntWithAggregatesFilter<"AuditDocument"> | number;
+  documentNumber?: Prisma.StringWithAggregatesFilter<"AuditDocument"> | string;
   auditStatus?:
-    | Prisma.EnumAuditStatusSnapshotWithAggregatesFilter<"WorkflowAuditDocument">
+    | Prisma.EnumAuditStatusSnapshotWithAggregatesFilter<"AuditDocument">
     | $Enums.AuditStatusSnapshot;
   submittedBy?:
-    | Prisma.StringNullableWithAggregatesFilter<"WorkflowAuditDocument">
+    | Prisma.StringNullableWithAggregatesFilter<"AuditDocument">
     | string
     | null;
   submittedAt?:
-    | Prisma.DateTimeNullableWithAggregatesFilter<"WorkflowAuditDocument">
+    | Prisma.DateTimeNullableWithAggregatesFilter<"AuditDocument">
     | Date
     | string
     | null;
   decidedBy?:
-    | Prisma.StringNullableWithAggregatesFilter<"WorkflowAuditDocument">
+    | Prisma.StringNullableWithAggregatesFilter<"AuditDocument">
     | string
     | null;
   decidedAt?:
-    | Prisma.DateTimeNullableWithAggregatesFilter<"WorkflowAuditDocument">
+    | Prisma.DateTimeNullableWithAggregatesFilter<"AuditDocument">
     | Date
     | string
     | null;
   rejectReason?:
-    | Prisma.StringNullableWithAggregatesFilter<"WorkflowAuditDocument">
+    | Prisma.StringNullableWithAggregatesFilter<"AuditDocument">
     | string
     | null;
-  resetCount?: Prisma.IntWithAggregatesFilter<"WorkflowAuditDocument"> | number;
+  resetCount?: Prisma.IntWithAggregatesFilter<"AuditDocument"> | number;
   lastResetAt?:
-    | Prisma.DateTimeNullableWithAggregatesFilter<"WorkflowAuditDocument">
+    | Prisma.DateTimeNullableWithAggregatesFilter<"AuditDocument">
     | Date
     | string
     | null;
   createdBy?:
-    | Prisma.StringNullableWithAggregatesFilter<"WorkflowAuditDocument">
+    | Prisma.StringNullableWithAggregatesFilter<"AuditDocument">
     | string
     | null;
   createdAt?:
-    | Prisma.DateTimeWithAggregatesFilter<"WorkflowAuditDocument">
+    | Prisma.DateTimeWithAggregatesFilter<"AuditDocument">
     | Date
     | string;
   updatedBy?:
-    | Prisma.StringNullableWithAggregatesFilter<"WorkflowAuditDocument">
+    | Prisma.StringNullableWithAggregatesFilter<"AuditDocument">
     | string
     | null;
   updatedAt?:
-    | Prisma.DateTimeWithAggregatesFilter<"WorkflowAuditDocument">
+    | Prisma.DateTimeWithAggregatesFilter<"AuditDocument">
     | Date
     | string;
 };
 
-export type WorkflowAuditDocumentCreateInput = {
+export type AuditDocumentCreateInput = {
   documentFamily: $Enums.DocumentFamily;
   documentType: string;
   documentId: number;
@@ -567,7 +519,7 @@ export type WorkflowAuditDocumentCreateInput = {
   updatedAt?: Date | string;
 };
 
-export type WorkflowAuditDocumentUncheckedCreateInput = {
+export type AuditDocumentUncheckedCreateInput = {
   id?: number;
   documentFamily: $Enums.DocumentFamily;
   documentType: string;
@@ -587,7 +539,7 @@ export type WorkflowAuditDocumentUncheckedCreateInput = {
   updatedAt?: Date | string;
 };
 
-export type WorkflowAuditDocumentUpdateInput = {
+export type AuditDocumentUpdateInput = {
   documentFamily?:
     | Prisma.EnumDocumentFamilyFieldUpdateOperationsInput
     | $Enums.DocumentFamily;
@@ -625,7 +577,7 @@ export type WorkflowAuditDocumentUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type WorkflowAuditDocumentUncheckedUpdateInput = {
+export type AuditDocumentUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   documentFamily?:
     | Prisma.EnumDocumentFamilyFieldUpdateOperationsInput
@@ -664,7 +616,7 @@ export type WorkflowAuditDocumentUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type WorkflowAuditDocumentCreateManyInput = {
+export type AuditDocumentCreateManyInput = {
   id?: number;
   documentFamily: $Enums.DocumentFamily;
   documentType: string;
@@ -684,7 +636,7 @@ export type WorkflowAuditDocumentCreateManyInput = {
   updatedAt?: Date | string;
 };
 
-export type WorkflowAuditDocumentUpdateManyMutationInput = {
+export type AuditDocumentUpdateManyMutationInput = {
   documentFamily?:
     | Prisma.EnumDocumentFamilyFieldUpdateOperationsInput
     | $Enums.DocumentFamily;
@@ -722,7 +674,7 @@ export type WorkflowAuditDocumentUpdateManyMutationInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type WorkflowAuditDocumentUncheckedUpdateManyInput = {
+export type AuditDocumentUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   documentFamily?:
     | Prisma.EnumDocumentFamilyFieldUpdateOperationsInput
@@ -761,20 +713,20 @@ export type WorkflowAuditDocumentUncheckedUpdateManyInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type WorkflowAuditDocumentOrderByRelevanceInput = {
+export type AuditDocumentOrderByRelevanceInput = {
   fields:
-    | Prisma.WorkflowAuditDocumentOrderByRelevanceFieldEnum
-    | Prisma.WorkflowAuditDocumentOrderByRelevanceFieldEnum[];
+    | Prisma.AuditDocumentOrderByRelevanceFieldEnum
+    | Prisma.AuditDocumentOrderByRelevanceFieldEnum[];
   sort: Prisma.SortOrder;
   search: string;
 };
 
-export type WorkflowAuditDocumentDocumentTypeDocumentIdCompoundUniqueInput = {
+export type AuditDocumentDocumentTypeDocumentIdCompoundUniqueInput = {
   documentType: string;
   documentId: number;
 };
 
-export type WorkflowAuditDocumentCountOrderByAggregateInput = {
+export type AuditDocumentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   documentFamily?: Prisma.SortOrder;
   documentType?: Prisma.SortOrder;
@@ -794,33 +746,13 @@ export type WorkflowAuditDocumentCountOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder;
 };
 
-export type WorkflowAuditDocumentAvgOrderByAggregateInput = {
+export type AuditDocumentAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   documentId?: Prisma.SortOrder;
   resetCount?: Prisma.SortOrder;
 };
 
-export type WorkflowAuditDocumentMaxOrderByAggregateInput = {
-  id?: Prisma.SortOrder;
-  documentFamily?: Prisma.SortOrder;
-  documentType?: Prisma.SortOrder;
-  documentId?: Prisma.SortOrder;
-  documentNumber?: Prisma.SortOrder;
-  auditStatus?: Prisma.SortOrder;
-  submittedBy?: Prisma.SortOrder;
-  submittedAt?: Prisma.SortOrder;
-  decidedBy?: Prisma.SortOrder;
-  decidedAt?: Prisma.SortOrder;
-  rejectReason?: Prisma.SortOrder;
-  resetCount?: Prisma.SortOrder;
-  lastResetAt?: Prisma.SortOrder;
-  createdBy?: Prisma.SortOrder;
-  createdAt?: Prisma.SortOrder;
-  updatedBy?: Prisma.SortOrder;
-  updatedAt?: Prisma.SortOrder;
-};
-
-export type WorkflowAuditDocumentMinOrderByAggregateInput = {
+export type AuditDocumentMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   documentFamily?: Prisma.SortOrder;
   documentType?: Prisma.SortOrder;
@@ -840,7 +772,27 @@ export type WorkflowAuditDocumentMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder;
 };
 
-export type WorkflowAuditDocumentSumOrderByAggregateInput = {
+export type AuditDocumentMinOrderByAggregateInput = {
+  id?: Prisma.SortOrder;
+  documentFamily?: Prisma.SortOrder;
+  documentType?: Prisma.SortOrder;
+  documentId?: Prisma.SortOrder;
+  documentNumber?: Prisma.SortOrder;
+  auditStatus?: Prisma.SortOrder;
+  submittedBy?: Prisma.SortOrder;
+  submittedAt?: Prisma.SortOrder;
+  decidedBy?: Prisma.SortOrder;
+  decidedAt?: Prisma.SortOrder;
+  rejectReason?: Prisma.SortOrder;
+  resetCount?: Prisma.SortOrder;
+  lastResetAt?: Prisma.SortOrder;
+  createdBy?: Prisma.SortOrder;
+  createdAt?: Prisma.SortOrder;
+  updatedBy?: Prisma.SortOrder;
+  updatedAt?: Prisma.SortOrder;
+};
+
+export type AuditDocumentSumOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   documentId?: Prisma.SortOrder;
   resetCount?: Prisma.SortOrder;
@@ -854,7 +806,7 @@ export type EnumAuditStatusSnapshotFieldUpdateOperationsInput = {
   set?: $Enums.AuditStatusSnapshot;
 };
 
-export type WorkflowAuditDocumentSelect<
+export type AuditDocumentSelect<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
@@ -877,10 +829,10 @@ export type WorkflowAuditDocumentSelect<
     updatedBy?: boolean;
     updatedAt?: boolean;
   },
-  ExtArgs["result"]["workflowAuditDocument"]
+  ExtArgs["result"]["auditDocument"]
 >;
 
-export type WorkflowAuditDocumentSelectScalar = {
+export type AuditDocumentSelectScalar = {
   id?: boolean;
   documentFamily?: boolean;
   documentType?: boolean;
@@ -900,7 +852,7 @@ export type WorkflowAuditDocumentSelectScalar = {
   updatedAt?: boolean;
 };
 
-export type WorkflowAuditDocumentOmit<
+export type AuditDocumentOmit<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
@@ -921,14 +873,14 @@ export type WorkflowAuditDocumentOmit<
   | "createdAt"
   | "updatedBy"
   | "updatedAt",
-  ExtArgs["result"]["workflowAuditDocument"]
+  ExtArgs["result"]["auditDocument"]
 >;
 
-export type $WorkflowAuditDocumentPayload<
+export type $AuditDocumentPayload<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
-  name: "WorkflowAuditDocument";
+  name: "AuditDocument";
   objects: {};
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -950,50 +902,50 @@ export type $WorkflowAuditDocumentPayload<
       updatedBy: string | null;
       updatedAt: Date;
     },
-    ExtArgs["result"]["workflowAuditDocument"]
+    ExtArgs["result"]["auditDocument"]
   >;
   composites: {};
 };
 
-export type WorkflowAuditDocumentGetPayload<
-  S extends boolean | null | undefined | WorkflowAuditDocumentDefaultArgs,
-> = runtime.Types.Result.GetResult<Prisma.$WorkflowAuditDocumentPayload, S>;
+export type AuditDocumentGetPayload<
+  S extends boolean | null | undefined | AuditDocumentDefaultArgs,
+> = runtime.Types.Result.GetResult<Prisma.$AuditDocumentPayload, S>;
 
-export type WorkflowAuditDocumentCountArgs<
+export type AuditDocumentCountArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = Omit<
-  WorkflowAuditDocumentFindManyArgs,
+  AuditDocumentFindManyArgs,
   "select" | "include" | "distinct" | "omit"
 > & {
-  select?: WorkflowAuditDocumentCountAggregateInputType | true;
+  select?: AuditDocumentCountAggregateInputType | true;
 };
 
-export interface WorkflowAuditDocumentDelegate<
+export interface AuditDocumentDelegate<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
   GlobalOmitOptions = {},
 > {
   [K: symbol]: {
-    types: Prisma.TypeMap<ExtArgs>["model"]["WorkflowAuditDocument"];
-    meta: { name: "WorkflowAuditDocument" };
+    types: Prisma.TypeMap<ExtArgs>["model"]["AuditDocument"];
+    meta: { name: "AuditDocument" };
   };
   /**
-   * Find zero or one WorkflowAuditDocument that matches the filter.
-   * @param {WorkflowAuditDocumentFindUniqueArgs} args - Arguments to find a WorkflowAuditDocument
+   * Find zero or one AuditDocument that matches the filter.
+   * @param {AuditDocumentFindUniqueArgs} args - Arguments to find a AuditDocument
    * @example
-   * // Get one WorkflowAuditDocument
-   * const workflowAuditDocument = await prisma.workflowAuditDocument.findUnique({
+   * // Get one AuditDocument
+   * const auditDocument = await prisma.auditDocument.findUnique({
    *   where: {
    *     // ... provide filter here
    *   }
    * })
    */
-  findUnique<T extends WorkflowAuditDocumentFindUniqueArgs>(
-    args: Prisma.SelectSubset<T, WorkflowAuditDocumentFindUniqueArgs<ExtArgs>>,
-  ): Prisma.Prisma__WorkflowAuditDocumentClient<
+  findUnique<T extends AuditDocumentFindUniqueArgs>(
+    args: Prisma.SelectSubset<T, AuditDocumentFindUniqueArgs<ExtArgs>>,
+  ): Prisma.Prisma__AuditDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$WorkflowAuditDocumentPayload<ExtArgs>,
+      Prisma.$AuditDocumentPayload<ExtArgs>,
       T,
       "findUnique",
       GlobalOmitOptions
@@ -1004,25 +956,22 @@ export interface WorkflowAuditDocumentDelegate<
   >;
 
   /**
-   * Find one WorkflowAuditDocument that matches the filter or throw an error with `error.code='P2025'`
+   * Find one AuditDocument that matches the filter or throw an error with `error.code='P2025'`
    * if no matches were found.
-   * @param {WorkflowAuditDocumentFindUniqueOrThrowArgs} args - Arguments to find a WorkflowAuditDocument
+   * @param {AuditDocumentFindUniqueOrThrowArgs} args - Arguments to find a AuditDocument
    * @example
-   * // Get one WorkflowAuditDocument
-   * const workflowAuditDocument = await prisma.workflowAuditDocument.findUniqueOrThrow({
+   * // Get one AuditDocument
+   * const auditDocument = await prisma.auditDocument.findUniqueOrThrow({
    *   where: {
    *     // ... provide filter here
    *   }
    * })
    */
-  findUniqueOrThrow<T extends WorkflowAuditDocumentFindUniqueOrThrowArgs>(
-    args: Prisma.SelectSubset<
-      T,
-      WorkflowAuditDocumentFindUniqueOrThrowArgs<ExtArgs>
-    >,
-  ): Prisma.Prisma__WorkflowAuditDocumentClient<
+  findUniqueOrThrow<T extends AuditDocumentFindUniqueOrThrowArgs>(
+    args: Prisma.SelectSubset<T, AuditDocumentFindUniqueOrThrowArgs<ExtArgs>>,
+  ): Prisma.Prisma__AuditDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$WorkflowAuditDocumentPayload<ExtArgs>,
+      Prisma.$AuditDocumentPayload<ExtArgs>,
       T,
       "findUniqueOrThrow",
       GlobalOmitOptions
@@ -1033,23 +982,23 @@ export interface WorkflowAuditDocumentDelegate<
   >;
 
   /**
-   * Find the first WorkflowAuditDocument that matches the filter.
+   * Find the first AuditDocument that matches the filter.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {WorkflowAuditDocumentFindFirstArgs} args - Arguments to find a WorkflowAuditDocument
+   * @param {AuditDocumentFindFirstArgs} args - Arguments to find a AuditDocument
    * @example
-   * // Get one WorkflowAuditDocument
-   * const workflowAuditDocument = await prisma.workflowAuditDocument.findFirst({
+   * // Get one AuditDocument
+   * const auditDocument = await prisma.auditDocument.findFirst({
    *   where: {
    *     // ... provide filter here
    *   }
    * })
    */
-  findFirst<T extends WorkflowAuditDocumentFindFirstArgs>(
-    args?: Prisma.SelectSubset<T, WorkflowAuditDocumentFindFirstArgs<ExtArgs>>,
-  ): Prisma.Prisma__WorkflowAuditDocumentClient<
+  findFirst<T extends AuditDocumentFindFirstArgs>(
+    args?: Prisma.SelectSubset<T, AuditDocumentFindFirstArgs<ExtArgs>>,
+  ): Prisma.Prisma__AuditDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$WorkflowAuditDocumentPayload<ExtArgs>,
+      Prisma.$AuditDocumentPayload<ExtArgs>,
       T,
       "findFirst",
       GlobalOmitOptions
@@ -1060,27 +1009,24 @@ export interface WorkflowAuditDocumentDelegate<
   >;
 
   /**
-   * Find the first WorkflowAuditDocument that matches the filter or
+   * Find the first AuditDocument that matches the filter or
    * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {WorkflowAuditDocumentFindFirstOrThrowArgs} args - Arguments to find a WorkflowAuditDocument
+   * @param {AuditDocumentFindFirstOrThrowArgs} args - Arguments to find a AuditDocument
    * @example
-   * // Get one WorkflowAuditDocument
-   * const workflowAuditDocument = await prisma.workflowAuditDocument.findFirstOrThrow({
+   * // Get one AuditDocument
+   * const auditDocument = await prisma.auditDocument.findFirstOrThrow({
    *   where: {
    *     // ... provide filter here
    *   }
    * })
    */
-  findFirstOrThrow<T extends WorkflowAuditDocumentFindFirstOrThrowArgs>(
-    args?: Prisma.SelectSubset<
-      T,
-      WorkflowAuditDocumentFindFirstOrThrowArgs<ExtArgs>
-    >,
-  ): Prisma.Prisma__WorkflowAuditDocumentClient<
+  findFirstOrThrow<T extends AuditDocumentFindFirstOrThrowArgs>(
+    args?: Prisma.SelectSubset<T, AuditDocumentFindFirstOrThrowArgs<ExtArgs>>,
+  ): Prisma.Prisma__AuditDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$WorkflowAuditDocumentPayload<ExtArgs>,
+      Prisma.$AuditDocumentPayload<ExtArgs>,
       T,
       "findFirstOrThrow",
       GlobalOmitOptions
@@ -1091,26 +1037,26 @@ export interface WorkflowAuditDocumentDelegate<
   >;
 
   /**
-   * Find zero or more WorkflowAuditDocuments that matches the filter.
+   * Find zero or more AuditDocuments that matches the filter.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {WorkflowAuditDocumentFindManyArgs} args - Arguments to filter and select certain fields only.
+   * @param {AuditDocumentFindManyArgs} args - Arguments to filter and select certain fields only.
    * @example
-   * // Get all WorkflowAuditDocuments
-   * const workflowAuditDocuments = await prisma.workflowAuditDocument.findMany()
+   * // Get all AuditDocuments
+   * const auditDocuments = await prisma.auditDocument.findMany()
    *
-   * // Get first 10 WorkflowAuditDocuments
-   * const workflowAuditDocuments = await prisma.workflowAuditDocument.findMany({ take: 10 })
+   * // Get first 10 AuditDocuments
+   * const auditDocuments = await prisma.auditDocument.findMany({ take: 10 })
    *
    * // Only select the `id`
-   * const workflowAuditDocumentWithIdOnly = await prisma.workflowAuditDocument.findMany({ select: { id: true } })
+   * const auditDocumentWithIdOnly = await prisma.auditDocument.findMany({ select: { id: true } })
    *
    */
-  findMany<T extends WorkflowAuditDocumentFindManyArgs>(
-    args?: Prisma.SelectSubset<T, WorkflowAuditDocumentFindManyArgs<ExtArgs>>,
+  findMany<T extends AuditDocumentFindManyArgs>(
+    args?: Prisma.SelectSubset<T, AuditDocumentFindManyArgs<ExtArgs>>,
   ): Prisma.PrismaPromise<
     runtime.Types.Result.GetResult<
-      Prisma.$WorkflowAuditDocumentPayload<ExtArgs>,
+      Prisma.$AuditDocumentPayload<ExtArgs>,
       T,
       "findMany",
       GlobalOmitOptions
@@ -1118,22 +1064,22 @@ export interface WorkflowAuditDocumentDelegate<
   >;
 
   /**
-   * Create a WorkflowAuditDocument.
-   * @param {WorkflowAuditDocumentCreateArgs} args - Arguments to create a WorkflowAuditDocument.
+   * Create a AuditDocument.
+   * @param {AuditDocumentCreateArgs} args - Arguments to create a AuditDocument.
    * @example
-   * // Create one WorkflowAuditDocument
-   * const WorkflowAuditDocument = await prisma.workflowAuditDocument.create({
+   * // Create one AuditDocument
+   * const AuditDocument = await prisma.auditDocument.create({
    *   data: {
-   *     // ... data to create a WorkflowAuditDocument
+   *     // ... data to create a AuditDocument
    *   }
    * })
    *
    */
-  create<T extends WorkflowAuditDocumentCreateArgs>(
-    args: Prisma.SelectSubset<T, WorkflowAuditDocumentCreateArgs<ExtArgs>>,
-  ): Prisma.Prisma__WorkflowAuditDocumentClient<
+  create<T extends AuditDocumentCreateArgs>(
+    args: Prisma.SelectSubset<T, AuditDocumentCreateArgs<ExtArgs>>,
+  ): Prisma.Prisma__AuditDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$WorkflowAuditDocumentPayload<ExtArgs>,
+      Prisma.$AuditDocumentPayload<ExtArgs>,
       T,
       "create",
       GlobalOmitOptions
@@ -1144,38 +1090,38 @@ export interface WorkflowAuditDocumentDelegate<
   >;
 
   /**
-   * Create many WorkflowAuditDocuments.
-   * @param {WorkflowAuditDocumentCreateManyArgs} args - Arguments to create many WorkflowAuditDocuments.
+   * Create many AuditDocuments.
+   * @param {AuditDocumentCreateManyArgs} args - Arguments to create many AuditDocuments.
    * @example
-   * // Create many WorkflowAuditDocuments
-   * const workflowAuditDocument = await prisma.workflowAuditDocument.createMany({
+   * // Create many AuditDocuments
+   * const auditDocument = await prisma.auditDocument.createMany({
    *   data: [
    *     // ... provide data here
    *   ]
    * })
    *
    */
-  createMany<T extends WorkflowAuditDocumentCreateManyArgs>(
-    args?: Prisma.SelectSubset<T, WorkflowAuditDocumentCreateManyArgs<ExtArgs>>,
+  createMany<T extends AuditDocumentCreateManyArgs>(
+    args?: Prisma.SelectSubset<T, AuditDocumentCreateManyArgs<ExtArgs>>,
   ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
   /**
-   * Delete a WorkflowAuditDocument.
-   * @param {WorkflowAuditDocumentDeleteArgs} args - Arguments to delete one WorkflowAuditDocument.
+   * Delete a AuditDocument.
+   * @param {AuditDocumentDeleteArgs} args - Arguments to delete one AuditDocument.
    * @example
-   * // Delete one WorkflowAuditDocument
-   * const WorkflowAuditDocument = await prisma.workflowAuditDocument.delete({
+   * // Delete one AuditDocument
+   * const AuditDocument = await prisma.auditDocument.delete({
    *   where: {
-   *     // ... filter to delete one WorkflowAuditDocument
+   *     // ... filter to delete one AuditDocument
    *   }
    * })
    *
    */
-  delete<T extends WorkflowAuditDocumentDeleteArgs>(
-    args: Prisma.SelectSubset<T, WorkflowAuditDocumentDeleteArgs<ExtArgs>>,
-  ): Prisma.Prisma__WorkflowAuditDocumentClient<
+  delete<T extends AuditDocumentDeleteArgs>(
+    args: Prisma.SelectSubset<T, AuditDocumentDeleteArgs<ExtArgs>>,
+  ): Prisma.Prisma__AuditDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$WorkflowAuditDocumentPayload<ExtArgs>,
+      Prisma.$AuditDocumentPayload<ExtArgs>,
       T,
       "delete",
       GlobalOmitOptions
@@ -1186,11 +1132,11 @@ export interface WorkflowAuditDocumentDelegate<
   >;
 
   /**
-   * Update one WorkflowAuditDocument.
-   * @param {WorkflowAuditDocumentUpdateArgs} args - Arguments to update one WorkflowAuditDocument.
+   * Update one AuditDocument.
+   * @param {AuditDocumentUpdateArgs} args - Arguments to update one AuditDocument.
    * @example
-   * // Update one WorkflowAuditDocument
-   * const workflowAuditDocument = await prisma.workflowAuditDocument.update({
+   * // Update one AuditDocument
+   * const auditDocument = await prisma.auditDocument.update({
    *   where: {
    *     // ... provide filter here
    *   },
@@ -1200,11 +1146,11 @@ export interface WorkflowAuditDocumentDelegate<
    * })
    *
    */
-  update<T extends WorkflowAuditDocumentUpdateArgs>(
-    args: Prisma.SelectSubset<T, WorkflowAuditDocumentUpdateArgs<ExtArgs>>,
-  ): Prisma.Prisma__WorkflowAuditDocumentClient<
+  update<T extends AuditDocumentUpdateArgs>(
+    args: Prisma.SelectSubset<T, AuditDocumentUpdateArgs<ExtArgs>>,
+  ): Prisma.Prisma__AuditDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$WorkflowAuditDocumentPayload<ExtArgs>,
+      Prisma.$AuditDocumentPayload<ExtArgs>,
       T,
       "update",
       GlobalOmitOptions
@@ -1215,29 +1161,29 @@ export interface WorkflowAuditDocumentDelegate<
   >;
 
   /**
-   * Delete zero or more WorkflowAuditDocuments.
-   * @param {WorkflowAuditDocumentDeleteManyArgs} args - Arguments to filter WorkflowAuditDocuments to delete.
+   * Delete zero or more AuditDocuments.
+   * @param {AuditDocumentDeleteManyArgs} args - Arguments to filter AuditDocuments to delete.
    * @example
-   * // Delete a few WorkflowAuditDocuments
-   * const { count } = await prisma.workflowAuditDocument.deleteMany({
+   * // Delete a few AuditDocuments
+   * const { count } = await prisma.auditDocument.deleteMany({
    *   where: {
    *     // ... provide filter here
    *   }
    * })
    *
    */
-  deleteMany<T extends WorkflowAuditDocumentDeleteManyArgs>(
-    args?: Prisma.SelectSubset<T, WorkflowAuditDocumentDeleteManyArgs<ExtArgs>>,
+  deleteMany<T extends AuditDocumentDeleteManyArgs>(
+    args?: Prisma.SelectSubset<T, AuditDocumentDeleteManyArgs<ExtArgs>>,
   ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
   /**
-   * Update zero or more WorkflowAuditDocuments.
+   * Update zero or more AuditDocuments.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {WorkflowAuditDocumentUpdateManyArgs} args - Arguments to update one or more rows.
+   * @param {AuditDocumentUpdateManyArgs} args - Arguments to update one or more rows.
    * @example
-   * // Update many WorkflowAuditDocuments
-   * const workflowAuditDocument = await prisma.workflowAuditDocument.updateMany({
+   * // Update many AuditDocuments
+   * const auditDocument = await prisma.auditDocument.updateMany({
    *   where: {
    *     // ... provide filter here
    *   },
@@ -1247,32 +1193,32 @@ export interface WorkflowAuditDocumentDelegate<
    * })
    *
    */
-  updateMany<T extends WorkflowAuditDocumentUpdateManyArgs>(
-    args: Prisma.SelectSubset<T, WorkflowAuditDocumentUpdateManyArgs<ExtArgs>>,
+  updateMany<T extends AuditDocumentUpdateManyArgs>(
+    args: Prisma.SelectSubset<T, AuditDocumentUpdateManyArgs<ExtArgs>>,
   ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
   /**
-   * Create or update one WorkflowAuditDocument.
-   * @param {WorkflowAuditDocumentUpsertArgs} args - Arguments to update or create a WorkflowAuditDocument.
+   * Create or update one AuditDocument.
+   * @param {AuditDocumentUpsertArgs} args - Arguments to update or create a AuditDocument.
    * @example
-   * // Update or create a WorkflowAuditDocument
-   * const workflowAuditDocument = await prisma.workflowAuditDocument.upsert({
+   * // Update or create a AuditDocument
+   * const auditDocument = await prisma.auditDocument.upsert({
    *   create: {
-   *     // ... data to create a WorkflowAuditDocument
+   *     // ... data to create a AuditDocument
    *   },
    *   update: {
    *     // ... in case it already exists, update
    *   },
    *   where: {
-   *     // ... the filter for the WorkflowAuditDocument we want to update
+   *     // ... the filter for the AuditDocument we want to update
    *   }
    * })
    */
-  upsert<T extends WorkflowAuditDocumentUpsertArgs>(
-    args: Prisma.SelectSubset<T, WorkflowAuditDocumentUpsertArgs<ExtArgs>>,
-  ): Prisma.Prisma__WorkflowAuditDocumentClient<
+  upsert<T extends AuditDocumentUpsertArgs>(
+    args: Prisma.SelectSubset<T, AuditDocumentUpsertArgs<ExtArgs>>,
+  ): Prisma.Prisma__AuditDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$WorkflowAuditDocumentPayload<ExtArgs>,
+      Prisma.$AuditDocumentPayload<ExtArgs>,
       T,
       "upsert",
       GlobalOmitOptions
@@ -1283,36 +1229,36 @@ export interface WorkflowAuditDocumentDelegate<
   >;
 
   /**
-   * Count the number of WorkflowAuditDocuments.
+   * Count the number of AuditDocuments.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {WorkflowAuditDocumentCountArgs} args - Arguments to filter WorkflowAuditDocuments to count.
+   * @param {AuditDocumentCountArgs} args - Arguments to filter AuditDocuments to count.
    * @example
-   * // Count the number of WorkflowAuditDocuments
-   * const count = await prisma.workflowAuditDocument.count({
+   * // Count the number of AuditDocuments
+   * const count = await prisma.auditDocument.count({
    *   where: {
-   *     // ... the filter for the WorkflowAuditDocuments we want to count
+   *     // ... the filter for the AuditDocuments we want to count
    *   }
    * })
    **/
-  count<T extends WorkflowAuditDocumentCountArgs>(
-    args?: Prisma.Subset<T, WorkflowAuditDocumentCountArgs>,
+  count<T extends AuditDocumentCountArgs>(
+    args?: Prisma.Subset<T, AuditDocumentCountArgs>,
   ): Prisma.PrismaPromise<
     T extends runtime.Types.Utils.Record<"select", any>
       ? T["select"] extends true
         ? number
         : Prisma.GetScalarType<
             T["select"],
-            WorkflowAuditDocumentCountAggregateOutputType
+            AuditDocumentCountAggregateOutputType
           >
       : number
   >;
 
   /**
-   * Allows you to perform aggregations operations on a WorkflowAuditDocument.
+   * Allows you to perform aggregations operations on a AuditDocument.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {WorkflowAuditDocumentAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+   * @param {AuditDocumentAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
    * @example
    * // Ordered by age ascending
    * // Where email contains prisma.io
@@ -1332,15 +1278,15 @@ export interface WorkflowAuditDocumentDelegate<
    *   take: 10,
    * })
    **/
-  aggregate<T extends WorkflowAuditDocumentAggregateArgs>(
-    args: Prisma.Subset<T, WorkflowAuditDocumentAggregateArgs>,
-  ): Prisma.PrismaPromise<GetWorkflowAuditDocumentAggregateType<T>>;
+  aggregate<T extends AuditDocumentAggregateArgs>(
+    args: Prisma.Subset<T, AuditDocumentAggregateArgs>,
+  ): Prisma.PrismaPromise<GetAuditDocumentAggregateType<T>>;
 
   /**
-   * Group by WorkflowAuditDocument.
+   * Group by AuditDocument.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {WorkflowAuditDocumentGroupByArgs} args - Group by arguments.
+   * @param {AuditDocumentGroupByArgs} args - Group by arguments.
    * @example
    * // Group by city, order by createdAt, get count
    * const result = await prisma.user.groupBy({
@@ -1355,14 +1301,14 @@ export interface WorkflowAuditDocumentDelegate<
    *
    **/
   groupBy<
-    T extends WorkflowAuditDocumentGroupByArgs,
+    T extends AuditDocumentGroupByArgs,
     HasSelectOrTake extends Prisma.Or<
       Prisma.Extends<"skip", Prisma.Keys<T>>,
       Prisma.Extends<"take", Prisma.Keys<T>>
     >,
     OrderByArg extends Prisma.True extends HasSelectOrTake
-      ? { orderBy: WorkflowAuditDocumentGroupByArgs["orderBy"] }
-      : { orderBy?: WorkflowAuditDocumentGroupByArgs["orderBy"] },
+      ? { orderBy: AuditDocumentGroupByArgs["orderBy"] }
+      : { orderBy?: AuditDocumentGroupByArgs["orderBy"] },
     OrderFields extends Prisma.ExcludeUnderscoreKeys<
       Prisma.Keys<Prisma.MaybeTupleToUnion<T["orderBy"]>>
     >,
@@ -1414,28 +1360,24 @@ export interface WorkflowAuditDocumentDelegate<
                     : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                 }[OrderFields],
   >(
-    args: Prisma.SubsetIntersection<
-      T,
-      WorkflowAuditDocumentGroupByArgs,
-      OrderByArg
-    > &
+    args: Prisma.SubsetIntersection<T, AuditDocumentGroupByArgs, OrderByArg> &
       InputErrors,
   ): {} extends InputErrors
-    ? GetWorkflowAuditDocumentGroupByPayload<T>
+    ? GetAuditDocumentGroupByPayload<T>
     : Prisma.PrismaPromise<InputErrors>;
   /**
-   * Fields of the WorkflowAuditDocument model
+   * Fields of the AuditDocument model
    */
-  readonly fields: WorkflowAuditDocumentFieldRefs;
+  readonly fields: AuditDocumentFieldRefs;
 }
 
 /**
- * The delegate class that acts as a "Promise-like" for WorkflowAuditDocument.
+ * The delegate class that acts as a "Promise-like" for AuditDocument.
  * Why is this prefixed with `Prisma__`?
  * Because we want to prevent naming conflicts as mentioned in
  * https://github.com/prisma/prisma-client-js/issues/707
  */
-export interface Prisma__WorkflowAuditDocumentClient<
+export interface Prisma__AuditDocumentClient<
   T,
   Null = never,
   ExtArgs extends
@@ -1482,420 +1424,414 @@ export interface Prisma__WorkflowAuditDocumentClient<
 }
 
 /**
- * Fields of the WorkflowAuditDocument model
+ * Fields of the AuditDocument model
  */
-export interface WorkflowAuditDocumentFieldRefs {
-  readonly id: Prisma.FieldRef<"WorkflowAuditDocument", "Int">;
-  readonly documentFamily: Prisma.FieldRef<
-    "WorkflowAuditDocument",
-    "DocumentFamily"
-  >;
-  readonly documentType: Prisma.FieldRef<"WorkflowAuditDocument", "String">;
-  readonly documentId: Prisma.FieldRef<"WorkflowAuditDocument", "Int">;
-  readonly documentNumber: Prisma.FieldRef<"WorkflowAuditDocument", "String">;
-  readonly auditStatus: Prisma.FieldRef<
-    "WorkflowAuditDocument",
-    "AuditStatusSnapshot"
-  >;
-  readonly submittedBy: Prisma.FieldRef<"WorkflowAuditDocument", "String">;
-  readonly submittedAt: Prisma.FieldRef<"WorkflowAuditDocument", "DateTime">;
-  readonly decidedBy: Prisma.FieldRef<"WorkflowAuditDocument", "String">;
-  readonly decidedAt: Prisma.FieldRef<"WorkflowAuditDocument", "DateTime">;
-  readonly rejectReason: Prisma.FieldRef<"WorkflowAuditDocument", "String">;
-  readonly resetCount: Prisma.FieldRef<"WorkflowAuditDocument", "Int">;
-  readonly lastResetAt: Prisma.FieldRef<"WorkflowAuditDocument", "DateTime">;
-  readonly createdBy: Prisma.FieldRef<"WorkflowAuditDocument", "String">;
-  readonly createdAt: Prisma.FieldRef<"WorkflowAuditDocument", "DateTime">;
-  readonly updatedBy: Prisma.FieldRef<"WorkflowAuditDocument", "String">;
-  readonly updatedAt: Prisma.FieldRef<"WorkflowAuditDocument", "DateTime">;
+export interface AuditDocumentFieldRefs {
+  readonly id: Prisma.FieldRef<"AuditDocument", "Int">;
+  readonly documentFamily: Prisma.FieldRef<"AuditDocument", "DocumentFamily">;
+  readonly documentType: Prisma.FieldRef<"AuditDocument", "String">;
+  readonly documentId: Prisma.FieldRef<"AuditDocument", "Int">;
+  readonly documentNumber: Prisma.FieldRef<"AuditDocument", "String">;
+  readonly auditStatus: Prisma.FieldRef<"AuditDocument", "AuditStatusSnapshot">;
+  readonly submittedBy: Prisma.FieldRef<"AuditDocument", "String">;
+  readonly submittedAt: Prisma.FieldRef<"AuditDocument", "DateTime">;
+  readonly decidedBy: Prisma.FieldRef<"AuditDocument", "String">;
+  readonly decidedAt: Prisma.FieldRef<"AuditDocument", "DateTime">;
+  readonly rejectReason: Prisma.FieldRef<"AuditDocument", "String">;
+  readonly resetCount: Prisma.FieldRef<"AuditDocument", "Int">;
+  readonly lastResetAt: Prisma.FieldRef<"AuditDocument", "DateTime">;
+  readonly createdBy: Prisma.FieldRef<"AuditDocument", "String">;
+  readonly createdAt: Prisma.FieldRef<"AuditDocument", "DateTime">;
+  readonly updatedBy: Prisma.FieldRef<"AuditDocument", "String">;
+  readonly updatedAt: Prisma.FieldRef<"AuditDocument", "DateTime">;
 }
 
 // Custom InputTypes
 /**
- * WorkflowAuditDocument findUnique
+ * AuditDocument findUnique
  */
-export type WorkflowAuditDocumentFindUniqueArgs<
+export type AuditDocumentFindUniqueArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the WorkflowAuditDocument
+   * Select specific fields to fetch from the AuditDocument
    */
-  select?: Prisma.WorkflowAuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the WorkflowAuditDocument
+   * Omit specific fields from the AuditDocument
    */
-  omit?: Prisma.WorkflowAuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
   /**
-   * Filter, which WorkflowAuditDocument to fetch.
+   * Filter, which AuditDocument to fetch.
    */
-  where: Prisma.WorkflowAuditDocumentWhereUniqueInput;
+  where: Prisma.AuditDocumentWhereUniqueInput;
 };
 
 /**
- * WorkflowAuditDocument findUniqueOrThrow
+ * AuditDocument findUniqueOrThrow
  */
-export type WorkflowAuditDocumentFindUniqueOrThrowArgs<
+export type AuditDocumentFindUniqueOrThrowArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the WorkflowAuditDocument
+   * Select specific fields to fetch from the AuditDocument
    */
-  select?: Prisma.WorkflowAuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the WorkflowAuditDocument
+   * Omit specific fields from the AuditDocument
    */
-  omit?: Prisma.WorkflowAuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
   /**
-   * Filter, which WorkflowAuditDocument to fetch.
+   * Filter, which AuditDocument to fetch.
    */
-  where: Prisma.WorkflowAuditDocumentWhereUniqueInput;
+  where: Prisma.AuditDocumentWhereUniqueInput;
 };
 
 /**
- * WorkflowAuditDocument findFirst
+ * AuditDocument findFirst
  */
-export type WorkflowAuditDocumentFindFirstArgs<
+export type AuditDocumentFindFirstArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the WorkflowAuditDocument
+   * Select specific fields to fetch from the AuditDocument
    */
-  select?: Prisma.WorkflowAuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the WorkflowAuditDocument
+   * Omit specific fields from the AuditDocument
    */
-  omit?: Prisma.WorkflowAuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
   /**
-   * Filter, which WorkflowAuditDocument to fetch.
+   * Filter, which AuditDocument to fetch.
    */
-  where?: Prisma.WorkflowAuditDocumentWhereInput;
+  where?: Prisma.AuditDocumentWhereInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    *
-   * Determine the order of WorkflowAuditDocuments to fetch.
+   * Determine the order of AuditDocuments to fetch.
    */
   orderBy?:
-    | Prisma.WorkflowAuditDocumentOrderByWithRelationInput
-    | Prisma.WorkflowAuditDocumentOrderByWithRelationInput[];
+    | Prisma.AuditDocumentOrderByWithRelationInput
+    | Prisma.AuditDocumentOrderByWithRelationInput[];
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    *
-   * Sets the position for searching for WorkflowAuditDocuments.
+   * Sets the position for searching for AuditDocuments.
    */
-  cursor?: Prisma.WorkflowAuditDocumentWhereUniqueInput;
+  cursor?: Prisma.AuditDocumentWhereUniqueInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Take `±n` WorkflowAuditDocuments from the position of the cursor.
+   * Take `±n` AuditDocuments from the position of the cursor.
    */
   take?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Skip the first `n` WorkflowAuditDocuments.
+   * Skip the first `n` AuditDocuments.
    */
   skip?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
    *
-   * Filter by unique combinations of WorkflowAuditDocuments.
+   * Filter by unique combinations of AuditDocuments.
    */
   distinct?:
-    | Prisma.WorkflowAuditDocumentScalarFieldEnum
-    | Prisma.WorkflowAuditDocumentScalarFieldEnum[];
+    | Prisma.AuditDocumentScalarFieldEnum
+    | Prisma.AuditDocumentScalarFieldEnum[];
 };
 
 /**
- * WorkflowAuditDocument findFirstOrThrow
+ * AuditDocument findFirstOrThrow
  */
-export type WorkflowAuditDocumentFindFirstOrThrowArgs<
+export type AuditDocumentFindFirstOrThrowArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the WorkflowAuditDocument
+   * Select specific fields to fetch from the AuditDocument
    */
-  select?: Prisma.WorkflowAuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the WorkflowAuditDocument
+   * Omit specific fields from the AuditDocument
    */
-  omit?: Prisma.WorkflowAuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
   /**
-   * Filter, which WorkflowAuditDocument to fetch.
+   * Filter, which AuditDocument to fetch.
    */
-  where?: Prisma.WorkflowAuditDocumentWhereInput;
+  where?: Prisma.AuditDocumentWhereInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    *
-   * Determine the order of WorkflowAuditDocuments to fetch.
+   * Determine the order of AuditDocuments to fetch.
    */
   orderBy?:
-    | Prisma.WorkflowAuditDocumentOrderByWithRelationInput
-    | Prisma.WorkflowAuditDocumentOrderByWithRelationInput[];
+    | Prisma.AuditDocumentOrderByWithRelationInput
+    | Prisma.AuditDocumentOrderByWithRelationInput[];
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    *
-   * Sets the position for searching for WorkflowAuditDocuments.
+   * Sets the position for searching for AuditDocuments.
    */
-  cursor?: Prisma.WorkflowAuditDocumentWhereUniqueInput;
+  cursor?: Prisma.AuditDocumentWhereUniqueInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Take `±n` WorkflowAuditDocuments from the position of the cursor.
+   * Take `±n` AuditDocuments from the position of the cursor.
    */
   take?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Skip the first `n` WorkflowAuditDocuments.
+   * Skip the first `n` AuditDocuments.
    */
   skip?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
    *
-   * Filter by unique combinations of WorkflowAuditDocuments.
+   * Filter by unique combinations of AuditDocuments.
    */
   distinct?:
-    | Prisma.WorkflowAuditDocumentScalarFieldEnum
-    | Prisma.WorkflowAuditDocumentScalarFieldEnum[];
+    | Prisma.AuditDocumentScalarFieldEnum
+    | Prisma.AuditDocumentScalarFieldEnum[];
 };
 
 /**
- * WorkflowAuditDocument findMany
+ * AuditDocument findMany
  */
-export type WorkflowAuditDocumentFindManyArgs<
+export type AuditDocumentFindManyArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the WorkflowAuditDocument
+   * Select specific fields to fetch from the AuditDocument
    */
-  select?: Prisma.WorkflowAuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the WorkflowAuditDocument
+   * Omit specific fields from the AuditDocument
    */
-  omit?: Prisma.WorkflowAuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
   /**
-   * Filter, which WorkflowAuditDocuments to fetch.
+   * Filter, which AuditDocuments to fetch.
    */
-  where?: Prisma.WorkflowAuditDocumentWhereInput;
+  where?: Prisma.AuditDocumentWhereInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    *
-   * Determine the order of WorkflowAuditDocuments to fetch.
+   * Determine the order of AuditDocuments to fetch.
    */
   orderBy?:
-    | Prisma.WorkflowAuditDocumentOrderByWithRelationInput
-    | Prisma.WorkflowAuditDocumentOrderByWithRelationInput[];
+    | Prisma.AuditDocumentOrderByWithRelationInput
+    | Prisma.AuditDocumentOrderByWithRelationInput[];
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    *
-   * Sets the position for listing WorkflowAuditDocuments.
+   * Sets the position for listing AuditDocuments.
    */
-  cursor?: Prisma.WorkflowAuditDocumentWhereUniqueInput;
+  cursor?: Prisma.AuditDocumentWhereUniqueInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Take `±n` WorkflowAuditDocuments from the position of the cursor.
+   * Take `±n` AuditDocuments from the position of the cursor.
    */
   take?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Skip the first `n` WorkflowAuditDocuments.
+   * Skip the first `n` AuditDocuments.
    */
   skip?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
    *
-   * Filter by unique combinations of WorkflowAuditDocuments.
+   * Filter by unique combinations of AuditDocuments.
    */
   distinct?:
-    | Prisma.WorkflowAuditDocumentScalarFieldEnum
-    | Prisma.WorkflowAuditDocumentScalarFieldEnum[];
+    | Prisma.AuditDocumentScalarFieldEnum
+    | Prisma.AuditDocumentScalarFieldEnum[];
 };
 
 /**
- * WorkflowAuditDocument create
+ * AuditDocument create
  */
-export type WorkflowAuditDocumentCreateArgs<
+export type AuditDocumentCreateArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the WorkflowAuditDocument
+   * Select specific fields to fetch from the AuditDocument
    */
-  select?: Prisma.WorkflowAuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the WorkflowAuditDocument
+   * Omit specific fields from the AuditDocument
    */
-  omit?: Prisma.WorkflowAuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
   /**
-   * The data needed to create a WorkflowAuditDocument.
+   * The data needed to create a AuditDocument.
    */
   data: Prisma.XOR<
-    Prisma.WorkflowAuditDocumentCreateInput,
-    Prisma.WorkflowAuditDocumentUncheckedCreateInput
+    Prisma.AuditDocumentCreateInput,
+    Prisma.AuditDocumentUncheckedCreateInput
   >;
 };
 
 /**
- * WorkflowAuditDocument createMany
+ * AuditDocument createMany
  */
-export type WorkflowAuditDocumentCreateManyArgs<
+export type AuditDocumentCreateManyArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * The data used to create many WorkflowAuditDocuments.
+   * The data used to create many AuditDocuments.
    */
   data:
-    | Prisma.WorkflowAuditDocumentCreateManyInput
-    | Prisma.WorkflowAuditDocumentCreateManyInput[];
+    | Prisma.AuditDocumentCreateManyInput
+    | Prisma.AuditDocumentCreateManyInput[];
   skipDuplicates?: boolean;
 };
 
 /**
- * WorkflowAuditDocument update
+ * AuditDocument update
  */
-export type WorkflowAuditDocumentUpdateArgs<
+export type AuditDocumentUpdateArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the WorkflowAuditDocument
+   * Select specific fields to fetch from the AuditDocument
    */
-  select?: Prisma.WorkflowAuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the WorkflowAuditDocument
+   * Omit specific fields from the AuditDocument
    */
-  omit?: Prisma.WorkflowAuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
   /**
-   * The data needed to update a WorkflowAuditDocument.
+   * The data needed to update a AuditDocument.
    */
   data: Prisma.XOR<
-    Prisma.WorkflowAuditDocumentUpdateInput,
-    Prisma.WorkflowAuditDocumentUncheckedUpdateInput
+    Prisma.AuditDocumentUpdateInput,
+    Prisma.AuditDocumentUncheckedUpdateInput
   >;
   /**
-   * Choose, which WorkflowAuditDocument to update.
+   * Choose, which AuditDocument to update.
    */
-  where: Prisma.WorkflowAuditDocumentWhereUniqueInput;
+  where: Prisma.AuditDocumentWhereUniqueInput;
 };
 
 /**
- * WorkflowAuditDocument updateMany
+ * AuditDocument updateMany
  */
-export type WorkflowAuditDocumentUpdateManyArgs<
+export type AuditDocumentUpdateManyArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * The data used to update WorkflowAuditDocuments.
+   * The data used to update AuditDocuments.
    */
   data: Prisma.XOR<
-    Prisma.WorkflowAuditDocumentUpdateManyMutationInput,
-    Prisma.WorkflowAuditDocumentUncheckedUpdateManyInput
+    Prisma.AuditDocumentUpdateManyMutationInput,
+    Prisma.AuditDocumentUncheckedUpdateManyInput
   >;
   /**
-   * Filter which WorkflowAuditDocuments to update
+   * Filter which AuditDocuments to update
    */
-  where?: Prisma.WorkflowAuditDocumentWhereInput;
+  where?: Prisma.AuditDocumentWhereInput;
   /**
-   * Limit how many WorkflowAuditDocuments to update.
+   * Limit how many AuditDocuments to update.
    */
   limit?: number;
 };
 
 /**
- * WorkflowAuditDocument upsert
+ * AuditDocument upsert
  */
-export type WorkflowAuditDocumentUpsertArgs<
+export type AuditDocumentUpsertArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the WorkflowAuditDocument
+   * Select specific fields to fetch from the AuditDocument
    */
-  select?: Prisma.WorkflowAuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the WorkflowAuditDocument
+   * Omit specific fields from the AuditDocument
    */
-  omit?: Prisma.WorkflowAuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
   /**
-   * The filter to search for the WorkflowAuditDocument to update in case it exists.
+   * The filter to search for the AuditDocument to update in case it exists.
    */
-  where: Prisma.WorkflowAuditDocumentWhereUniqueInput;
+  where: Prisma.AuditDocumentWhereUniqueInput;
   /**
-   * In case the WorkflowAuditDocument found by the `where` argument doesn't exist, create a new WorkflowAuditDocument with this data.
+   * In case the AuditDocument found by the `where` argument doesn't exist, create a new AuditDocument with this data.
    */
   create: Prisma.XOR<
-    Prisma.WorkflowAuditDocumentCreateInput,
-    Prisma.WorkflowAuditDocumentUncheckedCreateInput
+    Prisma.AuditDocumentCreateInput,
+    Prisma.AuditDocumentUncheckedCreateInput
   >;
   /**
-   * In case the WorkflowAuditDocument was found with the provided `where` argument, update it with this data.
+   * In case the AuditDocument was found with the provided `where` argument, update it with this data.
    */
   update: Prisma.XOR<
-    Prisma.WorkflowAuditDocumentUpdateInput,
-    Prisma.WorkflowAuditDocumentUncheckedUpdateInput
+    Prisma.AuditDocumentUpdateInput,
+    Prisma.AuditDocumentUncheckedUpdateInput
   >;
 };
 
 /**
- * WorkflowAuditDocument delete
+ * AuditDocument delete
  */
-export type WorkflowAuditDocumentDeleteArgs<
+export type AuditDocumentDeleteArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the WorkflowAuditDocument
+   * Select specific fields to fetch from the AuditDocument
    */
-  select?: Prisma.WorkflowAuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the WorkflowAuditDocument
+   * Omit specific fields from the AuditDocument
    */
-  omit?: Prisma.WorkflowAuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
   /**
-   * Filter which WorkflowAuditDocument to delete.
+   * Filter which AuditDocument to delete.
    */
-  where: Prisma.WorkflowAuditDocumentWhereUniqueInput;
+  where: Prisma.AuditDocumentWhereUniqueInput;
 };
 
 /**
- * WorkflowAuditDocument deleteMany
+ * AuditDocument deleteMany
  */
-export type WorkflowAuditDocumentDeleteManyArgs<
+export type AuditDocumentDeleteManyArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Filter which WorkflowAuditDocuments to delete
+   * Filter which AuditDocuments to delete
    */
-  where?: Prisma.WorkflowAuditDocumentWhereInput;
+  where?: Prisma.AuditDocumentWhereInput;
   /**
-   * Limit how many WorkflowAuditDocuments to delete.
+   * Limit how many AuditDocuments to delete.
    */
   limit?: number;
 };
 
 /**
- * WorkflowAuditDocument without action
+ * AuditDocument without action
  */
-export type WorkflowAuditDocumentDefaultArgs<
+export type AuditDocumentDefaultArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the WorkflowAuditDocument
+   * Select specific fields to fetch from the AuditDocument
    */
-  select?: Prisma.WorkflowAuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the WorkflowAuditDocument
+   * Omit specific fields from the AuditDocument
    */
-  omit?: Prisma.WorkflowAuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
 };

@@ -59,7 +59,7 @@
       "factory_number_reservation": 80,
       "inventory_log": 154,
       "inventory_source_usage": 0,
-      "workflow_audit_document": 113
+      "audit_document": 113
     },
     "lineBatchMapRows": 137,
     "lineTargetRows": 150,
@@ -72,7 +72,7 @@
     {
       "reason": "A table that must remain untouched by the outbound base slice already contains CustomerStockOrder-linked rows.",
       "severity": "blocker",
-      "tableName": "workflow_audit_document",
+      "tableName": "audit_document",
       "total": 113
     },
     {

@@ -106,7 +106,7 @@ describe("workshop-pick execute guard", () => {
           inventory_balance: 0,
           inventory_log: 0,
           inventory_source_usage: 0,
-          workflow_audit_document: 0,
+          audit_document: 0,
         },
       }),
     ).toEqual([
@@ -129,7 +129,7 @@ describe("workshop-pick execute guard", () => {
           inventory_balance: 0,
           inventory_log: 0,
           inventory_source_usage: 0,
-          workflow_audit_document: 0,
+          audit_document: 0,
         },
       }),
     ).toEqual([
@@ -152,7 +152,7 @@ describe("workshop-pick execute guard", () => {
           inventory_balance: 0,
           inventory_log: 0,
           inventory_source_usage: 0,
-          workflow_audit_document: 0,
+          audit_document: 0,
         },
       }),
     ).toEqual([]);
@@ -169,7 +169,7 @@ describe("workshop-pick execute guard", () => {
           inventory_balance: 3,
           inventory_log: 0,
           inventory_source_usage: 0,
-          workflow_audit_document: 0,
+          audit_document: 0,
         },
       }),
     ).toEqual([

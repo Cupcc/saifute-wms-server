@@ -15,7 +15,7 @@ export async function auditDocument(data) {
   }
 
   const auditResponse = await request({
-    url: "/api/workflow/audits/document",
+    url: "/api/audit/documents/detail",
     method: "get",
     params: {
       documentType,
@@ -30,13 +30,13 @@ export async function auditDocument(data) {
 
   if (String(data.auditStatus) === "1") {
     return request({
-      url: `/api/workflow/audits/${audit.id}/approve`,
+      url: `/api/audit/documents/${audit.id}/approve`,
       method: "post",
     });
   }
 
   return request({
-    url: `/api/workflow/audits/${audit.id}/reject`,
+    url: `/api/audit/documents/${audit.id}/reject`,
     method: "post",
     data: {
       rejectReason: data.rejectReason ?? "legacy page reject action",

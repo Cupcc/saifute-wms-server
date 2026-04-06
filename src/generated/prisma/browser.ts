@@ -58,6 +58,11 @@ export type StockScope = Prisma.StockScopeModel;
  */
 export type InventoryBalance = Prisma.InventoryBalanceModel;
 /**
+ * Model AllocationTarget
+ *
+ */
+export type AllocationTarget = Prisma.AllocationTargetModel;
+/**
  * Model InventoryLog
  *
  */
@@ -73,10 +78,10 @@ export type InventorySourceUsage = Prisma.InventorySourceUsageModel;
  */
 export type FactoryNumberReservation = Prisma.FactoryNumberReservationModel;
 /**
- * Model WorkflowAuditDocument
+ * Model AuditDocument
  *
  */
-export type WorkflowAuditDocument = Prisma.WorkflowAuditDocumentModel;
+export type AuditDocument = Prisma.AuditDocumentModel;
 /**
  * Model StockInOrder
  *

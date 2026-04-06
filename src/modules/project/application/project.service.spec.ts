@@ -22,6 +22,7 @@ describe("ProjectService", () => {
     supplierId: 20,
     managerPersonnelId: 30,
     workshopId: 1,
+    allocationTargetId: null,
     lifecycleStatus: DocumentLifecycleStatus.EFFECTIVE,
     auditStatusSnapshot: AuditStatusSnapshot.NOT_REQUIRED,
     inventoryEffectStatus: InventoryEffectStatus.POSTED,
@@ -118,6 +119,15 @@ describe("ProjectService", () => {
             createProjectLine: jest.fn(),
             updateProjectLine: jest.fn(),
             deleteProjectLine: jest.fn(),
+            findAllocationTargetBySource: jest.fn().mockResolvedValue(null),
+            createAllocationTarget: jest.fn().mockResolvedValue({
+              id: 5001,
+              targetType: "RD_PROJECT",
+              targetCode: "PRJ-001",
+              targetName: "Project A",
+            }),
+            updateAllocationTarget: jest.fn(),
+            attachAllocationTargetToProject: jest.fn().mockResolvedValue({}),
             hasActiveDownstreamDependencies: jest.fn().mockResolvedValue(false),
           },
         },
@@ -185,6 +195,10 @@ describe("ProjectService", () => {
     it("should create project with inventory decrease (consumption)", async () => {
       (repository.findProjectByCode as jest.Mock).mockResolvedValue(null);
       (repository.createProject as jest.Mock).mockResolvedValue(mockProject);
+      (repository.findProjectById as jest.Mock).mockResolvedValue({
+        ...mockProject,
+        allocationTargetId: 5001,
+      });
 
       const dto = {
         projectCode: "PRJ-001",
@@ -199,11 +213,15 @@ describe("ProjectService", () => {
 
       const result = await service.createProject(dto, "1");
 
-      expect(result).toEqual(mockProject);
+      expect(result).toEqual({
+        ...mockProject,
+        allocationTargetId: 5001,
+      });
       expect(repository.findProjectByCode).toHaveBeenCalledWith("PRJ-001");
       expect(repository.createProject).toHaveBeenCalled();
       expect(inventoryService.settleConsumerOut).toHaveBeenCalledWith(
         expect.objectContaining({
+          allocationTargetId: 5001,
           materialId: 100,
           stockScope: "MAIN",
           operationType: "PROJECT_CONSUMPTION_OUT",

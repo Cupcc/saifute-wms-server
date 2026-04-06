@@ -342,8 +342,8 @@ async function getForbiddenTableCounts(connection: {
     Array<{ tableName: string; total: number }>
   >(
     `
-      SELECT 'workflow_audit_document' AS tableName, COUNT(*) AS total
-      FROM workflow_audit_document
+      SELECT 'audit_document' AS tableName, COUNT(*) AS total
+      FROM audit_document
       WHERE documentFamily = 'WORKSHOP_MATERIAL' OR documentType = 'WorkshopMaterialOrder'
       UNION ALL
       SELECT 'document_relation' AS tableName, COUNT(*) AS total

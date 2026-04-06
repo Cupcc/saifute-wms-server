@@ -120,7 +120,7 @@ function mapInboundOrder(order, config, audit = null) {
 
 async function fetchAuditDocument(config, documentId) {
   const response = await request({
-    url: "/api/workflow/audits/document",
+    url: "/api/audit/documents/detail",
     method: "get",
     params: {
       documentType: config.documentType,

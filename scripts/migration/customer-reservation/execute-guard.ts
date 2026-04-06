@@ -138,8 +138,8 @@ export function buildDownstreamConsumerBlockers(
   return [
     {
       reason: state.hasBatchOwnership
-        ? "Outbound reservation rerun is blocked because downstream tables already exist for later relation, workflow, or inventory slices."
-        : "Outbound reservation execute is blocked because downstream relation, workflow, or inventory slices already observed the current outbound baseline before this batch owned any reservation rows.",
+        ? "Outbound reservation rerun is blocked because downstream tables already exist for later relation, audit, or inventory slices."
+        : "Outbound reservation execute is blocked because downstream relation, audit, or inventory slices already observed the current outbound baseline before this batch owned any reservation rows.",
       downstreamConsumers: Object.fromEntries(activeConsumers),
     },
   ];

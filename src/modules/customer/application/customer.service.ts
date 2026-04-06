@@ -15,12 +15,12 @@ import {
   Prisma,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
+import { AuditService } from "../../audit/application/audit.service";
 import {
   FIFO_SOURCE_OPERATION_TYPES,
   InventoryService,
 } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
-import { WorkflowService } from "../../workflow/application/workflow.service";
 import type { CreateOutboundOrderDto } from "../dto/create-outbound-order.dto";
 import type { CreateSalesReturnDto } from "../dto/create-sales-return.dto";
 import type { QueryOutboundOrderDto } from "../dto/query-outbound-order.dto";
@@ -57,7 +57,7 @@ export class CustomerService {
     private readonly repository: CustomerRepository,
     private readonly masterDataService: MasterDataService,
     private readonly inventoryService: InventoryService,
-    private readonly workflowService: WorkflowService,
+    private readonly auditService: AuditService,
   ) {}
 
   async listOrders(query: QueryOutboundOrderDto) {
@@ -203,7 +203,7 @@ export class CustomerService {
         }
       }
 
-      await this.workflowService.createOrRefreshAuditDocument(
+      await this.auditService.createOrRefreshAuditDocument(
         {
           documentFamily: DocumentFamily.CUSTOMER_STOCK,
           documentType: DOCUMENT_TYPE,
@@ -590,7 +590,7 @@ export class CustomerService {
         tx,
       );
 
-      await this.workflowService.createOrRefreshAuditDocument(
+      await this.auditService.createOrRefreshAuditDocument(
         {
           documentFamily: DocumentFamily.CUSTOMER_STOCK,
           documentType: DOCUMENT_TYPE,
@@ -692,7 +692,7 @@ export class CustomerService {
         tx,
       );
 
-      await this.workflowService.markAuditNotRequired(
+      await this.auditService.markAuditNotRequired(
         DOCUMENT_TYPE,
         id,
         voidedBy,
@@ -978,7 +978,7 @@ export class CustomerService {
         }
       }
 
-      await this.workflowService.createOrRefreshAuditDocument(
+      await this.auditService.createOrRefreshAuditDocument(
         {
           documentFamily: DocumentFamily.CUSTOMER_STOCK,
           documentType: DOCUMENT_TYPE,
@@ -1070,7 +1070,7 @@ export class CustomerService {
         tx,
       );
 
-      await this.workflowService.markAuditNotRequired(
+      await this.auditService.markAuditNotRequired(
         DOCUMENT_TYPE,
         id,
         voidedBy,

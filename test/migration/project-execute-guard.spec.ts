@@ -91,7 +91,7 @@ describe("project execute guard", () => {
           factory_number_reservation: 0,
           inventory_log: 0,
           inventory_source_usage: 0,
-          workflow_audit_document: 0,
+          audit_document: 0,
         },
       }),
     ).toEqual([
@@ -154,7 +154,7 @@ describe("project execute guard", () => {
         consumerCounts: {
           document_relation: 0,
           inventory_log: 0,
-          workflow_audit_document: 0,
+          audit_document: 0,
         },
       }),
     ).toEqual([]);
@@ -167,14 +167,14 @@ describe("project execute guard", () => {
         consumerCounts: {
           document_relation: 0,
           inventory_log: 5,
-          workflow_audit_document: 2,
+          audit_document: 2,
         },
       }),
     ).toEqual([
       expect.objectContaining({
         downstreamConsumers: {
           inventory_log: 5,
-          workflow_audit_document: 2,
+          audit_document: 2,
         },
       }),
     ]);

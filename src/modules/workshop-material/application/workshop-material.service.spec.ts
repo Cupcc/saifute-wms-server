@@ -13,9 +13,9 @@ import {
   WorkshopMaterialOrderType,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
+import { AuditService } from "../../audit/application/audit.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
-import { WorkflowService } from "../../workflow/application/workflow.service";
 import { WorkshopMaterialRepository } from "../infrastructure/workshop-material.repository";
 import { WorkshopMaterialService } from "./workshop-material.service";
 
@@ -85,7 +85,7 @@ describe("WorkshopMaterialService", () => {
   let repository: jest.Mocked<WorkshopMaterialRepository>;
   let masterDataService: jest.Mocked<MasterDataService>;
   let inventoryService: jest.Mocked<InventoryService>;
-  let workflowService: jest.Mocked<WorkflowService>;
+  let auditService: jest.Mocked<AuditService>;
   let prisma: { runInTransaction: jest.Mock };
 
   beforeEach(async () => {
@@ -161,7 +161,7 @@ describe("WorkshopMaterialService", () => {
           },
         },
         {
-          provide: WorkflowService,
+          provide: AuditService,
           useValue: {
             createOrRefreshAuditDocument: jest.fn().mockResolvedValue({}),
             markAuditNotRequired: jest.fn().mockResolvedValue({ count: 1 }),
@@ -174,7 +174,7 @@ describe("WorkshopMaterialService", () => {
     repository = moduleRef.get(WorkshopMaterialRepository);
     masterDataService = moduleRef.get(MasterDataService);
     inventoryService = moduleRef.get(InventoryService);
-    workflowService = moduleRef.get(WorkflowService);
+    auditService = moduleRef.get(AuditService);
 
     (masterDataService.getMaterialById as jest.Mock).mockResolvedValue(
       mockMaterial,
@@ -218,7 +218,7 @@ describe("WorkshopMaterialService", () => {
         }),
         expect.anything(),
       );
-      expect(workflowService.createOrRefreshAuditDocument).toHaveBeenCalledWith(
+      expect(auditService.createOrRefreshAuditDocument).toHaveBeenCalledWith(
         expect.objectContaining({
           documentFamily: DocumentFamily.WORKSHOP_MATERIAL,
           documentType: "WorkshopMaterialOrder",
@@ -277,9 +277,7 @@ describe("WorkshopMaterialService", () => {
         }),
         expect.anything(),
       );
-      expect(
-        workflowService.createOrRefreshAuditDocument,
-      ).not.toHaveBeenCalled();
+      expect(auditService.createOrRefreshAuditDocument).not.toHaveBeenCalled();
     });
   });
 
@@ -885,7 +883,7 @@ describe("WorkshopMaterialService", () => {
         }),
         expect.anything(),
       );
-      expect(workflowService.markAuditNotRequired).toHaveBeenCalledWith(
+      expect(auditService.markAuditNotRequired).toHaveBeenCalledWith(
         "WorkshopMaterialOrder",
         1,
         "1",

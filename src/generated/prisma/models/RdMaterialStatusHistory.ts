@@ -1359,10 +1359,6 @@ export type EnumRdMaterialStatusFieldUpdateOperationsInput = {
   set?: $Enums.RdMaterialStatus;
 };
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean;
-};
-
 export type RdMaterialStatusHistoryUpdateOneWithoutReversedByHistoriesNestedInput =
   {
     create?: Prisma.XOR<

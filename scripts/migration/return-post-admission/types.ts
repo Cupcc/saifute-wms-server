@@ -217,7 +217,7 @@ export interface InventorySourceUsageInsert {
   status: SourceUsageStatusValue;
 }
 
-export interface WorkflowAuditDocumentInsert {
+export interface AuditDocumentInsert {
   documentFamily: DocumentFamilyValue;
   documentType: string;
   documentId: number;
@@ -252,8 +252,8 @@ export interface InventoryReplayPlan {
   }>;
 }
 
-export interface WorkflowProjectionPlan {
-  workflowDocumentInserts: WorkflowAuditDocumentInsert[];
+export interface AuditProjectionPlan {
+  auditDocumentInserts: AuditDocumentInsert[];
 }
 
 export interface PostAdmissionMigrationPlan {
@@ -261,7 +261,7 @@ export interface PostAdmissionMigrationPlan {
   relation: RelationClassificationPlan;
   backfill: SourceBackfillPlan;
   replay: InventoryReplayPlan;
-  workflow: WorkflowProjectionPlan;
+  audit: AuditProjectionPlan;
   globalBlockers: Array<{ reason: string; details?: Record<string, unknown> }>;
   warnings: Array<{ reason: string; details?: Record<string, unknown> }>;
   counts: PostAdmissionPlanCounts;
@@ -283,7 +283,7 @@ export interface PostAdmissionPlanCounts {
   inventoryLogInserts: number;
   sourceUsageInserts: number;
   sourceUsageGaps: number;
-  workflowDocumentInserts: number;
+  auditDocumentInserts: number;
 }
 
 export interface PostAdmissionExecutionResult {
@@ -294,5 +294,5 @@ export interface PostAdmissionExecutionResult {
   inventoryBalancesInserted: number;
   inventoryLogsInserted: number;
   sourceUsageInserted: number;
-  workflowDocumentsInserted: number;
+  auditDocumentsInserted: number;
 }

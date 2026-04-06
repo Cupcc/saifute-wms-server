@@ -8,6 +8,21 @@ import {
 import type { RbacUserRecord, RouteNode } from "../domain/rbac.types";
 import { InMemoryRbacRepository } from "../infrastructure/in-memory-rbac.repository";
 
+const PERMISSION_ALIAS_MAP: Record<string, string[]> = {
+  "workflow:audit:status": ["audit:document:status"],
+  "workflow:audit:list": ["audit:document:list"],
+  "workflow:audit:create": ["audit:document:create"],
+  "workflow:audit:approve": ["audit:document:approve"],
+  "workflow:audit:reject": ["audit:document:reject"],
+  "workflow:audit:reset": ["audit:document:reset"],
+  "audit:document:status": ["workflow:audit:status"],
+  "audit:document:list": ["workflow:audit:list"],
+  "audit:document:create": ["workflow:audit:create"],
+  "audit:document:approve": ["workflow:audit:approve"],
+  "audit:document:reject": ["workflow:audit:reject"],
+  "audit:document:reset": ["workflow:audit:reset"],
+};
+
 @Injectable()
 export class RbacService {
   constructor(
@@ -35,6 +50,7 @@ export class RbacService {
     const workshopScope = user.workshopScope
       ? { ...user.workshopScope }
       : createAllSessionWorkshopScope();
+    const permissions = this.expandPermissionAliases(user.permissions);
 
     return {
       userId: user.userId,
@@ -42,7 +58,7 @@ export class RbacService {
       displayName: user.displayName,
       avatarUrl: user.avatarUrl ?? null,
       roles: [...user.roles],
-      permissions: [...user.permissions],
+      permissions,
       department: user.department ? { ...user.department } : null,
       consoleMode: user.consoleMode ?? "default",
       stockScope: user.stockScope
@@ -72,9 +88,10 @@ export class RbacService {
       return allRoutes;
     }
 
+    const permissions = this.expandPermissionAliases(user.permissions);
     const filteredRoutes = this.filterRoutesByPermissions(
       allRoutes,
-      user.permissions,
+      permissions,
     );
     return this.filterRoutesByConsoleMode(
       filteredRoutes,
@@ -200,6 +217,30 @@ export class RbacService {
       });
       return result;
     }, []);
+  }
+
+  private expandPermissionAliases(permissions: string[]): string[] {
+    const expanded = new Set(permissions.filter(Boolean));
+    const queue = [...expanded];
+
+    while (queue.length > 0) {
+      const permission = queue.shift();
+      if (!permission) {
+        continue;
+      }
+
+      const aliases = PERMISSION_ALIAS_MAP[permission] ?? [];
+      for (const alias of aliases) {
+        if (expanded.has(alias)) {
+          continue;
+        }
+
+        expanded.add(alias);
+        queue.push(alias);
+      }
+    }
+
+    return [...expanded];
   }
 
   private filterRoutesByConsoleMode(

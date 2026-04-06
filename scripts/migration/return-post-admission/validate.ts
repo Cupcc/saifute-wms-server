@@ -24,11 +24,11 @@ const EXPECTED_WORKSHOP_RETURN_ORDERS = 3;
 const EXPECTED_WORKSHOP_RETURN_LINES = 4;
 const EXPECTED_FACTORY_NUMBER_RESERVATION_COUNT = 80;
 
-async function getWorkflowDocumentCount(connection: {
+async function getAuditDocumentCount(connection: {
   query<T = unknown>(sql: string, values?: readonly unknown[]): Promise<T>;
 }): Promise<number> {
   const rows = await connection.query<Array<{ total: number }>>(
-    `SELECT COUNT(*) AS total FROM workflow_audit_document`,
+    `SELECT COUNT(*) AS total FROM audit_document`,
   );
 
   return Number(rows[0]?.total ?? 0);
@@ -109,7 +109,7 @@ async function getInventoryLogConsistencyIssues(connection: {
   return Number(rows[0]?.total ?? 0);
 }
 
-async function getWorkflowDocsByFamily(connection: {
+async function getAuditDocsByFamily(connection: {
   query<T = unknown>(sql: string, values?: readonly unknown[]): Promise<T>;
 }): Promise<Record<string, number>> {
   const rows = await connection.query<
@@ -117,7 +117,7 @@ async function getWorkflowDocsByFamily(connection: {
   >(
     `
       SELECT documentFamily, COUNT(*) AS total
-      FROM workflow_audit_document
+      FROM audit_document
       GROUP BY documentFamily
     `,
   );
@@ -345,20 +345,18 @@ async function main(): Promise<void> {
         const documentLineRelationCount =
           await getDocumentLineRelationCount(targetConnection);
         const sourceUsageCount = await getSourceUsageCount(targetConnection);
-        const workflowDocCount =
-          await getWorkflowDocumentCount(targetConnection);
+        const auditDocumentCount =
+          await getAuditDocumentCount(targetConnection);
         const negativeBalanceCount =
           await getNegativeBalanceCount(targetConnection);
         const logConsistencyIssues =
           await getInventoryLogConsistencyIssues(targetConnection);
-        const workflowDocsByFamily =
-          await getWorkflowDocsByFamily(targetConnection);
+        const auditDocsByFamily = await getAuditDocsByFamily(targetConnection);
         const relationsByType = await getRelationsByType(targetConnection);
         const nullSourceCounts =
           await getNullSourceReturnLineCounts(targetConnection);
 
-        const expectedWorkflowDocs =
-          plan.workflow.workflowDocumentInserts.length;
+        const expectedAuditDocuments = plan.audit.auditDocumentInserts.length;
         const expectedDocRelations = plan.backfill.documentRelations.length;
         const expectedDocLineRelations =
           plan.backfill.documentLineRelations.length;
@@ -422,13 +420,13 @@ async function main(): Promise<void> {
           });
         }
 
-        if (workflowDocCount !== expectedWorkflowDocs) {
+        if (auditDocumentCount !== expectedAuditDocuments) {
           validationIssues.push({
             severity: "warning",
             reason:
-              "workflow_audit_document row count does not match the deterministic plan.",
-            expectedWorkflowDocs,
-            actualWorkflowDocs: workflowDocCount,
+              "audit_document row count does not match the deterministic plan.",
+            expectedAuditDocuments,
+            actualAuditDocuments: auditDocumentCount,
           });
         }
 
@@ -467,11 +465,11 @@ async function main(): Promise<void> {
             documentRelationCount,
             documentLineRelationCount,
             sourceUsageCount,
-            workflowDocCount,
+            auditDocumentCount,
             negativeBalanceCount,
             logConsistencyIssues,
           },
-          workflowDocsByFamily,
+          auditDocsByFamily,
           relationsByType,
           nullSourceCounts,
           unresolvedSourceUsageGaps: plan.replay.unresolvedSourceUsageGaps,

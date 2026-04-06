@@ -7,9 +7,9 @@ import {
   Prisma,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
+import { AuditService } from "../../audit/application/audit.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
-import { WorkflowService } from "../../workflow/application/workflow.service";
 import { StockInPriceCorrectionRepository } from "../infrastructure/stock-in-price-correction.repository";
 import { StockInPriceCorrectionService } from "./stock-in-price-correction.service";
 
@@ -65,7 +65,7 @@ describe("StockInPriceCorrectionService", () => {
   let service: StockInPriceCorrectionService;
   let repository: jest.Mocked<StockInPriceCorrectionRepository>;
   let inventoryService: jest.Mocked<InventoryService>;
-  let workflowService: jest.Mocked<WorkflowService>;
+  let auditService: jest.Mocked<AuditService>;
 
   beforeEach(async () => {
     const prisma = {
@@ -176,7 +176,7 @@ describe("StockInPriceCorrectionService", () => {
           },
         },
         {
-          provide: WorkflowService,
+          provide: AuditService,
           useValue: {
             createOrRefreshAuditDocument: jest.fn().mockResolvedValue({}),
           },
@@ -187,7 +187,7 @@ describe("StockInPriceCorrectionService", () => {
     service = moduleRef.get(StockInPriceCorrectionService);
     repository = moduleRef.get(StockInPriceCorrectionRepository);
     inventoryService = moduleRef.get(InventoryService);
-    workflowService = moduleRef.get(WorkflowService);
+    auditService = moduleRef.get(AuditService);
   });
 
   it("should transfer remaining quantity into correction out/in logs for partial consumption", async () => {
@@ -249,7 +249,7 @@ describe("StockInPriceCorrectionService", () => {
       }),
       expect.anything(),
     );
-    expect(workflowService.createOrRefreshAuditDocument).toHaveBeenCalled();
+    expect(auditService.createOrRefreshAuditDocument).toHaveBeenCalled();
     expect(result.id).toBe(1);
   });
 

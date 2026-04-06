@@ -739,8 +739,8 @@ describe("return-post-admission inventory replay", () => {
     });
   });
 
-  describe("workflow audit document projection", () => {
-    it("should create workflow documents for PENDING orders only", () => {
+  describe("audit document projection", () => {
+    it("should create audit documents for PENDING orders only", () => {
       const stockInOrders: AdmittedOrderRow[] = [
         buildStockInOrder({
           id: 100,
@@ -758,15 +758,15 @@ describe("return-post-admission inventory replay", () => {
       const baseline = buildValidBaseline({ stockInOrders });
       const plan = buildPostAdmissionMigrationPlan(baseline);
 
-      const stockInWorkflowDocs = plan.workflow.workflowDocumentInserts.filter(
+      const stockInAuditDocs = plan.audit.auditDocumentInserts.filter(
         (d) => d.documentFamily === "STOCK_IN",
       );
 
-      expect(stockInWorkflowDocs).toHaveLength(1);
-      expect(stockInWorkflowDocs[0]?.documentId).toBe(100);
+      expect(stockInAuditDocs).toHaveLength(1);
+      expect(stockInAuditDocs[0]?.documentId).toBe(100);
     });
 
-    it("should not create workflow documents for VOIDED orders", () => {
+    it("should not create audit documents for VOIDED orders", () => {
       const stockInOrders: AdmittedOrderRow[] = [
         buildStockInOrder({
           id: 100,
@@ -778,14 +778,14 @@ describe("return-post-admission inventory replay", () => {
       const baseline = buildValidBaseline({ stockInOrders });
       const plan = buildPostAdmissionMigrationPlan(baseline);
 
-      const stockInWorkflowDocs = plan.workflow.workflowDocumentInserts.filter(
+      const stockInAuditDocs = plan.audit.auditDocumentInserts.filter(
         (d) => d.documentFamily === "STOCK_IN",
       );
 
-      expect(stockInWorkflowDocs).toHaveLength(0);
+      expect(stockInAuditDocs).toHaveLength(0);
     });
 
-    it("should create workflow documents for CUSTOMER_STOCK and WORKSHOP_MATERIAL families", () => {
+    it("should create audit documents for CUSTOMER_STOCK and WORKSHOP_MATERIAL families", () => {
       const salesReturnOrders: AdmittedOrderRow[] = Array.from(
         { length: 9 },
         (_, i) => ({
@@ -913,11 +913,11 @@ describe("return-post-admission inventory replay", () => {
 
       const plan = buildPostAdmissionMigrationPlan(baseline);
 
-      const customerStockDocs = plan.workflow.workflowDocumentInserts.filter(
+      const customerStockDocs = plan.audit.auditDocumentInserts.filter(
         (d) => d.documentFamily === "CUSTOMER_STOCK",
       );
 
-      const workshopMaterialDocs = plan.workflow.workflowDocumentInserts.filter(
+      const workshopMaterialDocs = plan.audit.auditDocumentInserts.filter(
         (d) => d.documentFamily === "WORKSHOP_MATERIAL",
       );
 
@@ -925,12 +925,12 @@ describe("return-post-admission inventory replay", () => {
       expect(workshopMaterialDocs.length).toBeGreaterThan(0);
     });
 
-    it("should not gate workflow projection on relation reconstruction completeness", () => {
+    it("should not gate audit projection on relation reconstruction completeness", () => {
       const baseline = buildValidBaseline();
       const plan = buildPostAdmissionMigrationPlan(baseline);
 
-      expect(plan.counts.workflowDocumentInserts).toBe(
-        plan.workflow.workflowDocumentInserts.length,
+      expect(plan.counts.auditDocumentInserts).toBe(
+        plan.audit.auditDocumentInserts.length,
       );
     });
   });

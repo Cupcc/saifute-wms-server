@@ -9,6 +9,7 @@ import {
   StockInOrderType,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
+import { AuditService } from "../../audit/application/audit.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import {
@@ -16,7 +17,6 @@ import {
   reverseAcceptanceStatusesForOrder,
 } from "../../rd-subwarehouse/application/rd-material-status.helper";
 import { RdProcurementRequestService } from "../../rd-subwarehouse/application/rd-procurement-request.service";
-import { WorkflowService } from "../../workflow/application/workflow.service";
 import { InboundRepository } from "../infrastructure/inbound.repository";
 import { InboundService } from "./inbound.service";
 
@@ -117,7 +117,7 @@ describe("InboundService", () => {
   let repository: jest.Mocked<InboundRepository>;
   let masterDataService: jest.Mocked<MasterDataService>;
   let inventoryService: jest.Mocked<InventoryService>;
-  let workflowService: jest.Mocked<WorkflowService>;
+  let auditService: jest.Mocked<AuditService>;
   let rdProcurementRequestService: jest.Mocked<RdProcurementRequestService>;
   let prisma: { runInTransaction: jest.Mock };
 
@@ -178,7 +178,7 @@ describe("InboundService", () => {
           },
         },
         {
-          provide: WorkflowService,
+          provide: AuditService,
           useValue: {
             createOrRefreshAuditDocument: jest.fn().mockResolvedValue({}),
             markAuditNotRequired: jest.fn().mockResolvedValue({ count: 1 }),
@@ -199,7 +199,7 @@ describe("InboundService", () => {
     repository = moduleRef.get(InboundRepository);
     masterDataService = moduleRef.get(MasterDataService);
     inventoryService = moduleRef.get(InventoryService);
-    workflowService = moduleRef.get(WorkflowService);
+    auditService = moduleRef.get(AuditService);
     rdProcurementRequestService = moduleRef.get(RdProcurementRequestService);
 
     (masterDataService.getMaterialById as jest.Mock).mockResolvedValue(
@@ -246,7 +246,7 @@ describe("InboundService", () => {
         }),
         expect.anything(),
       );
-      expect(workflowService.createOrRefreshAuditDocument).toHaveBeenCalledWith(
+      expect(auditService.createOrRefreshAuditDocument).toHaveBeenCalledWith(
         expect.objectContaining({
           documentFamily: DocumentFamily.STOCK_IN,
           documentType: "StockInOrder",
@@ -502,7 +502,7 @@ describe("InboundService", () => {
       expect(inventoryService.increaseStock).toHaveBeenCalled();
       expect(reverseAcceptanceStatusesForOrder).toHaveBeenCalled();
       expect(applyAcceptanceStatusesForOrder).toHaveBeenCalled();
-      expect(workflowService.createOrRefreshAuditDocument).toHaveBeenCalled();
+      expect(auditService.createOrRefreshAuditDocument).toHaveBeenCalled();
     });
   });
 
@@ -545,7 +545,7 @@ describe("InboundService", () => {
         }),
         expect.anything(),
       );
-      expect(workflowService.markAuditNotRequired).toHaveBeenCalledWith(
+      expect(auditService.markAuditNotRequired).toHaveBeenCalledWith(
         "StockInOrder",
         1,
         "1",

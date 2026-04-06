@@ -1,5 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import { DocumentFamily, type Prisma } from "../../../generated/prisma/client";
+import {
+  AllocationTargetType,
+  DocumentFamily,
+  type Prisma,
+} from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 
 type DbClient = Prisma.TransactionClient | PrismaService;
@@ -103,6 +107,56 @@ export class ProjectRepository {
     });
     if (!result) throw new Error("Project creation failed");
     return result;
+  }
+
+  async findAllocationTargetBySource(
+    params: {
+      targetType: AllocationTargetType;
+      sourceDocumentType: string;
+      sourceDocumentId: number;
+    },
+    db?: DbClient,
+  ) {
+    return this.db(db).allocationTarget.findFirst({
+      where: {
+        targetType: params.targetType,
+        sourceDocumentType: params.sourceDocumentType,
+        sourceDocumentId: params.sourceDocumentId,
+      },
+    });
+  }
+
+  async createAllocationTarget(
+    data: Prisma.AllocationTargetUncheckedCreateInput,
+    db?: DbClient,
+  ) {
+    return this.db(db).allocationTarget.create({ data });
+  }
+
+  async updateAllocationTarget(
+    id: number,
+    data: Prisma.AllocationTargetUncheckedUpdateInput,
+    db?: DbClient,
+  ) {
+    return this.db(db).allocationTarget.update({
+      where: { id },
+      data,
+    });
+  }
+
+  async attachAllocationTargetToProject(
+    projectId: number,
+    allocationTargetId: number,
+    updatedBy?: string,
+    db?: DbClient,
+  ) {
+    return this.db(db).project.update({
+      where: { id: projectId },
+      data: {
+        allocationTargetId,
+        updatedBy,
+      },
+    });
   }
 
   async updateProject(

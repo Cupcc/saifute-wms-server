@@ -171,6 +171,17 @@ export const DocumentRelationType = {
 export type DocumentRelationType =
   (typeof DocumentRelationType)[keyof typeof DocumentRelationType];
 
+export const AllocationTargetType = {
+  RD_PROJECT: "RD_PROJECT",
+  CUSTOMER_PROJECT: "CUSTOMER_PROJECT",
+  PRODUCTION_ORDER: "PRODUCTION_ORDER",
+  WORKSHOP_COMMON: "WORKSHOP_COMMON",
+  OFFICE_COMMON: "OFFICE_COMMON",
+} as const;
+
+export type AllocationTargetType =
+  (typeof AllocationTargetType)[keyof typeof AllocationTargetType];
+
 export const LoginLogAction = {
   LOGIN: "LOGIN",
   LOGOUT: "LOGOUT",

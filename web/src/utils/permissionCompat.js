@@ -57,10 +57,16 @@ const LEGACY_PERMISSION_ALIAS_MAP = {
   "inventory:factory-number:list": ["stock:interval:list"],
   "inventory:log:list": ["stock:log:list"],
   "inventory:source-usage:list": ["stock:used:list"],
-  "workflow:audit:create": ["audit:document:add"],
-  "workflow:audit:approve": ["audit:document:add"],
-  "workflow:audit:reject": ["audit:document:add"],
-  "workflow:audit:reset": ["audit:document:add"],
+  "workflow:audit:status": ["audit:document:status"],
+  "workflow:audit:list": ["audit:document:list"],
+  "workflow:audit:create": ["audit:document:create", "audit:document:add"],
+  "workflow:audit:approve": ["audit:document:approve", "audit:document:add"],
+  "workflow:audit:reject": ["audit:document:reject", "audit:document:add"],
+  "workflow:audit:reset": ["audit:document:reset", "audit:document:add"],
+  "audit:document:create": ["audit:document:add"],
+  "audit:document:approve": ["audit:document:add"],
+  "audit:document:reject": ["audit:document:add"],
+  "audit:document:reset": ["audit:document:add"],
 };
 
 export function expandPermissionAliases(permissions = []) {

@@ -2,6 +2,8 @@ import type {
   AdmittedLineRow,
   AdmittedOrderRow,
   AdmittedStockInLineRow,
+  AuditDocumentInsert,
+  AuditProjectionPlan,
   DocumentFamilyValue,
   DocumentLineRelationInsert,
   DocumentRelationInsert,
@@ -19,8 +21,6 @@ import type {
   StaleClearRecord,
   UpstreamOutboundLineRow,
   UpstreamPickLineRow,
-  WorkflowAuditDocumentInsert,
-  WorkflowProjectionPlan,
 } from "./types";
 import { POST_ADMISSION_MIGRATION_BATCH } from "./types";
 
@@ -891,16 +891,16 @@ function buildInventoryReplayPlan(
   };
 }
 
-function buildWorkflowProjectionPlan(
+function buildAuditProjectionPlan(
   stockInOrders: AdmittedOrderRow[],
   outboundOrders: AdmittedOrderRow[],
   salesReturnOrders: AdmittedOrderRow[],
   pickOrders: AdmittedOrderRow[],
   workshopReturnOrders: AdmittedOrderRow[],
-): WorkflowProjectionPlan {
-  const workflowDocumentInserts: WorkflowAuditDocumentInsert[] = [];
+): AuditProjectionPlan {
+  const auditDocumentInserts: AuditDocumentInsert[] = [];
 
-  function addWorkflowRows(
+  function addAuditRows(
     orders: AdmittedOrderRow[],
     documentFamily: DocumentFamilyValue,
     documentType: string,
@@ -914,7 +914,7 @@ function buildWorkflowProjectionPlan(
         continue;
       }
 
-      workflowDocumentInserts.push({
+      auditDocumentInserts.push({
         documentFamily,
         documentType,
         documentId: order.id,
@@ -924,17 +924,17 @@ function buildWorkflowProjectionPlan(
     }
   }
 
-  addWorkflowRows(stockInOrders, "STOCK_IN", "StockInOrder");
-  addWorkflowRows(outboundOrders, "CUSTOMER_STOCK", "CustomerStockOrder");
-  addWorkflowRows(salesReturnOrders, "CUSTOMER_STOCK", "CustomerStockOrder");
-  addWorkflowRows(pickOrders, "WORKSHOP_MATERIAL", "WorkshopMaterialOrder");
-  addWorkflowRows(
+  addAuditRows(stockInOrders, "STOCK_IN", "StockInOrder");
+  addAuditRows(outboundOrders, "CUSTOMER_STOCK", "CustomerStockOrder");
+  addAuditRows(salesReturnOrders, "CUSTOMER_STOCK", "CustomerStockOrder");
+  addAuditRows(pickOrders, "WORKSHOP_MATERIAL", "WorkshopMaterialOrder");
+  addAuditRows(
     workshopReturnOrders,
     "WORKSHOP_MATERIAL",
     "WorkshopMaterialOrder",
   );
 
-  workflowDocumentInserts.sort((a, b) => {
+  auditDocumentInserts.sort((a, b) => {
     const familyCompare = a.documentFamily.localeCompare(b.documentFamily);
 
     if (familyCompare !== 0) {
@@ -945,7 +945,7 @@ function buildWorkflowProjectionPlan(
   });
 
   return {
-    workflowDocumentInserts,
+    auditDocumentInserts,
   };
 }
 
@@ -990,7 +990,7 @@ export function buildPostAdmissionMigrationPlan(
     workshopReturnClassifications,
   );
 
-  const workflow = buildWorkflowProjectionPlan(
+  const audit = buildAuditProjectionPlan(
     baseline.stockInOrders,
     baseline.outboundOrders,
     baseline.salesReturnOrders,
@@ -1014,7 +1014,7 @@ export function buildPostAdmissionMigrationPlan(
     inventoryLogInserts: replay.logInserts.length,
     sourceUsageInserts: replay.sourceUsageInserts.length,
     sourceUsageGaps: replay.unresolvedSourceUsageGaps.length,
-    workflowDocumentInserts: workflow.workflowDocumentInserts.length,
+    auditDocumentInserts: audit.auditDocumentInserts.length,
   };
 
   const globalBlockers: PostAdmissionMigrationPlan["globalBlockers"] = [];
@@ -1056,7 +1056,7 @@ export function buildPostAdmissionMigrationPlan(
     relation,
     backfill,
     replay,
-    workflow,
+    audit,
     globalBlockers,
     warnings: [],
     counts,

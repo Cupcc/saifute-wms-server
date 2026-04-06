@@ -32,6 +32,7 @@ export interface IncreaseStockCommand {
   materialId: number;
   stockScope?: StockScopeCode;
   workshopId?: number;
+  allocationTargetId?: number;
   quantity: Prisma.Decimal | number | string;
   operationType: InventoryOperationTypeEnum;
   businessModule: string;
@@ -52,6 +53,7 @@ export interface DecreaseStockCommand {
   materialId: number;
   stockScope?: StockScopeCode;
   workshopId?: number;
+  allocationTargetId?: number;
   quantity: Prisma.Decimal | number | string;
   operationType: InventoryOperationTypeEnum;
   businessModule: string;
@@ -223,6 +225,7 @@ export class InventoryService {
               materialId: cmd.materialId,
               stockScopeId: scope.stockScopeId,
               workshopId: scope.workshopId,
+              allocationTargetId: cmd.allocationTargetId,
               direction: StockDirection.IN,
               operationType: cmd.operationType,
               businessModule: cmd.businessModule,
@@ -300,6 +303,7 @@ export class InventoryService {
             materialId: cmd.materialId,
             stockScopeId: scope.stockScopeId,
             workshopId: scope.workshopId,
+            allocationTargetId: cmd.allocationTargetId,
             direction: StockDirection.OUT,
             operationType: cmd.operationType,
             businessModule: cmd.businessModule,
@@ -382,6 +386,7 @@ export class InventoryService {
             materialId: sourceLog.materialId,
             stockScopeId: sourceLog.stockScopeId,
             workshopId: sourceLog.workshopId,
+            allocationTargetId: sourceLog.allocationTargetId,
             direction: reverseDirection,
             operationType: isIn
               ? InventoryOperationType.REVERSAL_OUT
@@ -680,6 +685,7 @@ export class InventoryService {
             materialId: cmd.materialId,
             stockScopeId: scope.stockScopeId,
             workshopId: scope.workshopId,
+            allocationTargetId: cmd.allocationTargetId,
             direction: StockDirection.OUT,
             operationType: cmd.operationType,
             businessModule: cmd.businessModule,

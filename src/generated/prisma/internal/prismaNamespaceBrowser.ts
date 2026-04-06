@@ -62,10 +62,11 @@ export const ModelName = {
   Workshop: "Workshop",
   StockScope: "StockScope",
   InventoryBalance: "InventoryBalance",
+  AllocationTarget: "AllocationTarget",
   InventoryLog: "InventoryLog",
   InventorySourceUsage: "InventorySourceUsage",
   FactoryNumberReservation: "FactoryNumberReservation",
-  WorkflowAuditDocument: "WorkflowAuditDocument",
+  AuditDocument: "AuditDocument",
   StockInOrder: "StockInOrder",
   StockInOrderLine: "StockInOrderLine",
   CustomerStockOrder: "CustomerStockOrder",
@@ -255,12 +256,31 @@ export const InventoryBalanceScalarFieldEnum = {
 export type InventoryBalanceScalarFieldEnum =
   (typeof InventoryBalanceScalarFieldEnum)[keyof typeof InventoryBalanceScalarFieldEnum];
 
+export const AllocationTargetScalarFieldEnum = {
+  id: "id",
+  targetType: "targetType",
+  targetCode: "targetCode",
+  targetName: "targetName",
+  sourceDocumentType: "sourceDocumentType",
+  sourceDocumentId: "sourceDocumentId",
+  isSystemDefault: "isSystemDefault",
+  remark: "remark",
+  createdBy: "createdBy",
+  createdAt: "createdAt",
+  updatedBy: "updatedBy",
+  updatedAt: "updatedAt",
+} as const;
+
+export type AllocationTargetScalarFieldEnum =
+  (typeof AllocationTargetScalarFieldEnum)[keyof typeof AllocationTargetScalarFieldEnum];
+
 export const InventoryLogScalarFieldEnum = {
   id: "id",
   balanceId: "balanceId",
   materialId: "materialId",
   stockScopeId: "stockScopeId",
   workshopId: "workshopId",
+  allocationTargetId: "allocationTargetId",
   direction: "direction",
   operationType: "operationType",
   businessModule: "businessModule",
@@ -324,7 +344,7 @@ export const FactoryNumberReservationScalarFieldEnum = {
 export type FactoryNumberReservationScalarFieldEnum =
   (typeof FactoryNumberReservationScalarFieldEnum)[keyof typeof FactoryNumberReservationScalarFieldEnum];
 
-export const WorkflowAuditDocumentScalarFieldEnum = {
+export const AuditDocumentScalarFieldEnum = {
   id: "id",
   documentFamily: "documentFamily",
   documentType: "documentType",
@@ -344,8 +364,8 @@ export const WorkflowAuditDocumentScalarFieldEnum = {
   updatedAt: "updatedAt",
 } as const;
 
-export type WorkflowAuditDocumentScalarFieldEnum =
-  (typeof WorkflowAuditDocumentScalarFieldEnum)[keyof typeof WorkflowAuditDocumentScalarFieldEnum];
+export type AuditDocumentScalarFieldEnum =
+  (typeof AuditDocumentScalarFieldEnum)[keyof typeof AuditDocumentScalarFieldEnum];
 
 export const StockInOrderScalarFieldEnum = {
   id: "id",
@@ -583,6 +603,7 @@ export const ProjectScalarFieldEnum = {
   managerPersonnelId: "managerPersonnelId",
   stockScopeId: "stockScopeId",
   workshopId: "workshopId",
+  allocationTargetId: "allocationTargetId",
   lifecycleStatus: "lifecycleStatus",
   auditStatusSnapshot: "auditStatusSnapshot",
   inventoryEffectStatus: "inventoryEffectStatus",
@@ -1250,6 +1271,18 @@ export const InventoryBalanceOrderByRelevanceFieldEnum = {
 export type InventoryBalanceOrderByRelevanceFieldEnum =
   (typeof InventoryBalanceOrderByRelevanceFieldEnum)[keyof typeof InventoryBalanceOrderByRelevanceFieldEnum];
 
+export const AllocationTargetOrderByRelevanceFieldEnum = {
+  targetCode: "targetCode",
+  targetName: "targetName",
+  sourceDocumentType: "sourceDocumentType",
+  remark: "remark",
+  createdBy: "createdBy",
+  updatedBy: "updatedBy",
+} as const;
+
+export type AllocationTargetOrderByRelevanceFieldEnum =
+  (typeof AllocationTargetOrderByRelevanceFieldEnum)[keyof typeof AllocationTargetOrderByRelevanceFieldEnum];
+
 export const InventoryLogOrderByRelevanceFieldEnum = {
   businessModule: "businessModule",
   businessDocumentType: "businessDocumentType",
@@ -1282,7 +1315,7 @@ export const FactoryNumberReservationOrderByRelevanceFieldEnum = {
 export type FactoryNumberReservationOrderByRelevanceFieldEnum =
   (typeof FactoryNumberReservationOrderByRelevanceFieldEnum)[keyof typeof FactoryNumberReservationOrderByRelevanceFieldEnum];
 
-export const WorkflowAuditDocumentOrderByRelevanceFieldEnum = {
+export const AuditDocumentOrderByRelevanceFieldEnum = {
   documentType: "documentType",
   documentNumber: "documentNumber",
   submittedBy: "submittedBy",
@@ -1292,8 +1325,8 @@ export const WorkflowAuditDocumentOrderByRelevanceFieldEnum = {
   updatedBy: "updatedBy",
 } as const;
 
-export type WorkflowAuditDocumentOrderByRelevanceFieldEnum =
-  (typeof WorkflowAuditDocumentOrderByRelevanceFieldEnum)[keyof typeof WorkflowAuditDocumentOrderByRelevanceFieldEnum];
+export type AuditDocumentOrderByRelevanceFieldEnum =
+  (typeof AuditDocumentOrderByRelevanceFieldEnum)[keyof typeof AuditDocumentOrderByRelevanceFieldEnum];
 
 export const StockInOrderOrderByRelevanceFieldEnum = {
   documentNo: "documentNo",

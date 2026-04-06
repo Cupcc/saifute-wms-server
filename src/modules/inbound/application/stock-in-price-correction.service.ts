@@ -12,12 +12,12 @@ import {
   Prisma,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
+import { AuditService } from "../../audit/application/audit.service";
 import {
   FIFO_SOURCE_OPERATION_TYPES,
   InventoryService,
 } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
-import { WorkflowService } from "../../workflow/application/workflow.service";
 import type { CreateStockInPriceCorrectionOrderDto } from "../dto/create-stock-in-price-correction-order.dto";
 import type { QueryStockInPriceCorrectionOrderDto } from "../dto/query-stock-in-price-correction-order.dto";
 import { StockInPriceCorrectionRepository } from "../infrastructure/stock-in-price-correction.repository";
@@ -33,7 +33,7 @@ export class StockInPriceCorrectionService {
     private readonly repository: StockInPriceCorrectionRepository,
     private readonly masterDataService: MasterDataService,
     private readonly inventoryService: InventoryService,
-    private readonly workflowService: WorkflowService,
+    private readonly auditService: AuditService,
   ) {}
 
   async listOrders(
@@ -256,7 +256,7 @@ export class StockInPriceCorrectionService {
         tx,
       );
 
-      await this.workflowService.createOrRefreshAuditDocument(
+      await this.auditService.createOrRefreshAuditDocument(
         {
           documentFamily: DocumentFamily.STOCK_IN,
           documentType: DOCUMENT_TYPE,

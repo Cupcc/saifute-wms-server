@@ -246,8 +246,8 @@ async function getDownstreamConsumerCounts(connection: {
     Array<{ consumer: string; total: number }>
   >(
     `
-      SELECT 'workflow_audit_document' AS consumer, COUNT(*) AS total
-      FROM workflow_audit_document
+      SELECT 'audit_document' AS consumer, COUNT(*) AS total
+      FROM audit_document
       WHERE documentFamily = 'CUSTOMER_STOCK' OR documentType = 'CustomerStockOrder'
       UNION ALL
       SELECT 'document_relation' AS consumer, COUNT(*) AS total

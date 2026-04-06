@@ -14,6 +14,7 @@ import {
   StockInOrderType,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
+import { AuditService } from "../../audit/application/audit.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import {
@@ -21,7 +22,6 @@ import {
   reverseAcceptanceStatusesForOrder,
 } from "../../rd-subwarehouse/application/rd-material-status.helper";
 import { RdProcurementRequestService } from "../../rd-subwarehouse/application/rd-procurement-request.service";
-import { WorkflowService } from "../../workflow/application/workflow.service";
 import type { CreateInboundOrderDto } from "../dto/create-inbound-order.dto";
 import type { QueryInboundOrderDto } from "../dto/query-inbound-order.dto";
 import type { UpdateInboundOrderDto } from "../dto/update-inbound-order.dto";
@@ -49,7 +49,7 @@ export class InboundService {
     private readonly repository: InboundRepository,
     private readonly masterDataService: MasterDataService,
     private readonly inventoryService: InventoryService,
-    private readonly workflowService: WorkflowService,
+    private readonly auditService: AuditService,
     private readonly rdProcurementRequestService: RdProcurementRequestService,
   ) {}
 
@@ -221,7 +221,7 @@ export class InboundService {
         tx,
       );
 
-      await this.workflowService.createOrRefreshAuditDocument(
+      await this.auditService.createOrRefreshAuditDocument(
         {
           documentFamily: DocumentFamily.STOCK_IN,
           documentType: DOCUMENT_TYPE,
@@ -597,7 +597,7 @@ export class InboundService {
         tx,
       );
 
-      await this.workflowService.createOrRefreshAuditDocument(
+      await this.auditService.createOrRefreshAuditDocument(
         {
           documentFamily: DocumentFamily.STOCK_IN,
           documentType: DOCUMENT_TYPE,
@@ -686,7 +686,7 @@ export class InboundService {
         tx,
       );
 
-      await this.workflowService.markAuditNotRequired(
+      await this.auditService.markAuditNotRequired(
         DOCUMENT_TYPE,
         id,
         voidedBy,

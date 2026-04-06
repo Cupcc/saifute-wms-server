@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
+import { AuditModule } from "../audit/audit.module";
 import { InventoryCoreModule } from "../inventory-core/inventory-core.module";
 import { MasterDataModule } from "../master-data/master-data.module";
 import { RbacModule } from "../rbac/rbac.module";
 import { RdSubwarehouseModule } from "../rd-subwarehouse/rd-subwarehouse.module";
-import { WorkflowModule } from "../workflow/workflow.module";
 import { InboundService } from "./application/inbound.service";
 import { StockInPriceCorrectionService } from "./application/stock-in-price-correction.service";
 import { InboundController } from "./controllers/inbound.controller";
@@ -14,7 +14,7 @@ import { StockInPriceCorrectionRepository } from "./infrastructure/stock-in-pric
   imports: [
     MasterDataModule,
     InventoryCoreModule,
-    WorkflowModule,
+    AuditModule,
     RbacModule,
     RdSubwarehouseModule,
   ],

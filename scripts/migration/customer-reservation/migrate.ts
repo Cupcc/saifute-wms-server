@@ -437,8 +437,8 @@ async function getDownstreamConsumerCounts(connection: {
          OR upstreamDocumentType = 'CustomerStockOrder'
          OR downstreamDocumentType = 'CustomerStockOrder'
       UNION ALL
-      SELECT 'workflow_audit_document' AS consumer, COUNT(*) AS total
-      FROM workflow_audit_document
+      SELECT 'audit_document' AS consumer, COUNT(*) AS total
+      FROM audit_document
       WHERE documentFamily = 'CUSTOMER_STOCK' OR documentType = 'CustomerStockOrder'
       UNION ALL
       SELECT 'inventory_balance' AS consumer, COUNT(*) AS total

@@ -122,6 +122,14 @@ enum DocumentRelationType {
   TRACEABILITY_REFERENCE
 }
 
+enum AllocationTargetType {
+  RD_PROJECT
+  CUSTOMER_PROJECT
+  PRODUCTION_ORDER
+  WORKSHOP_COMMON
+  OFFICE_COMMON
+}
+
 enum LoginLogAction {
   LOGIN
   LOGOUT
@@ -347,12 +355,34 @@ model InventoryBalance {
   @@map("inventory_balance")
 }
 
+model AllocationTarget {
+  id                 Int                  @id @default(autoincrement())
+  targetType         AllocationTargetType
+  targetCode         String               @unique @db.VarChar(64)
+  targetName         String               @db.VarChar(128)
+  sourceDocumentType String?              @db.VarChar(64)
+  sourceDocumentId   Int?
+  isSystemDefault    Boolean              @default(false)
+  remark             String?              @db.VarChar(500)
+  createdBy          String?              @db.VarChar(64)
+  createdAt          DateTime             @default(now())
+  updatedBy          String?              @db.VarChar(64)
+  updatedAt          DateTime             @updatedAt
+  project            Project?
+  inventoryLogs      InventoryLog[]
+
+  @@unique([targetType, sourceDocumentType, sourceDocumentId])
+  @@index([targetType])
+  @@map("allocation_target")
+}
+
 model InventoryLog {
   id                        Int                       @id @default(autoincrement())
   balanceId                 Int
   materialId                Int
   stockScopeId              Int?
   workshopId                Int
+  allocationTargetId        Int?
   direction                 StockDirection
   operationType             InventoryOperationType
   businessModule            String                    @db.VarChar(64)
@@ -374,6 +404,7 @@ model InventoryLog {
   material                  Material                  @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   stockScope                StockScope?               @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   workshop                  Workshop                  @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  allocationTarget          AllocationTarget?         @relation(fields: [allocationTargetId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   reversalOfLog             InventoryLog?             @relation("InventoryLogReversal", fields: [reversalOfLogId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   reversedByLogs            InventoryLog[]            @relation("InventoryLogReversal")
   allocatedSourceUsages     InventorySourceUsage[]
@@ -385,6 +416,7 @@ model InventoryLog {
 
   @@index([balanceId])
   @@index([stockScopeId])
+  @@index([allocationTargetId])
   @@index([businessDocumentType, businessDocumentId])
   @@index([businessDocumentType, businessDocumentId, businessDocumentLineId])
   @@index([occurredAt])
@@ -442,7 +474,7 @@ model FactoryNumberReservation {
   @@map("factory_number_reservation")
 }
 
-model WorkflowAuditDocument {
+model AuditDocument {
   id             Int                 @id @default(autoincrement())
   documentFamily DocumentFamily
   documentType   String              @db.VarChar(64)
@@ -464,7 +496,7 @@ model WorkflowAuditDocument {
   @@unique([documentType, documentId])
   @@index([documentFamily, auditStatus])
   @@index([documentNumber])
-  @@map("workflow_audit_document")
+  @@map("audit_document")
 }
 
 model StockInOrder {
@@ -757,6 +789,7 @@ model Project {
   managerPersonnelId    Int?
   stockScopeId          Int?
   workshopId            Int
+  allocationTargetId    Int?                    @unique
   lifecycleStatus       DocumentLifecycleStatus @default(EFFECTIVE)
   auditStatusSnapshot   AuditStatusSnapshot     @default(NOT_REQUIRED)
   inventoryEffectStatus InventoryEffectStatus   @default(POSTED)
@@ -782,6 +815,7 @@ model Project {
   managerPersonnel      Personnel?              @relation("ProjectManager", fields: [managerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   stockScope            StockScope?             @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   workshop              Workshop                @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  allocationTarget      AllocationTarget?       @relation(fields: [allocationTargetId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   materialLines         ProjectMaterialLine[]
 
   @@index([bizDate])

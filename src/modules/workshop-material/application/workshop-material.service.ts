@@ -15,6 +15,7 @@ import {
   WorkshopMaterialOrderType,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
+import { AuditService } from "../../audit/application/audit.service";
 import {
   FIFO_SOURCE_OPERATION_TYPES,
   InventoryService,
@@ -29,7 +30,6 @@ import {
   resolveStockScopeFromWorkshopIdentity,
   type StockScopeCode,
 } from "../../session/domain/user-session";
-import { WorkflowService } from "../../workflow/application/workflow.service";
 import type { CreateWorkshopMaterialOrderDto } from "../dto/create-workshop-material-order.dto";
 import type { CreateWorkshopMaterialOrderLineDto } from "../dto/create-workshop-material-order-line.dto";
 import type { QueryWorkshopMaterialOrderDto } from "../dto/query-workshop-material-order.dto";
@@ -61,7 +61,7 @@ export class WorkshopMaterialService {
     private readonly repository: WorkshopMaterialRepository,
     private readonly masterDataService: MasterDataService,
     private readonly inventoryService: InventoryService,
-    private readonly workflowService: WorkflowService,
+    private readonly auditService: AuditService,
   ) {}
 
   async listPickOrders(query: QueryWorkshopMaterialOrderDto) {
@@ -421,7 +421,7 @@ export class WorkshopMaterialService {
       }
 
       if (auditStatus === AuditStatusSnapshot.PENDING) {
-        await this.workflowService.createOrRefreshAuditDocument(
+        await this.auditService.createOrRefreshAuditDocument(
           {
             documentFamily: DocumentFamily.WORKSHOP_MATERIAL,
             documentType: DOCUMENT_TYPE,
@@ -713,7 +713,7 @@ export class WorkshopMaterialService {
         tx,
       );
 
-      await this.workflowService.markAuditNotRequired(
+      await this.auditService.markAuditNotRequired(
         DOCUMENT_TYPE,
         id,
         voidedBy,

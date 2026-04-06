@@ -204,7 +204,7 @@ describe("workshop-return execute guard", () => {
           isRerun: false,
           consumerCounts: {
             document_relation: 0,
-            workflow_audit_document: 0,
+            audit_document: 0,
             inventory_log: 0,
             inventory_source_usage: 0,
           },
@@ -221,7 +221,7 @@ describe("workshop-return execute guard", () => {
             document_line_relation: 0,
             inventory_log: 0,
             inventory_source_usage: 0,
-            workflow_audit_document: 0,
+            audit_document: 0,
           },
         }),
       ).toEqual([]);
@@ -233,14 +233,14 @@ describe("workshop-return execute guard", () => {
           isRerun: false,
           consumerCounts: {
             document_relation: 3,
-            workflow_audit_document: 1,
+            audit_document: 1,
           },
         }),
       ).toEqual([
         expect.objectContaining({
           downstreamConsumers: {
             document_relation: 3,
-            workflow_audit_document: 1,
+            audit_document: 1,
           },
         }),
       ]);
@@ -255,7 +255,7 @@ describe("workshop-return execute guard", () => {
             document_line_relation: 0,
             inventory_log: 0,
             inventory_source_usage: 0,
-            workflow_audit_document: 0,
+            audit_document: 0,
           },
         }),
       ).toEqual([
@@ -276,7 +276,7 @@ describe("workshop-return execute guard", () => {
             document_line_relation: 3,
             inventory_log: 0,
             inventory_source_usage: 0,
-            workflow_audit_document: 5,
+            audit_document: 5,
           },
         }),
       ).toEqual([
@@ -284,7 +284,7 @@ describe("workshop-return execute guard", () => {
           downstreamConsumers: {
             document_relation: 1,
             document_line_relation: 3,
-            workflow_audit_document: 5,
+            audit_document: 5,
           },
         }),
       ]);

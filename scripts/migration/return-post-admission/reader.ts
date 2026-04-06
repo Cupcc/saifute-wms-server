@@ -288,7 +288,7 @@ export async function readSharedTableCounts(connection: {
       UNION ALL
       SELECT 'inventory_source_usage' AS tableName, COUNT(*) AS total FROM inventory_source_usage
       UNION ALL
-      SELECT 'workflow_audit_document' AS tableName, COUNT(*) AS total FROM workflow_audit_document
+      SELECT 'audit_document' AS tableName, COUNT(*) AS total FROM audit_document
       UNION ALL
       SELECT 'factory_number_reservation' AS tableName, COUNT(*) AS total FROM factory_number_reservation
     `,
