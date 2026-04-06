@@ -3,7 +3,6 @@ import {
   Prisma,
   RdMaterialStatus,
   RdMaterialStatusEventType,
-  type RdMaterialStatusHistory,
   type RdMaterialStatusLedger,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";

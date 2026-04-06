@@ -11,10 +11,7 @@ import {
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
-import type {
-  ApplyRdProcurementStatusActionDto,
-  RdProcurementStatusActionType,
-} from "../dto/apply-rd-procurement-status-action.dto";
+import type { ApplyRdProcurementStatusActionDto } from "../dto/apply-rd-procurement-status-action.dto";
 import type { CreateRdProcurementRequestDto } from "../dto/create-rd-procurement-request.dto";
 import type { QueryRdProcurementRequestDto } from "../dto/query-rd-procurement-request.dto";
 import { RdProcurementRequestRepository } from "../infrastructure/rd-procurement-request.repository";

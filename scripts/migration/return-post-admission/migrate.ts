@@ -83,8 +83,8 @@ async function main(): Promise<void> {
         const executeBlockers: Array<Record<string, unknown>> = [];
 
         const isRerun =
-          sharedTableCounts["inventory_balance"] != null &&
-          sharedTableCounts["inventory_balance"] > 0;
+          sharedTableCounts.inventory_balance != null &&
+          sharedTableCounts.inventory_balance > 0;
 
         executeBlockers.push(
           ...buildSharedTableBlockers({
@@ -92,7 +92,7 @@ async function main(): Promise<void> {
             isRerun,
           }),
           ...buildFactoryNumberReservationBlockers({
-            currentCount: sharedTableCounts["factory_number_reservation"] ?? 0,
+            currentCount: sharedTableCounts.factory_number_reservation ?? 0,
             expectedCount: EXPECTED_FACTORY_NUMBER_RESERVATION_COUNT,
           }),
           ...buildAdmissionBaselineBlockers({

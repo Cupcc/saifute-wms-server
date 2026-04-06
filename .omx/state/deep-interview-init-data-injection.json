@@ -6,8 +6,29 @@
     "profile": "standard",
     "type": "brownfield",
     "initial_idea": "初始化的数据有吗，需要注入哪些数据？",
-    "rounds": [],
-    "current_ambiguity": 0.5,
+    "rounds": [
+      {
+        "round": 1,
+        "target": "scope",
+        "question": "你现在要确认的“初始化数据”，更偏向本地冷启动最小可运行数据，还是某条业务/验收链路需要的联调数据，还是 migration/cutover 的导数前置？",
+        "answer": "就是那种初始化的管理员 初始化的部门，角色和对应的权限",
+        "scores": {
+          "intent": 0.62,
+          "outcome": 0.58,
+          "scope": 0.88,
+          "constraints": 0.65,
+          "success": 0.55,
+          "context": 0.95
+        },
+        "ambiguity": 0.34,
+        "readiness": {
+          "nonGoalsExplicit": false,
+          "decisionBoundariesExplicit": false,
+          "pressurePassComplete": false
+        }
+      }
+    ],
+    "current_ambiguity": 0.34,
     "threshold": 0.2,
     "max_rounds": 12,
     "challenge_modes_used": [],
@@ -26,7 +47,7 @@
       ]
     },
     "current_stage": "intent-first",
-    "current_focus": "scope",
+    "current_focus": "outcome",
     "context_snapshot_path": ".omx/context/init-data-injection-20260406T081350Z.md"
   }
 }

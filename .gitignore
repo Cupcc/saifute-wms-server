@@ -173,10 +173,12 @@ $RECYCLE.BIN/
 # Custom rules (everything added below won't be overriden by 'Generate .gitignore File' if you use 'Update' option)
 logs-dev
 .cursor/hooks/state/
+.codex/hooks/state/
 
 # Local tooling / one-off counts
 .VSCodeCounter/
 .claude/
+__pycache__/
 
 # Migration dry-run / execute / validate JSON outputs (regenerated locally)
 scripts/migration/reports/

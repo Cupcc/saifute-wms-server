@@ -449,7 +449,7 @@ async function main(): Promise<void> {
       Array.isArray(
         (report as { executeBlockers?: unknown[] }).executeBlockers,
       ) &&
-      (report as { executeBlockers?: unknown[] }).executeBlockers!.length > 0 &&
+      (report as { executeBlockers?: unknown[] }).executeBlockers?.length > 0 &&
       !cliOptions.execute
     ) {
       process.exitCode = 1;

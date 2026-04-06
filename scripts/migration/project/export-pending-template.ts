@@ -84,29 +84,23 @@ function buildTemplateLine(
     projectLegacyId: project.legacyId,
     lineLegacyId: line.legacyId,
     materialLegacyId:
-      typeof payload["materialLegacyId"] === "number"
-        ? payload["materialLegacyId"]
+      typeof payload.materialLegacyId === "number"
+        ? payload.materialLegacyId
         : null,
     materialName:
-      typeof payload["materialName"] === "string"
-        ? payload["materialName"]
-        : null,
+      typeof payload.materialName === "string" ? payload.materialName : null,
     materialSpec:
-      typeof payload["materialSpec"] === "string"
-        ? payload["materialSpec"]
-        : null,
-    unit: typeof payload["unit"] === "string" ? payload["unit"] : null,
-    quantity:
-      typeof payload["quantity"] === "string" ? payload["quantity"] : null,
-    unitPrice:
-      typeof payload["unitPrice"] === "string" ? payload["unitPrice"] : null,
+      typeof payload.materialSpec === "string" ? payload.materialSpec : null,
+    unit: typeof payload.unit === "string" ? payload.unit : null,
+    quantity: typeof payload.quantity === "string" ? payload.quantity : null,
+    unitPrice: typeof payload.unitPrice === "string" ? payload.unitPrice : null,
     supplierLegacyId:
-      typeof payload["supplierLegacyId"] === "number"
-        ? payload["supplierLegacyId"]
+      typeof payload.supplierLegacyId === "number"
+        ? payload.supplierLegacyId
         : null,
     acceptanceDate:
-      typeof payload["acceptanceDate"] === "string"
-        ? payload["acceptanceDate"]
+      typeof payload.acceptanceDate === "string"
+        ? payload.acceptanceDate
         : null,
     ruleId: evidence.ruleId,
     pendingReason: line.pendingReason,
@@ -282,7 +276,7 @@ async function main(): Promise<void> {
 
     const csvLines = [CSV_HEADERS.join(","), ...templateLines.map(buildCsvRow)];
     mkdirSync(dirname(reportCsvPath), { recursive: true });
-    writeFileSync(reportCsvPath, csvLines.join("\n") + "\n", "utf8");
+    writeFileSync(reportCsvPath, `${csvLines.join("\n")}\n`, "utf8");
 
     console.log(
       `Project pending material template exported.\n` +

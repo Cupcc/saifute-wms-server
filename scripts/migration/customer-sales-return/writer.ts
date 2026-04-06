@@ -373,7 +373,7 @@ async function insertExcludedDocument(
   );
 }
 
-async function insertPendingRelation(
+async function _insertPendingRelation(
   connection: MigrationConnectionLike,
   migrationBatch: string,
   record: PendingRelationRecord,

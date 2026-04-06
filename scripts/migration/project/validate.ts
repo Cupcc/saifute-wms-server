@@ -729,7 +729,7 @@ async function main(): Promise<void> {
   );
   const env = loadMigrationEnvironment({ requireLegacyDatabaseUrl: true });
   const structuralExclusionsAcknowledged =
-    process.env["PROJECT_STRUCTURAL_EXCLUSIONS_ACKNOWLEDGED"] === "true";
+    process.env.PROJECT_STRUCTURAL_EXCLUSIONS_ACKNOWLEDGED === "true";
   const targetDatabaseName = assertExpectedDatabaseName(
     env.databaseUrl,
     EXPECTED_TARGET_DATABASE_NAME,

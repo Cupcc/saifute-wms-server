@@ -6,7 +6,7 @@
     "useIgnoreFile": false
   },
   "files": {
-    "includes": ["**", "!!**/dist"]
+    "includes": ["**", "!!**/dist", "!!web"]
   },
   "formatter": {
     "enabled": true,
@@ -45,6 +45,48 @@
         "rules": {
           "correctness": {
             "noUnusedVariables": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/**/*.ts"],
+      "linter": {
+        "rules": {
+          "nursery": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 1000
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["src/generated/**/*.ts"],
+      "linter": {
+        "rules": {
+          "nursery": {
+            "noExcessiveLinesPerFile": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "src/modules/customer/application/customer.service.ts",
+        "src/modules/inbound/application/inbound.service.ts",
+        "src/modules/inventory-core/application/inventory.service.spec.ts",
+        "src/modules/inventory-core/application/inventory.service.ts",
+        "src/modules/master-data/application/master-data.service.spec.ts",
+        "src/modules/rbac/infrastructure/in-memory-rbac.repository.ts"
+      ],
+      "linter": {
+        "rules": {
+          "nursery": {
+            "noExcessiveLinesPerFile": "off"
           }
         }
       }

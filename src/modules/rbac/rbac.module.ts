@@ -4,6 +4,7 @@ import { SessionModule } from "../session/session.module";
 import { RbacService } from "./application/rbac.service";
 import { SystemManagementService } from "./application/system-management.service";
 import { WorkshopScopeService } from "./application/workshop-scope.service";
+import { SystemManagementBootstrapService } from "./bootstrap/system-management-bootstrap.service";
 import { RbacController } from "./controllers/rbac.controller";
 import { SystemConfigController } from "./controllers/system-config.controller";
 import { SystemDeptController } from "./controllers/system-dept.controller";
@@ -34,6 +35,7 @@ import { InMemoryRbacRepository } from "./infrastructure/in-memory-rbac.reposito
     RbacService,
     SystemManagementService,
     WorkshopScopeService,
+    SystemManagementBootstrapService,
     InMemoryRbacRepository,
   ],
   exports: [RbacService, SystemManagementService, WorkshopScopeService],

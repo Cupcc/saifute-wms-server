@@ -1,4 +1,5 @@
 import { PrismaService } from "../../../shared/prisma/prisma.service";
+import { SystemManagementBootstrapService } from "../bootstrap/system-management-bootstrap.service";
 import { InMemoryRbacRepository } from "./in-memory-rbac.repository";
 
 describe("InMemoryRbacRepository", () => {
@@ -147,8 +148,11 @@ describe("InMemoryRbacRepository", () => {
     const persistentRepository = new InMemoryRbacRepository(
       mockPrisma as unknown as PrismaService,
     );
+    const bootstrapService = new SystemManagementBootstrapService(
+      persistentRepository,
+    );
 
-    await persistentRepository.onModuleInit();
+    await bootstrapService.onApplicationBootstrap();
 
     expect(count).toHaveBeenCalled();
     expect(txHandler).toHaveBeenCalledTimes(1);
@@ -226,8 +230,11 @@ describe("InMemoryRbacRepository", () => {
     const persistentRepository = new InMemoryRbacRepository(
       mockPrisma as unknown as PrismaService,
     );
+    const bootstrapService = new SystemManagementBootstrapService(
+      persistentRepository,
+    );
 
-    await persistentRepository.onModuleInit();
+    await bootstrapService.onApplicationBootstrap();
 
     const user = await persistentRepository.findUserByUsername("admin");
     expect(user).toBeDefined();
@@ -284,8 +291,11 @@ describe("InMemoryRbacRepository", () => {
     const persistentRepository = new InMemoryRbacRepository(
       mockPrisma as unknown as PrismaService,
     );
+    const bootstrapService = new SystemManagementBootstrapService(
+      persistentRepository,
+    );
 
-    await persistentRepository.onModuleInit();
+    await bootstrapService.onApplicationBootstrap();
 
     expect(persistentRepository.getDept(300).deptName).toBe("仓库");
     expect(txHandler).not.toHaveBeenCalled();

@@ -656,7 +656,7 @@ function buildIntegrityIssues(
 const MIGRATION_BATCH = "batch3e-workshop-return-formal";
 
 async function main(): Promise<void> {
-  const reportPathEnv = process.env["WORKSHOP_RETURN_VALIDATE_REPORT_PATH"];
+  const reportPathEnv = process.env.WORKSHOP_RETURN_VALIDATE_REPORT_PATH;
   const env = loadMigrationEnvironment({ requireLegacyDatabaseUrl: false });
   const targetDatabaseName = assertExpectedDatabaseName(
     env.databaseUrl,

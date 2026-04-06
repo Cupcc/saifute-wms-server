@@ -35,7 +35,7 @@ describe("rd-material-status.helper", () => {
           ...data,
         })),
       },
-    } as any;
+    } as unknown as Parameters<typeof transferStatusQuantity>[1];
 
     await transferStatusQuantity(
       {
@@ -123,7 +123,7 @@ describe("rd-material-status.helper", () => {
         findUnique: jest.fn().mockResolvedValue(ledger),
         update: jest.fn().mockResolvedValue(undefined),
       },
-    } as any;
+    } as unknown as Parameters<typeof reverseStatusHistory>[1];
 
     await reverseStatusHistory(
       {

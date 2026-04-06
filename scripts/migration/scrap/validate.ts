@@ -40,7 +40,7 @@ function comparableScalar(value: unknown): string | null {
   return stringValue;
 }
 
-function pushValueMismatch(
+function _pushValueMismatch(
   validationIssues: Array<Record<string, unknown>>,
   context: Record<string, unknown>,
   field: string,
@@ -58,7 +58,7 @@ function pushValueMismatch(
   });
 }
 
-async function getTableCount(
+async function _getTableCount(
   connection: {
     query<T = unknown>(sql: string, values?: readonly unknown[]): Promise<T>;
   },

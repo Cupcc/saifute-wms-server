@@ -246,7 +246,7 @@ async function main(): Promise<void> {
 
         const sharedTableCounts = await readSharedTableCounts(targetConnection);
         const factoryNumberReservationCount =
-          sharedTableCounts["factory_number_reservation"] ?? 0;
+          sharedTableCounts.factory_number_reservation ?? 0;
 
         if (
           factoryNumberReservationCount !==
