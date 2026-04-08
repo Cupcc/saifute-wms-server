@@ -22,8 +22,8 @@ subagent model:
 
 - `$saifute-planner`: `model: gpt-5.4`, `reasoning_effort: high`
 - `$saifute-coder`: `model: gpt-5.4`, `reasoning_effort: high`
-- `$saifute-code-reviewer`: `model: gpt-5.4`, `reasoning_effort: high`
-- `$saifute-acceptance-qa`: `model: gpt-5.4`, `reasoning_effort: high`
+- `$saifute-code-reviewer`: `model: gpt-5.4`, `reasoning_effort: xhigh`
+- `$saifute-acceptance-qa`: `model: gpt-5.4`, `reasoning_effort: medium`
 
 ## Codex-specific rules
 

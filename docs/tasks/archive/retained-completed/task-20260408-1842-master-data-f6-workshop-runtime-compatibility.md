@@ -7,21 +7,21 @@
   - 以既有 `F6/F8` 已验收基线与 live `.env.dev` 数据库真相为准，恢复 `Workshop` 运行时兼容，并完成 targeted review + QA 回环。
   - 明确排除其他主数据实体、`F1`~`F5` / `F7` 全量复验、以及任何借机进行的 `master-data` 重构。
 - Related requirement: `docs/requirements/domain/master-data-management.md (F6, F8)`
-- Status: `in-progress`
-- Review status: `pending`
+- Status: `completed`
+- Review status: `reviewed-clean`
 - Delivery mode: `standard`
 - Acceptance mode: `light`
-- Acceptance status: `pending`
+- Acceptance status: `accepted`
 - Complete test report required: `yes`
-- Lifecycle disposition: `active`
+- Lifecycle disposition: `retained-completed`
 - Planner: `saifute-planner`
 - Coder: `parent orchestrator`
 - Reviewer: `saifute-code-reviewer`
 - Acceptance QA: `saifute-acceptance-qa`
-- Last updated: `2026-04-08 18:49`
+- Last updated: `2026-04-08 19:07`
 - Related checklist: `None`
 - Related acceptance spec: `docs/acceptance-tests/specs/master-data.md`
-- Related acceptance run: `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md`
+- Related acceptance run: `docs/acceptance-tests/runs/run-20260408-1907-master-data-f6-workshop-runtime-compatibility.md`
 - Related files:
   - `docs/requirements/domain/master-data-management.md`
   - `docs/architecture/modules/master-data.md`
@@ -64,13 +64,13 @@
   - `master-data` `Phase 1` 已有 accepted baseline；当前仅 `F6` 在 live `.env.dev` 运行时出现回归。
 - Current state:
   - parent 已确认 immediate mismatch：broken source/schema 移除了 `workshopCode`，新增 `handlerPersonnelId`；live `.env.dev` DB 仍停留在 accepted F6 结构，导致 `GET /api/master-data/workshops` 因查询不存在字段 / relation 返回 `500`。
-  - 当前代码已恢复 `Workshop` 的 `workshopCode + workshopName` 契约，focused tests、`pnpm typecheck`、`pnpm build`、`pnpm --dir web build:prod` 均已通过；尚待 runtime API 与 browser QA 收口。
+  - 当前代码已恢复 `Workshop` 的 `workshopCode + workshopName` 契约，focused tests、`pnpm typecheck`、`pnpm build`、`pnpm --dir web build:prod`、runtime smoke、review 与 targeted browser QA 均已完成。
 - Acceptance state:
-  - `pending runtime verification + review + QA`
+  - `accepted`
 - Blockers:
-  - None at planning time.
+  - None.
 - Next step:
-  - coder 先确认最小兼容修复路径，再补 focused regression，随后进入 review 与 targeted browser QA。
+  - None. Task 已归档，targeted run 作为 `F6/F8` 运行时兼容修复基线保留。
 
 ## Goal And Acceptance Criteria
 
@@ -114,10 +114,10 @@
   - 选择最小兼容修复路径：将源码 / Prisma / 前端恢复到 accepted `Workshop` 契约，而不是推动 live DB 追随错误中的新字段假设。
 - [x] Step 3
   - focused regression 与构建校验已通过：`master-data` 相关 tests、`pnpm typecheck`、`pnpm build`、`pnpm --dir web build:prod` 均已完成。
-- [ ] Step 4
-  - 执行 runtime validation 与 browser rerun：`/base/workshop` 必测；另选一个既有 `F8` 车间消费者路径做 active-only smoke，默认沿用 `run-20260406-0134` 的入口。
-- [ ] Step 5
-  - reviewer 独立检查最终 diff、契约边界与验证充分性；全部 actionable findings 关闭后再进入 acceptance 收口。
+- [x] Step 4
+  - 已完成 runtime validation 与 browser rerun：`/base/workshop` 与 `/entry/order` 消费者路径均通过 targeted smoke，并冻结到 fix-specific acceptance run。
+- [x] Step 5
+  - reviewer 独立检查 completed with `reviewed-clean`；acceptance 已基于 review handoff 与 targeted evidence 收口。
 
 ## Coder Handoff
 
@@ -232,41 +232,52 @@
 ## Review Log
 
 - Validation results:
-  - Pending.
+  - `saifute-code-reviewer` scoped review completed with no blocking findings on the listed workshop runtime-compatibility files.
+  - Reviewer accepted parent validation set plus an additional `pnpm test -- src/modules/reporting/application/reporting.service.spec.ts` pass.
 - Findings:
-  - Pending.
+  - None in the tightened review scope.
 - Follow-up action:
-  - Pending.
+  - None. Review 与 acceptance 已闭环完成。
 
 ## Acceptance
 
-- Acceptance status: `not-assessed`
-- Acceptance QA:
-- Acceptance date:
+- Acceptance status: `accepted`
+- Acceptance QA: `saifute-acceptance-qa`
+- Acceptance date: `2026-04-08`
 - Complete test report:
+  - `docs/acceptance-tests/runs/run-20260408-1907-master-data-f6-workshop-runtime-compatibility.md`
 
 ### Acceptance Checklist
 
 > Acceptance QA 在验收时逐条填写。每条应对应 domain capability 的用户需求或 task doc 的 `[AC-*]` 条目。
 
-- [ ] `[AC-1]` `.env.dev` 下 `GET /api/master-data/workshops?limit=30&offset=0` 返回 `200`，且 `/base/workshop` 首屏恢复 — Evidence: ... — Verdict: `✓ met` | `✗ not met` | `△ partially met`
-- [ ] `[AC-2]` 修复保持当前 `Workshop` 契约，未回滚为旧字段 requirement — Evidence: ... — Verdict: `✓ met` | `✗ not met` | `△ partially met`
-- [ ] `[AC-2]` 修复后的 `Workshop` 契约与 accepted `F6/F8` 基线及 live DB 一致：保留 `workshopCode`，不再依赖 `handlerPersonnelId` — Evidence: ... — Verdict: `✓ met` | `✗ not met` | `△ partially met`
-- [ ] `[AC-3]` focused regression 与 `F6/F8` targeted rerun 均通过 — Evidence: ... — Verdict: `✓ met` | `✗ not met` | `△ partially met`
-- [ ] `[AC-4]` review clean，acceptance evidence 与既有 baseline 对齐 — Evidence: ... — Verdict: `✓ met` | `✗ not met` | `△ partially met`
+- [x] `[AC-1]` `.env.dev` 下 `GET /api/master-data/workshops?limit=30&offset=0` 返回 `200`，且 `/base/workshop` 首屏恢复 — Evidence: authenticated API smoke `POST /api/auth/login` -> `200`, `GET /api/master-data/workshops?limit=30&offset=0` -> `200`; browser smoke on `http://127.0.0.1:5174/base/workshop` rendered list with rows `装备车间` / `主仓` / `研发小仓` and no 500 path reappeared — Verdict: `✓ met`
+- [x] `[AC-2]` 修复后的 `Workshop` 契约与 accepted `F6/F8` 基线及 live DB 一致：保留 `workshopCode`、`workshopName`，不再依赖 `handlerPersonnelId` — Evidence: authenticated API response returned workshop items with `workshopCode` + `workshopName`; `/base/workshop` edit dialog showed disabled `车间编码` and editable `车间名称`; scoped repo grep in `src/modules/master-data/**`, `web/src/api/base/workshop.js`, `web/src/views/base/workshop/index.vue`, `web/src/views/entry/order/**`, `prisma/schema.prisma` found workshop contract wired on `workshopCode` / `workshopName` and no `handlerPersonnelId` usage on workshop CRUD path — Verdict: `✓ met`
+- [x] `[AC-3]` focused regression 与 `F6/F8` targeted rerun 均通过 — Evidence: parent-provided focused validation already passed (`master-data.controller.spec.ts`, `master-data.service.spec.ts`, `master-data.repository.spec.ts`, `pnpm typecheck`, `pnpm build`, `pnpm --dir web build:prod`); independent browser rerun on `/entry/order` add dialog triggered `GET /api/master-data/workshops?limit=100&offset=0` -> `200`, then searching inactive workshop `浏览器车间0202-改` triggered `GET /api/master-data/workshops?keyword=浏览器车间0202-改&limit=100&offset=0` -> `200` with authenticated API cross-check `items=[]` — Verdict: `✓ met`
+- [x] `[AC-4]` review clean，acceptance evidence 与既有 baseline 对齐 — Evidence: parent-provided `saifute-code-reviewer` handoff is `approved` with `findings: none`, `next_step: acceptance-qa`, and explicit statement that no blocking findings remain in the scoped workshop runtime-compatibility path; targeted runtime/browser evidence is now frozen in `docs/acceptance-tests/runs/run-20260408-1907-master-data-f6-workshop-runtime-compatibility.md` and aligned to the accepted baseline run `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md` — Verdict: `✓ met`
 
 ### Acceptance Notes
 
 - Acceptance path used: `light`
 - Acceptance summary:
+  - Independent runtime/browser smoke on the provided temp environment (`.env.dev`; backend `http://127.0.0.1:8113`; web `http://127.0.0.1:5174`) confirms the workshop list no longer 500s, the accepted `workshopCode + workshopName` contract is live again, and the `F8` consumer path still applies active-only workshop filtering.
+  - Reviewer handoff is now `approved` with no scoped findings, so `[AC-1]` ~ `[AC-4]` are all met and this task is accepted.
 - Report completeness check:
+  - Targeted acceptance run is frozen at `docs/acceptance-tests/runs/run-20260408-1907-master-data-f6-workshop-runtime-compatibility.md`; `docs/acceptance-tests/specs/master-data.md` now indexes this fix-specific rerun alongside the existing `2026-04-06` baseline.
 - If rejected or blocked: root cause（`requirement-misunderstanding` | `implementation-gap` | `evidence-gap` | `environment-gap`）+ 精确修复指引 / 环境修复指引
-- If conditionally accepted: follow-up requirement / task:
+  - None.
+- If conditionally accepted:
+  - None.
 
 ## Final Status
 
 - Outcome:
+  - `accepted`
 - Requirement alignment:
+  - `.env.dev` 下的 workshop runtime 行为已重新对齐 accepted `F6/F8` 基线与 live DB 真相。
 - Residual risks or testing gaps:
-- Directory disposition after completion: keep `active` while the task is still open; once it is no longer active, set this to `retained-completed` or `cleanup-candidate`, then sync `docs/tasks/TASK_CENTER.md`
+  - 本 run 是 targeted runtime/browser closure，不替代 `2026-04-06` 的 broader accepted baseline。
+- Directory disposition after completion:
+  - `retained-completed`
 - Next action:
+  - None.

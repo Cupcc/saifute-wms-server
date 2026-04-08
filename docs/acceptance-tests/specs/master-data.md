@@ -57,6 +57,7 @@
 | 2026-04-06 | task-20260402-1802（F2 browser QA 补证） | `.env.dev`；backend `:8112` + web `:90`；`agent-browser`；补最小 `material-category` fixture | `passed` |
 | 2026-04-06 | task-20260406-0106（F1/F2 对齐修复复验） | `.env.dev`；backend `:8112` + web `:90`；`agent-browser`；真实登录 `admin` | `passed` |
 | 2026-04-06 | task-20260406-0134（F1-F8 browser verification fix loop） | `.env.dev`；backend `:8112` + web `:90`；`agent-browser`；`pnpm --dir web build:prod`；master-data 三层回归 `3 suites / 80 tests` | `passed` |
+| 2026-04-08 | task-20260408-1842（F6 workshop runtime compatibility） | `.env.dev`；backend `:8113` + web `:5174`；authenticated API smoke；`agent-browser`；parent review handoff `approved` | `passed` |
 
 
 ---
@@ -262,18 +263,21 @@
 
 - `web/src/api/base/workshop.js`；service/repository specs
 - `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md`
+- `docs/acceptance-tests/runs/run-20260408-1907-master-data-f6-workshop-runtime-compatibility.md`
 
 ### 验证摘要
 
 | 时间 | 关联 task | 环境 | 结果 |
 | ---- | ---- | ---- | ---- |
 | 2026-04-06 | `task-20260406-0134` | `.env.dev`; backend `:8112`; web `:90`; `agent-browser`; `admin` 已登录 | `passed` |
+| 2026-04-08 | `task-20260408-1842` | `.env.dev`; backend `:8113`; web `:5174`; authenticated API smoke; `agent-browser`; reviewer handoff `approved` | `passed` |
 
 ### Browser 补充说明
 
 - 本轮在 `/base/workshop` 完成新增、编辑与停用复验，编码字段保持只读。
 - 页面契约已对齐到主数据主档，停用接口返回 `200`。
 - 本轮 browser 证据与 run 冻结见 `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md`。
+- `2026-04-08` targeted runtime 兼容复验确认 `.env.dev` 的 live workshop 数据再次可由 `/base/workshop` 正常加载，且编辑弹窗继续体现 `workshopCode + workshopName` 合同；证据冻结见 `docs/acceptance-tests/runs/run-20260408-1907-master-data-f6-workshop-runtime-compatibility.md`。
 
 
 ---
@@ -325,18 +329,21 @@
 
 - `MasterDataService` 与消费者模块单测；controller 列表/详情 active 过滤
 - `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md`
+- `docs/acceptance-tests/runs/run-20260408-1907-master-data-f6-workshop-runtime-compatibility.md`
 
 ### 验证摘要
 
 | 时间 | 关联 task | 环境 | 结果 |
 | ---- | ---- | ---- | ---- |
 | 2026-04-06 | `task-20260406-0134` | `.env.dev`; backend `:8112`; web `:90`; `agent-browser`; `admin` 已登录 | `passed` |
+| 2026-04-08 | `task-20260408-1842` | `.env.dev`; backend `:8113`; web `:5174`; authenticated API smoke; `agent-browser`; reviewer handoff `approved` | `passed` |
 
 ### Browser 补充说明
 
 - 本轮在 `/entry/order` 的新增验收单弹窗中复验了车间下拉的 active-only 语义。
 - 搜索已停用车间“浏览器车间0202-改”时，下拉返回无数据，网络响应 `GET /api/master-data/workshops?keyword=浏览器车间0202-改&limit=100&offset=0` 为 `200` 且 `items=[]`。
 - 本轮 browser 证据与 run 冻结见 `docs/acceptance-tests/runs/run-20260406-0134-master-data-f1-f8-browser-verification.md`。
+- `2026-04-08` targeted rerun 在 temp env (`:8113` / `:5174`) 再次验证了 `/entry/order` 新增弹窗的车间查询：打开下拉时 `GET /api/master-data/workshops?limit=100&offset=0` = `200`，搜索停用车间仍返回 `items=[]`；证据冻结见 `docs/acceptance-tests/runs/run-20260408-1907-master-data-f6-workshop-runtime-compatibility.md`。
 
 
 ---
