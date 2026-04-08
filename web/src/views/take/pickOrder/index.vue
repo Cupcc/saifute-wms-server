@@ -21,23 +21,7 @@
         ></el-date-picker>
       </el-form-item>
       <el-form-item label="领料人" prop="picker">
-        <el-select
-          v-model="queryParams.picker"
-          filterable
-          remote
-          reserve-keyword
-          placeholder="请输入人员姓名搜索"
-          :remote-method="searchPersonnelForQuery"
-          :loading="personnelLoading"
-          clearable
-          style="width: 240px">
-          <el-option
-            v-for="item in personnelOptions"
-            :key="item.personnelId"
-            :label="item.name"
-            :value="item.name">
-          </el-option>
-        </el-select>
+        <combo-input v-model="queryParams.picker" scope="personnel" field="personnelName" placeholder="请选择或输入领料人" width="240px" />
       </el-form-item>
 	    <el-form-item label="部门" prop="workshopId">
 		    <el-select v-model="queryParams.workshopId" filterable remote reserve-keyword placeholder="请输入部门名称搜索"
@@ -73,13 +57,7 @@
 		    </el-select>
 	    </el-form-item>
 	    <el-form-item label="物料名称" prop="materialName">
-		    <el-input
-			    v-model="queryParams.materialName"
-			    placeholder="请输入物料名称"
-			    clearable
-			    style="width: 240px"
-			    @keyup.enter="handleQuery"
-		    />
+		    <combo-input v-model="queryParams.materialName" scope="material" field="materialName" placeholder="请选择或输入物料名称" width="240px" />
 	    </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -110,7 +88,8 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="pickOrderList" @selection-change="handleSelectionChange">
+    <adaptive-table border stripe v-loading="loading" :data="pickOrderList" @selection-change="handleSelectionChange" @row-click="handleRowClick">
+      <el-table-column type="selection" width="50" align="center" />
       <el-table-column type="index" width="50" align="center" />
       <el-table-column sortable show-overflow-tooltip label="领料单号" align="center" prop="pickNo" v-if="columns[0].visible">
         <template #default="scope">
@@ -179,7 +158,7 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="领料单号" prop="pickNo">
-              <el-input v-model="form.pickNo" placeholder="请输入领料单号" :disabled="!!form.pickId" />
+              <el-input v-model="form.pickNo" placeholder="请输入领料单号" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -189,7 +168,6 @@
                 type="date"
                 value-format="YYYY-MM-DD"
                 placeholder="请选择领料日期"
-                :disabled="!!form.pickId"
                 @change="handlePickDateChange">
               </el-date-picker>
             </el-form-item>
@@ -198,29 +176,12 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="领料人" prop="picker">
-              <el-select
-                v-model="form.picker"
-                filterable
-                allow-create
-                remote
-                reserve-keyword
-                placeholder="请输入人员姓名搜索"
-                :remote-method="searchPersonnel"
-                :loading="personnelLoading"
-                style="width: 100%"
-                :disabled="!!form.pickId">
-                <el-option
-                  v-for="item in personnelOptions"
-                  :key="item.personnelId"
-                  :label="item.name"
-                  :value="item.name">
-                </el-option>
-              </el-select>
+              <combo-input v-model="form.picker" scope="personnel" field="personnelName" placeholder="请选择或输入领料人" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="负责人" prop="chargeBy">
-              <el-input v-model="form.chargeBy" placeholder="请输入负责人" :disabled="!!form.pickId"/>
+              <combo-input v-model="form.chargeBy" scope="personnel" field="personnelName" placeholder="请选择或输入负责人" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -254,7 +215,7 @@
           </el-col>
 	        <el-col :span="24">
 		        <el-form-item label="备注" prop="remark">
-			        <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" :disabled="!!form.pickId"/>
+			        <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
 		        </el-form-item>
 	        </el-col>
         </el-row>
@@ -272,7 +233,7 @@
                   placeholder="请输入物料名称或规格型号搜索"
                   :remote-method="(query) => searchMaterialForDetail(query, scope.$index)"
                   :loading="materialLoading"
-                  style="width: 100%" :disabled="!!form.pickId"
+                  style="width: 100%"
                   @change="(val) => handleMaterialSelect(val, scope.$index)">
                   <el-option
                     v-for="item in materialOptions"
@@ -294,7 +255,6 @@
                   :min="0"
                   :max="form.pickId ? undefined : getMaxQuantity(scope.row)"
                   controls-position="right"
-                  :disabled="!!form.pickId"
                   style="width: 100%"
                   @change="(val) => handleMaterialOrQuantityChange(undefined, val, scope.$index)" />
               </template>
@@ -313,12 +273,12 @@
             <el-table-column label="备注" prop="remark">
               <template #default="scope">
                 <el-input v-model="scope.row.remark"
-                          type="textarea" :autosize="{ minRows: 1 }" placeholder="请输入备注" :disabled="!!form.pickId" />
+                          type="textarea" :autosize="{ minRows: 1 }" placeholder="请输入备注" />
               </template>
             </el-table-column>
             <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
               <template #default="scope">
-                <el-button link type="primary" icon="Delete" @click="handleDeleteDetail(scope.$index)" :disabled="!!form.pickId">删除</el-button>
+                <el-button link type="primary" icon="Delete" @click="handleDeleteDetail(scope.$index)">删除</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -326,7 +286,7 @@
         <el-row>
           <el-col :span="24">
 	          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-right: 20px">
-	            <el-button type="primary" plain icon="Plus" @click="handleAddDetail" :disabled="!!form.pickId">添加明细</el-button>
+	            <el-button type="primary" plain icon="Plus" @click="handleAddDetail">添加明细</el-button>
               <span>合计金额: {{ form.totalAmount }}</span>
             </div>
           </el-col>
@@ -403,14 +363,14 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button
-            type="success" v-hasPermi="['audit:document:add']"
+            type="success" v-hasPermi="['approval:document:approve']"
             v-if="(detailData.auditStatus === '0' || detailData.auditStatus === 0) && (username !== detailData.createBy || username === 'admin')"
             @click="handleAudit(1)"
           >
             通过
           </el-button>
           <el-button
-            type="danger" v-hasPermi="['audit:document:add']"
+            type="danger" v-hasPermi="['approval:document:reject']"
             v-if="(detailData.auditStatus === '0' || detailData.auditStatus === 0) && (username !== detailData.createBy || username === 'admin')"
             @click="handleAudit(2)"
           >
@@ -439,9 +399,10 @@
 </template>
 
 <script setup name="PickOrder">
-import { auditDocument } from "@/api/audit/audit";
+import { approvalDocument } from "@/api/approval/approval";
 import { listMaterialByCodeOrName } from "@/api/base/material.js";
 import { listPersonnel } from "@/api/base/personnel";
+import { clearSuggestionsCache } from "@/api/base/suggestions";
 import { listByNameOrContact } from "@/api/base/workshop.js";
 import { selectSaifuteInventoryListGroupByMaterial } from "@/api/stock/inventory.js";
 import { getUsedByMaterialIdAndQuantity } from "@/api/stock/used.js";
@@ -562,6 +523,7 @@ function reset() {
     projectId: null,
     pickDate: null,
     picker: null,
+    workshopId: null,
     chargeBy: null,
     remark: null,
     delFlag: null,
@@ -639,12 +601,15 @@ async function handlePickDateChange(val) {
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
+  const pickId = resolveSelectedPickId(row);
+  if (!pickId) {
+    return;
+  }
   reset();
   title.value = "修改领料单";
   open.value = true;
   dialogLoading.value = true;
-  const _pickId = row.pickId || ids.value[0];
-  getPickOrder(_pickId)
+  getPickOrder(pickId)
     .then((response) => {
       const orderData = response.data;
       form.value = {
@@ -653,6 +618,7 @@ function handleUpdate(row) {
         projectId: orderData.projectId,
         pickDate: orderData.pickDate,
         picker: orderData.picker,
+        workshopId: orderData.workshopId,
         chargeBy: orderData.chargeBy,
         remark: orderData.remark,
         delFlag: orderData.delFlag,
@@ -664,13 +630,21 @@ function handleUpdate(row) {
         totalAmount: orderData.totalAmount,
         details: [],
       };
+      workshopOptionsForForm.value = orderData.workshopId
+        ? [
+            {
+              workshopId: orderData.workshopId,
+              workshopName: orderData.workshopName,
+            },
+          ]
+        : [];
       if (orderData.details && orderData.details.length > 0) {
         form.value.details = orderData.details.map((detail) => ({
           detailId: detail.detailId,
           materialId: detail.materialId,
           quantity: detail.quantity,
           unitPrice: detail.unitPrice,
-          instruction: detail.instruction,
+          instruction: detail.instruction ?? "",
           remark: detail.remark,
         }));
         const materialIds = orderData.details
@@ -700,6 +674,10 @@ function handleUpdate(row) {
 function submitForm() {
   proxy.$refs["pickOrderRef"].validate((valid) => {
     if (valid) {
+      if (!form.value.details || form.value.details.length === 0) {
+        proxy.$modal.msgError("至少需要添加一条明细");
+        return;
+      }
       // 如果存在pickId，则为修改操作
       if (form.value.pickId != null) {
         // 修改操作需要验证所有字段
@@ -725,6 +703,7 @@ function submitForm() {
 
         // 调用修改接口（包含明细数据）
         updatePickOrder(form.value).then((response) => {
+          clearSuggestionsCache();
           proxy.$modal.msgSuccess("修改成功");
           open.value = false;
           getList();
@@ -753,6 +732,7 @@ function submitForm() {
         }
 
         addPickOrder(form.value).then((response) => {
+          clearSuggestionsCache();
           proxy.$modal.msgSuccess("新增成功");
           open.value = false;
           getList();
@@ -773,6 +753,16 @@ function handleSelectionChange(selection) {
   ids.value = selection.map((item) => item.pickId);
   single.value = selection.length !== 1;
   multiple.value = !selection.length;
+}
+
+/** 点击行时同步工具栏状态 */
+function handleRowClick(row) {
+  if (!row?.pickId) {
+    return;
+  }
+  ids.value = [row.pickId];
+  single.value = false;
+  multiple.value = false;
 }
 
 /** 详情按钮操作 */
@@ -803,12 +793,25 @@ function handleDeleteDetail(index) {
 
 /** 作废按钮操作 */
 function handleVoid(row) {
+  const pickId = resolveSelectedPickId(row);
+  if (!pickId) {
+    return;
+  }
   abandonForm.value = {
-    pickId: row.pickId || ids.value,
+    pickId,
     voidDescription: "",
   };
   abandonOpen.value = true;
   proxy.resetForm("abandonRef");
+}
+
+function resolveSelectedPickId(row) {
+  const pickId = row?.pickId ?? ids.value[0];
+  if (!pickId) {
+    proxy.$modal.msgError("请选择一条领料单记录");
+    return null;
+  }
+  return pickId;
 }
 
 /** 取消作废操作 */
@@ -1054,7 +1057,7 @@ function handleAudit(status) {
     auditStatus: status,
   };
 
-  auditDocument(auditData)
+  approvalDocument(auditData)
     .then((response) => {
       proxy.$modal.msgSuccess(status === 1 ? "审核通过" : "审核不通过");
       detailOpen.value = false;

@@ -392,8 +392,8 @@ async function getForbiddenTableCounts(connection: {
          OR upstreamDocumentType = 'CustomerStockOrder'
          OR downstreamDocumentType = 'CustomerStockOrder'
       UNION ALL
-      SELECT 'audit_document' AS tableName, COUNT(*) AS total
-      FROM audit_document
+      SELECT 'approval_document' AS tableName, COUNT(*) AS total
+      FROM approval_document
       WHERE documentFamily = 'CUSTOMER_STOCK' OR documentType = 'CustomerStockOrder'
       UNION ALL
       SELECT 'inventory_balance' AS tableName, COUNT(*) AS total

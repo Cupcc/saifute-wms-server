@@ -10,8 +10,6 @@
 
 ## 真源关系
 
-- 人类可读正文仍是各自文档：`docs/playbooks/**`、`docs/requirements/**`、`docs/architecture/**`、`docs/dependencies/**`、`docs/tasks/**`、`docs/acceptance-tests/**`
-- `docs/catalog/catalog.jsonl` 只是机器检索层
 - 更新正文时，如果条目会影响命中语义，必须同轮更新 catalog
 
 ## 检索流程

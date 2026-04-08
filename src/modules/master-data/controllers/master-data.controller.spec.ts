@@ -1,3 +1,4 @@
+import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import type { SessionUserSnapshot } from "../../session/domain/user-session";
 import { MasterDataService } from "../application/master-data.service";
@@ -25,6 +26,11 @@ describe("MasterDataController", () => {
 
   beforeEach(async () => {
     masterDataService = {
+      // Field suggestions
+      getFieldSuggestionsRequiredPermission: jest
+        .fn()
+        .mockReturnValue("master:material:list"),
+      getFieldSuggestions: jest.fn().mockResolvedValue(["PCS"]),
       // Supplier
       listSuppliers: jest.fn().mockResolvedValue({ items: [], total: 0 }),
       createSupplier: jest.fn().mockResolvedValue({ id: 1 }),
@@ -93,6 +99,38 @@ describe("MasterDataController", () => {
     }).compile();
 
     controller = moduleRef.get(MasterDataController);
+  });
+
+  it("forwards field suggestions after permission check", async () => {
+    await expect(
+      controller.getFieldSuggestions("material", "unitCode", adminUser),
+    ).resolves.toEqual(["PCS"]);
+
+    expect(
+      masterDataService.getFieldSuggestionsRequiredPermission,
+    ).toHaveBeenCalledWith("material");
+    expect(masterDataService.getFieldSuggestions).toHaveBeenCalledWith(
+      "material",
+      "unitCode",
+    );
+  });
+
+  it("rejects field suggestions when user is missing", async () => {
+    await expect(
+      controller.getFieldSuggestions("material", "unitCode", undefined),
+    ).rejects.toThrow(UnauthorizedException);
+  });
+
+  it("rejects field suggestions when user lacks scope permission", async () => {
+    const limitedUser: SessionUserSnapshot = {
+      ...adminUser,
+      userId: 2,
+      permissions: ["master:supplier:list"],
+    };
+
+    await expect(
+      controller.getFieldSuggestions("material", "unitCode", limitedUser),
+    ).rejects.toThrow(ForbiddenException);
   });
 
   // ─── Supplier (F4) ──────────────────────────────────────────────────────────

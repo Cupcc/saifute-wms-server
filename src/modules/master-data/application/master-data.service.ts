@@ -23,13 +23,97 @@ import type { UpdateSupplierDto } from "../dto/update-supplier.dto";
 import type { UpdateWorkshopDto } from "../dto/update-workshop.dto";
 import { MasterDataRepository } from "../infrastructure/master-data.repository";
 
+type FieldSuggestionScope =
+  | "material"
+  | "customer"
+  | "supplier"
+  | "workshop"
+  | "personnel";
+
+const FIELD_SUGGESTION_SCOPE_CONFIG = {
+  material: {
+    permission: "master:material:list",
+    fields: new Set(["unitCode", "specModel", "materialName", "materialCode"]),
+  },
+  customer: {
+    permission: "master:customer:list",
+    fields: new Set(["customerCode", "customerName"]),
+  },
+  supplier: {
+    permission: "master:supplier:list",
+    fields: new Set(["supplierCode", "supplierName"]),
+  },
+  workshop: {
+    permission: "master:workshop:list",
+    fields: new Set(["workshopCode", "workshopName"]),
+  },
+  personnel: {
+    permission: "master:personnel:list",
+    fields: new Set(["personnelCode", "personnelName"]),
+  },
+} as const;
+
 @Injectable()
 export class MasterDataService implements OnModuleInit {
+  private static readonly FIELD_SUGGESTION_LIMIT = 200;
+
   constructor(private readonly repository: MasterDataRepository) {}
 
   async onModuleInit(): Promise<void> {
     await this.repository.ensureCanonicalWorkshops();
     await this.repository.ensureCanonicalStockScopes();
+  }
+
+  // ─── Field Suggestions ──────────────────────────────────────────────────────
+
+  getFieldSuggestionsRequiredPermission(scope: string): string {
+    return this.resolveFieldSuggestionScopeConfig(scope).permission;
+  }
+
+  async getFieldSuggestions(scope: string, field: string): Promise<string[]> {
+    const config = this.resolveFieldSuggestionScopeConfig(scope);
+    if (!config.fields.has(field)) {
+      throw new BadRequestException(`不支持的建议字段: ${field}`);
+    }
+
+    switch (scope as FieldSuggestionScope) {
+      case "material":
+        return this.repository.findMaterialSuggestionValues(
+          field as "unitCode" | "specModel" | "materialName" | "materialCode",
+          MasterDataService.FIELD_SUGGESTION_LIMIT,
+        );
+      case "customer":
+        return this.repository.findCustomerSuggestionValues(
+          field as "customerCode" | "customerName",
+          MasterDataService.FIELD_SUGGESTION_LIMIT,
+        );
+      case "supplier":
+        return this.repository.findSupplierSuggestionValues(
+          field as "supplierCode" | "supplierName",
+          MasterDataService.FIELD_SUGGESTION_LIMIT,
+        );
+      case "workshop":
+        return this.repository.findWorkshopSuggestionValues(
+          field as "workshopCode" | "workshopName",
+          MasterDataService.FIELD_SUGGESTION_LIMIT,
+        );
+      case "personnel":
+        return this.repository.findPersonnelSuggestionValues(
+          field as "personnelCode" | "personnelName",
+          MasterDataService.FIELD_SUGGESTION_LIMIT,
+        );
+    }
+  }
+
+  private resolveFieldSuggestionScopeConfig(scope: string) {
+    const config =
+      FIELD_SUGGESTION_SCOPE_CONFIG[
+        scope as keyof typeof FIELD_SUGGESTION_SCOPE_CONFIG
+      ];
+    if (!config) {
+      throw new BadRequestException(`不支持的建议范围: ${scope}`);
+    }
+    return config;
   }
 
   // ─── MaterialCategory (F1) ──────────────────────────────────────────────────
@@ -711,7 +795,9 @@ export class MasterDataService implements OnModuleInit {
 
     return this.repository.updateWorkshop(
       id,
-      { workshopName: dto.workshopName },
+      {
+        workshopName: dto.workshopName,
+      },
       updatedBy,
     );
   }

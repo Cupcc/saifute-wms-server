@@ -536,6 +536,11 @@ export type WorkshopSumOrderByAggregateInput = {
   id?: Prisma.SortOrder;
 };
 
+export type WorkshopNullableScalarRelationFilter = {
+  is?: Prisma.WorkshopWhereInput | null;
+  isNot?: Prisma.WorkshopWhereInput | null;
+};
+
 export type WorkshopScalarRelationFilter = {
   is?: Prisma.WorkshopWhereInput;
   isNot?: Prisma.WorkshopWhereInput;
@@ -550,13 +555,15 @@ export type WorkshopCreateNestedOneWithoutInventoryBalancesInput = {
   connect?: Prisma.WorkshopWhereUniqueInput;
 };
 
-export type WorkshopUpdateOneRequiredWithoutInventoryBalancesNestedInput = {
+export type WorkshopUpdateOneWithoutInventoryBalancesNestedInput = {
   create?: Prisma.XOR<
     Prisma.WorkshopCreateWithoutInventoryBalancesInput,
     Prisma.WorkshopUncheckedCreateWithoutInventoryBalancesInput
   >;
   connectOrCreate?: Prisma.WorkshopCreateOrConnectWithoutInventoryBalancesInput;
   upsert?: Prisma.WorkshopUpsertWithoutInventoryBalancesInput;
+  disconnect?: Prisma.WorkshopWhereInput | boolean;
+  delete?: Prisma.WorkshopWhereInput | boolean;
   connect?: Prisma.WorkshopWhereUniqueInput;
   update?: Prisma.XOR<
     Prisma.XOR<
@@ -576,13 +583,15 @@ export type WorkshopCreateNestedOneWithoutInventoryLogsInput = {
   connect?: Prisma.WorkshopWhereUniqueInput;
 };
 
-export type WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput = {
+export type WorkshopUpdateOneWithoutInventoryLogsNestedInput = {
   create?: Prisma.XOR<
     Prisma.WorkshopCreateWithoutInventoryLogsInput,
     Prisma.WorkshopUncheckedCreateWithoutInventoryLogsInput
   >;
   connectOrCreate?: Prisma.WorkshopCreateOrConnectWithoutInventoryLogsInput;
   upsert?: Prisma.WorkshopUpsertWithoutInventoryLogsInput;
+  disconnect?: Prisma.WorkshopWhereInput | boolean;
+  delete?: Prisma.WorkshopWhereInput | boolean;
   connect?: Prisma.WorkshopWhereUniqueInput;
   update?: Prisma.XOR<
     Prisma.XOR<
@@ -602,23 +611,24 @@ export type WorkshopCreateNestedOneWithoutFactoryNumberReservationsInput = {
   connect?: Prisma.WorkshopWhereUniqueInput;
 };
 
-export type WorkshopUpdateOneRequiredWithoutFactoryNumberReservationsNestedInput =
-  {
-    create?: Prisma.XOR<
-      Prisma.WorkshopCreateWithoutFactoryNumberReservationsInput,
-      Prisma.WorkshopUncheckedCreateWithoutFactoryNumberReservationsInput
-    >;
-    connectOrCreate?: Prisma.WorkshopCreateOrConnectWithoutFactoryNumberReservationsInput;
-    upsert?: Prisma.WorkshopUpsertWithoutFactoryNumberReservationsInput;
-    connect?: Prisma.WorkshopWhereUniqueInput;
-    update?: Prisma.XOR<
-      Prisma.XOR<
-        Prisma.WorkshopUpdateToOneWithWhereWithoutFactoryNumberReservationsInput,
-        Prisma.WorkshopUpdateWithoutFactoryNumberReservationsInput
-      >,
-      Prisma.WorkshopUncheckedUpdateWithoutFactoryNumberReservationsInput
-    >;
-  };
+export type WorkshopUpdateOneWithoutFactoryNumberReservationsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.WorkshopCreateWithoutFactoryNumberReservationsInput,
+    Prisma.WorkshopUncheckedCreateWithoutFactoryNumberReservationsInput
+  >;
+  connectOrCreate?: Prisma.WorkshopCreateOrConnectWithoutFactoryNumberReservationsInput;
+  upsert?: Prisma.WorkshopUpsertWithoutFactoryNumberReservationsInput;
+  disconnect?: Prisma.WorkshopWhereInput | boolean;
+  delete?: Prisma.WorkshopWhereInput | boolean;
+  connect?: Prisma.WorkshopWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.WorkshopUpdateToOneWithWhereWithoutFactoryNumberReservationsInput,
+      Prisma.WorkshopUpdateWithoutFactoryNumberReservationsInput
+    >,
+    Prisma.WorkshopUncheckedUpdateWithoutFactoryNumberReservationsInput
+  >;
+};
 
 export type WorkshopCreateNestedOneWithoutStockInOrdersInput = {
   create?: Prisma.XOR<
@@ -770,13 +780,15 @@ export type WorkshopCreateNestedOneWithoutRdHandoffTargetOrdersInput = {
   connect?: Prisma.WorkshopWhereUniqueInput;
 };
 
-export type WorkshopUpdateOneRequiredWithoutRdHandoffSourceOrdersNestedInput = {
+export type WorkshopUpdateOneWithoutRdHandoffSourceOrdersNestedInput = {
   create?: Prisma.XOR<
     Prisma.WorkshopCreateWithoutRdHandoffSourceOrdersInput,
     Prisma.WorkshopUncheckedCreateWithoutRdHandoffSourceOrdersInput
   >;
   connectOrCreate?: Prisma.WorkshopCreateOrConnectWithoutRdHandoffSourceOrdersInput;
   upsert?: Prisma.WorkshopUpsertWithoutRdHandoffSourceOrdersInput;
+  disconnect?: Prisma.WorkshopWhereInput | boolean;
+  delete?: Prisma.WorkshopWhereInput | boolean;
   connect?: Prisma.WorkshopWhereUniqueInput;
   update?: Prisma.XOR<
     Prisma.XOR<
@@ -787,13 +799,15 @@ export type WorkshopUpdateOneRequiredWithoutRdHandoffSourceOrdersNestedInput = {
   >;
 };
 
-export type WorkshopUpdateOneRequiredWithoutRdHandoffTargetOrdersNestedInput = {
+export type WorkshopUpdateOneWithoutRdHandoffTargetOrdersNestedInput = {
   create?: Prisma.XOR<
     Prisma.WorkshopCreateWithoutRdHandoffTargetOrdersInput,
     Prisma.WorkshopUncheckedCreateWithoutRdHandoffTargetOrdersInput
   >;
   connectOrCreate?: Prisma.WorkshopCreateOrConnectWithoutRdHandoffTargetOrdersInput;
   upsert?: Prisma.WorkshopUpsertWithoutRdHandoffTargetOrdersInput;
+  disconnect?: Prisma.WorkshopWhereInput | boolean;
+  delete?: Prisma.WorkshopWhereInput | boolean;
   connect?: Prisma.WorkshopWhereUniqueInput;
   update?: Prisma.XOR<
     Prisma.XOR<

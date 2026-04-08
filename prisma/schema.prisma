@@ -336,7 +336,7 @@ model InventoryBalance {
   id             Int            @id @default(autoincrement())
   materialId     Int
   stockScopeId   Int?
-  workshopId     Int
+  workshopId     Int?
   quantityOnHand Decimal        @default(0) @db.Decimal(18, 6)
   rowVersion     Int            @default(0)
   createdBy      String?        @db.VarChar(64)
@@ -345,11 +345,10 @@ model InventoryBalance {
   updatedAt      DateTime       @updatedAt
   material       Material       @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   stockScope     StockScope?    @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  workshop       Workshop       @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  workshop       Workshop?      @relation(fields: [workshopId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   logs           InventoryLog[]
 
   @@unique([materialId, stockScopeId])
-  @@unique([materialId, workshopId])
   @@index([stockScopeId])
   @@index([workshopId])
   @@map("inventory_balance")
@@ -381,7 +380,7 @@ model InventoryLog {
   balanceId                 Int
   materialId                Int
   stockScopeId              Int?
-  workshopId                Int
+  workshopId                Int?
   allocationTargetId        Int?
   direction                 StockDirection
   operationType             InventoryOperationType
@@ -403,7 +402,7 @@ model InventoryLog {
   balance                   InventoryBalance          @relation(fields: [balanceId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   material                  Material                  @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   stockScope                StockScope?               @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  workshop                  Workshop                  @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  workshop                  Workshop?                 @relation(fields: [workshopId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   allocationTarget          AllocationTarget?         @relation(fields: [allocationTargetId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   reversalOfLog             InventoryLog?             @relation("InventoryLogReversal", fields: [reversalOfLogId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   reversedByLogs            InventoryLog[]            @relation("InventoryLogReversal")
@@ -450,7 +449,7 @@ model FactoryNumberReservation {
   id                     Int                            @id @default(autoincrement())
   materialId             Int
   stockScopeId           Int?
-  workshopId             Int
+  workshopId             Int?
   businessDocumentType   String                         @db.VarChar(64)
   businessDocumentId     Int
   businessDocumentLineId Int
@@ -465,7 +464,7 @@ model FactoryNumberReservation {
   updatedAt              DateTime                       @updatedAt
   material               Material                       @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   stockScope             StockScope?                    @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  workshop               Workshop                       @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  workshop               Workshop?                      @relation(fields: [workshopId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@unique([businessDocumentType, businessDocumentLineId, startNumber, endNumber])
   @@index([materialId, stockScopeId])
@@ -474,7 +473,7 @@ model FactoryNumberReservation {
   @@map("factory_number_reservation")
 }
 
-model AuditDocument {
+model ApprovalDocument {
   id             Int                 @id @default(autoincrement())
   documentFamily DocumentFamily
   documentType   String              @db.VarChar(64)
@@ -496,7 +495,7 @@ model AuditDocument {
   @@unique([documentType, documentId])
   @@index([documentFamily, auditStatus])
   @@index([documentNumber])
-  @@map("audit_document")
+  @@map("approval_document")
 }
 
 model StockInOrder {
@@ -860,15 +859,15 @@ model RdHandoffOrder {
   handlerPersonnelId         Int?
   sourceStockScopeId         Int?
   targetStockScopeId         Int?
-  sourceWorkshopId           Int
-  targetWorkshopId           Int
+  sourceWorkshopId           Int?
+  targetWorkshopId           Int?
   lifecycleStatus            DocumentLifecycleStatus @default(EFFECTIVE)
   auditStatusSnapshot        AuditStatusSnapshot     @default(NOT_REQUIRED)
   inventoryEffectStatus      InventoryEffectStatus   @default(POSTED)
   revisionNo                 Int                     @default(1)
   handlerNameSnapshot        String?                 @db.VarChar(128)
-  sourceWorkshopNameSnapshot String                  @db.VarChar(128)
-  targetWorkshopNameSnapshot String                  @db.VarChar(128)
+  sourceWorkshopNameSnapshot String?                 @db.VarChar(128)
+  targetWorkshopNameSnapshot String?                 @db.VarChar(128)
   totalQty                   Decimal                 @default(0) @db.Decimal(18, 6)
   totalAmount                Decimal                 @default(0) @db.Decimal(18, 2)
   remark                     String?                 @db.VarChar(500)
@@ -882,8 +881,8 @@ model RdHandoffOrder {
   handlerPersonnel           Personnel?              @relation("RdHandoffOrderHandler", fields: [handlerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   sourceStockScope           StockScope?             @relation("RdHandoffSourceStockScope", fields: [sourceStockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   targetStockScope           StockScope?             @relation("RdHandoffTargetStockScope", fields: [targetStockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  sourceWorkshop             Workshop                @relation("RdHandoffSourceWorkshop", fields: [sourceWorkshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  targetWorkshop             Workshop                @relation("RdHandoffTargetWorkshop", fields: [targetWorkshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  sourceWorkshop             Workshop?               @relation("RdHandoffSourceWorkshop", fields: [sourceWorkshopId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  targetWorkshop             Workshop?               @relation("RdHandoffTargetWorkshop", fields: [targetWorkshopId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   lines                      RdHandoffOrderLine[]
 
   @@index([bizDate])
@@ -1326,6 +1325,7 @@ model SysUser {
   remark           String   @default("") @db.VarChar(500)
   passwordHash     String   @db.VarChar(256) @map("password_hash")
   consoleMode      String   @default("default") @db.VarChar(32) @map("console_mode")
+  stockScope       Json?    @map("stock_scope")
   workshopScope    Json?    @map("workshop_scope")
   extraPermissions Json?    @map("extra_permissions")
   createdAt        DateTime @default(now()) @map("created_at")

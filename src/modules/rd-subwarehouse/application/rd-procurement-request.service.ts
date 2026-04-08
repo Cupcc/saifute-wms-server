@@ -24,8 +24,6 @@ import {
   initializeRequestStatusTruth,
 } from "./rd-material-status.helper";
 
-const RD_SUBWAREHOUSE_CODE = "RD";
-
 @Injectable()
 export class RdProcurementRequestService {
   constructor(
@@ -79,9 +77,6 @@ export class RdProcurementRequestService {
     const workshop = await this.masterDataService.getWorkshopById(
       dto.workshopId,
     );
-    if (workshop.workshopCode !== RD_SUBWAREHOUSE_CODE) {
-      throw new BadRequestException("研发采购需求只能归属研发小仓");
-    }
     const stockScopeRecord =
       await this.masterDataService.getStockScopeByCode("RD_SUB");
 

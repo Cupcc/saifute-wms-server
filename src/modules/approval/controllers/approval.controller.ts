@@ -10,38 +10,38 @@ import {
 import { CurrentUser } from "../../../shared/decorators/current-user.decorator";
 import { Permissions } from "../../../shared/decorators/permissions.decorator";
 import type { SessionUserSnapshot } from "../../session/domain/user-session";
-import { AuditService } from "../application/audit.service";
-import { CreateAuditDocumentDto } from "../dto/create-audit-document.dto";
-import { QueryAuditStatusDto } from "../dto/query-audit-status.dto";
-import { QueryAuditsDto } from "../dto/query-audits.dto";
-import { RejectAuditDto } from "../dto/reject-audit.dto";
+import { ApprovalService } from "../application/approval.service";
+import { CreateApprovalDocumentDto } from "../dto/create-approval-document.dto";
+import { QueryApprovalStatusDto } from "../dto/query-approval-status.dto";
+import { QueryApprovalsDto } from "../dto/query-approvals.dto";
+import { RejectApprovalDto } from "../dto/reject-approval.dto";
 
-@Controller("audit")
-export class AuditController {
-  constructor(private readonly auditService: AuditService) {}
+@Controller("approval")
+export class ApprovalController {
+  constructor(private readonly approvalService: ApprovalService) {}
 
-  @Permissions("audit:document:status")
+  @Permissions("approval:document:status")
   @Get("documents/status")
-  async getAuditStatus(@Query() query: QueryAuditStatusDto) {
-    return this.auditService.getAuditStatus(
+  async getApprovalStatus(@Query() query: QueryApprovalStatusDto) {
+    return this.approvalService.getApprovalStatus(
       query.documentType,
       query.documentId,
     );
   }
 
-  @Permissions("audit:document:status")
+  @Permissions("approval:document:status")
   @Get("documents/detail")
-  async getAuditDocument(@Query() query: QueryAuditStatusDto) {
-    return this.auditService.getAuditDocument(
+  async getApprovalDocument(@Query() query: QueryApprovalStatusDto) {
+    return this.approvalService.getApprovalDocument(
       query.documentType,
       query.documentId,
     );
   }
 
-  @Permissions("audit:document:list")
+  @Permissions("approval:document:list")
   @Get("documents")
-  async listAudits(@Query() query: QueryAuditsDto) {
-    return this.auditService.listAudits({
+  async listApprovals(@Query() query: QueryApprovalsDto) {
+    return this.approvalService.listApprovals({
       documentFamily: query.documentFamily,
       auditStatus: query.auditStatus,
       limit: query.limit,
@@ -49,13 +49,13 @@ export class AuditController {
     });
   }
 
-  @Permissions("audit:document:create")
+  @Permissions("approval:document:create")
   @Post("documents")
-  async createAuditDocument(
-    @Body() dto: CreateAuditDocumentDto,
+  async createApprovalDocument(
+    @Body() dto: CreateApprovalDocumentDto,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    return this.auditService.createOrRefreshAuditDocument({
+    return this.approvalService.createOrRefreshApprovalDocument({
       documentFamily: dto.documentFamily,
       documentType: dto.documentType,
       documentId: dto.documentId,
@@ -65,35 +65,35 @@ export class AuditController {
     });
   }
 
-  @Permissions("audit:document:approve")
+  @Permissions("approval:document:approve")
   @Post("documents/:id/approve")
   async approve(
     @Param("id", ParseIntPipe) id: number,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    return this.auditService.approve(id, user?.userId?.toString());
+    return this.approvalService.approve(id, user?.userId?.toString());
   }
 
-  @Permissions("audit:document:reject")
+  @Permissions("approval:document:reject")
   @Post("documents/:id/reject")
   async reject(
     @Param("id", ParseIntPipe) id: number,
-    @Body() dto: RejectAuditDto,
+    @Body() dto: RejectApprovalDto,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    return this.auditService.reject(
+    return this.approvalService.reject(
       id,
       dto.rejectReason,
       user?.userId?.toString(),
     );
   }
 
-  @Permissions("audit:document:reset")
+  @Permissions("approval:document:reset")
   @Post("documents/:id/reset")
   async reset(
     @Param("id", ParseIntPipe) id: number,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    return this.auditService.reset(id, user?.userId?.toString());
+    return this.approvalService.reset(id, user?.userId?.toString());
   }
 }

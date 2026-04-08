@@ -93,4 +93,26 @@ describe("RbacService", () => {
       workshopName: "研发小仓",
     });
   });
+
+  it("should keep canonical approval permissions only", async () => {
+    const user = await rbacService.getCurrentUser(1);
+    const documentPermissions = [
+      ...new Set(
+        user.permissions.filter((permission) =>
+          permission.startsWith("approval:document:"),
+        ),
+      ),
+    ].sort();
+
+    expect(documentPermissions).toEqual(
+      [
+        "approval:document:status",
+        "approval:document:list",
+        "approval:document:create",
+        "approval:document:approve",
+        "approval:document:reject",
+        "approval:document:reset",
+      ].sort(),
+    );
+  });
 });

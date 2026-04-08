@@ -123,7 +123,7 @@ async function clearInventoryTables(
 async function clearAuditDocuments(
   connection: MigrationConnectionLike,
 ): Promise<void> {
-  await connection.query(`DELETE FROM audit_document`);
+  await connection.query(`DELETE FROM approval_document`);
 }
 
 async function clearDocumentRelations(
@@ -287,7 +287,7 @@ async function upsertAuditDocument(
 ): Promise<void> {
   await connection.query(
     `
-      INSERT INTO audit_document (
+      INSERT INTO approval_document (
         documentFamily,
         documentType,
         documentId,

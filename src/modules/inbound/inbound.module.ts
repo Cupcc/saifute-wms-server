@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { AuditModule } from "../audit/audit.module";
+import { ApprovalModule } from "../approval/approval.module";
 import { InventoryCoreModule } from "../inventory-core/inventory-core.module";
 import { MasterDataModule } from "../master-data/master-data.module";
 import { RbacModule } from "../rbac/rbac.module";
@@ -14,7 +14,7 @@ import { StockInPriceCorrectionRepository } from "./infrastructure/stock-in-pric
   imports: [
     MasterDataModule,
     InventoryCoreModule,
-    AuditModule,
+    ApprovalModule,
     RbacModule,
     RdSubwarehouseModule,
   ],

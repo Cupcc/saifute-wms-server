@@ -46,7 +46,7 @@
         <el-table-column prop="materialCode" label="物料编码" min-width="140" />
         <el-table-column prop="materialName" label="物料名称" min-width="180" />
         <el-table-column prop="categoryName" label="分类" min-width="140" />
-        <el-table-column prop="workshopName" label="车间" min-width="140" />
+        <el-table-column prop="stockScopeName" label="库存范围" min-width="140" />
         <el-table-column prop="quantityOnHand" label="库存数量" min-width="120" />
         <el-table-column prop="unitCode" label="单位" min-width="90" />
         <el-table-column label="状态" min-width="110">

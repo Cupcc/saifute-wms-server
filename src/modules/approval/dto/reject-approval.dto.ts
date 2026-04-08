@@ -1,6 +1,6 @@
 import { IsOptional, IsString, MaxLength } from "class-validator";
 
-export class RejectAuditDto {
+export class RejectApprovalDto {
   @IsString()
   @IsOptional()
   @MaxLength(500)

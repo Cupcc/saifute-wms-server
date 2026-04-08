@@ -62,22 +62,10 @@
 		    </el-select>
 	    </el-form-item>
       <el-form-item label="物料名称" prop="materialName">
-        <el-input
-          v-model="queryParams.materialName"
-          placeholder="请输入物料名称"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
+        <combo-input v-model="queryParams.materialName" scope="material" field="materialName" placeholder="请选择或输入物料名称" width="240px" />
       </el-form-item>
       <el-form-item label="规格型号" prop="specification">
-        <el-input
-          v-model="queryParams.specification"
-          placeholder="请输入规格型号"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
+        <combo-input v-model="queryParams.specification" scope="material" field="specModel" placeholder="请选择或输入规格型号" width="240px" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -151,7 +139,7 @@
           <el-input v-model="form.returnReason" placeholder="请输入退料原因：1-质量问题 2-规格不符 3-多发退回 4-其他" />
         </el-form-item>
         <el-form-item label="单位" prop="unit">
-          <el-input v-model="form.unit" placeholder="请输入单位" />
+          <combo-input v-model="form.unit" scope="material" field="unitCode" placeholder="请选择或输入单位" />
         </el-form-item>
         <el-form-item label="单价" prop="unitPrice">
           <el-input v-model="form.unitPrice" placeholder="请输入单价" />

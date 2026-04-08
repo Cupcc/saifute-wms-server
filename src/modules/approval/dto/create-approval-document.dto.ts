@@ -9,7 +9,7 @@ import {
 } from "class-validator";
 import { DocumentFamily } from "../../../generated/prisma/client";
 
-export class CreateAuditDocumentDto {
+export class CreateApprovalDocumentDto {
   @IsEnum(DocumentFamily)
   documentFamily!: DocumentFamily;
 

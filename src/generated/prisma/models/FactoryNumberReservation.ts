@@ -281,7 +281,7 @@ export type FactoryNumberReservationGroupByOutputType = {
   id: number;
   materialId: number;
   stockScopeId: number | null;
-  workshopId: number;
+  workshopId: number | null;
   businessDocumentType: string;
   businessDocumentId: number;
   businessDocumentLineId: number;
@@ -339,7 +339,10 @@ export type FactoryNumberReservationWhereInput = {
     | Prisma.IntNullableFilter<"FactoryNumberReservation">
     | number
     | null;
-  workshopId?: Prisma.IntFilter<"FactoryNumberReservation"> | number;
+  workshopId?:
+    | Prisma.IntNullableFilter<"FactoryNumberReservation">
+    | number
+    | null;
   businessDocumentType?:
     | Prisma.StringFilter<"FactoryNumberReservation">
     | string;
@@ -380,16 +383,16 @@ export type FactoryNumberReservationWhereInput = {
     Prisma.StockScopeWhereInput
   > | null;
   workshop?: Prisma.XOR<
-    Prisma.WorkshopScalarRelationFilter,
+    Prisma.WorkshopNullableScalarRelationFilter,
     Prisma.WorkshopWhereInput
-  >;
+  > | null;
 };
 
 export type FactoryNumberReservationOrderByWithRelationInput = {
   id?: Prisma.SortOrder;
   materialId?: Prisma.SortOrder;
   stockScopeId?: Prisma.SortOrderInput | Prisma.SortOrder;
-  workshopId?: Prisma.SortOrder;
+  workshopId?: Prisma.SortOrderInput | Prisma.SortOrder;
   businessDocumentType?: Prisma.SortOrder;
   businessDocumentId?: Prisma.SortOrder;
   businessDocumentLineId?: Prisma.SortOrder;
@@ -424,7 +427,10 @@ export type FactoryNumberReservationWhereUniqueInput = Prisma.AtLeast<
       | Prisma.IntNullableFilter<"FactoryNumberReservation">
       | number
       | null;
-    workshopId?: Prisma.IntFilter<"FactoryNumberReservation"> | number;
+    workshopId?:
+      | Prisma.IntNullableFilter<"FactoryNumberReservation">
+      | number
+      | null;
     businessDocumentType?:
       | Prisma.StringFilter<"FactoryNumberReservation">
       | string;
@@ -471,9 +477,9 @@ export type FactoryNumberReservationWhereUniqueInput = Prisma.AtLeast<
       Prisma.StockScopeWhereInput
     > | null;
     workshop?: Prisma.XOR<
-      Prisma.WorkshopScalarRelationFilter,
+      Prisma.WorkshopNullableScalarRelationFilter,
       Prisma.WorkshopWhereInput
-    >;
+    > | null;
   },
   "id" | "businessDocumentType_businessDocumentLineId_startNumber_endNumber"
 >;
@@ -482,7 +488,7 @@ export type FactoryNumberReservationOrderByWithAggregationInput = {
   id?: Prisma.SortOrder;
   materialId?: Prisma.SortOrder;
   stockScopeId?: Prisma.SortOrderInput | Prisma.SortOrder;
-  workshopId?: Prisma.SortOrder;
+  workshopId?: Prisma.SortOrderInput | Prisma.SortOrder;
   businessDocumentType?: Prisma.SortOrder;
   businessDocumentId?: Prisma.SortOrder;
   businessDocumentLineId?: Prisma.SortOrder;
@@ -519,8 +525,9 @@ export type FactoryNumberReservationScalarWhereWithAggregatesInput = {
     | number
     | null;
   workshopId?:
-    | Prisma.IntWithAggregatesFilter<"FactoryNumberReservation">
-    | number;
+    | Prisma.IntNullableWithAggregatesFilter<"FactoryNumberReservation">
+    | number
+    | null;
   businessDocumentType?:
     | Prisma.StringWithAggregatesFilter<"FactoryNumberReservation">
     | string;
@@ -581,14 +588,14 @@ export type FactoryNumberReservationCreateInput = {
   updatedAt?: Date | string;
   material: Prisma.MaterialCreateNestedOneWithoutFactoryNumberReservationsInput;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutFactoryNumberReservationsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutFactoryNumberReservationsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutFactoryNumberReservationsInput;
 };
 
 export type FactoryNumberReservationUncheckedCreateInput = {
   id?: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   businessDocumentType: string;
   businessDocumentId: number;
   businessDocumentLineId: number;
@@ -624,14 +631,14 @@ export type FactoryNumberReservationUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   material?: Prisma.MaterialUpdateOneRequiredWithoutFactoryNumberReservationsNestedInput;
   stockScope?: Prisma.StockScopeUpdateOneWithoutFactoryNumberReservationsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutFactoryNumberReservationsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutFactoryNumberReservationsNestedInput;
 };
 
 export type FactoryNumberReservationUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   businessDocumentType?: Prisma.StringFieldUpdateOperationsInput | string;
   businessDocumentId?: Prisma.IntFieldUpdateOperationsInput | number;
   businessDocumentLineId?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -656,7 +663,7 @@ export type FactoryNumberReservationCreateManyInput = {
   id?: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   businessDocumentType: string;
   businessDocumentId: number;
   businessDocumentLineId: number;
@@ -696,7 +703,7 @@ export type FactoryNumberReservationUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   businessDocumentType?: Prisma.StringFieldUpdateOperationsInput | string;
   businessDocumentId?: Prisma.IntFieldUpdateOperationsInput | number;
   businessDocumentLineId?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1176,13 +1183,13 @@ export type FactoryNumberReservationCreateWithoutMaterialInput = {
   updatedBy?: string | null;
   updatedAt?: Date | string;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutFactoryNumberReservationsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutFactoryNumberReservationsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutFactoryNumberReservationsInput;
 };
 
 export type FactoryNumberReservationUncheckedCreateWithoutMaterialInput = {
   id?: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   businessDocumentType: string;
   businessDocumentId: number;
   businessDocumentLineId: number;
@@ -1256,7 +1263,10 @@ export type FactoryNumberReservationScalarWhereInput = {
     | Prisma.IntNullableFilter<"FactoryNumberReservation">
     | number
     | null;
-  workshopId?: Prisma.IntFilter<"FactoryNumberReservation"> | number;
+  workshopId?:
+    | Prisma.IntNullableFilter<"FactoryNumberReservation">
+    | number
+    | null;
   businessDocumentType?:
     | Prisma.StringFilter<"FactoryNumberReservation">
     | string;
@@ -1384,13 +1394,13 @@ export type FactoryNumberReservationCreateWithoutStockScopeInput = {
   updatedBy?: string | null;
   updatedAt?: Date | string;
   material: Prisma.MaterialCreateNestedOneWithoutFactoryNumberReservationsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutFactoryNumberReservationsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutFactoryNumberReservationsInput;
 };
 
 export type FactoryNumberReservationUncheckedCreateWithoutStockScopeInput = {
   id?: number;
   materialId: number;
-  workshopId: number;
+  workshopId?: number | null;
   businessDocumentType: string;
   businessDocumentId: number;
   businessDocumentLineId: number;
@@ -1454,7 +1464,7 @@ export type FactoryNumberReservationUpdateManyWithWhereWithoutStockScopeInput =
 export type FactoryNumberReservationCreateManyMaterialInput = {
   id?: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   businessDocumentType: string;
   businessDocumentId: number;
   businessDocumentLineId: number;
@@ -1489,13 +1499,13 @@ export type FactoryNumberReservationUpdateWithoutMaterialInput = {
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   stockScope?: Prisma.StockScopeUpdateOneWithoutFactoryNumberReservationsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutFactoryNumberReservationsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutFactoryNumberReservationsNestedInput;
 };
 
 export type FactoryNumberReservationUncheckedUpdateWithoutMaterialInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   businessDocumentType?: Prisma.StringFieldUpdateOperationsInput | string;
   businessDocumentId?: Prisma.IntFieldUpdateOperationsInput | number;
   businessDocumentLineId?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1519,7 +1529,7 @@ export type FactoryNumberReservationUncheckedUpdateWithoutMaterialInput = {
 export type FactoryNumberReservationUncheckedUpdateManyWithoutMaterialInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   businessDocumentType?: Prisma.StringFieldUpdateOperationsInput | string;
   businessDocumentId?: Prisma.IntFieldUpdateOperationsInput | number;
   businessDocumentLineId?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1632,7 +1642,7 @@ export type FactoryNumberReservationUncheckedUpdateManyWithoutWorkshopInput = {
 export type FactoryNumberReservationCreateManyStockScopeInput = {
   id?: number;
   materialId: number;
-  workshopId: number;
+  workshopId?: number | null;
   businessDocumentType: string;
   businessDocumentId: number;
   businessDocumentLineId: number;
@@ -1667,13 +1677,13 @@ export type FactoryNumberReservationUpdateWithoutStockScopeInput = {
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   material?: Prisma.MaterialUpdateOneRequiredWithoutFactoryNumberReservationsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutFactoryNumberReservationsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutFactoryNumberReservationsNestedInput;
 };
 
 export type FactoryNumberReservationUncheckedUpdateWithoutStockScopeInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   businessDocumentType?: Prisma.StringFieldUpdateOperationsInput | string;
   businessDocumentId?: Prisma.IntFieldUpdateOperationsInput | number;
   businessDocumentLineId?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1698,7 +1708,7 @@ export type FactoryNumberReservationUncheckedUpdateManyWithoutStockScopeInput =
   {
     id?: Prisma.IntFieldUpdateOperationsInput | number;
     materialId?: Prisma.IntFieldUpdateOperationsInput | number;
-    workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+    workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     businessDocumentType?: Prisma.StringFieldUpdateOperationsInput | string;
     businessDocumentId?: Prisma.IntFieldUpdateOperationsInput | number;
     businessDocumentLineId?: Prisma.IntFieldUpdateOperationsInput | number;
@@ -1744,7 +1754,7 @@ export type FactoryNumberReservationSelect<
     stockScope?:
       | boolean
       | Prisma.FactoryNumberReservation$stockScopeArgs<ExtArgs>;
-    workshop?: boolean | Prisma.WorkshopDefaultArgs<ExtArgs>;
+    workshop?: boolean | Prisma.FactoryNumberReservation$workshopArgs<ExtArgs>;
   },
   ExtArgs["result"]["factoryNumberReservation"]
 >;
@@ -1798,7 +1808,7 @@ export type FactoryNumberReservationInclude<
   stockScope?:
     | boolean
     | Prisma.FactoryNumberReservation$stockScopeArgs<ExtArgs>;
-  workshop?: boolean | Prisma.WorkshopDefaultArgs<ExtArgs>;
+  workshop?: boolean | Prisma.FactoryNumberReservation$workshopArgs<ExtArgs>;
 };
 
 export type $FactoryNumberReservationPayload<
@@ -1809,14 +1819,14 @@ export type $FactoryNumberReservationPayload<
   objects: {
     material: Prisma.$MaterialPayload<ExtArgs>;
     stockScope: Prisma.$StockScopePayload<ExtArgs> | null;
-    workshop: Prisma.$WorkshopPayload<ExtArgs>;
+    workshop: Prisma.$WorkshopPayload<ExtArgs> | null;
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
       id: number;
       materialId: number;
       stockScopeId: number | null;
-      workshopId: number;
+      workshopId: number | null;
       businessDocumentType: string;
       businessDocumentId: number;
       businessDocumentLineId: number;
@@ -2373,17 +2383,21 @@ export interface Prisma__FactoryNumberReservationClient<
     ExtArgs,
     GlobalOmitOptions
   >;
-  workshop<T extends Prisma.WorkshopDefaultArgs<ExtArgs> = {}>(
-    args?: Prisma.Subset<T, Prisma.WorkshopDefaultArgs<ExtArgs>>,
+  workshop<
+    T extends Prisma.FactoryNumberReservation$workshopArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<
+      T,
+      Prisma.FactoryNumberReservation$workshopArgs<ExtArgs>
+    >,
   ): Prisma.Prisma__WorkshopClient<
-    | runtime.Types.Result.GetResult<
-        Prisma.$WorkshopPayload<ExtArgs>,
-        T,
-        "findUniqueOrThrow",
-        GlobalOmitOptions
-      >
-    | Null,
-    Null,
+    runtime.Types.Result.GetResult<
+      Prisma.$WorkshopPayload<ExtArgs>,
+      T,
+      "findUniqueOrThrow",
+      GlobalOmitOptions
+    > | null,
+    null,
     ExtArgs,
     GlobalOmitOptions
   >;
@@ -2888,6 +2902,28 @@ export type FactoryNumberReservation$stockScopeArgs<
    */
   include?: Prisma.StockScopeInclude<ExtArgs> | null;
   where?: Prisma.StockScopeWhereInput;
+};
+
+/**
+ * FactoryNumberReservation.workshop
+ */
+export type FactoryNumberReservation$workshopArgs<
+  ExtArgs extends
+    runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the Workshop
+   */
+  select?: Prisma.WorkshopSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the Workshop
+   */
+  omit?: Prisma.WorkshopOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WorkshopInclude<ExtArgs> | null;
+  where?: Prisma.WorkshopWhereInput;
 };
 
 /**

@@ -34,9 +34,9 @@ export interface InventoryBalanceSnapshot {
   };
   workshop: {
     id: number;
-    workshopCode: string;
+    workshopCode?: string | null;
     workshopName: string;
-  };
+  } | null;
 }
 
 export interface TrendDocumentSnapshot {

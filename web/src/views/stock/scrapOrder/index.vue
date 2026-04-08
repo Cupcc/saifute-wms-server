@@ -35,23 +35,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="经办人" prop="attn">
-        <el-select
-          v-model="queryParams.attn"
-          filterable
-          remote
-          reserve-keyword
-          placeholder="请输入经办人姓名搜索"
-          :remote-method="searchPersonnel"
-          :loading="personnelLoading"
-          clearable
-          style="width: 240px">
-          <el-option
-            v-for="item in personnelOptions"
-            :key="item.personnelId"
-            :label="item.name"
-            :value="item.name">
-          </el-option>
-        </el-select>
+        <combo-input v-model="queryParams.attn" scope="personnel" field="personnelName" placeholder="请选择或输入经办人" width="240px" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -92,7 +76,8 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="scrapOrderList" @selection-change="handleSelectionChange">
+    <adaptive-table border stripe v-loading="loading" :data="scrapOrderList" @selection-change="handleSelectionChange" @row-click="handleRowClick">
+      <el-table-column type="selection" width="50" align="center" />
       <el-table-column type="index" width="50" align="center" />
       <el-table-column sortable show-overflow-tooltip label="报废单号" align="center" prop="scrapNo" v-if="columns[0].visible">
         <template #default="scope">
@@ -178,29 +163,33 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="负责人" prop="chargeBy">
-              <el-input v-model="form.chargeBy" placeholder="请输入负责人" />
+              <combo-input v-model="form.chargeBy" scope="personnel" field="personnelName" placeholder="请选择或输入负责人" />
             </el-form-item>
           </el-col>
         </el-row>
         <el-row>
           <el-col :span="12">
             <el-form-item label="经办人" prop="attn">
+              <combo-input v-model="form.attn" scope="personnel" field="personnelName" placeholder="请选择或输入经办人" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="车间" prop="workshopId">
               <el-select
-                v-model="form.attn"
+                v-model="form.workshopId"
                 filterable
                 remote
                 reserve-keyword
-                placeholder="请输入经办人姓名搜索"
-                :remote-method="searchPersonnel"
-                :loading="personnelLoading"
-                allow-create
-                default-first-option
+                placeholder="请输入车间名称搜索"
+                :remote-method="searchWorkshop"
+                :loading="workshopLoading"
                 style="width: 100%">
                 <el-option
-                  v-for="item in personnelOptions"
-                  :key="item.personnelId"
-                  :label="item.name"
-                  :value="item.name">
+                  v-for="item in workshopOptions"
+                  :key="item.workshopId"
+                  :label="item.workshopName"
+                  :value="item.workshopId">
+                  <span style="float: left">{{ item.workshopName }}</span>
                 </el-option>
               </el-select>
             </el-form-item>
@@ -250,7 +239,7 @@
             </el-table-column>
             <el-table-column label="单位" prop="unit">
               <template #default="scope">
-                <el-input v-model="scope.row.unit" placeholder="请输入单位" :disabled="isView" />
+                <combo-input v-model="scope.row.unit" scope="material" field="unitCode" placeholder="请选择或输入单位" :disabled="isView" />
               </template>
             </el-table-column>
             <el-table-column label="报废原因" prop="scrapReason">
@@ -353,9 +342,10 @@
 <script setup name="ScrapOrder">
 import { listMaterialByCodeOrName } from "@/api/base/material";
 import { listPersonnel } from "@/api/base/personnel";
+import { clearSuggestionsCache } from "@/api/base/suggestions";
+import { listByNameOrContact } from "@/api/base/workshop";
 import {
   addScrapOrder,
-  delScrapOrder,
   getScrapOrder,
   listScrapOrder,
   updateScrapOrder,
@@ -392,6 +382,8 @@ const materialLoading = ref(false);
 // 人员信息相关
 const personnelOptions = ref([]);
 const personnelLoading = ref(false);
+const workshopOptions = ref([]);
+const workshopLoading = ref(false);
 
 // 详情数据
 const detailData = ref({});
@@ -412,6 +404,7 @@ const data = reactive({
     scrapDate: [
       { required: true, message: "报废日期不能为空", trigger: "blur" },
     ],
+    workshopId: [{ required: true, message: "车间不能为空", trigger: "change" }],
     disposalMethod: [
       { required: true, message: "处理方式不能为空", trigger: "change" },
     ],
@@ -467,7 +460,8 @@ function reset() {
     scrapId: null,
     scrapNo: null,
     scrapDate: null,
-    disposalMethod: null,
+    workshopId: null,
+    disposalMethod: 1,
     chargeBy: null,
     attn: null,
     remark: null,
@@ -490,6 +484,8 @@ function reset() {
   ];
   materialOptions.value = [];
   materialLoading.value = false;
+  workshopOptions.value = [];
+  workshopLoading.value = false;
   proxy.resetForm("scrapOrderRef");
 }
 
@@ -541,6 +537,21 @@ function searchPersonnel(query) {
     })
     .catch(() => {
       personnelLoading.value = false;
+    });
+}
+
+/** 搜索车间 */
+function searchWorkshop(query) {
+  workshopLoading.value = true;
+  listByNameOrContact({
+    workshopName: query,
+  })
+    .then((response) => {
+      workshopOptions.value = response.rows || [];
+      workshopLoading.value = false;
+    })
+    .catch(() => {
+      workshopLoading.value = false;
     });
 }
 
@@ -619,6 +630,7 @@ function handleAdd() {
   reset();
   const today = new Date();
   form.value.scrapDate = formatDateToYYYYMMDD(today);
+  form.value.disposalMethod = 1;
   form.value.scrapNoManuallyChanged = false;
   title.value = "添加报废单";
   isView.value = false;
@@ -627,6 +639,7 @@ function handleAdd() {
   generateScrapNo(today)
     .then((scrapNo) => {
       form.value.scrapNo = scrapNo;
+      searchWorkshop("");
       loadMaterialOptions();
     })
     .finally(() => {
@@ -636,15 +649,19 @@ function handleAdd() {
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
+  const scrapId = resolveSelectedScrapId(row);
+  if (!scrapId) {
+    return;
+  }
   reset();
   title.value = "修改报废单";
   isView.value = false;
   open.value = true;
   dialogLoading.value = true;
-  const _scrapId = row.scrapId || ids.value;
-  getScrapOrder(_scrapId)
+  getScrapOrder(scrapId)
     .then((response) => {
       form.value = response.data;
+      searchWorkshop(response.data.workshopName ?? "");
       if (response.data.details && response.data.details.length > 0) {
         detailList.value = response.data.details;
       }
@@ -675,6 +692,16 @@ function handleDetail(row) {
     detailData.value = response.data;
     detailOpen.value = true;
   });
+}
+
+/** 点击行时同步工具栏状态 */
+function handleRowClick(row) {
+  if (!row?.scrapId) {
+    return;
+  }
+  ids.value = [row.scrapId];
+  single.value = false;
+  multiple.value = false;
 }
 
 /** 当报废单号输入框发生变化时 */
@@ -714,12 +741,14 @@ function submitForm() {
 
       if (form.value.scrapId != null) {
         updateScrapOrder(form.value).then((response) => {
+          clearSuggestionsCache();
           proxy.$modal.msgSuccess("修改成功");
           open.value = false;
           getList();
         });
       } else {
         addScrapOrder(form.value).then((response) => {
+          clearSuggestionsCache();
           proxy.$modal.msgSuccess("新增成功");
           open.value = false;
           getList();
@@ -731,12 +760,25 @@ function submitForm() {
 
 /** 作废按钮操作 */
 function handleDelete(row) {
+  const scrapId = resolveSelectedScrapId(row);
+  if (!scrapId) {
+    return;
+  }
   abandonForm.value = {
-    scrapId: row.scrapId || ids.value[0],
+    scrapId,
     voidDescription: "",
   };
   abandonOpen.value = true;
   proxy.resetForm("abandonRef");
+}
+
+function resolveSelectedScrapId(row) {
+  const scrapId = row?.scrapId ?? ids.value[0];
+  if (!scrapId) {
+    proxy.$modal.msgError("请选择一条报废单记录");
+    return null;
+  }
+  return scrapId;
 }
 
 /** 取消作废操作 */

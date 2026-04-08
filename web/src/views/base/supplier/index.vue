@@ -8,22 +8,10 @@
       label-width="84px"
     >
       <el-form-item label="供应商编码" prop="supplierCode">
-        <el-input
-          v-model="queryParams.supplierCode"
-          placeholder="请输入供应商编码"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
+        <combo-input v-model="queryParams.supplierCode" scope="supplier" field="supplierCode" placeholder="请选择或输入供应商编码" width="240px" />
       </el-form-item>
       <el-form-item label="供应商名称" prop="supplierName">
-        <el-input
-          v-model="queryParams.supplierName"
-          placeholder="请输入供应商名称"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
+        <combo-input v-model="queryParams.supplierName" scope="supplier" field="supplierName" placeholder="请选择或输入供应商名称" width="240px" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">
@@ -112,10 +100,10 @@
     >
       <el-form ref="supplierRef" :model="form" :rules="rules" label-width="92px">
         <el-form-item label="供应商编码" prop="supplierCode">
-          <el-input v-model="form.supplierCode" placeholder="请输入供应商编码" />
+          <combo-input v-model="form.supplierCode" scope="supplier" field="supplierCode" placeholder="请选择或输入供应商编码" />
         </el-form-item>
         <el-form-item label="供应商名称" prop="supplierName">
-          <el-input v-model="form.supplierName" placeholder="请输入供应商名称" />
+          <combo-input v-model="form.supplierName" scope="supplier" field="supplierName" placeholder="请选择或输入供应商名称" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -136,6 +124,7 @@ import {
   listSupplier,
   updateSupplier,
 } from "@/api/base/supplier";
+import { clearSuggestionsCache } from "@/api/base/suggestions";
 
 const { proxy } = getCurrentInstance();
 
@@ -239,6 +228,7 @@ function submitForm() {
       : addSupplier(form.value);
 
     request.then(() => {
+      clearSuggestionsCache();
       proxy.$modal.msgSuccess(form.value.supplierId ? "修改成功" : "新增成功");
       open.value = false;
       getList();

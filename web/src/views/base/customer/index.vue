@@ -2,22 +2,10 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="客户编码" prop="customerCode">
-        <el-input
-          v-model="queryParams.customerCode"
-          placeholder="请输入客户编码"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
+        <combo-input v-model="queryParams.customerCode" scope="customer" field="customerCode" placeholder="请选择或输入客户编码" width="240px" />
       </el-form-item>
       <el-form-item label="客户名称" prop="customerName">
-        <el-input
-          v-model="queryParams.customerName"
-          placeholder="请输入客户名称"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
+        <combo-input v-model="queryParams.customerName" scope="customer" field="customerName" placeholder="请选择或输入客户名称" width="240px" />
       </el-form-item>
       <el-form-item label="客户简称" prop="customerShortName">
         <el-input
@@ -140,14 +128,10 @@
     <el-dialog :title="title" v-model="open" width="500px" append-to-body draggable>
       <el-form ref="customerRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="客户编码" prop="customerCode">
-          <el-input
-            v-model="form.customerCode"
-            :disabled="Boolean(form.customerId)"
-            placeholder="请输入客户编码"
-          />
+          <combo-input v-model="form.customerCode" scope="customer" field="customerCode" :disabled="Boolean(form.customerId)" placeholder="请选择或输入客户编码" />
         </el-form-item>
         <el-form-item label="客户名称" prop="customerName">
-          <el-input v-model="form.customerName" placeholder="请输入客户名称" />
+          <combo-input v-model="form.customerName" scope="customer" field="customerName" placeholder="请选择或输入客户名称" />
         </el-form-item>
         <el-form-item label="客户简称" prop="customerShortName">
           <el-input v-model="form.customerShortName" placeholder="请输入客户简称" />
@@ -204,6 +188,7 @@ import {
   listTree,
   updateCustomer,
 } from "@/api/base/customer";
+import { clearSuggestionsCache } from "@/api/base/suggestions";
 
 const { proxy } = getCurrentInstance();
 const { saifute_customer_type } = proxy.useDict("saifute_customer_type");
@@ -468,6 +453,7 @@ async function submitForm() {
     : addCustomer(form.value);
 
   await request;
+  clearSuggestionsCache();
   proxy.$modal.msgSuccess(form.value.customerId ? "修改成功" : "新增成功");
   open.value = false;
   getList();

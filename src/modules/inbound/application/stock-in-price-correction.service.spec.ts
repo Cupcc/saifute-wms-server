@@ -7,7 +7,7 @@ import {
   Prisma,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
-import { AuditService } from "../../audit/application/audit.service";
+import { ApprovalService } from "../../approval/application/approval.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { StockInPriceCorrectionRepository } from "../infrastructure/stock-in-price-correction.repository";
@@ -65,7 +65,7 @@ describe("StockInPriceCorrectionService", () => {
   let service: StockInPriceCorrectionService;
   let repository: jest.Mocked<StockInPriceCorrectionRepository>;
   let inventoryService: jest.Mocked<InventoryService>;
-  let auditService: jest.Mocked<AuditService>;
+  let approvalService: jest.Mocked<ApprovalService>;
 
   beforeEach(async () => {
     const prisma = {
@@ -176,9 +176,9 @@ describe("StockInPriceCorrectionService", () => {
           },
         },
         {
-          provide: AuditService,
+          provide: ApprovalService,
           useValue: {
-            createOrRefreshAuditDocument: jest.fn().mockResolvedValue({}),
+            createOrRefreshApprovalDocument: jest.fn().mockResolvedValue({}),
           },
         },
       ],
@@ -187,7 +187,7 @@ describe("StockInPriceCorrectionService", () => {
     service = moduleRef.get(StockInPriceCorrectionService);
     repository = moduleRef.get(StockInPriceCorrectionRepository);
     inventoryService = moduleRef.get(InventoryService);
-    auditService = moduleRef.get(AuditService);
+    approvalService = moduleRef.get(ApprovalService);
   });
 
   it("should transfer remaining quantity into correction out/in logs for partial consumption", async () => {
@@ -249,7 +249,7 @@ describe("StockInPriceCorrectionService", () => {
       }),
       expect.anything(),
     );
-    expect(auditService.createOrRefreshAuditDocument).toHaveBeenCalled();
+    expect(approvalService.createOrRefreshApprovalDocument).toHaveBeenCalled();
     expect(result.id).toBe(1);
   });
 

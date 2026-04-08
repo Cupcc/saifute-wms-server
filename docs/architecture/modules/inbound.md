@@ -70,13 +70,13 @@
 - 主表和明细基础 CRUD 可用 Prisma
 - 列表联查、导出、历史回溯优先 raw SQL
 - 与库存交互只通过 `inventory-core` 应用服务
-- 审核状态由 `audit` 统一提供，不直接查 `audit_document`
+- 审核状态由 `approval` 统一提供，不直接查 `approval_document`
 
 ## 与其他模块的依赖关系
 
 - 依赖 `master-data`
 - 依赖 `inventory-core`
-- 依赖 `audit`
+- 依赖 `approval`
 - 导出和审计依赖 `audit-log`
 
 ## 事务边界与一致性要求
@@ -95,7 +95,7 @@
 - 入库家族统一收敛到 `stock_in_order`、`stock_in_order_line`
 - 通过 `orderType` 区分验收单和生产入库单，不再拆两套高度重复主从表
 - 库存增加与逆操作继续下沉到 `inventory-core`
-- 审核状态继续下沉到 `audit`，主表只保留快照
+- 审核状态继续下沉到 `approval`，主表只保留快照
 - 详细业务流程与字段建议见 `docs/architecture/20-wms-database-tables-and-schema.md`
 
 ## 待补测试清单
@@ -116,4 +116,3 @@
 
 - 单据模板配置
 - 批量导入验收单
-

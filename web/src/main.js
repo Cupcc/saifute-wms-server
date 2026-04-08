@@ -25,6 +25,8 @@ import "./permission"; // permission control
 import { getConfigKey } from "@/api/system/config";
 // 自适应表格组件
 import AdaptiveTable from "@/components/AdaptiveTable";
+// 可搜索可自定义输入组件
+import ComboInput from "@/components/ComboInput";
 // 字典标签组件
 import DictTag from "@/components/DictTag";
 // 富文本组件
@@ -71,6 +73,7 @@ app.component("ImagePreview", ImagePreview);
 app.component("RightToolbar", RightToolbar);
 app.component("Editor", Editor);
 app.component("AdaptiveTable", AdaptiveTable);
+app.component("ComboInput", ComboInput);
 
 app.use(router);
 app.use(store);

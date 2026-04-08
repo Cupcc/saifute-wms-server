@@ -3,7 +3,7 @@
 // biome-ignore-all lint: generated file
 // @ts-nocheck
 /*
- * This file exports the `AuditDocument` model and its related types.
+ * This file exports the `ApprovalDocument` model and its related types.
  *
  * 🟢 You can import this file directly.
  */
@@ -12,53 +12,33 @@ import type * as $Enums from "../enums";
 import type * as Prisma from "../internal/prismaNamespace";
 
 /**
- * Model AuditDocument
+ * Model ApprovalDocument
  *
  */
-export type AuditDocumentModel =
-  runtime.Types.Result.DefaultSelection<Prisma.$AuditDocumentPayload>;
+export type ApprovalDocumentModel =
+  runtime.Types.Result.DefaultSelection<Prisma.$ApprovalDocumentPayload>;
 
-export type AggregateAuditDocument = {
-  _count: AuditDocumentCountAggregateOutputType | null;
-  _avg: AuditDocumentAvgAggregateOutputType | null;
-  _sum: AuditDocumentSumAggregateOutputType | null;
-  _min: AuditDocumentMinAggregateOutputType | null;
-  _max: AuditDocumentMaxAggregateOutputType | null;
+export type AggregateApprovalDocument = {
+  _count: ApprovalDocumentCountAggregateOutputType | null;
+  _avg: ApprovalDocumentAvgAggregateOutputType | null;
+  _sum: ApprovalDocumentSumAggregateOutputType | null;
+  _min: ApprovalDocumentMinAggregateOutputType | null;
+  _max: ApprovalDocumentMaxAggregateOutputType | null;
 };
 
-export type AuditDocumentAvgAggregateOutputType = {
+export type ApprovalDocumentAvgAggregateOutputType = {
   id: number | null;
   documentId: number | null;
   resetCount: number | null;
 };
 
-export type AuditDocumentSumAggregateOutputType = {
+export type ApprovalDocumentSumAggregateOutputType = {
   id: number | null;
   documentId: number | null;
   resetCount: number | null;
 };
 
-export type AuditDocumentMinAggregateOutputType = {
-  id: number | null;
-  documentFamily: $Enums.DocumentFamily | null;
-  documentType: string | null;
-  documentId: number | null;
-  documentNumber: string | null;
-  auditStatus: $Enums.AuditStatusSnapshot | null;
-  submittedBy: string | null;
-  submittedAt: Date | null;
-  decidedBy: string | null;
-  decidedAt: Date | null;
-  rejectReason: string | null;
-  resetCount: number | null;
-  lastResetAt: Date | null;
-  createdBy: string | null;
-  createdAt: Date | null;
-  updatedBy: string | null;
-  updatedAt: Date | null;
-};
-
-export type AuditDocumentMaxAggregateOutputType = {
+export type ApprovalDocumentMinAggregateOutputType = {
   id: number | null;
   documentFamily: $Enums.DocumentFamily | null;
   documentType: string | null;
@@ -78,7 +58,27 @@ export type AuditDocumentMaxAggregateOutputType = {
   updatedAt: Date | null;
 };
 
-export type AuditDocumentCountAggregateOutputType = {
+export type ApprovalDocumentMaxAggregateOutputType = {
+  id: number | null;
+  documentFamily: $Enums.DocumentFamily | null;
+  documentType: string | null;
+  documentId: number | null;
+  documentNumber: string | null;
+  auditStatus: $Enums.AuditStatusSnapshot | null;
+  submittedBy: string | null;
+  submittedAt: Date | null;
+  decidedBy: string | null;
+  decidedAt: Date | null;
+  rejectReason: string | null;
+  resetCount: number | null;
+  lastResetAt: Date | null;
+  createdBy: string | null;
+  createdAt: Date | null;
+  updatedBy: string | null;
+  updatedAt: Date | null;
+};
+
+export type ApprovalDocumentCountAggregateOutputType = {
   id: number;
   documentFamily: number;
   documentType: number;
@@ -99,39 +99,19 @@ export type AuditDocumentCountAggregateOutputType = {
   _all: number;
 };
 
-export type AuditDocumentAvgAggregateInputType = {
+export type ApprovalDocumentAvgAggregateInputType = {
   id?: true;
   documentId?: true;
   resetCount?: true;
 };
 
-export type AuditDocumentSumAggregateInputType = {
+export type ApprovalDocumentSumAggregateInputType = {
   id?: true;
   documentId?: true;
   resetCount?: true;
 };
 
-export type AuditDocumentMinAggregateInputType = {
-  id?: true;
-  documentFamily?: true;
-  documentType?: true;
-  documentId?: true;
-  documentNumber?: true;
-  auditStatus?: true;
-  submittedBy?: true;
-  submittedAt?: true;
-  decidedBy?: true;
-  decidedAt?: true;
-  rejectReason?: true;
-  resetCount?: true;
-  lastResetAt?: true;
-  createdBy?: true;
-  createdAt?: true;
-  updatedBy?: true;
-  updatedAt?: true;
-};
-
-export type AuditDocumentMaxAggregateInputType = {
+export type ApprovalDocumentMinAggregateInputType = {
   id?: true;
   documentFamily?: true;
   documentType?: true;
@@ -151,7 +131,27 @@ export type AuditDocumentMaxAggregateInputType = {
   updatedAt?: true;
 };
 
-export type AuditDocumentCountAggregateInputType = {
+export type ApprovalDocumentMaxAggregateInputType = {
+  id?: true;
+  documentFamily?: true;
+  documentType?: true;
+  documentId?: true;
+  documentNumber?: true;
+  auditStatus?: true;
+  submittedBy?: true;
+  submittedAt?: true;
+  decidedBy?: true;
+  decidedAt?: true;
+  rejectReason?: true;
+  resetCount?: true;
+  lastResetAt?: true;
+  createdBy?: true;
+  createdAt?: true;
+  updatedBy?: true;
+  updatedAt?: true;
+};
+
+export type ApprovalDocumentCountAggregateInputType = {
   id?: true;
   documentFamily?: true;
   documentType?: true;
@@ -172,104 +172,104 @@ export type AuditDocumentCountAggregateInputType = {
   _all?: true;
 };
 
-export type AuditDocumentAggregateArgs<
+export type ApprovalDocumentAggregateArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Filter which AuditDocument to aggregate.
+   * Filter which ApprovalDocument to aggregate.
    */
-  where?: Prisma.AuditDocumentWhereInput;
+  where?: Prisma.ApprovalDocumentWhereInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    *
-   * Determine the order of AuditDocuments to fetch.
+   * Determine the order of ApprovalDocuments to fetch.
    */
   orderBy?:
-    | Prisma.AuditDocumentOrderByWithRelationInput
-    | Prisma.AuditDocumentOrderByWithRelationInput[];
+    | Prisma.ApprovalDocumentOrderByWithRelationInput
+    | Prisma.ApprovalDocumentOrderByWithRelationInput[];
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    *
    * Sets the start position
    */
-  cursor?: Prisma.AuditDocumentWhereUniqueInput;
+  cursor?: Prisma.ApprovalDocumentWhereUniqueInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Take `±n` AuditDocuments from the position of the cursor.
+   * Take `±n` ApprovalDocuments from the position of the cursor.
    */
   take?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Skip the first `n` AuditDocuments.
+   * Skip the first `n` ApprovalDocuments.
    */
   skip?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    *
-   * Count returned AuditDocuments
+   * Count returned ApprovalDocuments
    **/
-  _count?: true | AuditDocumentCountAggregateInputType;
+  _count?: true | ApprovalDocumentCountAggregateInputType;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    *
    * Select which fields to average
    **/
-  _avg?: AuditDocumentAvgAggregateInputType;
+  _avg?: ApprovalDocumentAvgAggregateInputType;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    *
    * Select which fields to sum
    **/
-  _sum?: AuditDocumentSumAggregateInputType;
+  _sum?: ApprovalDocumentSumAggregateInputType;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    *
    * Select which fields to find the minimum value
    **/
-  _min?: AuditDocumentMinAggregateInputType;
+  _min?: ApprovalDocumentMinAggregateInputType;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    *
    * Select which fields to find the maximum value
    **/
-  _max?: AuditDocumentMaxAggregateInputType;
+  _max?: ApprovalDocumentMaxAggregateInputType;
 };
 
-export type GetAuditDocumentAggregateType<
-  T extends AuditDocumentAggregateArgs,
+export type GetApprovalDocumentAggregateType<
+  T extends ApprovalDocumentAggregateArgs,
 > = {
-  [P in keyof T & keyof AggregateAuditDocument]: P extends "_count" | "count"
+  [P in keyof T & keyof AggregateApprovalDocument]: P extends "_count" | "count"
     ? T[P] extends true
       ? number
-      : Prisma.GetScalarType<T[P], AggregateAuditDocument[P]>
-    : Prisma.GetScalarType<T[P], AggregateAuditDocument[P]>;
+      : Prisma.GetScalarType<T[P], AggregateApprovalDocument[P]>
+    : Prisma.GetScalarType<T[P], AggregateApprovalDocument[P]>;
 };
 
-export type AuditDocumentGroupByArgs<
+export type ApprovalDocumentGroupByArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
-  where?: Prisma.AuditDocumentWhereInput;
+  where?: Prisma.ApprovalDocumentWhereInput;
   orderBy?:
-    | Prisma.AuditDocumentOrderByWithAggregationInput
-    | Prisma.AuditDocumentOrderByWithAggregationInput[];
+    | Prisma.ApprovalDocumentOrderByWithAggregationInput
+    | Prisma.ApprovalDocumentOrderByWithAggregationInput[];
   by:
-    | Prisma.AuditDocumentScalarFieldEnum[]
-    | Prisma.AuditDocumentScalarFieldEnum;
-  having?: Prisma.AuditDocumentScalarWhereWithAggregatesInput;
+    | Prisma.ApprovalDocumentScalarFieldEnum[]
+    | Prisma.ApprovalDocumentScalarFieldEnum;
+  having?: Prisma.ApprovalDocumentScalarWhereWithAggregatesInput;
   take?: number;
   skip?: number;
-  _count?: AuditDocumentCountAggregateInputType | true;
-  _avg?: AuditDocumentAvgAggregateInputType;
-  _sum?: AuditDocumentSumAggregateInputType;
-  _min?: AuditDocumentMinAggregateInputType;
-  _max?: AuditDocumentMaxAggregateInputType;
+  _count?: ApprovalDocumentCountAggregateInputType | true;
+  _avg?: ApprovalDocumentAvgAggregateInputType;
+  _sum?: ApprovalDocumentSumAggregateInputType;
+  _min?: ApprovalDocumentMinAggregateInputType;
+  _max?: ApprovalDocumentMaxAggregateInputType;
 };
 
-export type AuditDocumentGroupByOutputType = {
+export type ApprovalDocumentGroupByOutputType = {
   id: number;
   documentFamily: $Enums.DocumentFamily;
   documentType: string;
@@ -287,67 +287,70 @@ export type AuditDocumentGroupByOutputType = {
   createdAt: Date;
   updatedBy: string | null;
   updatedAt: Date;
-  _count: AuditDocumentCountAggregateOutputType | null;
-  _avg: AuditDocumentAvgAggregateOutputType | null;
-  _sum: AuditDocumentSumAggregateOutputType | null;
-  _min: AuditDocumentMinAggregateOutputType | null;
-  _max: AuditDocumentMaxAggregateOutputType | null;
+  _count: ApprovalDocumentCountAggregateOutputType | null;
+  _avg: ApprovalDocumentAvgAggregateOutputType | null;
+  _sum: ApprovalDocumentSumAggregateOutputType | null;
+  _min: ApprovalDocumentMinAggregateOutputType | null;
+  _max: ApprovalDocumentMaxAggregateOutputType | null;
 };
 
-type GetAuditDocumentGroupByPayload<T extends AuditDocumentGroupByArgs> =
+type GetApprovalDocumentGroupByPayload<T extends ApprovalDocumentGroupByArgs> =
   Prisma.PrismaPromise<
     Array<
-      Prisma.PickEnumerable<AuditDocumentGroupByOutputType, T["by"]> & {
+      Prisma.PickEnumerable<ApprovalDocumentGroupByOutputType, T["by"]> & {
         [P in keyof T &
-          keyof AuditDocumentGroupByOutputType]: P extends "_count"
+          keyof ApprovalDocumentGroupByOutputType]: P extends "_count"
           ? T[P] extends boolean
             ? number
-            : Prisma.GetScalarType<T[P], AuditDocumentGroupByOutputType[P]>
-          : Prisma.GetScalarType<T[P], AuditDocumentGroupByOutputType[P]>;
+            : Prisma.GetScalarType<T[P], ApprovalDocumentGroupByOutputType[P]>
+          : Prisma.GetScalarType<T[P], ApprovalDocumentGroupByOutputType[P]>;
       }
     >
   >;
 
-export type AuditDocumentWhereInput = {
-  AND?: Prisma.AuditDocumentWhereInput | Prisma.AuditDocumentWhereInput[];
-  OR?: Prisma.AuditDocumentWhereInput[];
-  NOT?: Prisma.AuditDocumentWhereInput | Prisma.AuditDocumentWhereInput[];
-  id?: Prisma.IntFilter<"AuditDocument"> | number;
+export type ApprovalDocumentWhereInput = {
+  AND?: Prisma.ApprovalDocumentWhereInput | Prisma.ApprovalDocumentWhereInput[];
+  OR?: Prisma.ApprovalDocumentWhereInput[];
+  NOT?: Prisma.ApprovalDocumentWhereInput | Prisma.ApprovalDocumentWhereInput[];
+  id?: Prisma.IntFilter<"ApprovalDocument"> | number;
   documentFamily?:
-    | Prisma.EnumDocumentFamilyFilter<"AuditDocument">
+    | Prisma.EnumDocumentFamilyFilter<"ApprovalDocument">
     | $Enums.DocumentFamily;
-  documentType?: Prisma.StringFilter<"AuditDocument"> | string;
-  documentId?: Prisma.IntFilter<"AuditDocument"> | number;
-  documentNumber?: Prisma.StringFilter<"AuditDocument"> | string;
+  documentType?: Prisma.StringFilter<"ApprovalDocument"> | string;
+  documentId?: Prisma.IntFilter<"ApprovalDocument"> | number;
+  documentNumber?: Prisma.StringFilter<"ApprovalDocument"> | string;
   auditStatus?:
-    | Prisma.EnumAuditStatusSnapshotFilter<"AuditDocument">
+    | Prisma.EnumAuditStatusSnapshotFilter<"ApprovalDocument">
     | $Enums.AuditStatusSnapshot;
-  submittedBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
+  submittedBy?: Prisma.StringNullableFilter<"ApprovalDocument"> | string | null;
   submittedAt?:
-    | Prisma.DateTimeNullableFilter<"AuditDocument">
+    | Prisma.DateTimeNullableFilter<"ApprovalDocument">
     | Date
     | string
     | null;
-  decidedBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
+  decidedBy?: Prisma.StringNullableFilter<"ApprovalDocument"> | string | null;
   decidedAt?:
-    | Prisma.DateTimeNullableFilter<"AuditDocument">
+    | Prisma.DateTimeNullableFilter<"ApprovalDocument">
     | Date
     | string
     | null;
-  rejectReason?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
-  resetCount?: Prisma.IntFilter<"AuditDocument"> | number;
+  rejectReason?:
+    | Prisma.StringNullableFilter<"ApprovalDocument">
+    | string
+    | null;
+  resetCount?: Prisma.IntFilter<"ApprovalDocument"> | number;
   lastResetAt?:
-    | Prisma.DateTimeNullableFilter<"AuditDocument">
+    | Prisma.DateTimeNullableFilter<"ApprovalDocument">
     | Date
     | string
     | null;
-  createdBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
-  createdAt?: Prisma.DateTimeFilter<"AuditDocument"> | Date | string;
-  updatedBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
-  updatedAt?: Prisma.DateTimeFilter<"AuditDocument"> | Date | string;
+  createdBy?: Prisma.StringNullableFilter<"ApprovalDocument"> | string | null;
+  createdAt?: Prisma.DateTimeFilter<"ApprovalDocument"> | Date | string;
+  updatedBy?: Prisma.StringNullableFilter<"ApprovalDocument"> | string | null;
+  updatedAt?: Prisma.DateTimeFilter<"ApprovalDocument"> | Date | string;
 };
 
-export type AuditDocumentOrderByWithRelationInput = {
+export type ApprovalDocumentOrderByWithRelationInput = {
   id?: Prisma.SortOrder;
   documentFamily?: Prisma.SortOrder;
   documentType?: Prisma.SortOrder;
@@ -365,53 +368,63 @@ export type AuditDocumentOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder;
   updatedBy?: Prisma.SortOrderInput | Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
-  _relevance?: Prisma.AuditDocumentOrderByRelevanceInput;
+  _relevance?: Prisma.ApprovalDocumentOrderByRelevanceInput;
 };
 
-export type AuditDocumentWhereUniqueInput = Prisma.AtLeast<
+export type ApprovalDocumentWhereUniqueInput = Prisma.AtLeast<
   {
     id?: number;
-    documentType_documentId?: Prisma.AuditDocumentDocumentTypeDocumentIdCompoundUniqueInput;
-    AND?: Prisma.AuditDocumentWhereInput | Prisma.AuditDocumentWhereInput[];
-    OR?: Prisma.AuditDocumentWhereInput[];
-    NOT?: Prisma.AuditDocumentWhereInput | Prisma.AuditDocumentWhereInput[];
+    documentType_documentId?: Prisma.ApprovalDocumentDocumentTypeDocumentIdCompoundUniqueInput;
+    AND?:
+      | Prisma.ApprovalDocumentWhereInput
+      | Prisma.ApprovalDocumentWhereInput[];
+    OR?: Prisma.ApprovalDocumentWhereInput[];
+    NOT?:
+      | Prisma.ApprovalDocumentWhereInput
+      | Prisma.ApprovalDocumentWhereInput[];
     documentFamily?:
-      | Prisma.EnumDocumentFamilyFilter<"AuditDocument">
+      | Prisma.EnumDocumentFamilyFilter<"ApprovalDocument">
       | $Enums.DocumentFamily;
-    documentType?: Prisma.StringFilter<"AuditDocument"> | string;
-    documentId?: Prisma.IntFilter<"AuditDocument"> | number;
-    documentNumber?: Prisma.StringFilter<"AuditDocument"> | string;
+    documentType?: Prisma.StringFilter<"ApprovalDocument"> | string;
+    documentId?: Prisma.IntFilter<"ApprovalDocument"> | number;
+    documentNumber?: Prisma.StringFilter<"ApprovalDocument"> | string;
     auditStatus?:
-      | Prisma.EnumAuditStatusSnapshotFilter<"AuditDocument">
+      | Prisma.EnumAuditStatusSnapshotFilter<"ApprovalDocument">
       | $Enums.AuditStatusSnapshot;
-    submittedBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
+    submittedBy?:
+      | Prisma.StringNullableFilter<"ApprovalDocument">
+      | string
+      | null;
     submittedAt?:
-      | Prisma.DateTimeNullableFilter<"AuditDocument">
+      | Prisma.DateTimeNullableFilter<"ApprovalDocument">
       | Date
       | string
       | null;
-    decidedBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
+    decidedBy?: Prisma.StringNullableFilter<"ApprovalDocument"> | string | null;
     decidedAt?:
-      | Prisma.DateTimeNullableFilter<"AuditDocument">
+      | Prisma.DateTimeNullableFilter<"ApprovalDocument">
       | Date
       | string
       | null;
-    rejectReason?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
-    resetCount?: Prisma.IntFilter<"AuditDocument"> | number;
+    rejectReason?:
+      | Prisma.StringNullableFilter<"ApprovalDocument">
+      | string
+      | null;
+    resetCount?: Prisma.IntFilter<"ApprovalDocument"> | number;
     lastResetAt?:
-      | Prisma.DateTimeNullableFilter<"AuditDocument">
+      | Prisma.DateTimeNullableFilter<"ApprovalDocument">
       | Date
       | string
       | null;
-    createdBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
-    createdAt?: Prisma.DateTimeFilter<"AuditDocument"> | Date | string;
-    updatedBy?: Prisma.StringNullableFilter<"AuditDocument"> | string | null;
-    updatedAt?: Prisma.DateTimeFilter<"AuditDocument"> | Date | string;
+    createdBy?: Prisma.StringNullableFilter<"ApprovalDocument"> | string | null;
+    createdAt?: Prisma.DateTimeFilter<"ApprovalDocument"> | Date | string;
+    updatedBy?: Prisma.StringNullableFilter<"ApprovalDocument"> | string | null;
+    updatedAt?: Prisma.DateTimeFilter<"ApprovalDocument"> | Date | string;
   },
   "id" | "documentType_documentId"
 >;
 
-export type AuditDocumentOrderByWithAggregationInput = {
+export type ApprovalDocumentOrderByWithAggregationInput = {
   id?: Prisma.SortOrder;
   documentFamily?: Prisma.SortOrder;
   documentType?: Prisma.SortOrder;
@@ -429,78 +442,80 @@ export type AuditDocumentOrderByWithAggregationInput = {
   createdAt?: Prisma.SortOrder;
   updatedBy?: Prisma.SortOrderInput | Prisma.SortOrder;
   updatedAt?: Prisma.SortOrder;
-  _count?: Prisma.AuditDocumentCountOrderByAggregateInput;
-  _avg?: Prisma.AuditDocumentAvgOrderByAggregateInput;
-  _max?: Prisma.AuditDocumentMaxOrderByAggregateInput;
-  _min?: Prisma.AuditDocumentMinOrderByAggregateInput;
-  _sum?: Prisma.AuditDocumentSumOrderByAggregateInput;
+  _count?: Prisma.ApprovalDocumentCountOrderByAggregateInput;
+  _avg?: Prisma.ApprovalDocumentAvgOrderByAggregateInput;
+  _max?: Prisma.ApprovalDocumentMaxOrderByAggregateInput;
+  _min?: Prisma.ApprovalDocumentMinOrderByAggregateInput;
+  _sum?: Prisma.ApprovalDocumentSumOrderByAggregateInput;
 };
 
-export type AuditDocumentScalarWhereWithAggregatesInput = {
+export type ApprovalDocumentScalarWhereWithAggregatesInput = {
   AND?:
-    | Prisma.AuditDocumentScalarWhereWithAggregatesInput
-    | Prisma.AuditDocumentScalarWhereWithAggregatesInput[];
-  OR?: Prisma.AuditDocumentScalarWhereWithAggregatesInput[];
+    | Prisma.ApprovalDocumentScalarWhereWithAggregatesInput
+    | Prisma.ApprovalDocumentScalarWhereWithAggregatesInput[];
+  OR?: Prisma.ApprovalDocumentScalarWhereWithAggregatesInput[];
   NOT?:
-    | Prisma.AuditDocumentScalarWhereWithAggregatesInput
-    | Prisma.AuditDocumentScalarWhereWithAggregatesInput[];
-  id?: Prisma.IntWithAggregatesFilter<"AuditDocument"> | number;
+    | Prisma.ApprovalDocumentScalarWhereWithAggregatesInput
+    | Prisma.ApprovalDocumentScalarWhereWithAggregatesInput[];
+  id?: Prisma.IntWithAggregatesFilter<"ApprovalDocument"> | number;
   documentFamily?:
-    | Prisma.EnumDocumentFamilyWithAggregatesFilter<"AuditDocument">
+    | Prisma.EnumDocumentFamilyWithAggregatesFilter<"ApprovalDocument">
     | $Enums.DocumentFamily;
-  documentType?: Prisma.StringWithAggregatesFilter<"AuditDocument"> | string;
-  documentId?: Prisma.IntWithAggregatesFilter<"AuditDocument"> | number;
-  documentNumber?: Prisma.StringWithAggregatesFilter<"AuditDocument"> | string;
+  documentType?: Prisma.StringWithAggregatesFilter<"ApprovalDocument"> | string;
+  documentId?: Prisma.IntWithAggregatesFilter<"ApprovalDocument"> | number;
+  documentNumber?:
+    | Prisma.StringWithAggregatesFilter<"ApprovalDocument">
+    | string;
   auditStatus?:
-    | Prisma.EnumAuditStatusSnapshotWithAggregatesFilter<"AuditDocument">
+    | Prisma.EnumAuditStatusSnapshotWithAggregatesFilter<"ApprovalDocument">
     | $Enums.AuditStatusSnapshot;
   submittedBy?:
-    | Prisma.StringNullableWithAggregatesFilter<"AuditDocument">
+    | Prisma.StringNullableWithAggregatesFilter<"ApprovalDocument">
     | string
     | null;
   submittedAt?:
-    | Prisma.DateTimeNullableWithAggregatesFilter<"AuditDocument">
+    | Prisma.DateTimeNullableWithAggregatesFilter<"ApprovalDocument">
     | Date
     | string
     | null;
   decidedBy?:
-    | Prisma.StringNullableWithAggregatesFilter<"AuditDocument">
+    | Prisma.StringNullableWithAggregatesFilter<"ApprovalDocument">
     | string
     | null;
   decidedAt?:
-    | Prisma.DateTimeNullableWithAggregatesFilter<"AuditDocument">
+    | Prisma.DateTimeNullableWithAggregatesFilter<"ApprovalDocument">
     | Date
     | string
     | null;
   rejectReason?:
-    | Prisma.StringNullableWithAggregatesFilter<"AuditDocument">
+    | Prisma.StringNullableWithAggregatesFilter<"ApprovalDocument">
     | string
     | null;
-  resetCount?: Prisma.IntWithAggregatesFilter<"AuditDocument"> | number;
+  resetCount?: Prisma.IntWithAggregatesFilter<"ApprovalDocument"> | number;
   lastResetAt?:
-    | Prisma.DateTimeNullableWithAggregatesFilter<"AuditDocument">
+    | Prisma.DateTimeNullableWithAggregatesFilter<"ApprovalDocument">
     | Date
     | string
     | null;
   createdBy?:
-    | Prisma.StringNullableWithAggregatesFilter<"AuditDocument">
+    | Prisma.StringNullableWithAggregatesFilter<"ApprovalDocument">
     | string
     | null;
   createdAt?:
-    | Prisma.DateTimeWithAggregatesFilter<"AuditDocument">
+    | Prisma.DateTimeWithAggregatesFilter<"ApprovalDocument">
     | Date
     | string;
   updatedBy?:
-    | Prisma.StringNullableWithAggregatesFilter<"AuditDocument">
+    | Prisma.StringNullableWithAggregatesFilter<"ApprovalDocument">
     | string
     | null;
   updatedAt?:
-    | Prisma.DateTimeWithAggregatesFilter<"AuditDocument">
+    | Prisma.DateTimeWithAggregatesFilter<"ApprovalDocument">
     | Date
     | string;
 };
 
-export type AuditDocumentCreateInput = {
+export type ApprovalDocumentCreateInput = {
   documentFamily: $Enums.DocumentFamily;
   documentType: string;
   documentId: number;
@@ -519,7 +534,7 @@ export type AuditDocumentCreateInput = {
   updatedAt?: Date | string;
 };
 
-export type AuditDocumentUncheckedCreateInput = {
+export type ApprovalDocumentUncheckedCreateInput = {
   id?: number;
   documentFamily: $Enums.DocumentFamily;
   documentType: string;
@@ -539,7 +554,7 @@ export type AuditDocumentUncheckedCreateInput = {
   updatedAt?: Date | string;
 };
 
-export type AuditDocumentUpdateInput = {
+export type ApprovalDocumentUpdateInput = {
   documentFamily?:
     | Prisma.EnumDocumentFamilyFieldUpdateOperationsInput
     | $Enums.DocumentFamily;
@@ -577,7 +592,7 @@ export type AuditDocumentUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type AuditDocumentUncheckedUpdateInput = {
+export type ApprovalDocumentUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   documentFamily?:
     | Prisma.EnumDocumentFamilyFieldUpdateOperationsInput
@@ -616,7 +631,7 @@ export type AuditDocumentUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type AuditDocumentCreateManyInput = {
+export type ApprovalDocumentCreateManyInput = {
   id?: number;
   documentFamily: $Enums.DocumentFamily;
   documentType: string;
@@ -636,7 +651,7 @@ export type AuditDocumentCreateManyInput = {
   updatedAt?: Date | string;
 };
 
-export type AuditDocumentUpdateManyMutationInput = {
+export type ApprovalDocumentUpdateManyMutationInput = {
   documentFamily?:
     | Prisma.EnumDocumentFamilyFieldUpdateOperationsInput
     | $Enums.DocumentFamily;
@@ -674,7 +689,7 @@ export type AuditDocumentUpdateManyMutationInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type AuditDocumentUncheckedUpdateManyInput = {
+export type ApprovalDocumentUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   documentFamily?:
     | Prisma.EnumDocumentFamilyFieldUpdateOperationsInput
@@ -713,20 +728,20 @@ export type AuditDocumentUncheckedUpdateManyInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
-export type AuditDocumentOrderByRelevanceInput = {
+export type ApprovalDocumentOrderByRelevanceInput = {
   fields:
-    | Prisma.AuditDocumentOrderByRelevanceFieldEnum
-    | Prisma.AuditDocumentOrderByRelevanceFieldEnum[];
+    | Prisma.ApprovalDocumentOrderByRelevanceFieldEnum
+    | Prisma.ApprovalDocumentOrderByRelevanceFieldEnum[];
   sort: Prisma.SortOrder;
   search: string;
 };
 
-export type AuditDocumentDocumentTypeDocumentIdCompoundUniqueInput = {
+export type ApprovalDocumentDocumentTypeDocumentIdCompoundUniqueInput = {
   documentType: string;
   documentId: number;
 };
 
-export type AuditDocumentCountOrderByAggregateInput = {
+export type ApprovalDocumentCountOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   documentFamily?: Prisma.SortOrder;
   documentType?: Prisma.SortOrder;
@@ -746,33 +761,13 @@ export type AuditDocumentCountOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder;
 };
 
-export type AuditDocumentAvgOrderByAggregateInput = {
+export type ApprovalDocumentAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   documentId?: Prisma.SortOrder;
   resetCount?: Prisma.SortOrder;
 };
 
-export type AuditDocumentMaxOrderByAggregateInput = {
-  id?: Prisma.SortOrder;
-  documentFamily?: Prisma.SortOrder;
-  documentType?: Prisma.SortOrder;
-  documentId?: Prisma.SortOrder;
-  documentNumber?: Prisma.SortOrder;
-  auditStatus?: Prisma.SortOrder;
-  submittedBy?: Prisma.SortOrder;
-  submittedAt?: Prisma.SortOrder;
-  decidedBy?: Prisma.SortOrder;
-  decidedAt?: Prisma.SortOrder;
-  rejectReason?: Prisma.SortOrder;
-  resetCount?: Prisma.SortOrder;
-  lastResetAt?: Prisma.SortOrder;
-  createdBy?: Prisma.SortOrder;
-  createdAt?: Prisma.SortOrder;
-  updatedBy?: Prisma.SortOrder;
-  updatedAt?: Prisma.SortOrder;
-};
-
-export type AuditDocumentMinOrderByAggregateInput = {
+export type ApprovalDocumentMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   documentFamily?: Prisma.SortOrder;
   documentType?: Prisma.SortOrder;
@@ -792,7 +787,27 @@ export type AuditDocumentMinOrderByAggregateInput = {
   updatedAt?: Prisma.SortOrder;
 };
 
-export type AuditDocumentSumOrderByAggregateInput = {
+export type ApprovalDocumentMinOrderByAggregateInput = {
+  id?: Prisma.SortOrder;
+  documentFamily?: Prisma.SortOrder;
+  documentType?: Prisma.SortOrder;
+  documentId?: Prisma.SortOrder;
+  documentNumber?: Prisma.SortOrder;
+  auditStatus?: Prisma.SortOrder;
+  submittedBy?: Prisma.SortOrder;
+  submittedAt?: Prisma.SortOrder;
+  decidedBy?: Prisma.SortOrder;
+  decidedAt?: Prisma.SortOrder;
+  rejectReason?: Prisma.SortOrder;
+  resetCount?: Prisma.SortOrder;
+  lastResetAt?: Prisma.SortOrder;
+  createdBy?: Prisma.SortOrder;
+  createdAt?: Prisma.SortOrder;
+  updatedBy?: Prisma.SortOrder;
+  updatedAt?: Prisma.SortOrder;
+};
+
+export type ApprovalDocumentSumOrderByAggregateInput = {
   id?: Prisma.SortOrder;
   documentId?: Prisma.SortOrder;
   resetCount?: Prisma.SortOrder;
@@ -806,7 +821,7 @@ export type EnumAuditStatusSnapshotFieldUpdateOperationsInput = {
   set?: $Enums.AuditStatusSnapshot;
 };
 
-export type AuditDocumentSelect<
+export type ApprovalDocumentSelect<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetSelect<
@@ -829,10 +844,10 @@ export type AuditDocumentSelect<
     updatedBy?: boolean;
     updatedAt?: boolean;
   },
-  ExtArgs["result"]["auditDocument"]
+  ExtArgs["result"]["approvalDocument"]
 >;
 
-export type AuditDocumentSelectScalar = {
+export type ApprovalDocumentSelectScalar = {
   id?: boolean;
   documentFamily?: boolean;
   documentType?: boolean;
@@ -852,7 +867,7 @@ export type AuditDocumentSelectScalar = {
   updatedAt?: boolean;
 };
 
-export type AuditDocumentOmit<
+export type ApprovalDocumentOmit<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
@@ -873,14 +888,14 @@ export type AuditDocumentOmit<
   | "createdAt"
   | "updatedBy"
   | "updatedAt",
-  ExtArgs["result"]["auditDocument"]
+  ExtArgs["result"]["approvalDocument"]
 >;
 
-export type $AuditDocumentPayload<
+export type $ApprovalDocumentPayload<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
-  name: "AuditDocument";
+  name: "ApprovalDocument";
   objects: {};
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
@@ -902,50 +917,50 @@ export type $AuditDocumentPayload<
       updatedBy: string | null;
       updatedAt: Date;
     },
-    ExtArgs["result"]["auditDocument"]
+    ExtArgs["result"]["approvalDocument"]
   >;
   composites: {};
 };
 
-export type AuditDocumentGetPayload<
-  S extends boolean | null | undefined | AuditDocumentDefaultArgs,
-> = runtime.Types.Result.GetResult<Prisma.$AuditDocumentPayload, S>;
+export type ApprovalDocumentGetPayload<
+  S extends boolean | null | undefined | ApprovalDocumentDefaultArgs,
+> = runtime.Types.Result.GetResult<Prisma.$ApprovalDocumentPayload, S>;
 
-export type AuditDocumentCountArgs<
+export type ApprovalDocumentCountArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = Omit<
-  AuditDocumentFindManyArgs,
+  ApprovalDocumentFindManyArgs,
   "select" | "include" | "distinct" | "omit"
 > & {
-  select?: AuditDocumentCountAggregateInputType | true;
+  select?: ApprovalDocumentCountAggregateInputType | true;
 };
 
-export interface AuditDocumentDelegate<
+export interface ApprovalDocumentDelegate<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
   GlobalOmitOptions = {},
 > {
   [K: symbol]: {
-    types: Prisma.TypeMap<ExtArgs>["model"]["AuditDocument"];
-    meta: { name: "AuditDocument" };
+    types: Prisma.TypeMap<ExtArgs>["model"]["ApprovalDocument"];
+    meta: { name: "ApprovalDocument" };
   };
   /**
-   * Find zero or one AuditDocument that matches the filter.
-   * @param {AuditDocumentFindUniqueArgs} args - Arguments to find a AuditDocument
+   * Find zero or one ApprovalDocument that matches the filter.
+   * @param {ApprovalDocumentFindUniqueArgs} args - Arguments to find a ApprovalDocument
    * @example
-   * // Get one AuditDocument
-   * const auditDocument = await prisma.auditDocument.findUnique({
+   * // Get one ApprovalDocument
+   * const approvalDocument = await prisma.approvalDocument.findUnique({
    *   where: {
    *     // ... provide filter here
    *   }
    * })
    */
-  findUnique<T extends AuditDocumentFindUniqueArgs>(
-    args: Prisma.SelectSubset<T, AuditDocumentFindUniqueArgs<ExtArgs>>,
-  ): Prisma.Prisma__AuditDocumentClient<
+  findUnique<T extends ApprovalDocumentFindUniqueArgs>(
+    args: Prisma.SelectSubset<T, ApprovalDocumentFindUniqueArgs<ExtArgs>>,
+  ): Prisma.Prisma__ApprovalDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$AuditDocumentPayload<ExtArgs>,
+      Prisma.$ApprovalDocumentPayload<ExtArgs>,
       T,
       "findUnique",
       GlobalOmitOptions
@@ -956,22 +971,25 @@ export interface AuditDocumentDelegate<
   >;
 
   /**
-   * Find one AuditDocument that matches the filter or throw an error with `error.code='P2025'`
+   * Find one ApprovalDocument that matches the filter or throw an error with `error.code='P2025'`
    * if no matches were found.
-   * @param {AuditDocumentFindUniqueOrThrowArgs} args - Arguments to find a AuditDocument
+   * @param {ApprovalDocumentFindUniqueOrThrowArgs} args - Arguments to find a ApprovalDocument
    * @example
-   * // Get one AuditDocument
-   * const auditDocument = await prisma.auditDocument.findUniqueOrThrow({
+   * // Get one ApprovalDocument
+   * const approvalDocument = await prisma.approvalDocument.findUniqueOrThrow({
    *   where: {
    *     // ... provide filter here
    *   }
    * })
    */
-  findUniqueOrThrow<T extends AuditDocumentFindUniqueOrThrowArgs>(
-    args: Prisma.SelectSubset<T, AuditDocumentFindUniqueOrThrowArgs<ExtArgs>>,
-  ): Prisma.Prisma__AuditDocumentClient<
+  findUniqueOrThrow<T extends ApprovalDocumentFindUniqueOrThrowArgs>(
+    args: Prisma.SelectSubset<
+      T,
+      ApprovalDocumentFindUniqueOrThrowArgs<ExtArgs>
+    >,
+  ): Prisma.Prisma__ApprovalDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$AuditDocumentPayload<ExtArgs>,
+      Prisma.$ApprovalDocumentPayload<ExtArgs>,
       T,
       "findUniqueOrThrow",
       GlobalOmitOptions
@@ -982,23 +1000,23 @@ export interface AuditDocumentDelegate<
   >;
 
   /**
-   * Find the first AuditDocument that matches the filter.
+   * Find the first ApprovalDocument that matches the filter.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {AuditDocumentFindFirstArgs} args - Arguments to find a AuditDocument
+   * @param {ApprovalDocumentFindFirstArgs} args - Arguments to find a ApprovalDocument
    * @example
-   * // Get one AuditDocument
-   * const auditDocument = await prisma.auditDocument.findFirst({
+   * // Get one ApprovalDocument
+   * const approvalDocument = await prisma.approvalDocument.findFirst({
    *   where: {
    *     // ... provide filter here
    *   }
    * })
    */
-  findFirst<T extends AuditDocumentFindFirstArgs>(
-    args?: Prisma.SelectSubset<T, AuditDocumentFindFirstArgs<ExtArgs>>,
-  ): Prisma.Prisma__AuditDocumentClient<
+  findFirst<T extends ApprovalDocumentFindFirstArgs>(
+    args?: Prisma.SelectSubset<T, ApprovalDocumentFindFirstArgs<ExtArgs>>,
+  ): Prisma.Prisma__ApprovalDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$AuditDocumentPayload<ExtArgs>,
+      Prisma.$ApprovalDocumentPayload<ExtArgs>,
       T,
       "findFirst",
       GlobalOmitOptions
@@ -1009,24 +1027,27 @@ export interface AuditDocumentDelegate<
   >;
 
   /**
-   * Find the first AuditDocument that matches the filter or
+   * Find the first ApprovalDocument that matches the filter or
    * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {AuditDocumentFindFirstOrThrowArgs} args - Arguments to find a AuditDocument
+   * @param {ApprovalDocumentFindFirstOrThrowArgs} args - Arguments to find a ApprovalDocument
    * @example
-   * // Get one AuditDocument
-   * const auditDocument = await prisma.auditDocument.findFirstOrThrow({
+   * // Get one ApprovalDocument
+   * const approvalDocument = await prisma.approvalDocument.findFirstOrThrow({
    *   where: {
    *     // ... provide filter here
    *   }
    * })
    */
-  findFirstOrThrow<T extends AuditDocumentFindFirstOrThrowArgs>(
-    args?: Prisma.SelectSubset<T, AuditDocumentFindFirstOrThrowArgs<ExtArgs>>,
-  ): Prisma.Prisma__AuditDocumentClient<
+  findFirstOrThrow<T extends ApprovalDocumentFindFirstOrThrowArgs>(
+    args?: Prisma.SelectSubset<
+      T,
+      ApprovalDocumentFindFirstOrThrowArgs<ExtArgs>
+    >,
+  ): Prisma.Prisma__ApprovalDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$AuditDocumentPayload<ExtArgs>,
+      Prisma.$ApprovalDocumentPayload<ExtArgs>,
       T,
       "findFirstOrThrow",
       GlobalOmitOptions
@@ -1037,26 +1058,26 @@ export interface AuditDocumentDelegate<
   >;
 
   /**
-   * Find zero or more AuditDocuments that matches the filter.
+   * Find zero or more ApprovalDocuments that matches the filter.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {AuditDocumentFindManyArgs} args - Arguments to filter and select certain fields only.
+   * @param {ApprovalDocumentFindManyArgs} args - Arguments to filter and select certain fields only.
    * @example
-   * // Get all AuditDocuments
-   * const auditDocuments = await prisma.auditDocument.findMany()
+   * // Get all ApprovalDocuments
+   * const approvalDocuments = await prisma.approvalDocument.findMany()
    *
-   * // Get first 10 AuditDocuments
-   * const auditDocuments = await prisma.auditDocument.findMany({ take: 10 })
+   * // Get first 10 ApprovalDocuments
+   * const approvalDocuments = await prisma.approvalDocument.findMany({ take: 10 })
    *
    * // Only select the `id`
-   * const auditDocumentWithIdOnly = await prisma.auditDocument.findMany({ select: { id: true } })
+   * const approvalDocumentWithIdOnly = await prisma.approvalDocument.findMany({ select: { id: true } })
    *
    */
-  findMany<T extends AuditDocumentFindManyArgs>(
-    args?: Prisma.SelectSubset<T, AuditDocumentFindManyArgs<ExtArgs>>,
+  findMany<T extends ApprovalDocumentFindManyArgs>(
+    args?: Prisma.SelectSubset<T, ApprovalDocumentFindManyArgs<ExtArgs>>,
   ): Prisma.PrismaPromise<
     runtime.Types.Result.GetResult<
-      Prisma.$AuditDocumentPayload<ExtArgs>,
+      Prisma.$ApprovalDocumentPayload<ExtArgs>,
       T,
       "findMany",
       GlobalOmitOptions
@@ -1064,22 +1085,22 @@ export interface AuditDocumentDelegate<
   >;
 
   /**
-   * Create a AuditDocument.
-   * @param {AuditDocumentCreateArgs} args - Arguments to create a AuditDocument.
+   * Create a ApprovalDocument.
+   * @param {ApprovalDocumentCreateArgs} args - Arguments to create a ApprovalDocument.
    * @example
-   * // Create one AuditDocument
-   * const AuditDocument = await prisma.auditDocument.create({
+   * // Create one ApprovalDocument
+   * const ApprovalDocument = await prisma.approvalDocument.create({
    *   data: {
-   *     // ... data to create a AuditDocument
+   *     // ... data to create a ApprovalDocument
    *   }
    * })
    *
    */
-  create<T extends AuditDocumentCreateArgs>(
-    args: Prisma.SelectSubset<T, AuditDocumentCreateArgs<ExtArgs>>,
-  ): Prisma.Prisma__AuditDocumentClient<
+  create<T extends ApprovalDocumentCreateArgs>(
+    args: Prisma.SelectSubset<T, ApprovalDocumentCreateArgs<ExtArgs>>,
+  ): Prisma.Prisma__ApprovalDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$AuditDocumentPayload<ExtArgs>,
+      Prisma.$ApprovalDocumentPayload<ExtArgs>,
       T,
       "create",
       GlobalOmitOptions
@@ -1090,38 +1111,38 @@ export interface AuditDocumentDelegate<
   >;
 
   /**
-   * Create many AuditDocuments.
-   * @param {AuditDocumentCreateManyArgs} args - Arguments to create many AuditDocuments.
+   * Create many ApprovalDocuments.
+   * @param {ApprovalDocumentCreateManyArgs} args - Arguments to create many ApprovalDocuments.
    * @example
-   * // Create many AuditDocuments
-   * const auditDocument = await prisma.auditDocument.createMany({
+   * // Create many ApprovalDocuments
+   * const approvalDocument = await prisma.approvalDocument.createMany({
    *   data: [
    *     // ... provide data here
    *   ]
    * })
    *
    */
-  createMany<T extends AuditDocumentCreateManyArgs>(
-    args?: Prisma.SelectSubset<T, AuditDocumentCreateManyArgs<ExtArgs>>,
+  createMany<T extends ApprovalDocumentCreateManyArgs>(
+    args?: Prisma.SelectSubset<T, ApprovalDocumentCreateManyArgs<ExtArgs>>,
   ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
   /**
-   * Delete a AuditDocument.
-   * @param {AuditDocumentDeleteArgs} args - Arguments to delete one AuditDocument.
+   * Delete a ApprovalDocument.
+   * @param {ApprovalDocumentDeleteArgs} args - Arguments to delete one ApprovalDocument.
    * @example
-   * // Delete one AuditDocument
-   * const AuditDocument = await prisma.auditDocument.delete({
+   * // Delete one ApprovalDocument
+   * const ApprovalDocument = await prisma.approvalDocument.delete({
    *   where: {
-   *     // ... filter to delete one AuditDocument
+   *     // ... filter to delete one ApprovalDocument
    *   }
    * })
    *
    */
-  delete<T extends AuditDocumentDeleteArgs>(
-    args: Prisma.SelectSubset<T, AuditDocumentDeleteArgs<ExtArgs>>,
-  ): Prisma.Prisma__AuditDocumentClient<
+  delete<T extends ApprovalDocumentDeleteArgs>(
+    args: Prisma.SelectSubset<T, ApprovalDocumentDeleteArgs<ExtArgs>>,
+  ): Prisma.Prisma__ApprovalDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$AuditDocumentPayload<ExtArgs>,
+      Prisma.$ApprovalDocumentPayload<ExtArgs>,
       T,
       "delete",
       GlobalOmitOptions
@@ -1132,11 +1153,11 @@ export interface AuditDocumentDelegate<
   >;
 
   /**
-   * Update one AuditDocument.
-   * @param {AuditDocumentUpdateArgs} args - Arguments to update one AuditDocument.
+   * Update one ApprovalDocument.
+   * @param {ApprovalDocumentUpdateArgs} args - Arguments to update one ApprovalDocument.
    * @example
-   * // Update one AuditDocument
-   * const auditDocument = await prisma.auditDocument.update({
+   * // Update one ApprovalDocument
+   * const approvalDocument = await prisma.approvalDocument.update({
    *   where: {
    *     // ... provide filter here
    *   },
@@ -1146,11 +1167,11 @@ export interface AuditDocumentDelegate<
    * })
    *
    */
-  update<T extends AuditDocumentUpdateArgs>(
-    args: Prisma.SelectSubset<T, AuditDocumentUpdateArgs<ExtArgs>>,
-  ): Prisma.Prisma__AuditDocumentClient<
+  update<T extends ApprovalDocumentUpdateArgs>(
+    args: Prisma.SelectSubset<T, ApprovalDocumentUpdateArgs<ExtArgs>>,
+  ): Prisma.Prisma__ApprovalDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$AuditDocumentPayload<ExtArgs>,
+      Prisma.$ApprovalDocumentPayload<ExtArgs>,
       T,
       "update",
       GlobalOmitOptions
@@ -1161,29 +1182,29 @@ export interface AuditDocumentDelegate<
   >;
 
   /**
-   * Delete zero or more AuditDocuments.
-   * @param {AuditDocumentDeleteManyArgs} args - Arguments to filter AuditDocuments to delete.
+   * Delete zero or more ApprovalDocuments.
+   * @param {ApprovalDocumentDeleteManyArgs} args - Arguments to filter ApprovalDocuments to delete.
    * @example
-   * // Delete a few AuditDocuments
-   * const { count } = await prisma.auditDocument.deleteMany({
+   * // Delete a few ApprovalDocuments
+   * const { count } = await prisma.approvalDocument.deleteMany({
    *   where: {
    *     // ... provide filter here
    *   }
    * })
    *
    */
-  deleteMany<T extends AuditDocumentDeleteManyArgs>(
-    args?: Prisma.SelectSubset<T, AuditDocumentDeleteManyArgs<ExtArgs>>,
+  deleteMany<T extends ApprovalDocumentDeleteManyArgs>(
+    args?: Prisma.SelectSubset<T, ApprovalDocumentDeleteManyArgs<ExtArgs>>,
   ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
   /**
-   * Update zero or more AuditDocuments.
+   * Update zero or more ApprovalDocuments.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {AuditDocumentUpdateManyArgs} args - Arguments to update one or more rows.
+   * @param {ApprovalDocumentUpdateManyArgs} args - Arguments to update one or more rows.
    * @example
-   * // Update many AuditDocuments
-   * const auditDocument = await prisma.auditDocument.updateMany({
+   * // Update many ApprovalDocuments
+   * const approvalDocument = await prisma.approvalDocument.updateMany({
    *   where: {
    *     // ... provide filter here
    *   },
@@ -1193,32 +1214,32 @@ export interface AuditDocumentDelegate<
    * })
    *
    */
-  updateMany<T extends AuditDocumentUpdateManyArgs>(
-    args: Prisma.SelectSubset<T, AuditDocumentUpdateManyArgs<ExtArgs>>,
+  updateMany<T extends ApprovalDocumentUpdateManyArgs>(
+    args: Prisma.SelectSubset<T, ApprovalDocumentUpdateManyArgs<ExtArgs>>,
   ): Prisma.PrismaPromise<Prisma.BatchPayload>;
 
   /**
-   * Create or update one AuditDocument.
-   * @param {AuditDocumentUpsertArgs} args - Arguments to update or create a AuditDocument.
+   * Create or update one ApprovalDocument.
+   * @param {ApprovalDocumentUpsertArgs} args - Arguments to update or create a ApprovalDocument.
    * @example
-   * // Update or create a AuditDocument
-   * const auditDocument = await prisma.auditDocument.upsert({
+   * // Update or create a ApprovalDocument
+   * const approvalDocument = await prisma.approvalDocument.upsert({
    *   create: {
-   *     // ... data to create a AuditDocument
+   *     // ... data to create a ApprovalDocument
    *   },
    *   update: {
    *     // ... in case it already exists, update
    *   },
    *   where: {
-   *     // ... the filter for the AuditDocument we want to update
+   *     // ... the filter for the ApprovalDocument we want to update
    *   }
    * })
    */
-  upsert<T extends AuditDocumentUpsertArgs>(
-    args: Prisma.SelectSubset<T, AuditDocumentUpsertArgs<ExtArgs>>,
-  ): Prisma.Prisma__AuditDocumentClient<
+  upsert<T extends ApprovalDocumentUpsertArgs>(
+    args: Prisma.SelectSubset<T, ApprovalDocumentUpsertArgs<ExtArgs>>,
+  ): Prisma.Prisma__ApprovalDocumentClient<
     runtime.Types.Result.GetResult<
-      Prisma.$AuditDocumentPayload<ExtArgs>,
+      Prisma.$ApprovalDocumentPayload<ExtArgs>,
       T,
       "upsert",
       GlobalOmitOptions
@@ -1229,36 +1250,36 @@ export interface AuditDocumentDelegate<
   >;
 
   /**
-   * Count the number of AuditDocuments.
+   * Count the number of ApprovalDocuments.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {AuditDocumentCountArgs} args - Arguments to filter AuditDocuments to count.
+   * @param {ApprovalDocumentCountArgs} args - Arguments to filter ApprovalDocuments to count.
    * @example
-   * // Count the number of AuditDocuments
-   * const count = await prisma.auditDocument.count({
+   * // Count the number of ApprovalDocuments
+   * const count = await prisma.approvalDocument.count({
    *   where: {
-   *     // ... the filter for the AuditDocuments we want to count
+   *     // ... the filter for the ApprovalDocuments we want to count
    *   }
    * })
    **/
-  count<T extends AuditDocumentCountArgs>(
-    args?: Prisma.Subset<T, AuditDocumentCountArgs>,
+  count<T extends ApprovalDocumentCountArgs>(
+    args?: Prisma.Subset<T, ApprovalDocumentCountArgs>,
   ): Prisma.PrismaPromise<
     T extends runtime.Types.Utils.Record<"select", any>
       ? T["select"] extends true
         ? number
         : Prisma.GetScalarType<
             T["select"],
-            AuditDocumentCountAggregateOutputType
+            ApprovalDocumentCountAggregateOutputType
           >
       : number
   >;
 
   /**
-   * Allows you to perform aggregations operations on a AuditDocument.
+   * Allows you to perform aggregations operations on a ApprovalDocument.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {AuditDocumentAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+   * @param {ApprovalDocumentAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
    * @example
    * // Ordered by age ascending
    * // Where email contains prisma.io
@@ -1278,15 +1299,15 @@ export interface AuditDocumentDelegate<
    *   take: 10,
    * })
    **/
-  aggregate<T extends AuditDocumentAggregateArgs>(
-    args: Prisma.Subset<T, AuditDocumentAggregateArgs>,
-  ): Prisma.PrismaPromise<GetAuditDocumentAggregateType<T>>;
+  aggregate<T extends ApprovalDocumentAggregateArgs>(
+    args: Prisma.Subset<T, ApprovalDocumentAggregateArgs>,
+  ): Prisma.PrismaPromise<GetApprovalDocumentAggregateType<T>>;
 
   /**
-   * Group by AuditDocument.
+   * Group by ApprovalDocument.
    * Note, that providing `undefined` is treated as the value not being there.
    * Read more here: https://pris.ly/d/null-undefined
-   * @param {AuditDocumentGroupByArgs} args - Group by arguments.
+   * @param {ApprovalDocumentGroupByArgs} args - Group by arguments.
    * @example
    * // Group by city, order by createdAt, get count
    * const result = await prisma.user.groupBy({
@@ -1301,14 +1322,14 @@ export interface AuditDocumentDelegate<
    *
    **/
   groupBy<
-    T extends AuditDocumentGroupByArgs,
+    T extends ApprovalDocumentGroupByArgs,
     HasSelectOrTake extends Prisma.Or<
       Prisma.Extends<"skip", Prisma.Keys<T>>,
       Prisma.Extends<"take", Prisma.Keys<T>>
     >,
     OrderByArg extends Prisma.True extends HasSelectOrTake
-      ? { orderBy: AuditDocumentGroupByArgs["orderBy"] }
-      : { orderBy?: AuditDocumentGroupByArgs["orderBy"] },
+      ? { orderBy: ApprovalDocumentGroupByArgs["orderBy"] }
+      : { orderBy?: ApprovalDocumentGroupByArgs["orderBy"] },
     OrderFields extends Prisma.ExcludeUnderscoreKeys<
       Prisma.Keys<Prisma.MaybeTupleToUnion<T["orderBy"]>>
     >,
@@ -1360,24 +1381,28 @@ export interface AuditDocumentDelegate<
                     : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`;
                 }[OrderFields],
   >(
-    args: Prisma.SubsetIntersection<T, AuditDocumentGroupByArgs, OrderByArg> &
+    args: Prisma.SubsetIntersection<
+      T,
+      ApprovalDocumentGroupByArgs,
+      OrderByArg
+    > &
       InputErrors,
   ): {} extends InputErrors
-    ? GetAuditDocumentGroupByPayload<T>
+    ? GetApprovalDocumentGroupByPayload<T>
     : Prisma.PrismaPromise<InputErrors>;
   /**
-   * Fields of the AuditDocument model
+   * Fields of the ApprovalDocument model
    */
-  readonly fields: AuditDocumentFieldRefs;
+  readonly fields: ApprovalDocumentFieldRefs;
 }
 
 /**
- * The delegate class that acts as a "Promise-like" for AuditDocument.
+ * The delegate class that acts as a "Promise-like" for ApprovalDocument.
  * Why is this prefixed with `Prisma__`?
  * Because we want to prevent naming conflicts as mentioned in
  * https://github.com/prisma/prisma-client-js/issues/707
  */
-export interface Prisma__AuditDocumentClient<
+export interface Prisma__ApprovalDocumentClient<
   T,
   Null = never,
   ExtArgs extends
@@ -1424,414 +1449,420 @@ export interface Prisma__AuditDocumentClient<
 }
 
 /**
- * Fields of the AuditDocument model
+ * Fields of the ApprovalDocument model
  */
-export interface AuditDocumentFieldRefs {
-  readonly id: Prisma.FieldRef<"AuditDocument", "Int">;
-  readonly documentFamily: Prisma.FieldRef<"AuditDocument", "DocumentFamily">;
-  readonly documentType: Prisma.FieldRef<"AuditDocument", "String">;
-  readonly documentId: Prisma.FieldRef<"AuditDocument", "Int">;
-  readonly documentNumber: Prisma.FieldRef<"AuditDocument", "String">;
-  readonly auditStatus: Prisma.FieldRef<"AuditDocument", "AuditStatusSnapshot">;
-  readonly submittedBy: Prisma.FieldRef<"AuditDocument", "String">;
-  readonly submittedAt: Prisma.FieldRef<"AuditDocument", "DateTime">;
-  readonly decidedBy: Prisma.FieldRef<"AuditDocument", "String">;
-  readonly decidedAt: Prisma.FieldRef<"AuditDocument", "DateTime">;
-  readonly rejectReason: Prisma.FieldRef<"AuditDocument", "String">;
-  readonly resetCount: Prisma.FieldRef<"AuditDocument", "Int">;
-  readonly lastResetAt: Prisma.FieldRef<"AuditDocument", "DateTime">;
-  readonly createdBy: Prisma.FieldRef<"AuditDocument", "String">;
-  readonly createdAt: Prisma.FieldRef<"AuditDocument", "DateTime">;
-  readonly updatedBy: Prisma.FieldRef<"AuditDocument", "String">;
-  readonly updatedAt: Prisma.FieldRef<"AuditDocument", "DateTime">;
+export interface ApprovalDocumentFieldRefs {
+  readonly id: Prisma.FieldRef<"ApprovalDocument", "Int">;
+  readonly documentFamily: Prisma.FieldRef<
+    "ApprovalDocument",
+    "DocumentFamily"
+  >;
+  readonly documentType: Prisma.FieldRef<"ApprovalDocument", "String">;
+  readonly documentId: Prisma.FieldRef<"ApprovalDocument", "Int">;
+  readonly documentNumber: Prisma.FieldRef<"ApprovalDocument", "String">;
+  readonly auditStatus: Prisma.FieldRef<
+    "ApprovalDocument",
+    "AuditStatusSnapshot"
+  >;
+  readonly submittedBy: Prisma.FieldRef<"ApprovalDocument", "String">;
+  readonly submittedAt: Prisma.FieldRef<"ApprovalDocument", "DateTime">;
+  readonly decidedBy: Prisma.FieldRef<"ApprovalDocument", "String">;
+  readonly decidedAt: Prisma.FieldRef<"ApprovalDocument", "DateTime">;
+  readonly rejectReason: Prisma.FieldRef<"ApprovalDocument", "String">;
+  readonly resetCount: Prisma.FieldRef<"ApprovalDocument", "Int">;
+  readonly lastResetAt: Prisma.FieldRef<"ApprovalDocument", "DateTime">;
+  readonly createdBy: Prisma.FieldRef<"ApprovalDocument", "String">;
+  readonly createdAt: Prisma.FieldRef<"ApprovalDocument", "DateTime">;
+  readonly updatedBy: Prisma.FieldRef<"ApprovalDocument", "String">;
+  readonly updatedAt: Prisma.FieldRef<"ApprovalDocument", "DateTime">;
 }
 
 // Custom InputTypes
 /**
- * AuditDocument findUnique
+ * ApprovalDocument findUnique
  */
-export type AuditDocumentFindUniqueArgs<
+export type ApprovalDocumentFindUniqueArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the AuditDocument
+   * Select specific fields to fetch from the ApprovalDocument
    */
-  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.ApprovalDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the AuditDocument
+   * Omit specific fields from the ApprovalDocument
    */
-  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.ApprovalDocumentOmit<ExtArgs> | null;
   /**
-   * Filter, which AuditDocument to fetch.
+   * Filter, which ApprovalDocument to fetch.
    */
-  where: Prisma.AuditDocumentWhereUniqueInput;
+  where: Prisma.ApprovalDocumentWhereUniqueInput;
 };
 
 /**
- * AuditDocument findUniqueOrThrow
+ * ApprovalDocument findUniqueOrThrow
  */
-export type AuditDocumentFindUniqueOrThrowArgs<
+export type ApprovalDocumentFindUniqueOrThrowArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the AuditDocument
+   * Select specific fields to fetch from the ApprovalDocument
    */
-  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.ApprovalDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the AuditDocument
+   * Omit specific fields from the ApprovalDocument
    */
-  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.ApprovalDocumentOmit<ExtArgs> | null;
   /**
-   * Filter, which AuditDocument to fetch.
+   * Filter, which ApprovalDocument to fetch.
    */
-  where: Prisma.AuditDocumentWhereUniqueInput;
+  where: Prisma.ApprovalDocumentWhereUniqueInput;
 };
 
 /**
- * AuditDocument findFirst
+ * ApprovalDocument findFirst
  */
-export type AuditDocumentFindFirstArgs<
+export type ApprovalDocumentFindFirstArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the AuditDocument
+   * Select specific fields to fetch from the ApprovalDocument
    */
-  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.ApprovalDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the AuditDocument
+   * Omit specific fields from the ApprovalDocument
    */
-  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.ApprovalDocumentOmit<ExtArgs> | null;
   /**
-   * Filter, which AuditDocument to fetch.
+   * Filter, which ApprovalDocument to fetch.
    */
-  where?: Prisma.AuditDocumentWhereInput;
+  where?: Prisma.ApprovalDocumentWhereInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    *
-   * Determine the order of AuditDocuments to fetch.
+   * Determine the order of ApprovalDocuments to fetch.
    */
   orderBy?:
-    | Prisma.AuditDocumentOrderByWithRelationInput
-    | Prisma.AuditDocumentOrderByWithRelationInput[];
+    | Prisma.ApprovalDocumentOrderByWithRelationInput
+    | Prisma.ApprovalDocumentOrderByWithRelationInput[];
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    *
-   * Sets the position for searching for AuditDocuments.
+   * Sets the position for searching for ApprovalDocuments.
    */
-  cursor?: Prisma.AuditDocumentWhereUniqueInput;
+  cursor?: Prisma.ApprovalDocumentWhereUniqueInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Take `±n` AuditDocuments from the position of the cursor.
+   * Take `±n` ApprovalDocuments from the position of the cursor.
    */
   take?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Skip the first `n` AuditDocuments.
+   * Skip the first `n` ApprovalDocuments.
    */
   skip?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
    *
-   * Filter by unique combinations of AuditDocuments.
+   * Filter by unique combinations of ApprovalDocuments.
    */
   distinct?:
-    | Prisma.AuditDocumentScalarFieldEnum
-    | Prisma.AuditDocumentScalarFieldEnum[];
+    | Prisma.ApprovalDocumentScalarFieldEnum
+    | Prisma.ApprovalDocumentScalarFieldEnum[];
 };
 
 /**
- * AuditDocument findFirstOrThrow
+ * ApprovalDocument findFirstOrThrow
  */
-export type AuditDocumentFindFirstOrThrowArgs<
+export type ApprovalDocumentFindFirstOrThrowArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the AuditDocument
+   * Select specific fields to fetch from the ApprovalDocument
    */
-  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.ApprovalDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the AuditDocument
+   * Omit specific fields from the ApprovalDocument
    */
-  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.ApprovalDocumentOmit<ExtArgs> | null;
   /**
-   * Filter, which AuditDocument to fetch.
+   * Filter, which ApprovalDocument to fetch.
    */
-  where?: Prisma.AuditDocumentWhereInput;
+  where?: Prisma.ApprovalDocumentWhereInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    *
-   * Determine the order of AuditDocuments to fetch.
+   * Determine the order of ApprovalDocuments to fetch.
    */
   orderBy?:
-    | Prisma.AuditDocumentOrderByWithRelationInput
-    | Prisma.AuditDocumentOrderByWithRelationInput[];
+    | Prisma.ApprovalDocumentOrderByWithRelationInput
+    | Prisma.ApprovalDocumentOrderByWithRelationInput[];
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    *
-   * Sets the position for searching for AuditDocuments.
+   * Sets the position for searching for ApprovalDocuments.
    */
-  cursor?: Prisma.AuditDocumentWhereUniqueInput;
+  cursor?: Prisma.ApprovalDocumentWhereUniqueInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Take `±n` AuditDocuments from the position of the cursor.
+   * Take `±n` ApprovalDocuments from the position of the cursor.
    */
   take?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Skip the first `n` AuditDocuments.
+   * Skip the first `n` ApprovalDocuments.
    */
   skip?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
    *
-   * Filter by unique combinations of AuditDocuments.
+   * Filter by unique combinations of ApprovalDocuments.
    */
   distinct?:
-    | Prisma.AuditDocumentScalarFieldEnum
-    | Prisma.AuditDocumentScalarFieldEnum[];
+    | Prisma.ApprovalDocumentScalarFieldEnum
+    | Prisma.ApprovalDocumentScalarFieldEnum[];
 };
 
 /**
- * AuditDocument findMany
+ * ApprovalDocument findMany
  */
-export type AuditDocumentFindManyArgs<
+export type ApprovalDocumentFindManyArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the AuditDocument
+   * Select specific fields to fetch from the ApprovalDocument
    */
-  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.ApprovalDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the AuditDocument
+   * Omit specific fields from the ApprovalDocument
    */
-  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.ApprovalDocumentOmit<ExtArgs> | null;
   /**
-   * Filter, which AuditDocuments to fetch.
+   * Filter, which ApprovalDocuments to fetch.
    */
-  where?: Prisma.AuditDocumentWhereInput;
+  where?: Prisma.ApprovalDocumentWhereInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
    *
-   * Determine the order of AuditDocuments to fetch.
+   * Determine the order of ApprovalDocuments to fetch.
    */
   orderBy?:
-    | Prisma.AuditDocumentOrderByWithRelationInput
-    | Prisma.AuditDocumentOrderByWithRelationInput[];
+    | Prisma.ApprovalDocumentOrderByWithRelationInput
+    | Prisma.ApprovalDocumentOrderByWithRelationInput[];
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
    *
-   * Sets the position for listing AuditDocuments.
+   * Sets the position for listing ApprovalDocuments.
    */
-  cursor?: Prisma.AuditDocumentWhereUniqueInput;
+  cursor?: Prisma.ApprovalDocumentWhereUniqueInput;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Take `±n` AuditDocuments from the position of the cursor.
+   * Take `±n` ApprovalDocuments from the position of the cursor.
    */
   take?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
    *
-   * Skip the first `n` AuditDocuments.
+   * Skip the first `n` ApprovalDocuments.
    */
   skip?: number;
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
    *
-   * Filter by unique combinations of AuditDocuments.
+   * Filter by unique combinations of ApprovalDocuments.
    */
   distinct?:
-    | Prisma.AuditDocumentScalarFieldEnum
-    | Prisma.AuditDocumentScalarFieldEnum[];
+    | Prisma.ApprovalDocumentScalarFieldEnum
+    | Prisma.ApprovalDocumentScalarFieldEnum[];
 };
 
 /**
- * AuditDocument create
+ * ApprovalDocument create
  */
-export type AuditDocumentCreateArgs<
+export type ApprovalDocumentCreateArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the AuditDocument
+   * Select specific fields to fetch from the ApprovalDocument
    */
-  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.ApprovalDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the AuditDocument
+   * Omit specific fields from the ApprovalDocument
    */
-  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.ApprovalDocumentOmit<ExtArgs> | null;
   /**
-   * The data needed to create a AuditDocument.
+   * The data needed to create a ApprovalDocument.
    */
   data: Prisma.XOR<
-    Prisma.AuditDocumentCreateInput,
-    Prisma.AuditDocumentUncheckedCreateInput
+    Prisma.ApprovalDocumentCreateInput,
+    Prisma.ApprovalDocumentUncheckedCreateInput
   >;
 };
 
 /**
- * AuditDocument createMany
+ * ApprovalDocument createMany
  */
-export type AuditDocumentCreateManyArgs<
+export type ApprovalDocumentCreateManyArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * The data used to create many AuditDocuments.
+   * The data used to create many ApprovalDocuments.
    */
   data:
-    | Prisma.AuditDocumentCreateManyInput
-    | Prisma.AuditDocumentCreateManyInput[];
+    | Prisma.ApprovalDocumentCreateManyInput
+    | Prisma.ApprovalDocumentCreateManyInput[];
   skipDuplicates?: boolean;
 };
 
 /**
- * AuditDocument update
+ * ApprovalDocument update
  */
-export type AuditDocumentUpdateArgs<
+export type ApprovalDocumentUpdateArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the AuditDocument
+   * Select specific fields to fetch from the ApprovalDocument
    */
-  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.ApprovalDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the AuditDocument
+   * Omit specific fields from the ApprovalDocument
    */
-  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.ApprovalDocumentOmit<ExtArgs> | null;
   /**
-   * The data needed to update a AuditDocument.
+   * The data needed to update a ApprovalDocument.
    */
   data: Prisma.XOR<
-    Prisma.AuditDocumentUpdateInput,
-    Prisma.AuditDocumentUncheckedUpdateInput
+    Prisma.ApprovalDocumentUpdateInput,
+    Prisma.ApprovalDocumentUncheckedUpdateInput
   >;
   /**
-   * Choose, which AuditDocument to update.
+   * Choose, which ApprovalDocument to update.
    */
-  where: Prisma.AuditDocumentWhereUniqueInput;
+  where: Prisma.ApprovalDocumentWhereUniqueInput;
 };
 
 /**
- * AuditDocument updateMany
+ * ApprovalDocument updateMany
  */
-export type AuditDocumentUpdateManyArgs<
+export type ApprovalDocumentUpdateManyArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * The data used to update AuditDocuments.
+   * The data used to update ApprovalDocuments.
    */
   data: Prisma.XOR<
-    Prisma.AuditDocumentUpdateManyMutationInput,
-    Prisma.AuditDocumentUncheckedUpdateManyInput
+    Prisma.ApprovalDocumentUpdateManyMutationInput,
+    Prisma.ApprovalDocumentUncheckedUpdateManyInput
   >;
   /**
-   * Filter which AuditDocuments to update
+   * Filter which ApprovalDocuments to update
    */
-  where?: Prisma.AuditDocumentWhereInput;
+  where?: Prisma.ApprovalDocumentWhereInput;
   /**
-   * Limit how many AuditDocuments to update.
+   * Limit how many ApprovalDocuments to update.
    */
   limit?: number;
 };
 
 /**
- * AuditDocument upsert
+ * ApprovalDocument upsert
  */
-export type AuditDocumentUpsertArgs<
+export type ApprovalDocumentUpsertArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the AuditDocument
+   * Select specific fields to fetch from the ApprovalDocument
    */
-  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.ApprovalDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the AuditDocument
+   * Omit specific fields from the ApprovalDocument
    */
-  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.ApprovalDocumentOmit<ExtArgs> | null;
   /**
-   * The filter to search for the AuditDocument to update in case it exists.
+   * The filter to search for the ApprovalDocument to update in case it exists.
    */
-  where: Prisma.AuditDocumentWhereUniqueInput;
+  where: Prisma.ApprovalDocumentWhereUniqueInput;
   /**
-   * In case the AuditDocument found by the `where` argument doesn't exist, create a new AuditDocument with this data.
+   * In case the ApprovalDocument found by the `where` argument doesn't exist, create a new ApprovalDocument with this data.
    */
   create: Prisma.XOR<
-    Prisma.AuditDocumentCreateInput,
-    Prisma.AuditDocumentUncheckedCreateInput
+    Prisma.ApprovalDocumentCreateInput,
+    Prisma.ApprovalDocumentUncheckedCreateInput
   >;
   /**
-   * In case the AuditDocument was found with the provided `where` argument, update it with this data.
+   * In case the ApprovalDocument was found with the provided `where` argument, update it with this data.
    */
   update: Prisma.XOR<
-    Prisma.AuditDocumentUpdateInput,
-    Prisma.AuditDocumentUncheckedUpdateInput
+    Prisma.ApprovalDocumentUpdateInput,
+    Prisma.ApprovalDocumentUncheckedUpdateInput
   >;
 };
 
 /**
- * AuditDocument delete
+ * ApprovalDocument delete
  */
-export type AuditDocumentDeleteArgs<
+export type ApprovalDocumentDeleteArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the AuditDocument
+   * Select specific fields to fetch from the ApprovalDocument
    */
-  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.ApprovalDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the AuditDocument
+   * Omit specific fields from the ApprovalDocument
    */
-  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.ApprovalDocumentOmit<ExtArgs> | null;
   /**
-   * Filter which AuditDocument to delete.
+   * Filter which ApprovalDocument to delete.
    */
-  where: Prisma.AuditDocumentWhereUniqueInput;
+  where: Prisma.ApprovalDocumentWhereUniqueInput;
 };
 
 /**
- * AuditDocument deleteMany
+ * ApprovalDocument deleteMany
  */
-export type AuditDocumentDeleteManyArgs<
+export type ApprovalDocumentDeleteManyArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Filter which AuditDocuments to delete
+   * Filter which ApprovalDocuments to delete
    */
-  where?: Prisma.AuditDocumentWhereInput;
+  where?: Prisma.ApprovalDocumentWhereInput;
   /**
-   * Limit how many AuditDocuments to delete.
+   * Limit how many ApprovalDocuments to delete.
    */
   limit?: number;
 };
 
 /**
- * AuditDocument without action
+ * ApprovalDocument without action
  */
-export type AuditDocumentDefaultArgs<
+export type ApprovalDocumentDefaultArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = {
   /**
-   * Select specific fields to fetch from the AuditDocument
+   * Select specific fields to fetch from the ApprovalDocument
    */
-  select?: Prisma.AuditDocumentSelect<ExtArgs> | null;
+  select?: Prisma.ApprovalDocumentSelect<ExtArgs> | null;
   /**
-   * Omit specific fields from the AuditDocument
+   * Omit specific fields from the ApprovalDocument
    */
-  omit?: Prisma.AuditDocumentOmit<ExtArgs> | null;
+  omit?: Prisma.ApprovalDocumentOmit<ExtArgs> | null;
 };

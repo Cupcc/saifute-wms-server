@@ -1,7 +1,8 @@
 import {
   getWorkshopOrder,
   listWorkshopOrders,
-  unsupportedWorkshopOrderAction,
+  submitWorkshopOrder,
+  voidWorkshopOrder,
 } from "./compat";
 
 // 查询领料单列表
@@ -15,21 +16,27 @@ export function getPickOrder(pickId) {
 }
 
 // 新增领料单
-export function addPickOrder() {
-  return unsupportedWorkshopOrderAction("当前领料单写操作仍在适配中");
+export function addPickOrder(data) {
+  return submitWorkshopOrder(data, "pickOrder");
 }
 
 // 修改领料单
-export function updatePickOrder() {
-  return unsupportedWorkshopOrderAction("当前领料单修改仍在适配中");
+export function updatePickOrder(data) {
+  return submitWorkshopOrder(data, "pickOrder");
 }
 
 // 作废领料单
-export function voidPickOrder() {
-  return unsupportedWorkshopOrderAction("当前领料单作废仍在适配中");
+export function voidPickOrder(pickId, data) {
+  return voidWorkshopOrder(
+    {
+      pickId,
+      ...data,
+    },
+    "pickOrder",
+  );
 }
 
 // 删除领料单
 export function delPickOrder() {
-  return unsupportedWorkshopOrderAction("当前领料单删除仍在适配中");
+  return Promise.reject(new Error("领料单仅支持作废，不支持删除"));
 }

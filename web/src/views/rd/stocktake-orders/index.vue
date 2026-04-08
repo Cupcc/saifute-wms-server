@@ -319,7 +319,7 @@ const filters = ref({
 const form = ref(createEmptyForm());
 
 const workshopLabel = computed(
-  () => userStore.workshopScope?.workshopName || "未绑定研发小仓",
+  () => userStore.stockScope?.stockScopeName || "未绑定研发小仓",
 );
 
 function createEmptyLine() {
@@ -453,8 +453,12 @@ function removeLine(index) {
 }
 
 function openCreateDialog() {
+  if (!userStore.stockScope?.stockScope) {
+    ElMessage.error("当前账号未绑定研发库存范围，无法创建盘点调整单");
+    return;
+  }
   if (!userStore.workshopScope?.workshopId) {
-    ElMessage.error("当前账号未绑定研发小仓，无法创建盘点调整单");
+    ElMessage.error("当前账号未绑定业务车间，无法创建盘点调整单");
     return;
   }
   form.value = createEmptyForm();

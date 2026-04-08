@@ -309,7 +309,7 @@
           <el-descriptions-item label="经办人">
             {{ detailRow.handlerNameSnapshot || "-" }}
           </el-descriptions-item>
-          <el-descriptions-item label="归属仓别">
+          <el-descriptions-item label="关联车间">
             {{ detailRow.workshopNameSnapshot }}
           </el-descriptions-item>
           <el-descriptions-item label="总金额">
@@ -411,7 +411,7 @@
             </template>
           </el-table-column>
           <el-table-column prop="supplierNameSnapshot" label="供应商" min-width="160" />
-          <el-table-column prop="workshopNameSnapshot" label="入库仓别" min-width="120" />
+          <el-table-column prop="workshopNameSnapshot" label="入库关联部门" min-width="120" />
           <el-table-column prop="totalQty" label="总数量" min-width="100" />
           <el-table-column prop="totalAmount" label="总金额" min-width="100" />
           <el-table-column label="关联行数" min-width="100">
@@ -536,9 +536,13 @@ const filters = ref({
 const form = ref(createEmptyForm());
 
 const workshopLabel = computed(
-  () => userStore.workshopScope?.workshopName || "未绑定研发小仓",
+  () => userStore.stockScope?.stockScopeName || "未绑定研发小仓",
 );
-const canCreate = computed(() => Boolean(userStore.workshopScope?.workshopId));
+const canCreate = computed(
+  () =>
+    Boolean(userStore.stockScope?.stockScope) &&
+    Boolean(userStore.workshopScope?.workshopId),
+);
 const statusActionTitle = computed(() => {
   switch (statusActionForm.value.actionType) {
     case "PROCUREMENT_STARTED":
@@ -806,7 +810,7 @@ function removeLine(index) {
 
 function openCreateDialog() {
   if (!canCreate.value) {
-    ElMessage.error("当前账号未绑定研发小仓，无法录入采购需求");
+    ElMessage.error("当前账号未完成研发库存范围或业务车间绑定，无法录入采购需求");
     return;
   }
   form.value = createEmptyForm();

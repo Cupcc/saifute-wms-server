@@ -30,15 +30,8 @@ export class RdHandoffController {
     @Query() query: QueryRdHandoffOrderDto,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    const targetWorkshopId =
-      await this.workshopScopeService.resolveQueryWorkshopId(
-        user,
-        query.targetWorkshopId,
-      );
-    return this.rdHandoffService.listOrders({
-      ...query,
-      targetWorkshopId,
-    });
+    await this.workshopScopeService.getResolvedStockScope(user);
+    return this.rdHandoffService.listOrders(query);
   }
 
   @Permissions("rd:handoff-order:list")
@@ -48,9 +41,9 @@ export class RdHandoffController {
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
     const order = await this.rdHandoffService.getOrderById(id);
-    await this.workshopScopeService.assertWorkshopAccess(
+    await this.workshopScopeService.assertInventoryStockScopeAccess(
       user,
-      order.targetWorkshopId,
+      order.targetStockScopeId,
     );
     return order;
   }
@@ -74,9 +67,9 @@ export class RdHandoffController {
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
     const order = await this.rdHandoffService.getOrderById(id);
-    await this.workshopScopeService.assertWorkshopAccess(
+    await this.workshopScopeService.assertInventoryStockScopeAccess(
       user,
-      order.targetWorkshopId,
+      order.targetStockScopeId,
     );
     return this.rdHandoffService.voidOrder(
       id,

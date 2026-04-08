@@ -34,23 +34,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="经办人" prop="attn">
-        <el-select
-          v-model="queryParams.attn"
-          filterable
-          remote
-          reserve-keyword
-          placeholder="请输入经办人姓名搜索"
-          :remote-method="searchPersonnel"
-          :loading="personnelLoading"
-          clearable
-          style="width: 240px">
-          <el-option
-            v-for="item in personnelOptions"
-            :key="item.personnelId"
-            :label="item.name"
-            :value="item.name">
-          </el-option>
-        </el-select>
+        <combo-input v-model="queryParams.attn" scope="personnel" field="personnelName" placeholder="请选择或输入经办人" width="240px" />
       </el-form-item>
 	    <el-form-item label="物料" prop="materialId">
 		    <el-select
@@ -74,13 +58,7 @@
 		    </el-select>
 	    </el-form-item>
 	    <el-form-item label="物料名称" prop="materialName">
-		    <el-input
-			    v-model="queryParams.materialName"
-			    placeholder="请输入物料名称"
-			    clearable
-			    style="width: 240px"
-			    @keyup.enter="handleQuery"
-		    />
+		    <combo-input v-model="queryParams.materialName" scope="material" field="materialName" placeholder="请选择或输入物料名称" width="240px" />
 	    </el-form-item>
 	    <el-form-item label="生产编号" prop="interval">
 		    <el-input
@@ -236,32 +214,14 @@
           </el-col>
           <el-col :span="12">
 	          <el-form-item label="经办人" prop="attn">
-		          <el-select
-			          v-model="form.attn"
-			          filterable
-			          remote
-			          reserve-keyword
-			          placeholder="请输入经办人姓名搜索"
-			          :remote-method="searchPersonnel"
-			          :loading="personnelLoading"
-			          allow-create
-			          default-first-option
-			          style="width: 100%"
-			          :disabled="form.intoId != null">
-			          <el-option
-				          v-for="item in personnelOptions"
-				          :key="item.personnelId"
-				          :label="item.name"
-				          :value="item.name">
-			          </el-option>
-		          </el-select>
+		          <combo-input v-model="form.attn" scope="personnel" field="personnelName" placeholder="请选择或输入经办人" :disabled="form.intoId != null" />
 	          </el-form-item>
           </el-col>
         </el-row>
         <el-row>
           <el-col :span="12">
 	          <el-form-item label="负责人" prop="chargeBy">
-		          <el-input v-model="form.chargeBy" placeholder="请输入负责人" :disabled="form.intoId != null"/>
+		          <combo-input v-model="form.chargeBy" scope="personnel" field="personnelName" placeholder="请选择或输入负责人" :disabled="form.intoId != null" />
 	          </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -409,7 +369,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button
-            type="success" v-hasPermi="['audit:document:add']"
+            type="success" v-hasPermi="['approval:document:approve']"
             v-if="(detailData.auditStatus === '0' || detailData.auditStatus === 0) && (username !== detailData.createBy || username === 'admin')"
             @click="handleAudit(1)"
             :loading="submitLoading"
@@ -417,7 +377,7 @@
             通过
           </el-button>
           <el-button
-            type="danger" v-hasPermi="['audit:document:add']"
+            type="danger" v-hasPermi="['approval:document:reject']"
             v-if="(detailData.auditStatus === '0' || detailData.auditStatus === 0) && (username !== detailData.createBy || username === 'admin')"
             @click="handleAudit(2)"
             :loading="submitLoading"
@@ -461,9 +421,10 @@
 </template>
 
 <script setup name="IntoOrder">
-import { auditDocument } from "@/api/audit/audit";
+import { approvalDocument } from "@/api/approval/approval";
 import { listMaterialByCodeOrName } from "@/api/base/material";
 import { listPersonnel } from "@/api/base/personnel";
+import { clearSuggestionsCache } from "@/api/base/suggestions";
 import { getWorkshop, listByNameOrContact } from "@/api/base/workshop";
 import { getLatestIntoDetailByMaterialId } from "@/api/entry/intoDetail";
 import {
@@ -897,6 +858,7 @@ function submitForm() {
       if (form.value.intoId != null) {
         updateIntoOrder(form.value)
           .then((response) => {
+            clearSuggestionsCache();
             proxy.$modal.msgSuccess("修改成功");
             open.value = false;
             getList();
@@ -907,6 +869,7 @@ function submitForm() {
       } else {
         addIntoOrder(form.value)
           .then((response) => {
+            clearSuggestionsCache();
             proxy.$modal.msgSuccess("新增成功");
             open.value = false;
             getList();
@@ -969,7 +932,7 @@ function handleAudit(status) {
     .confirm(`确定要${status === 1 ? "审核通过" : "审核不通过"}该入库单吗？`)
     .then(() => {
       submitLoading.value = true;
-      return auditDocument(auditData);
+      return approvalDocument(auditData);
     })
     .then(() => {
       proxy.$modal.msgSuccess(status === 1 ? "审核通过成功" : "审核不通过成功");

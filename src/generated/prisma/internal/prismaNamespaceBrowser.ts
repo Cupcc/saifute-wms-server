@@ -66,7 +66,7 @@ export const ModelName = {
   InventoryLog: "InventoryLog",
   InventorySourceUsage: "InventorySourceUsage",
   FactoryNumberReservation: "FactoryNumberReservation",
-  AuditDocument: "AuditDocument",
+  ApprovalDocument: "ApprovalDocument",
   StockInOrder: "StockInOrder",
   StockInOrderLine: "StockInOrderLine",
   CustomerStockOrder: "CustomerStockOrder",
@@ -344,7 +344,7 @@ export const FactoryNumberReservationScalarFieldEnum = {
 export type FactoryNumberReservationScalarFieldEnum =
   (typeof FactoryNumberReservationScalarFieldEnum)[keyof typeof FactoryNumberReservationScalarFieldEnum];
 
-export const AuditDocumentScalarFieldEnum = {
+export const ApprovalDocumentScalarFieldEnum = {
   id: "id",
   documentFamily: "documentFamily",
   documentType: "documentType",
@@ -364,8 +364,8 @@ export const AuditDocumentScalarFieldEnum = {
   updatedAt: "updatedAt",
 } as const;
 
-export type AuditDocumentScalarFieldEnum =
-  (typeof AuditDocumentScalarFieldEnum)[keyof typeof AuditDocumentScalarFieldEnum];
+export type ApprovalDocumentScalarFieldEnum =
+  (typeof ApprovalDocumentScalarFieldEnum)[keyof typeof ApprovalDocumentScalarFieldEnum];
 
 export const StockInOrderScalarFieldEnum = {
   id: "id",
@@ -1061,6 +1061,7 @@ export const SysUserScalarFieldEnum = {
   remark: "remark",
   passwordHash: "passwordHash",
   consoleMode: "consoleMode",
+  stockScope: "stockScope",
   workshopScope: "workshopScope",
   extraPermissions: "extraPermissions",
   createdAt: "createdAt",
@@ -1315,7 +1316,7 @@ export const FactoryNumberReservationOrderByRelevanceFieldEnum = {
 export type FactoryNumberReservationOrderByRelevanceFieldEnum =
   (typeof FactoryNumberReservationOrderByRelevanceFieldEnum)[keyof typeof FactoryNumberReservationOrderByRelevanceFieldEnum];
 
-export const AuditDocumentOrderByRelevanceFieldEnum = {
+export const ApprovalDocumentOrderByRelevanceFieldEnum = {
   documentType: "documentType",
   documentNumber: "documentNumber",
   submittedBy: "submittedBy",
@@ -1325,8 +1326,8 @@ export const AuditDocumentOrderByRelevanceFieldEnum = {
   updatedBy: "updatedBy",
 } as const;
 
-export type AuditDocumentOrderByRelevanceFieldEnum =
-  (typeof AuditDocumentOrderByRelevanceFieldEnum)[keyof typeof AuditDocumentOrderByRelevanceFieldEnum];
+export type ApprovalDocumentOrderByRelevanceFieldEnum =
+  (typeof ApprovalDocumentOrderByRelevanceFieldEnum)[keyof typeof ApprovalDocumentOrderByRelevanceFieldEnum];
 
 export const StockInOrderOrderByRelevanceFieldEnum = {
   documentNo: "documentNo",

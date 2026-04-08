@@ -23,12 +23,14 @@
 
 | Task 文档 | 状态 | 说明 |
 | --- | --- | --- |
-| `-` | `-` | 当前无 active task。 |
+| `task-20260408-1842-master-data-f6-workshop-runtime-compatibility.md` | `in-progress` | `master-data` `F6` 车间管理回归修复：已完成代码层合同回正与 focused 验证，当前在做 runtime smoke、独立 review 与 targeted QA 收口。 |
+| `task-20260407-0929-workshop-material-f1-f3-autonomous-delivery.md` | `planned` | 车间物料 `F1/F2/F3` 端到端自治交付：沿用统一后端家族模型与三个既有前端页面，补齐改单补偿、主仓库存 / 来源追溯、前端 API 接通与 full acceptance；明确排除 `F4` 报表 / 净耗用 / 导出。 |
 
 ## 已完成（`archive/retained-completed/`）
 
 | Task 文档 | 状态 | 说明 |
 | --- | --- | --- |
+| `archive/retained-completed/task-20260407-0033-approval-rename-two-phase-plan.md` | `accepted` | `approval` 语义重命名与最终清理已完成并归档：代码/API/权限/模块统一收口到 `approval`，target DB 只保留 `approval_document` 真源，业务审核 `audit` 兼容层已移除。 |
 | `archive/retained-completed/task-20260406-0134-master-data-phase1-browser-verification-fix-loop.md` | `accepted` | `master-data` `Phase 1` `F1`~`F8` 的继续浏览器实测、缺陷修复回环、review 与 acceptance evidence 更新已完成；`F3/F5/F6/F7/F8` 新证据已冻结到 `spec/cases/run`，并保留 `customer/material/personnel` pre-dirty 页面既有修改。 |
 | `archive/retained-completed/task-20260406-0106-master-data-material-category-alignment.md` | `accepted` | `master-data` 物料分类前后端真源对齐、F1 页面补齐与 F2 浏览器失败修复已完成；focused 自动化验证与 `agent-browser` targeted browser QA 均通过。 |
 | `archive/retained-completed/task-20260405-2136-price-layer-outbound-and-inbound-price-correction.md` | `accepted` | `customer` `F2/F3` 与 `inbound` `F8` 的跨域价格层出库 / 入库调价切片已完成实现、review 修复、light acceptance 与归档收口；自动化 gate 为 `4` suites / `64` tests 通过。 |

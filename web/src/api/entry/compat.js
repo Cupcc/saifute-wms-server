@@ -118,9 +118,9 @@ function mapInboundOrder(order, config, audit = null) {
   };
 }
 
-async function fetchAuditDocument(config, documentId) {
+async function fetchApprovalDocument(config, documentId) {
   const response = await request({
-    url: "/api/audit/documents/detail",
+    url: "/api/approval/documents/detail",
     method: "get",
     params: {
       documentType: config.documentType,
@@ -218,7 +218,7 @@ export async function getInboundOrder(id, mode = "order") {
       url: `${config.itemUrl}/${id}`,
       method: "get",
     }),
-    fetchAuditDocument(config, id).catch(() => null),
+    fetchApprovalDocument(config, id).catch(() => null),
   ]);
 
   return {

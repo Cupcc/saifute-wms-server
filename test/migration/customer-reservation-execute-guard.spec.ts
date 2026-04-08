@@ -133,7 +133,7 @@ describe("outbound reservation execute guard", () => {
         consumerCounts: {
           document_relation: 1,
           document_line_relation: 0,
-          audit_document: 0,
+          approval_document: 0,
           inventory_balance: 0,
           inventory_log: 0,
           inventory_source_usage: 0,
@@ -156,7 +156,7 @@ describe("outbound reservation execute guard", () => {
         consumerCounts: {
           document_relation: 0,
           document_line_relation: 0,
-          audit_document: 0,
+          approval_document: 0,
           inventory_balance: 0,
           inventory_log: 1,
           inventory_source_usage: 0,
@@ -181,7 +181,7 @@ describe("outbound reservation execute guard", () => {
         consumerCounts: {
           document_relation: 0,
           document_line_relation: 0,
-          audit_document: 0,
+          approval_document: 0,
           inventory_balance: 0,
           inventory_log: 0,
           inventory_source_usage: 0,

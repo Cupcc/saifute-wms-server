@@ -7,15 +7,14 @@ const DOCUMENT_TYPE_MAP = {
   5: "WorkshopMaterialOrder",
 };
 
-// 审核单据
-export async function auditDocument(data) {
+export async function approvalDocument(data) {
   const documentType = DOCUMENT_TYPE_MAP[data.documentType];
   if (!documentType) {
-    throw new Error(`未支持的审核 documentType: ${data.documentType}`);
+    throw new Error(`未支持的审批 documentType: ${data.documentType}`);
   }
 
-  const auditResponse = await request({
-    url: "/api/audit/documents/detail",
+  const approvalResponse = await request({
+    url: "/api/approval/documents/detail",
     method: "get",
     params: {
       documentType,
@@ -23,20 +22,20 @@ export async function auditDocument(data) {
     },
   });
 
-  const audit = auditResponse.data;
-  if (!audit?.id) {
-    throw new Error(`未找到审核记录: ${documentType}#${data.documentId}`);
+  const approval = approvalResponse.data;
+  if (!approval?.id) {
+    throw new Error(`未找到审批记录: ${documentType}#${data.documentId}`);
   }
 
   if (String(data.auditStatus) === "1") {
     return request({
-      url: `/api/audit/documents/${audit.id}/approve`,
+      url: `/api/approval/documents/${approval.id}/approve`,
       method: "post",
     });
   }
 
   return request({
-    url: `/api/audit/documents/${audit.id}/reject`,
+    url: `/api/approval/documents/${approval.id}/reject`,
     method: "post",
     data: {
       rejectReason: data.rejectReason ?? "legacy page reject action",

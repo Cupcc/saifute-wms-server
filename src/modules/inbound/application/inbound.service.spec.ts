@@ -9,7 +9,7 @@ import {
   StockInOrderType,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
-import { AuditService } from "../../audit/application/audit.service";
+import { ApprovalService } from "../../approval/application/approval.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import {
@@ -117,7 +117,7 @@ describe("InboundService", () => {
   let repository: jest.Mocked<InboundRepository>;
   let masterDataService: jest.Mocked<MasterDataService>;
   let inventoryService: jest.Mocked<InventoryService>;
-  let auditService: jest.Mocked<AuditService>;
+  let approvalService: jest.Mocked<ApprovalService>;
   let rdProcurementRequestService: jest.Mocked<RdProcurementRequestService>;
   let prisma: { runInTransaction: jest.Mock };
 
@@ -178,10 +178,10 @@ describe("InboundService", () => {
           },
         },
         {
-          provide: AuditService,
+          provide: ApprovalService,
           useValue: {
-            createOrRefreshAuditDocument: jest.fn().mockResolvedValue({}),
-            markAuditNotRequired: jest.fn().mockResolvedValue({ count: 1 }),
+            createOrRefreshApprovalDocument: jest.fn().mockResolvedValue({}),
+            markApprovalNotRequired: jest.fn().mockResolvedValue({ count: 1 }),
           },
         },
         {
@@ -199,7 +199,7 @@ describe("InboundService", () => {
     repository = moduleRef.get(InboundRepository);
     masterDataService = moduleRef.get(MasterDataService);
     inventoryService = moduleRef.get(InventoryService);
-    auditService = moduleRef.get(AuditService);
+    approvalService = moduleRef.get(ApprovalService);
     rdProcurementRequestService = moduleRef.get(RdProcurementRequestService);
 
     (masterDataService.getMaterialById as jest.Mock).mockResolvedValue(
@@ -246,7 +246,9 @@ describe("InboundService", () => {
         }),
         expect.anything(),
       );
-      expect(auditService.createOrRefreshAuditDocument).toHaveBeenCalledWith(
+      expect(
+        approvalService.createOrRefreshApprovalDocument,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           documentFamily: DocumentFamily.STOCK_IN,
           documentType: "StockInOrder",
@@ -502,7 +504,9 @@ describe("InboundService", () => {
       expect(inventoryService.increaseStock).toHaveBeenCalled();
       expect(reverseAcceptanceStatusesForOrder).toHaveBeenCalled();
       expect(applyAcceptanceStatusesForOrder).toHaveBeenCalled();
-      expect(auditService.createOrRefreshAuditDocument).toHaveBeenCalled();
+      expect(
+        approvalService.createOrRefreshApprovalDocument,
+      ).toHaveBeenCalled();
     });
   });
 
@@ -545,7 +549,7 @@ describe("InboundService", () => {
         }),
         expect.anything(),
       );
-      expect(auditService.markAuditNotRequired).toHaveBeenCalledWith(
+      expect(approvalService.markApprovalNotRequired).toHaveBeenCalledWith(
         "StockInOrder",
         1,
         "1",

@@ -67,23 +67,7 @@
 				</el-input>
 			</el-form-item>
 			<el-form-item label="退料人" prop="returnBy">
-				<el-select
-					v-model="queryParams.returnBy"
-					filterable
-					remote
-					reserve-keyword
-					placeholder="请输入人员姓名搜索"
-					:remote-method="searchPersonnelForQuery"
-					:loading="personnelLoading"
-					clearable
-					style="width: 240px">
-					<el-option
-						v-for="item in personnelOptions"
-						:key="item.personnelId"
-						:label="item.name"
-						:value="item.name">
-					</el-option>
-				</el-select>
+				<combo-input v-model="queryParams.returnBy" scope="personnel" field="personnelName" placeholder="请选择或输入退料人" width="240px" />
 			</el-form-item>
 			<el-form-item label="物料" prop="materialId">
 				<el-select
@@ -107,13 +91,7 @@
 				</el-select>
 			</el-form-item>
 			<el-form-item label="物料名称" prop="materialName">
-				<el-input
-					v-model="queryParams.materialName"
-					placeholder="请输入物料名称"
-					clearable
-					style="width: 240px"
-					@keyup.enter="handleQuery"
-				/>
+				<combo-input v-model="queryParams.materialName" scope="material" field="materialName" placeholder="请选择或输入物料名称" width="240px" />
 			</el-form-item>
 			<el-form-item>
 				<el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -144,7 +122,8 @@
 			<right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
 		</el-row>
 		
-		<adaptive-table border stripe v-loading="loading" :data="returnOrderList" @row-click="handleRowClick">
+		<adaptive-table border stripe v-loading="loading" :data="returnOrderList" @selection-change="handleSelectionChange" @row-click="handleRowClick">
+			<el-table-column type="selection" width="50" align="center" />
 			<el-table-column type="index" width="50" align="center" />
 			<el-table-column sortable show-overflow-tooltip label="退料单号" align="center" prop="returnNo" v-if="columns[0].visible">
 				<template #default="scope">
@@ -272,29 +251,12 @@
 				<el-row>
 					<el-col :span="8">
 						<el-form-item label="退料人" prop="returnBy">
-							<el-select
-								v-model="form.returnBy"
-								filterable
-								remote
-								allow-create
-								reserve-keyword
-								placeholder="请输入人员姓名搜索"
-								:remote-method="searchPersonnel"
-								:loading="personnelLoading"
-								clearable
-								style="width: 100%">
-								<el-option
-									v-for="item in personnelOptions"
-									:key="item.personnelId"
-									:label="item.name"
-									:value="item.name">
-								</el-option>
-							</el-select>
+							<combo-input v-model="form.returnBy" scope="personnel" field="personnelName" placeholder="请选择或输入退料人" />
 						</el-form-item>
 					</el-col>
 					<el-col :span="8">
 						<el-form-item label="负责人" prop="chargeBy">
-							<el-input v-model="form.chargeBy" placeholder="请输入负责人" />
+							<combo-input v-model="form.chargeBy" scope="personnel" field="personnelName" placeholder="请选择或输入负责人" />
 						</el-form-item>
 					</el-col>
 				</el-row>
@@ -430,14 +392,14 @@
 			<template #footer>
 				<div class="dialog-footer">
 					<el-button
-						type="success" v-hasPermi="['audit:document:add']"
+						type="success" v-hasPermi="['approval:document:approve']"
 						v-if="(detailData.auditStatus === '0' || detailData.auditStatus === 0) && (username !== detailData.createBy || username === 'admin')"
 						@click="handleAudit(1)"
 					>
 						通过
 					</el-button>
 					<el-button
-						type="danger" v-hasPermi="['audit:document:add']"
+						type="danger" v-hasPermi="['approval:document:reject']"
 						v-if="(detailData.auditStatus === '0' || detailData.auditStatus === 0) && (username !== detailData.createBy || username === 'admin')"
 						@click="handleAudit(2)"
 					>
@@ -486,13 +448,7 @@
 					></el-date-picker>
 				</el-form-item>
 				<el-form-item label="领料人" prop="picker">
-					<el-input
-						v-model="pickOrderQueryParams.picker"
-						placeholder="请输入领料人"
-						clearable
-						style="width: 200px"
-						@keyup.enter="handlePickOrderQuery"
-					/>
+					<combo-input v-model="pickOrderQueryParams.picker" scope="personnel" field="personnelName" placeholder="请选择或输入领料人" width="200px" />
 				</el-form-item>
 				<el-form-item>
 					<el-button type="primary" icon="Search" @click="handlePickOrderQuery">搜索</el-button>
@@ -533,9 +489,10 @@
 </template>
 
 <script setup name="ReturnOrder">
-import { auditDocument } from "@/api/audit/audit";
+import { approvalDocument } from "@/api/approval/approval";
 import { listMaterialByCodeOrName } from "@/api/base/material";
 import { listPersonnel } from "@/api/base/personnel.js";
+import { clearSuggestionsCache } from "@/api/base/suggestions";
 import { listByNameOrContact } from "@/api/base/workshop.js";
 import { getPickOrder, listPickOrder } from "@/api/take/pickOrder";
 import { listReturnDetail } from "@/api/take/returnDetail";
@@ -747,6 +704,20 @@ function getFilteredMaterialOptions(rowIndex) {
   );
 }
 
+function mergeMaterialOptions(materials = []) {
+  const materialMap = new Map(
+    materialOptions.value.map((item) => [item.materialId, item]),
+  );
+
+  materials.forEach((item) => {
+    if (item?.materialId) {
+      materialMap.set(item.materialId, item);
+    }
+  });
+
+  materialOptions.value = [...materialMap.values()];
+}
+
 /** 查询人员 */
 function searchPersonnel(query) {
   personnelLoading.value = true;
@@ -805,9 +776,10 @@ function reset() {
     returnNo: null,
     returnDate: null,
     workshopId: null,
-    sourceType: null,
+    sourceType: 1,
     sourceId: null,
     returnBy: null,
+    chargeBy: null,
     totalAmount: null,
     remark: null,
     delFlag: null,
@@ -915,6 +887,7 @@ function handleAdd() {
   reset();
   const today = new Date();
   form.value.returnDate = formatDateToYYYYMMDD(today);
+  form.value.sourceType = 1;
   isView.value = false;
   title.value = "添加退料单";
   open.value = true;
@@ -966,7 +939,7 @@ function handleAudit(status) {
     auditor: username.value,
   };
 
-  auditDocument(auditData)
+  approvalDocument(auditData)
     .then((response) => {
       proxy.$modal.msgSuccess(status === 1 ? "审核通过" : "审核不通过");
       detailOpen.value = false;
@@ -980,13 +953,16 @@ function handleAudit(status) {
 
 /** 修改按钮操作 */
 function handleUpdate(row) {
+  const returnId = resolveSelectedReturnId(row);
+  if (!returnId) {
+    return;
+  }
   reset();
   isView.value = false;
   title.value = "修改退料单";
   open.value = true;
   dialogLoading.value = true;
-  const _returnId = row.returnId || ids.value;
-  getReturnOrder(_returnId)
+  getReturnOrder(returnId)
     .then((response) => {
       const orderData = response.data;
       form.value = {
@@ -994,8 +970,8 @@ function handleUpdate(row) {
         returnNo: orderData.returnNo,
         returnDate: orderData.returnDate,
         workshopId: orderData.workshopId,
-        sourceType: orderData.sourceType,
-        sourceId: orderData.sourceId,
+        sourceType: orderData.sourceType ?? 1,
+        sourceId: orderData.sourceId ?? orderData.pickId ?? null,
         returnBy: orderData.returnBy,
         chargeBy: orderData.chargeBy,
         totalAmount: orderData.totalAmount,
@@ -1003,8 +979,9 @@ function handleUpdate(row) {
         delFlag: orderData.delFlag,
         voidDescription: orderData.voidDescription,
       };
-      if (orderData.sourceId) {
-        getPickOrder(orderData.sourceId).then((res) => {
+      selectedPickOrderNo.value = orderData.pickNo ?? "";
+      if (!selectedPickOrderNo.value && form.value.sourceId) {
+        getPickOrder(form.value.sourceId).then((res) => {
           selectedPickOrderNo.value = res.data.pickNo;
         });
       }
@@ -1015,12 +992,16 @@ function handleUpdate(row) {
           returnQty: detail.returnQty,
           unitPrice: detail.unitPrice,
           returnReason: detail.returnReason,
+          sourceDocumentType: detail.sourceDocumentType,
+          sourceDocumentId: detail.sourceDocumentId,
+          sourceDocumentLineId: detail.sourceDocumentLineId,
           remark: detail.remark,
           subtotal:
             detail.returnQty && detail.unitPrice
               ? (detail.returnQty * detail.unitPrice).toFixed(2)
               : "0.00",
         }));
+        mergeMaterialOptions(orderData.details.map((detail) => detail.material));
       }
       searchMaterial();
     })
@@ -1061,12 +1042,14 @@ function submitForm() {
 
       if (form.value.returnId != null) {
         updateReturnOrder(form.value).then((response) => {
+          clearSuggestionsCache();
           proxy.$modal.msgSuccess("修改成功");
           open.value = false;
           getList();
         });
       } else {
         addReturnOrder(form.value).then((response) => {
+          clearSuggestionsCache();
           proxy.$modal.msgSuccess("新增成功");
           open.value = false;
           getList();
@@ -1078,8 +1061,12 @@ function submitForm() {
 
 /** 作废按钮操作 */
 function handleDelete(row) {
+  const returnId = resolveSelectedReturnId(row);
+  if (!returnId) {
+    return;
+  }
   abandonForm.value = {
-    returnId: row.returnId || ids.value,
+    returnId,
     voidDescription: "",
   };
   abandonOpen.value = true;
@@ -1123,7 +1110,21 @@ function handleExport() {
 
 /** 处理行点击事件 */
 function handleRowClick(row) {
-  // 可以在这里添加行点击事件的处理逻辑
+  if (!row?.returnId) {
+    return;
+  }
+  ids.value = [row.returnId];
+  single.value = false;
+  multiple.value = false;
+}
+
+function resolveSelectedReturnId(row) {
+  const returnId = row?.returnId ?? ids.value[0];
+  if (!returnId) {
+    proxy.$modal.msgError("请选择一条退料单记录");
+    return null;
+  }
+  return returnId;
 }
 
 /** 打开选择领料单对话框（用于表单） */
@@ -1181,6 +1182,7 @@ function handlePickOrderSelect(row) {
     if (open.value) {
       // 在新增/修改表单中选择领料单
       form.value.sourceId = selectedPickOrder.value.pickId;
+      form.value.sourceType = 1;
       selectedPickOrderNo.value = selectedPickOrder.value.pickNo;
 
       // 清空当前明细
@@ -1191,42 +1193,33 @@ function handlePickOrderSelect(row) {
         selectedPickOrder.value.details &&
         selectedPickOrder.value.details.length > 0
       ) {
-        selectedPickOrder.value.details.forEach((pickDetail) => {
-          // 为每个明细项预加载物料和库位选项
-          const index = detailList.value.length;
-
-          // 初始化选项数组
-          if (!materialOptions.value[index]) {
-            materialOptions.value[index] = [];
-          }
-
-          // 添加明细项
-          detailList.value.push({
+        detailList.value = selectedPickOrder.value.details.map((pickDetail) => {
+          const unitPrice =
+            pickDetail.rawUnitPrice ??
+            (pickDetail.quantity
+              ? pickDetail.unitPrice / pickDetail.quantity
+              : pickDetail.unitPrice);
+          return {
             materialId: pickDetail.materialId,
-            returnQty: pickDetail.quantity, // 默认使用领料数量
-            unitPrice: pickDetail.unitPrice,
+            returnQty: pickDetail.quantity,
+            unitPrice,
             returnReason: "",
+            sourceDocumentType:
+              pickDetail.sourceDocumentType ?? "WorkshopMaterialOrder",
+            sourceDocumentId:
+              pickDetail.sourceDocumentId ?? selectedPickOrder.value.pickId,
+            sourceDocumentLineId:
+              pickDetail.sourceDocumentLineId ?? pickDetail.detailId,
             remark: pickDetail.remark,
             subtotal:
-              pickDetail.quantity && pickDetail.unitPrice
-                ? (pickDetail.quantity * pickDetail.unitPrice).toFixed(2)
+              pickDetail.quantity && unitPrice
+                ? (pickDetail.quantity * unitPrice).toFixed(2)
                 : "0.00",
-          });
-
-          // 获取物料详细信息并添加到选项中
-          if (pickDetail.materialId) {
-            getMaterial(pickDetail.materialId)
-              .then((materialResponse) => {
-                // 将物料信息添加到选项中
-                materialOptions.value[index] = [materialResponse.data];
-                // 确保视图更新
-                materialOptions.value = [...materialOptions.value];
-              })
-              .catch(() => {
-                // 如果获取物料信息失败，不处理
-              });
-          }
+          };
         });
+        mergeMaterialOptions(
+          selectedPickOrder.value.details.map((pickDetail) => pickDetail.material),
+        );
       }
 
       // 计算总金额

@@ -4,7 +4,7 @@ import { EventEmitterModule } from "@nestjs/event-emitter";
 import { ScheduleModule } from "@nestjs/schedule";
 import { AppController } from "./app.controller";
 import { AiAssistantModule } from "./modules/ai-assistant/ai-assistant.module";
-import { AuditModule } from "./modules/audit/audit.module";
+import { ApprovalModule } from "./modules/approval/approval.module";
 import { AuditLogModule } from "./modules/audit-log/audit-log.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { CustomerModule } from "./modules/customer/customer.module";
@@ -42,7 +42,7 @@ import { RedisModule } from "./shared/redis/redis.module";
     FileStorageModule,
     MasterDataModule,
     InventoryCoreModule,
-    AuditModule,
+    ApprovalModule,
     InboundModule,
     CustomerModule,
     WorkshopMaterialModule,

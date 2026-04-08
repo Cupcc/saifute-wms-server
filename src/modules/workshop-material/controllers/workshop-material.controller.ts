@@ -5,6 +5,7 @@ import {
   Param,
   ParseIntPipe,
   Post,
+  Put,
   Query,
 } from "@nestjs/common";
 import { CurrentUser } from "../../../shared/decorators/current-user.decorator";
@@ -14,6 +15,7 @@ import type { SessionUserSnapshot } from "../../session/domain/user-session";
 import { WorkshopMaterialService } from "../application/workshop-material.service";
 import { CreateWorkshopMaterialOrderDto } from "../dto/create-workshop-material-order.dto";
 import { QueryWorkshopMaterialOrderDto } from "../dto/query-workshop-material-order.dto";
+import { UpdateWorkshopMaterialOrderDto } from "../dto/update-workshop-material-order.dto";
 import { VoidWorkshopMaterialOrderDto } from "../dto/void-workshop-material-order.dto";
 
 @Controller("workshop-material")
@@ -64,6 +66,29 @@ export class WorkshopMaterialController {
       dto,
     );
     return this.workshopMaterialService.createPickOrder(
+      scopedDto,
+      user?.userId?.toString(),
+    );
+  }
+
+  @Permissions("workshop-material:pick-order:update")
+  @Put("pick-orders/:id")
+  async updatePickOrder(
+    @Param("id", ParseIntPipe) id: number,
+    @Body() dto: UpdateWorkshopMaterialOrderDto,
+    @CurrentUser() user?: SessionUserSnapshot,
+  ) {
+    const order = await this.workshopMaterialService.getPickOrderById(id);
+    await this.workshopScopeService.assertWorkshopAccess(
+      user,
+      order.workshopId,
+    );
+    const scopedDto = await this.workshopScopeService.applyFixedWorkshopScope(
+      user,
+      dto,
+    );
+    return this.workshopMaterialService.updatePickOrder(
+      id,
       scopedDto,
       user?.userId?.toString(),
     );
@@ -134,6 +159,29 @@ export class WorkshopMaterialController {
     );
   }
 
+  @Permissions("workshop-material:return-order:update")
+  @Put("return-orders/:id")
+  async updateReturnOrder(
+    @Param("id", ParseIntPipe) id: number,
+    @Body() dto: UpdateWorkshopMaterialOrderDto,
+    @CurrentUser() user?: SessionUserSnapshot,
+  ) {
+    const order = await this.workshopMaterialService.getReturnOrderById(id);
+    await this.workshopScopeService.assertWorkshopAccess(
+      user,
+      order.workshopId,
+    );
+    const scopedDto = await this.workshopScopeService.applyFixedWorkshopScope(
+      user,
+      dto,
+    );
+    return this.workshopMaterialService.updateReturnOrder(
+      id,
+      scopedDto,
+      user?.userId?.toString(),
+    );
+  }
+
   @Permissions("workshop-material:return-order:void")
   @Post("return-orders/:id/void")
   async voidReturnOrder(
@@ -163,9 +211,15 @@ export class WorkshopMaterialController {
       user,
       query.workshopId,
     );
+    const inventoryScope =
+      await this.workshopScopeService.resolveInventoryQueryScope(
+        user,
+        query.workshopId,
+      );
     return this.workshopMaterialService.listScrapOrders({
       ...query,
       workshopId,
+      stockScope: inventoryScope?.stockScope,
     });
   }
 
@@ -180,6 +234,10 @@ export class WorkshopMaterialController {
       user,
       order.workshopId,
     );
+    await this.workshopScopeService.assertInventoryStockScopeAccess(
+      user,
+      order.stockScopeId,
+    );
     return order;
   }
 
@@ -193,8 +251,45 @@ export class WorkshopMaterialController {
       user,
       dto,
     );
+    const inventoryScope =
+      await this.workshopScopeService.getResolvedStockScope(user);
     return this.workshopMaterialService.createScrapOrder(
-      scopedDto,
+      {
+        ...scopedDto,
+        stockScope: inventoryScope?.stockScope,
+      },
+      user?.userId?.toString(),
+    );
+  }
+
+  @Permissions("workshop-material:scrap-order:update")
+  @Put("scrap-orders/:id")
+  async updateScrapOrder(
+    @Param("id", ParseIntPipe) id: number,
+    @Body() dto: UpdateWorkshopMaterialOrderDto,
+    @CurrentUser() user?: SessionUserSnapshot,
+  ) {
+    const order = await this.workshopMaterialService.getScrapOrderById(id);
+    await this.workshopScopeService.assertWorkshopAccess(
+      user,
+      order.workshopId,
+    );
+    await this.workshopScopeService.assertInventoryStockScopeAccess(
+      user,
+      order.stockScopeId,
+    );
+    const scopedDto = await this.workshopScopeService.applyFixedWorkshopScope(
+      user,
+      dto,
+    );
+    const inventoryScope =
+      await this.workshopScopeService.getResolvedStockScope(user);
+    return this.workshopMaterialService.updateScrapOrder(
+      id,
+      {
+        ...scopedDto,
+        stockScope: inventoryScope?.stockScope,
+      },
       user?.userId?.toString(),
     );
   }
@@ -210,6 +305,10 @@ export class WorkshopMaterialController {
     await this.workshopScopeService.assertWorkshopAccess(
       user,
       order.workshopId,
+    );
+    await this.workshopScopeService.assertInventoryStockScopeAccess(
+      user,
+      order.stockScopeId,
     );
     return this.workshopMaterialService.voidScrapOrder(
       id,

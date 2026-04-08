@@ -13,7 +13,7 @@
 - `docs/requirements/domain/project-management.md`
 - `docs/requirements/domain/inventory-core-module.md`
 - `docs/requirements/domain/workshop-material-module.md`
-- `docs/requirements/domain/audit-module.md`
+- `docs/requirements/domain/approval-module.md`
 - `docs/requirements/domain/ai-assistant-module.md`
 
 ## AI 下一步

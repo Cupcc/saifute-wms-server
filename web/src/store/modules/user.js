@@ -18,10 +18,14 @@ const useUserStore = defineStore("user", {
     permissions: [],
     consoleMode: "default",
     department: null,
+    stockScope: {
+      mode: "ALL",
+      stockScope: null,
+      stockScopeName: null,
+    },
     workshopScope: {
       mode: "ALL",
       workshopId: null,
-      workshopCode: null,
       workshopName: null,
     },
   }),
@@ -78,10 +82,14 @@ const useUserStore = defineStore("user", {
             this.avatar = avatar;
             this.consoleMode = user.consoleMode || "default";
             this.department = user.department || null;
+            this.stockScope = user.stockScope || {
+              mode: "ALL",
+              stockScope: null,
+              stockScopeName: null,
+            };
             this.workshopScope = user.workshopScope || {
               mode: "ALL",
               workshopId: null,
-              workshopCode: null,
               workshopName: null,
             };
             if (res.isPasswordExpired) {
@@ -119,10 +127,14 @@ const useUserStore = defineStore("user", {
             this.permissions = [];
             this.consoleMode = "default";
             this.department = null;
+            this.stockScope = {
+              mode: "ALL",
+              stockScope: null,
+              stockScopeName: null,
+            };
             this.workshopScope = {
               mode: "ALL",
               workshopId: null,
-              workshopCode: null,
               workshopName: null,
             };
             useTagsViewStore().$reset();

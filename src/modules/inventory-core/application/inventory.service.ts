@@ -13,10 +13,7 @@ import {
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
-import {
-  resolveStockScopeFromWorkshopIdentity,
-  type StockScopeCode,
-} from "../../session/domain/user-session";
+import { type StockScopeCode } from "../../session/domain/user-session";
 import { InventoryRepository } from "../infrastructure/inventory.repository";
 import { StockScopeCompatibilityService } from "./stock-scope-compatibility.service";
 
@@ -176,7 +173,7 @@ export class InventoryService {
       stockScope: cmd.stockScope,
       workshopId: cmd.workshopId,
     });
-    await this.ensureMasterDataExists(cmd.materialId, scope.workshopId);
+    await this.ensureMasterDataExists(cmd.materialId, cmd.workshopId);
 
     try {
       return await this.withTransaction(tx, async (db) => {
@@ -194,7 +191,7 @@ export class InventoryService {
             data: {
               materialId: cmd.materialId,
               stockScopeId: scope.stockScopeId,
-              workshopId: scope.workshopId,
+              workshopId: null,
               quantityOnHand: 0,
               createdBy: cmd.operatorId,
               updatedBy: cmd.operatorId,
@@ -224,7 +221,7 @@ export class InventoryService {
               balanceId: balance.id,
               materialId: cmd.materialId,
               stockScopeId: scope.stockScopeId,
-              workshopId: scope.workshopId,
+              workshopId: cmd.workshopId ?? null,
               allocationTargetId: cmd.allocationTargetId,
               direction: StockDirection.IN,
               operationType: cmd.operationType,
@@ -269,7 +266,7 @@ export class InventoryService {
       stockScope: cmd.stockScope,
       workshopId: cmd.workshopId,
     });
-    await this.ensureMasterDataExists(cmd.materialId, scope.workshopId);
+    await this.ensureMasterDataExists(cmd.materialId, cmd.workshopId);
 
     try {
       return await this.withTransaction(tx, async (db) => {
@@ -284,7 +281,7 @@ export class InventoryService {
 
         if (!balance) {
           throw new BadRequestException(
-            `库存余额不存在: materialId=${cmd.materialId}, workshopId=${scope.workshopId}`,
+            `库存余额不存在: materialId=${cmd.materialId}, stockScope=${scope.stockScope}`,
           );
         }
 
@@ -302,7 +299,7 @@ export class InventoryService {
             balanceId: balance.id,
             materialId: cmd.materialId,
             stockScopeId: scope.stockScopeId,
-            workshopId: scope.workshopId,
+            workshopId: cmd.workshopId ?? null,
             allocationTargetId: cmd.allocationTargetId,
             direction: StockDirection.OUT,
             operationType: cmd.operationType,
@@ -610,7 +607,7 @@ export class InventoryService {
       stockScope: cmd.stockScope,
       workshopId: cmd.workshopId,
     });
-    await this.ensureMasterDataExists(cmd.materialId, scope.workshopId);
+    await this.ensureMasterDataExists(cmd.materialId, cmd.workshopId);
 
     try {
       return await this.withTransaction(tx, async (db) => {
@@ -666,7 +663,7 @@ export class InventoryService {
 
         if (!balance) {
           throw new BadRequestException(
-            `库存余额不存在: materialId=${cmd.materialId}, workshopId=${scope.workshopId}`,
+            `库存余额不存在: materialId=${cmd.materialId}, stockScope=${scope.stockScope}`,
           );
         }
 
@@ -684,7 +681,7 @@ export class InventoryService {
             balanceId: balance.id,
             materialId: cmd.materialId,
             stockScopeId: scope.stockScopeId,
-            workshopId: scope.workshopId,
+            workshopId: cmd.workshopId ?? null,
             allocationTargetId: cmd.allocationTargetId,
             direction: StockDirection.OUT,
             operationType: cmd.operationType,
@@ -1074,7 +1071,7 @@ export class InventoryService {
       stockScope: params.stockScope,
       workshopId: params.workshopId,
     });
-    await this.ensureMasterDataExists(params.materialId, scope.workshopId);
+    await this.ensureMasterDataExists(params.materialId, params.workshopId);
     return this.repository.findBalanceByMaterialAndStockScope(
       params.materialId,
       scope.stockScopeId,
@@ -1139,13 +1136,13 @@ export class InventoryService {
       stockScope: cmd.stockScope,
       workshopId: cmd.workshopId,
     });
-    await this.ensureMasterDataExists(cmd.materialId, scope.workshopId);
+    await this.ensureMasterDataExists(cmd.materialId, cmd.workshopId);
     return this.withTransaction(tx, async (db) => {
       return this.repository.createFactoryNumberReservation(
         {
           materialId: cmd.materialId,
           stockScopeId: scope.stockScopeId,
-          workshopId: scope.workshopId,
+          workshopId: cmd.workshopId ?? null,
           businessDocumentType: cmd.businessDocumentType,
           businessDocumentId: cmd.businessDocumentId,
           businessDocumentLineId: cmd.businessDocumentLineId,
@@ -1260,7 +1257,7 @@ export class InventoryService {
       stockScope: params.stockScope,
       workshopId: params.workshopId,
     });
-    await this.ensureMasterDataExists(params.materialId, scope.workshopId);
+    await this.ensureMasterDataExists(params.materialId, params.workshopId);
 
     const sourceLogs = await this.repository.findFifoSourceLogs({
       materialId: params.materialId,
@@ -1449,30 +1446,23 @@ export class InventoryService {
         scopeCode: string;
         scopeName: string;
       } | null;
-      workshop?: {
-        id: number;
-        workshopCode: string;
-        workshopName: string;
-      } | null;
     },
   >(item: T): T & { stockScope: StockScopeCode | null } {
     return {
       ...item,
       stockScope: item.stockScope
         ? (item.stockScope.scopeCode as StockScopeCode)
-        : item.workshop
-          ? resolveStockScopeFromWorkshopIdentity({
-              workshopCode: item.workshop.workshopCode,
-              workshopName: item.workshop.workshopName,
-            })
-          : null,
+        : null,
     };
   }
 
-  private async ensureMasterDataExists(materialId: number, workshopId: number) {
-    await Promise.all([
-      this.masterDataService.getMaterialById(materialId),
-      this.masterDataService.getWorkshopById(workshopId),
-    ]);
+  private async ensureMasterDataExists(
+    materialId: number,
+    workshopId?: number | null,
+  ) {
+    await this.masterDataService.getMaterialById(materialId);
+    if (workshopId) {
+      await this.masterDataService.getWorkshopById(workshopId);
+    }
   }
 }

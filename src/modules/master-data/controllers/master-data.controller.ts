@@ -1,12 +1,14 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   Param,
   ParseIntPipe,
   Patch,
   Post,
   Query,
+  UnauthorizedException,
 } from "@nestjs/common";
 import { CurrentUser } from "../../../shared/decorators/current-user.decorator";
 import { Permissions } from "../../../shared/decorators/permissions.decorator";
@@ -31,6 +33,35 @@ import { UpdateWorkshopDto } from "../dto/update-workshop.dto";
 @Controller("master-data")
 export class MasterDataController {
   constructor(private readonly masterDataService: MasterDataService) {}
+
+  // ─── Field Suggestions ──────────────────────────────────────────────────────
+
+  @Get("field-suggestions")
+  async getFieldSuggestions(
+    @Query("scope") scope: string,
+    @Query("field") field: string,
+    @CurrentUser() user?: SessionUserSnapshot,
+  ) {
+    const requiredPermission =
+      this.masterDataService.getFieldSuggestionsRequiredPermission(scope);
+    this.assertFieldSuggestionPermission(user, requiredPermission);
+    return this.masterDataService.getFieldSuggestions(scope, field);
+  }
+
+  private assertFieldSuggestionPermission(
+    user: SessionUserSnapshot | undefined,
+    requiredPermission: string,
+  ) {
+    if (!user) {
+      throw new UnauthorizedException("当前请求未携带用户上下文");
+    }
+    if (user.userId === 1) {
+      return;
+    }
+    if (!user.permissions.includes(requiredPermission)) {
+      throw new ForbiddenException("当前用户缺少所需权限");
+    }
+  }
 
   // ─── MaterialCategory (F1) ──────────────────────────────────────────────────
 

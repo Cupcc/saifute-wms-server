@@ -426,7 +426,7 @@ export const ModelName = {
   InventoryLog: "InventoryLog",
   InventorySourceUsage: "InventorySourceUsage",
   FactoryNumberReservation: "FactoryNumberReservation",
-  AuditDocument: "AuditDocument",
+  ApprovalDocument: "ApprovalDocument",
   StockInOrder: "StockInOrder",
   StockInOrderLine: "StockInOrderLine",
   CustomerStockOrder: "CustomerStockOrder",
@@ -498,7 +498,7 @@ export type TypeMap<
       | "inventoryLog"
       | "inventorySourceUsage"
       | "factoryNumberReservation"
-      | "auditDocument"
+      | "approvalDocument"
       | "stockInOrder"
       | "stockInOrderLine"
       | "customerStockOrder"
@@ -1355,70 +1355,70 @@ export type TypeMap<
         };
       };
     };
-    AuditDocument: {
-      payload: Prisma.$AuditDocumentPayload<ExtArgs>;
-      fields: Prisma.AuditDocumentFieldRefs;
+    ApprovalDocument: {
+      payload: Prisma.$ApprovalDocumentPayload<ExtArgs>;
+      fields: Prisma.ApprovalDocumentFieldRefs;
       operations: {
         findUnique: {
-          args: Prisma.AuditDocumentFindUniqueArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload> | null;
+          args: Prisma.ApprovalDocumentFindUniqueArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalDocumentPayload> | null;
         };
         findUniqueOrThrow: {
-          args: Prisma.AuditDocumentFindUniqueOrThrowArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload>;
+          args: Prisma.ApprovalDocumentFindUniqueOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalDocumentPayload>;
         };
         findFirst: {
-          args: Prisma.AuditDocumentFindFirstArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload> | null;
+          args: Prisma.ApprovalDocumentFindFirstArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalDocumentPayload> | null;
         };
         findFirstOrThrow: {
-          args: Prisma.AuditDocumentFindFirstOrThrowArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload>;
+          args: Prisma.ApprovalDocumentFindFirstOrThrowArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalDocumentPayload>;
         };
         findMany: {
-          args: Prisma.AuditDocumentFindManyArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload>[];
+          args: Prisma.ApprovalDocumentFindManyArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalDocumentPayload>[];
         };
         create: {
-          args: Prisma.AuditDocumentCreateArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload>;
+          args: Prisma.ApprovalDocumentCreateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalDocumentPayload>;
         };
         createMany: {
-          args: Prisma.AuditDocumentCreateManyArgs<ExtArgs>;
+          args: Prisma.ApprovalDocumentCreateManyArgs<ExtArgs>;
           result: BatchPayload;
         };
         delete: {
-          args: Prisma.AuditDocumentDeleteArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload>;
+          args: Prisma.ApprovalDocumentDeleteArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalDocumentPayload>;
         };
         update: {
-          args: Prisma.AuditDocumentUpdateArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload>;
+          args: Prisma.ApprovalDocumentUpdateArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalDocumentPayload>;
         };
         deleteMany: {
-          args: Prisma.AuditDocumentDeleteManyArgs<ExtArgs>;
+          args: Prisma.ApprovalDocumentDeleteManyArgs<ExtArgs>;
           result: BatchPayload;
         };
         updateMany: {
-          args: Prisma.AuditDocumentUpdateManyArgs<ExtArgs>;
+          args: Prisma.ApprovalDocumentUpdateManyArgs<ExtArgs>;
           result: BatchPayload;
         };
         upsert: {
-          args: Prisma.AuditDocumentUpsertArgs<ExtArgs>;
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$AuditDocumentPayload>;
+          args: Prisma.ApprovalDocumentUpsertArgs<ExtArgs>;
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ApprovalDocumentPayload>;
         };
         aggregate: {
-          args: Prisma.AuditDocumentAggregateArgs<ExtArgs>;
-          result: runtime.Types.Utils.Optional<Prisma.AggregateAuditDocument>;
+          args: Prisma.ApprovalDocumentAggregateArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.AggregateApprovalDocument>;
         };
         groupBy: {
-          args: Prisma.AuditDocumentGroupByArgs<ExtArgs>;
-          result: runtime.Types.Utils.Optional<Prisma.AuditDocumentGroupByOutputType>[];
+          args: Prisma.ApprovalDocumentGroupByArgs<ExtArgs>;
+          result: runtime.Types.Utils.Optional<Prisma.ApprovalDocumentGroupByOutputType>[];
         };
         count: {
-          args: Prisma.AuditDocumentCountArgs<ExtArgs>;
+          args: Prisma.ApprovalDocumentCountArgs<ExtArgs>;
           result:
-            | runtime.Types.Utils.Optional<Prisma.AuditDocumentCountAggregateOutputType>
+            | runtime.Types.Utils.Optional<Prisma.ApprovalDocumentCountAggregateOutputType>
             | number;
         };
       };
@@ -4200,7 +4200,7 @@ export const FactoryNumberReservationScalarFieldEnum = {
 export type FactoryNumberReservationScalarFieldEnum =
   (typeof FactoryNumberReservationScalarFieldEnum)[keyof typeof FactoryNumberReservationScalarFieldEnum];
 
-export const AuditDocumentScalarFieldEnum = {
+export const ApprovalDocumentScalarFieldEnum = {
   id: "id",
   documentFamily: "documentFamily",
   documentType: "documentType",
@@ -4220,8 +4220,8 @@ export const AuditDocumentScalarFieldEnum = {
   updatedAt: "updatedAt",
 } as const;
 
-export type AuditDocumentScalarFieldEnum =
-  (typeof AuditDocumentScalarFieldEnum)[keyof typeof AuditDocumentScalarFieldEnum];
+export type ApprovalDocumentScalarFieldEnum =
+  (typeof ApprovalDocumentScalarFieldEnum)[keyof typeof ApprovalDocumentScalarFieldEnum];
 
 export const StockInOrderScalarFieldEnum = {
   id: "id",
@@ -4917,6 +4917,7 @@ export const SysUserScalarFieldEnum = {
   remark: "remark",
   passwordHash: "passwordHash",
   consoleMode: "consoleMode",
+  stockScope: "stockScope",
   workshopScope: "workshopScope",
   extraPermissions: "extraPermissions",
   createdAt: "createdAt",
@@ -5171,7 +5172,7 @@ export const FactoryNumberReservationOrderByRelevanceFieldEnum = {
 export type FactoryNumberReservationOrderByRelevanceFieldEnum =
   (typeof FactoryNumberReservationOrderByRelevanceFieldEnum)[keyof typeof FactoryNumberReservationOrderByRelevanceFieldEnum];
 
-export const AuditDocumentOrderByRelevanceFieldEnum = {
+export const ApprovalDocumentOrderByRelevanceFieldEnum = {
   documentType: "documentType",
   documentNumber: "documentNumber",
   submittedBy: "submittedBy",
@@ -5181,8 +5182,8 @@ export const AuditDocumentOrderByRelevanceFieldEnum = {
   updatedBy: "updatedBy",
 } as const;
 
-export type AuditDocumentOrderByRelevanceFieldEnum =
-  (typeof AuditDocumentOrderByRelevanceFieldEnum)[keyof typeof AuditDocumentOrderByRelevanceFieldEnum];
+export type ApprovalDocumentOrderByRelevanceFieldEnum =
+  (typeof ApprovalDocumentOrderByRelevanceFieldEnum)[keyof typeof ApprovalDocumentOrderByRelevanceFieldEnum];
 
 export const StockInOrderOrderByRelevanceFieldEnum = {
   documentNo: "documentNo",
@@ -5980,7 +5981,7 @@ export type GlobalOmitConfig = {
   inventoryLog?: Prisma.InventoryLogOmit;
   inventorySourceUsage?: Prisma.InventorySourceUsageOmit;
   factoryNumberReservation?: Prisma.FactoryNumberReservationOmit;
-  auditDocument?: Prisma.AuditDocumentOmit;
+  approvalDocument?: Prisma.ApprovalDocumentOmit;
   stockInOrder?: Prisma.StockInOrderOmit;
   stockInOrderLine?: Prisma.StockInOrderLineOmit;
   customerStockOrder?: Prisma.CustomerStockOrderOmit;

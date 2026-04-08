@@ -77,7 +77,7 @@
 
 - 依赖 `master-data`
 - 依赖 `inventory-core`
-- 依赖 `audit`
+- 依赖 `approval`
 - 审计和导出接入 `audit-log`
 
 ## 事务边界与一致性要求

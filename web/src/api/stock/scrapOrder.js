@@ -1,7 +1,8 @@
 import {
   getWorkshopOrder,
   listWorkshopOrders,
-  unsupportedWorkshopOrderAction,
+  submitWorkshopOrder,
+  voidWorkshopOrder,
 } from "@/api/take/compat";
 
 // 查询报废单列表
@@ -15,21 +16,21 @@ export function getScrapOrder(scrapId) {
 }
 
 // 新增报废单
-export function addScrapOrder() {
-  return unsupportedWorkshopOrderAction("当前报废单写操作仍在适配中");
+export function addScrapOrder(data) {
+  return submitWorkshopOrder(data, "scrapOrder");
 }
 
 // 修改报废单
-export function updateScrapOrder() {
-  return unsupportedWorkshopOrderAction("当前报废单修改仍在适配中");
+export function updateScrapOrder(data) {
+  return submitWorkshopOrder(data, "scrapOrder");
 }
 
 // 删除报废单
 export function delScrapOrder() {
-  return unsupportedWorkshopOrderAction("当前报废单删除仍在适配中");
+  return Promise.reject(new Error("报废单仅支持作废，不支持删除"));
 }
 
 // 作废报废单
-export function voidScrapOrder() {
-  return unsupportedWorkshopOrderAction("当前报废单作废仍在适配中");
+export function voidScrapOrder(data) {
+  return voidWorkshopOrder(data, "scrapOrder");
 }

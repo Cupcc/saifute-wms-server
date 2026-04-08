@@ -15,7 +15,7 @@ import {
   Prisma,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
-import { AuditService } from "../../audit/application/audit.service";
+import { ApprovalService } from "../../approval/application/approval.service";
 import {
   FIFO_SOURCE_OPERATION_TYPES,
   InventoryService,
@@ -57,7 +57,7 @@ export class CustomerService {
     private readonly repository: CustomerRepository,
     private readonly masterDataService: MasterDataService,
     private readonly inventoryService: InventoryService,
-    private readonly auditService: AuditService,
+    private readonly approvalService: ApprovalService,
   ) {}
 
   async listOrders(query: QueryOutboundOrderDto) {
@@ -203,7 +203,7 @@ export class CustomerService {
         }
       }
 
-      await this.auditService.createOrRefreshAuditDocument(
+      await this.approvalService.createOrRefreshApprovalDocument(
         {
           documentFamily: DocumentFamily.CUSTOMER_STOCK,
           documentType: DOCUMENT_TYPE,
@@ -590,7 +590,7 @@ export class CustomerService {
         tx,
       );
 
-      await this.auditService.createOrRefreshAuditDocument(
+      await this.approvalService.createOrRefreshApprovalDocument(
         {
           documentFamily: DocumentFamily.CUSTOMER_STOCK,
           documentType: DOCUMENT_TYPE,
@@ -692,7 +692,7 @@ export class CustomerService {
         tx,
       );
 
-      await this.auditService.markAuditNotRequired(
+      await this.approvalService.markApprovalNotRequired(
         DOCUMENT_TYPE,
         id,
         voidedBy,
@@ -978,7 +978,7 @@ export class CustomerService {
         }
       }
 
-      await this.auditService.createOrRefreshAuditDocument(
+      await this.approvalService.createOrRefreshApprovalDocument(
         {
           documentFamily: DocumentFamily.CUSTOMER_STOCK,
           documentType: DOCUMENT_TYPE,
@@ -1070,7 +1070,7 @@ export class CustomerService {
         tx,
       );
 
-      await this.auditService.markAuditNotRequired(
+      await this.approvalService.markApprovalNotRequired(
         DOCUMENT_TYPE,
         id,
         voidedBy,

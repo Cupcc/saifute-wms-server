@@ -23,8 +23,9 @@ export class CreateRdHandoffOrderDto {
   bizDate!: string;
 
   @IsInt()
+  @IsOptional()
   @Min(1)
-  sourceWorkshopId!: number;
+  sourceWorkshopId?: number;
 
   @IsInt()
   @IsOptional()

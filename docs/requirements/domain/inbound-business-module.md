@@ -11,7 +11,7 @@
 
 - `inbound` 是长期业务主题，解决验收单、生产入库单如何在统一入库家族下完成录入、过账、修改、作废、追溯与下游协同。
 - 成品入库统一走 `inbound`（`/inbound/into-orders` 生产入库单），与验收单共用 `stock_in_order` / `stock_in_order_line`。
-- 当前范围覆盖 `/inbound/orders` 验收单、`/inbound/into-orders` 生产入库单，以及与 `inventory-core`、`audit`、车间领料和来源成本追溯的长期边界。
+- 当前范围覆盖 `/inbound/orders` 验收单、`/inbound/into-orders` 生产入库单，以及与 `inventory-core`、`approval`、车间领料和来源成本追溯的长期边界。
 - 本文档只保留长期约束、长期业务口径、能力清单和能力合同；单次交付直接从本 domain 创建 `task-*.md`。
 
 ## 承接的项目级能力版图
@@ -27,7 +27,8 @@
 ### 相邻共享边界
 
 - `inventory-core` 继续作为所有库存变动的唯一写入口；入库只负责组织单据语义，不旁路改库存。
-- `audit` 第一阶段默认采用轻量审核模式，审核更多用于记录、查询、追溯和纠偏，不阻塞入库落账。
+- `approval` 第一阶段默认采用轻量审核模式，审核更多用于记录、查询、追溯和纠偏，不阻塞入库落账。
+- 注意：当前入库家族上的历史字段名 `auditStatusSnapshot` 仍保持冻结命名，语义上指向 `approval` 审批状态；若后续要把字段名一并改成 `approval*`，必须作为独立切片处理。状态：`注意`
 
 ## 长期约束
 

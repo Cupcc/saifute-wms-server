@@ -9,9 +9,9 @@ import {
   type Prisma,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
-import { AuditRepository } from "../infrastructure/audit.repository";
+import { ApprovalRepository } from "../infrastructure/approval.repository";
 
-export interface CreateAuditDocumentCommand {
+export interface CreateApprovalDocumentCommand {
   documentFamily: DocumentFamily;
   documentType: string;
   documentId: number;
@@ -21,18 +21,19 @@ export interface CreateAuditDocumentCommand {
 }
 
 @Injectable()
-export class AuditService {
+export class ApprovalService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly repository: AuditRepository,
+    private readonly repository: ApprovalRepository,
   ) {}
 
-  async createOrRefreshAuditDocument(
-    cmd: CreateAuditDocumentCommand,
+  async createOrRefreshApprovalDocument(
+    cmd: CreateApprovalDocumentCommand,
     tx?: Prisma.TransactionClient,
   ) {
     const db = tx ?? this.prisma;
-    return db.auditDocument.upsert({
+
+    return db.approvalDocument.upsert({
       where: {
         documentType_documentId: {
           documentType: cmd.documentType,
@@ -65,7 +66,7 @@ export class AuditService {
     });
   }
 
-  async markAuditNotRequired(
+  async markApprovalNotRequired(
     documentType: string,
     documentId: number,
     updatedBy?: string,
@@ -73,7 +74,7 @@ export class AuditService {
   ) {
     const db = tx ?? this.prisma;
 
-    return db.auditDocument.updateMany({
+    return db.approvalDocument.updateMany({
       where: {
         documentType,
         documentId,
@@ -88,32 +89,34 @@ export class AuditService {
     });
   }
 
-  async getAuditStatus(documentType: string, documentId: number) {
-    const audit = await this.repository.findAuditByDocument(
+  async getApprovalStatus(documentType: string, documentId: number) {
+    const approval = await this.repository.findApprovalByDocument(
       documentType,
       documentId,
     );
-    return audit?.auditStatus ?? null;
+    return approval?.auditStatus ?? null;
   }
 
-  async getAuditDocument(documentType: string, documentId: number) {
-    return this.repository.findAuditByDocument(documentType, documentId);
+  async getApprovalDocument(documentType: string, documentId: number) {
+    return this.repository.findApprovalByDocument(documentType, documentId);
   }
 
   async approve(id: number, decidedBy?: string) {
-    const audit = await this.repository.findAuditById(id);
-    if (!audit) {
+    const approval = await this.repository.findApprovalById(id);
+    if (!approval) {
       throw new NotFoundException(`审核记录不存在: ${id}`);
     }
-    if (audit.auditStatus !== AuditStatusSnapshot.PENDING) {
-      throw new BadRequestException(`当前状态不可审批: ${audit.auditStatus}`);
+    if (approval.auditStatus !== AuditStatusSnapshot.PENDING) {
+      throw new BadRequestException(
+        `当前状态不可审批: ${approval.auditStatus}`,
+      );
     }
 
-    return this.prisma.auditDocument.update({
+    return this.prisma.approvalDocument.update({
       where: { id },
       data: {
         auditStatus: AuditStatusSnapshot.APPROVED,
-        decidedBy: decidedBy ?? audit.decidedBy,
+        decidedBy: decidedBy ?? approval.decidedBy,
         decidedAt: new Date(),
         rejectReason: null,
         updatedBy: decidedBy,
@@ -122,19 +125,21 @@ export class AuditService {
   }
 
   async reject(id: number, rejectReason?: string, decidedBy?: string) {
-    const audit = await this.repository.findAuditById(id);
-    if (!audit) {
+    const approval = await this.repository.findApprovalById(id);
+    if (!approval) {
       throw new NotFoundException(`审核记录不存在: ${id}`);
     }
-    if (audit.auditStatus !== AuditStatusSnapshot.PENDING) {
-      throw new BadRequestException(`当前状态不可审批: ${audit.auditStatus}`);
+    if (approval.auditStatus !== AuditStatusSnapshot.PENDING) {
+      throw new BadRequestException(
+        `当前状态不可审批: ${approval.auditStatus}`,
+      );
     }
 
-    return this.prisma.auditDocument.update({
+    return this.prisma.approvalDocument.update({
       where: { id },
       data: {
         auditStatus: AuditStatusSnapshot.REJECTED,
-        decidedBy: decidedBy ?? audit.decidedBy,
+        decidedBy: decidedBy ?? approval.decidedBy,
         decidedAt: new Date(),
         rejectReason: rejectReason ?? null,
         updatedBy: decidedBy,
@@ -143,12 +148,12 @@ export class AuditService {
   }
 
   async reset(id: number, updatedBy?: string) {
-    const audit = await this.repository.findAuditById(id);
-    if (!audit) {
+    const approval = await this.repository.findApprovalById(id);
+    if (!approval) {
       throw new NotFoundException(`审核记录不存在: ${id}`);
     }
 
-    return this.prisma.auditDocument.update({
+    return this.prisma.approvalDocument.update({
       where: { id },
       data: {
         auditStatus: AuditStatusSnapshot.PENDING,
@@ -162,7 +167,7 @@ export class AuditService {
     });
   }
 
-  async listAudits(params: {
+  async listApprovals(params: {
     documentFamily?: DocumentFamily;
     auditStatus?: AuditStatusSnapshot;
     limit?: number;
@@ -170,7 +175,7 @@ export class AuditService {
   }) {
     const limit = Math.min(params.limit ?? 50, 100);
     const offset = params.offset ?? 0;
-    return this.repository.findAudits({
+    return this.repository.listApprovals({
       documentFamily: params.documentFamily,
       auditStatus: params.auditStatus,
       limit,

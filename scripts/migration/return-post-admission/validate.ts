@@ -28,7 +28,7 @@ async function getAuditDocumentCount(connection: {
   query<T = unknown>(sql: string, values?: readonly unknown[]): Promise<T>;
 }): Promise<number> {
   const rows = await connection.query<Array<{ total: number }>>(
-    `SELECT COUNT(*) AS total FROM audit_document`,
+    `SELECT COUNT(*) AS total FROM approval_document`,
   );
 
   return Number(rows[0]?.total ?? 0);
@@ -117,7 +117,7 @@ async function getAuditDocsByFamily(connection: {
   >(
     `
       SELECT documentFamily, COUNT(*) AS total
-      FROM audit_document
+      FROM approval_document
       GROUP BY documentFamily
     `,
   );
@@ -424,7 +424,7 @@ async function main(): Promise<void> {
           validationIssues.push({
             severity: "warning",
             reason:
-              "audit_document row count does not match the deterministic plan.",
+              "approval_document row count does not match the deterministic plan.",
             expectedAuditDocuments,
             actualAuditDocuments: auditDocumentCount,
           });

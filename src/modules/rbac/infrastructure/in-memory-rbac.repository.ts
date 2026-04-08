@@ -8,6 +8,7 @@ import {
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import type {
   SessionConsoleMode,
+  SessionStockScopeSnapshot,
   SessionWorkshopScopeSnapshot,
 } from "../../session/domain/user-session";
 import type {
@@ -663,11 +664,15 @@ export class InMemoryRbacRepository {
         .map((ur) => ur.roleId),
       passwordHash: u.passwordHash,
       consoleMode: (u.consoleMode ?? "default") as SessionConsoleMode,
+      stockScope: (u.stockScope as unknown as SessionStockScopeSnapshot) ?? {
+        mode: "ALL",
+        stockScope: null,
+        stockScopeName: null,
+      },
       workshopScope:
         (u.workshopScope as unknown as SessionWorkshopScopeSnapshot) ?? {
           mode: "ALL",
           workshopId: null,
-          workshopCode: null,
           workshopName: null,
         },
       extraPermissions: (u.extraPermissions as unknown as string[]) ?? [],
@@ -848,6 +853,7 @@ export class InMemoryRbacRepository {
             remark: u.remark,
             passwordHash: u.passwordHash,
             consoleMode: u.consoleMode,
+            stockScope: u.stockScope as unknown as Prisma.InputJsonValue,
             workshopScope: u.workshopScope as unknown as Prisma.InputJsonValue,
             extraPermissions:
               u.extraPermissions as unknown as Prisma.InputJsonValue,
@@ -1007,10 +1013,14 @@ export class InMemoryRbacRepository {
       roleIds: this.normalizeNumberList(data.roleIds),
       passwordHash: hashText(String(data.password ?? "ChangeMe123")),
       consoleMode: "default",
+      stockScope: {
+        mode: "ALL",
+        stockScope: null,
+        stockScopeName: null,
+      },
       workshopScope: {
         mode: "ALL",
         workshopId: null,
-        workshopCode: null,
         workshopName: null,
       },
       extraPermissions: [],
@@ -1870,6 +1880,7 @@ export class InMemoryRbacRepository {
         ? this.toSessionDepartmentReference(user.deptId)
         : null,
       consoleMode: user.consoleMode,
+      stockScope: structuredClone(user.stockScope),
       workshopScope: structuredClone(user.workshopScope),
       passwordHash: user.passwordHash,
       status: user.status === "0" ? "active" : "disabled",
@@ -2009,6 +2020,7 @@ export class InMemoryRbacRepository {
       ...this.toUserRow(user),
       avatarUrl: user.avatarUrl,
       consoleMode: user.consoleMode,
+      stockScope: structuredClone(user.stockScope),
       workshopScope: structuredClone(user.workshopScope),
     };
   }

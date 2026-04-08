@@ -9,31 +9,21 @@ export type StockScopeCode = "MAIN" | "RD_SUB";
 export interface SessionWorkshopScopeSnapshot {
   mode: "ALL" | "FIXED";
   workshopId: number | null;
-  workshopCode: string | null;
+  workshopCode?: string | null;
   workshopName: string | null;
 }
 
 export interface SessionStockScopeSnapshot {
   mode: "ALL" | "FIXED";
   stockScope: StockScopeCode | null;
-  workshopId: number | null;
-  workshopCode: string | null;
-  workshopName: string | null;
+  stockScopeName: string | null;
 }
 
 export interface ResolvedStockScopeContext {
   stockScopeId: number;
   stockScope: StockScopeCode;
-  workshopId: number;
-  workshopCode: string;
-  workshopName: string;
+  stockScopeName: string;
 }
-
-const STOCK_SCOPE_BY_WORKSHOP_CODE: Record<string, StockScopeCode> = {
-  MAIN: "MAIN",
-  RD: "RD_SUB",
-  RD_SUB: "RD_SUB",
-};
 
 const STOCK_SCOPE_BY_WORKSHOP_NAME: Record<string, StockScopeCode> = {
   主仓: "MAIN",
@@ -53,20 +43,13 @@ export function createAllSessionStockScope(): SessionStockScopeSnapshot {
   return {
     mode: "ALL",
     stockScope: null,
-    workshopId: null,
-    workshopCode: null,
-    workshopName: null,
+    stockScopeName: null,
   };
 }
 
 export function resolveStockScopeFromWorkshopIdentity(params: {
-  workshopCode?: string | null;
   workshopName?: string | null;
 }): StockScopeCode | null {
-  if (params.workshopCode) {
-    return STOCK_SCOPE_BY_WORKSHOP_CODE[params.workshopCode] ?? null;
-  }
-
   if (params.workshopName) {
     return STOCK_SCOPE_BY_WORKSHOP_NAME[params.workshopName] ?? null;
   }
@@ -74,48 +57,16 @@ export function resolveStockScopeFromWorkshopIdentity(params: {
   return null;
 }
 
-export function resolveWorkshopCodeFromStockScope(
-  stockScope: StockScopeCode,
-): string {
-  return stockScope === "RD_SUB" ? "RD" : "MAIN";
-}
-
 export function toSessionStockScopeSnapshotFromWorkshopScope(
-  scope: SessionWorkshopScopeSnapshot | null | undefined,
+  _scope: SessionWorkshopScopeSnapshot | null | undefined,
 ): SessionStockScopeSnapshot {
-  if (!scope || scope.mode !== "FIXED") {
-    return createAllSessionStockScope();
-  }
-
-  return {
-    mode: "FIXED",
-    stockScope: resolveStockScopeFromWorkshopIdentity({
-      workshopCode: scope.workshopCode,
-      workshopName: scope.workshopName,
-    }),
-    workshopId: scope.workshopId,
-    workshopCode: scope.workshopCode,
-    workshopName: scope.workshopName,
-  };
+  return createAllSessionStockScope();
 }
 
 export function toSessionWorkshopScopeSnapshotFromStockScope(
-  scope: SessionStockScopeSnapshot | null | undefined,
+  _scope: SessionStockScopeSnapshot | null | undefined,
 ): SessionWorkshopScopeSnapshot {
-  if (!scope || scope.mode !== "FIXED") {
-    return createAllSessionWorkshopScope();
-  }
-
-  return {
-    mode: "FIXED",
-    workshopId: scope.workshopId,
-    workshopCode:
-      scope.workshopCode ??
-      (scope.stockScope
-        ? resolveWorkshopCodeFromStockScope(scope.stockScope)
-        : null),
-    workshopName: scope.workshopName,
-  };
+  return createAllSessionWorkshopScope();
 }
 
 export interface SessionUserSnapshot {

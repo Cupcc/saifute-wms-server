@@ -1,5 +1,6 @@
 import type {
   SessionConsoleMode,
+  SessionStockScopeSnapshot,
   SessionUserSnapshot,
   SessionWorkshopScopeSnapshot,
 } from "../../session/domain/user-session";
@@ -91,6 +92,7 @@ export interface ManagedUserRecord {
   roleIds: number[];
   passwordHash: string;
   consoleMode: SessionConsoleMode;
+  stockScope: SessionStockScopeSnapshot;
   workshopScope: SessionWorkshopScopeSnapshot;
   extraPermissions: string[];
 }

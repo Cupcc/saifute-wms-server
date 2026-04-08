@@ -194,7 +194,7 @@ describe("customer-sales-return execute guard", () => {
           isRerun: false,
           consumerCounts: {
             document_relation: 0,
-            audit_document: 0,
+            approval_document: 0,
           },
         }),
       ).toEqual([]);
@@ -209,7 +209,7 @@ describe("customer-sales-return execute guard", () => {
             document_line_relation: 0,
             inventory_log: 0,
             inventory_source_usage: 0,
-            audit_document: 0,
+            approval_document: 0,
           },
         }),
       ).toEqual([]);
@@ -221,14 +221,14 @@ describe("customer-sales-return execute guard", () => {
           isRerun: false,
           consumerCounts: {
             document_relation: 3,
-            audit_document: 1,
+            approval_document: 1,
           },
         }),
       ).toEqual([
         expect.objectContaining({
           downstreamConsumers: {
             document_relation: 3,
-            audit_document: 1,
+            approval_document: 1,
           },
         }),
       ]);
@@ -243,7 +243,7 @@ describe("customer-sales-return execute guard", () => {
             document_line_relation: 0,
             inventory_log: 0,
             inventory_source_usage: 0,
-            audit_document: 0,
+            approval_document: 0,
           },
         }),
       ).toEqual([
@@ -264,7 +264,7 @@ describe("customer-sales-return execute guard", () => {
             document_line_relation: 3,
             inventory_log: 0,
             inventory_source_usage: 0,
-            audit_document: 5,
+            approval_document: 5,
           },
         }),
       ).toEqual([
@@ -272,7 +272,7 @@ describe("customer-sales-return execute guard", () => {
           downstreamConsumers: {
             document_relation: 1,
             document_line_relation: 3,
-            audit_document: 5,
+            approval_document: 5,
           },
         }),
       ]);

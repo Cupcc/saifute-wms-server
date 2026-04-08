@@ -32,6 +32,11 @@ export class CreateWorkshopMaterialOrderDto {
   @Min(1)
   handlerPersonnelId?: number;
 
+  @IsString()
+  @IsOptional()
+  @MaxLength(64)
+  handlerName?: string;
+
   @IsInt()
   @Min(1)
   workshopId!: number;

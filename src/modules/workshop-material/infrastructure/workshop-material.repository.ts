@@ -6,6 +6,7 @@ import {
   WorkshopMaterialOrderType,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
+import type { StockScopeCode } from "../../session/domain/user-session";
 
 type DbClient = Prisma.TransactionClient | PrismaService;
 
@@ -29,6 +30,7 @@ export class WorkshopMaterialRepository {
       bizDateFrom?: Date;
       bizDateTo?: Date;
       workshopId?: number;
+      stockScope?: StockScopeCode;
       limit: number;
       offset: number;
     },
@@ -72,6 +74,13 @@ export class WorkshopMaterialRepository {
     if (params.workshopId) {
       where.workshopId = params.workshopId;
     }
+    if (params.stockScope) {
+      where.stockScope = {
+        is: {
+          scopeCode: params.stockScope,
+        },
+      };
+    }
 
     const client = this.db(db);
     const [items, total] = await Promise.all([
@@ -80,7 +89,10 @@ export class WorkshopMaterialRepository {
         take: params.limit,
         skip: params.offset,
         orderBy: { bizDate: "desc" },
-        include: { lines: { orderBy: { lineNo: "asc" } } },
+        include: {
+          stockScope: true,
+          lines: { orderBy: { lineNo: "asc" } },
+        },
       }),
       client.workshopMaterialOrder.count({ where }),
     ]);
@@ -91,14 +103,17 @@ export class WorkshopMaterialRepository {
   async findOrderById(id: number, db?: DbClient) {
     return this.db(db).workshopMaterialOrder.findUnique({
       where: { id },
-      include: { lines: { orderBy: { lineNo: "asc" } } },
+      include: {
+        stockScope: true,
+        lines: { orderBy: { lineNo: "asc" } },
+      },
     });
   }
 
   async findOrderByDocumentNo(documentNo: string, db?: DbClient) {
     return this.db(db).workshopMaterialOrder.findUnique({
       where: { documentNo },
-      include: { lines: true },
+      include: { stockScope: true, lines: true },
     });
   }
 
@@ -120,7 +135,10 @@ export class WorkshopMaterialRepository {
     });
     const result = await client.workshopMaterialOrder.findUnique({
       where: { id: order.id },
-      include: { lines: { orderBy: { lineNo: "asc" } } },
+      include: {
+        stockScope: true,
+        lines: { orderBy: { lineNo: "asc" } },
+      },
     });
     if (!result) throw new Error("Order creation failed");
     return result;
@@ -134,7 +152,25 @@ export class WorkshopMaterialRepository {
     return this.db(db).workshopMaterialOrder.update({
       where: { id },
       data,
-      include: { lines: { orderBy: { lineNo: "asc" } } },
+      include: {
+        stockScope: true,
+        lines: { orderBy: { lineNo: "asc" } },
+      },
+    });
+  }
+
+  async createOrderLine(
+    data: Prisma.WorkshopMaterialOrderLineUncheckedCreateInput,
+    db?: DbClient,
+  ) {
+    return this.db(db).workshopMaterialOrderLine.create({
+      data,
+    });
+  }
+
+  async deleteOrderLinesByOrderId(orderId: number, db?: DbClient) {
+    return this.db(db).workshopMaterialOrderLine.deleteMany({
+      where: { orderId },
     });
   }
 
@@ -185,6 +221,20 @@ export class WorkshopMaterialRepository {
         relationType: DocumentRelationType.WORKSHOP_RETURN_FROM_PICK,
       },
       data: { isActive: false },
+    });
+  }
+
+  async deleteDocumentLineRelationsForReturn(
+    returnOrderId: number,
+    db?: DbClient,
+  ) {
+    return this.db(db).documentLineRelation.deleteMany({
+      where: {
+        downstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
+        downstreamDocumentType: DOCUMENT_TYPE,
+        downstreamDocumentId: returnOrderId,
+        relationType: DocumentRelationType.WORKSHOP_RETURN_FROM_PICK,
+      },
     });
   }
 

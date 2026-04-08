@@ -324,17 +324,17 @@
           </el-table-column>
           <el-table-column label="物料名称" prop="materialName" width="160">
             <template #default="scope">
-              <el-input v-model="scope.row.materialName" :placeholder="scope.row.materialId ? '自动填充' : '请输入物料名称'" :disabled="!!scope.row.materialId" />
+              <combo-input v-model="scope.row.materialName" scope="material" field="materialName" :placeholder="scope.row.materialId ? '自动填充' : '请选择或输入物料名称'" :disabled="!!scope.row.materialId" />
             </template>
           </el-table-column>
           <el-table-column label="规格型号" prop="specification" width="120">
             <template #default="scope">
-              <el-input v-model="scope.row.specification" :placeholder="scope.row.materialId ? '自动填充' : '请输入规格型号'" :disabled="!!scope.row.materialId" />
+              <combo-input v-model="scope.row.specification" scope="material" field="specModel" :placeholder="scope.row.materialId ? '自动填充' : '请选择或输入规格型号'" :disabled="!!scope.row.materialId" />
             </template>
           </el-table-column>
-          <el-table-column label="单位" prop="unit" width="100">
+          <el-table-column label="单位" prop="unit" width="120">
             <template #default="scope">
-              <el-input v-model="scope.row.unit" placeholder="请输入单位" />
+              <combo-input v-model="scope.row.unit" scope="material" field="unitCode" placeholder="请选择或输入单位" />
             </template>
           </el-table-column>
           <el-table-column label="数量" prop="quantity" width="120">

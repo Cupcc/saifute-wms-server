@@ -78,10 +78,10 @@ export type InventorySourceUsage = Prisma.InventorySourceUsageModel;
  */
 export type FactoryNumberReservation = Prisma.FactoryNumberReservationModel;
 /**
- * Model AuditDocument
+ * Model ApprovalDocument
  *
  */
-export type AuditDocument = Prisma.AuditDocumentModel;
+export type ApprovalDocument = Prisma.ApprovalDocumentModel;
 /**
  * Model StockInOrder
  *

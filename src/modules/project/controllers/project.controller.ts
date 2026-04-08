@@ -35,9 +35,12 @@ export class ProjectController {
       user,
       query.workshopId,
     );
+    const inventoryScope =
+      await this.workshopScopeService.getResolvedStockScope(user);
     return this.projectService.listProjects({
       ...query,
       workshopId,
+      stockScope: inventoryScope?.stockScope,
     });
   }
 
@@ -52,6 +55,10 @@ export class ProjectController {
       user,
       project.workshopId,
     );
+    await this.workshopScopeService.assertInventoryStockScopeAccess(
+      user,
+      project.stockScopeId,
+    );
     return project;
   }
 
@@ -65,8 +72,13 @@ export class ProjectController {
       user,
       dto,
     );
+    const inventoryScope =
+      await this.workshopScopeService.getResolvedStockScope(user);
     return this.projectService.createProject(
-      scopedDto,
+      {
+        ...scopedDto,
+        stockScope: inventoryScope?.stockScope,
+      },
       user?.userId?.toString(),
     );
   }
@@ -83,13 +95,22 @@ export class ProjectController {
       user,
       existingProject.workshopId,
     );
+    await this.workshopScopeService.assertInventoryStockScopeAccess(
+      user,
+      existingProject.stockScopeId,
+    );
     const scopedDto = await this.workshopScopeService.applyFixedWorkshopScope(
       user,
       dto,
     );
+    const inventoryScope =
+      await this.workshopScopeService.getResolvedStockScope(user);
     return this.projectService.updateProject(
       id,
-      scopedDto,
+      {
+        ...scopedDto,
+        stockScope: inventoryScope?.stockScope,
+      },
       user?.userId?.toString(),
     );
   }
@@ -105,6 +126,10 @@ export class ProjectController {
     await this.workshopScopeService.assertWorkshopAccess(
       user,
       project.workshopId,
+    );
+    await this.workshopScopeService.assertInventoryStockScopeAccess(
+      user,
+      project.stockScopeId,
     );
     return this.projectService.voidProject(
       id,
@@ -123,6 +148,10 @@ export class ProjectController {
     await this.workshopScopeService.assertWorkshopAccess(
       user,
       project.workshopId,
+    );
+    await this.workshopScopeService.assertInventoryStockScopeAccess(
+      user,
+      project.stockScopeId,
     );
     return this.projectService.listMaterials(id);
   }

@@ -12,7 +12,7 @@ import {
   Prisma,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
-import { AuditService } from "../../audit/application/audit.service";
+import { ApprovalService } from "../../approval/application/approval.service";
 import {
   FIFO_SOURCE_OPERATION_TYPES,
   InventoryService,
@@ -24,7 +24,6 @@ import { StockInPriceCorrectionRepository } from "../infrastructure/stock-in-pri
 
 const DOCUMENT_TYPE = "StockInPriceCorrectionOrder";
 const BUSINESS_MODULE = "inbound";
-const MAIN_WAREHOUSE_CODE = "MAIN";
 
 @Injectable()
 export class StockInPriceCorrectionService {
@@ -33,7 +32,7 @@ export class StockInPriceCorrectionService {
     private readonly repository: StockInPriceCorrectionRepository,
     private readonly masterDataService: MasterDataService,
     private readonly inventoryService: InventoryService,
-    private readonly auditService: AuditService,
+    private readonly approvalService: ApprovalService,
   ) {}
 
   async listOrders(
@@ -76,7 +75,6 @@ export class StockInPriceCorrectionService {
     const workshop = await this.masterDataService.getWorkshopById(
       dto.workshopId,
     );
-    this.assertMainWarehouse(workshop);
     const stockScopeRecord =
       await this.masterDataService.getStockScopeByCode("MAIN");
     this.assertNoDuplicateSourceLogs(dto.lines);
@@ -199,7 +197,7 @@ export class StockInPriceCorrectionService {
           const correctionOut = await this.inventoryService.settleConsumerOut(
             {
               materialId: sourceLog.materialId,
-              workshopId: sourceLog.workshopId,
+              workshopId: sourceLog.workshopId ?? undefined,
               quantity: remainingQtyAtCorrection,
               operationType: InventoryOperationType.PRICE_CORRECTION_OUT,
               businessModule: BUSINESS_MODULE,
@@ -219,7 +217,7 @@ export class StockInPriceCorrectionService {
           const correctionIn = await this.inventoryService.increaseStock(
             {
               materialId: sourceLog.materialId,
-              workshopId: sourceLog.workshopId,
+              workshopId: sourceLog.workshopId ?? undefined,
               quantity: remainingQtyAtCorrection,
               operationType: InventoryOperationType.PRICE_CORRECTION_IN,
               businessModule: BUSINESS_MODULE,
@@ -256,7 +254,7 @@ export class StockInPriceCorrectionService {
         tx,
       );
 
-      await this.auditService.createOrRefreshAuditDocument(
+      await this.approvalService.createOrRefreshApprovalDocument(
         {
           documentFamily: DocumentFamily.STOCK_IN,
           documentType: DOCUMENT_TYPE,
@@ -299,7 +297,7 @@ export class StockInPriceCorrectionService {
       operationType: InventoryOperationType;
       materialId: number;
       stockScopeId: number | null;
-      workshopId: number;
+      workshopId: number | null;
     },
     materialId: number,
     stockScopeId: number,
@@ -392,15 +390,6 @@ export class StockInPriceCorrectionService {
         priorCorrectionLine?.sourceStockInOrder?.bizDate ??
         null,
     };
-  }
-
-  private assertMainWarehouse(workshop: {
-    workshopCode: string;
-    workshopName: string;
-  }) {
-    if (workshop.workshopCode !== MAIN_WAREHOUSE_CODE) {
-      throw new BadRequestException("入库调价单只能归属主仓");
-    }
   }
 
   private toPositiveMoney(value: Prisma.Decimal | string, fieldName: string) {

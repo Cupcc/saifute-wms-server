@@ -14,7 +14,7 @@
 
 范围说明：
 
-- 本文件聚焦 `master-data`、`inventory-core`、`audit` 与各事务单据家族的运行态数据库表。
+- 本文件聚焦 `master-data`、`inventory-core`、`approval` 与各事务单据家族的运行态数据库表。
 - 不覆盖平台层辅助持久化表；这类表应在对应模块架构文档中说明，而不是混入业务表基线。
 
 ## 2. 设计原则
@@ -23,7 +23,7 @@
 
 - `master-data` 只负责主数据与快照查询，不直接维护库存或审核状态
 - `inventory-core` 是唯一库存写入口，单据模块不能绕过它直接改库存
-- `audit` 只负责审核投影与审核动作，不替代业务单据主状态
+- `approval` 只负责审核投影与审核动作，不替代业务单据主状态
 - `reporting` 只做读模型与汇总查询，不拥有事务写模型
 
 ### 2.2 单据建模原则
@@ -44,7 +44,7 @@
 其中：
 
 - 单据主状态由业务模块维护
-- 审核状态以 `audit_document` 为准，单据表仅保留快照字段方便列表查询
+- 审核状态以 `approval_document` 为准，单据表仅保留快照字段方便列表查询
 - 库存副作用状态由 `inventory-core` 控制
 
 ### 2.4 事务原则
@@ -69,14 +69,14 @@ flowchart TD
     masterData[MasterData]
     documentFamily[DocumentFamily]
     inventoryCore[InventoryCore]
-    audit[Audit]
+    approval[Approval]
     reporting[ReportingViews]
 
     masterData -->|"snapshot / ensure"| documentFamily
     documentFamily -->|"increase / decrease / reverse"| inventoryCore
-    documentFamily -->|"create / reset / approve"| audit
+    documentFamily -->|"create / reset / approve"| approval
     inventoryCore --> reporting
-    audit --> reporting
+    approval --> reporting
     documentFamily --> reporting
 ```
 
@@ -88,7 +88,7 @@ flowchart TD
 | ------------------- | -------------------- | ------ | ----------------------------------------------------------------------------------------- | -------------------------------------- |
 | `master-data`       | `/master-data`       | 主数据    | `material_category`、`material`、`customer`、`supplier`、`personnel`、`workshop`、`stock_scope` | 为事务单据提供主档、归属维度与真实库存范围                  |
 | `inventory-core`    | `/inventory`         | 库存核心   | `inventory_balance`、`inventory_log`、`inventory_source_usage`、`factory_number_reservation`、`allocation_target` | 库存唯一写入口                                |
-| `audit`          | `/audit`          | 审核投影   | `audit_document`                                                                 | 单据表只保留审核快照                             |
+| `approval`       | `/approval`       | 审核投影   | `approval_document`                                                              | 代码/API/Prisma/DB canonical 名称；单据表只保留审核快照 |
 | `inbound`           | `/inbound`           | 入库家族   | `stock_in_order`、`stock_in_order_line`                                                    | `orders` 对应验收单，`into-orders` 对应生产入库单   |
 | `customer`          | `/customer`          | 客户收发家族 | `customer_stock_order`、`customer_stock_order_line`                                        | `orders` 对应出库单，`sales-returns` 对应销售退货单 |
 | `workshop-material` | `/workshop-material` | 车间物料家族 | `workshop_material_order`、`workshop_material_order_line`                                  | `pick` / `return` / `scrap` 共用一套主从表    |
@@ -137,13 +137,13 @@ flowchart TD
 - 同一物料不同来源批次可保留不同成本层，出库成本必须通过来源分配传递
 - 幂等通过 `idempotencyKey` 保证，避免重复写库存
 
-### 4.3 `audit`
+### 4.3 `approval`
 
 主流程：
 
-1. 单据创建后创建或刷新 `audit_document`
+1. 单据创建后创建或刷新 `approval_document`
 2. 审核执行通过、拒绝、重置等动作
-3. 单据修改后是否重置审核由业务模块决定，但统一由 `audit` 落表
+3. 单据修改后是否重置审核由业务模块决定，但统一由 `approval` 落表
 4. 作废前通过查询服务校验下游依赖和审核约束
 
 关键约束：
@@ -244,24 +244,26 @@ NestJS `customer` 模块映射补充：
 3. `workshopId` 只用于归属与成本核算，不建立车间库存余额
 4. 对消耗类动作维护 `inventory_source_usage`
 5. 通过单据关系表表达退料对领料的回冲关系
-6. 报废可选引用领料或其他上游关系，但该关系仅用于来源追溯与成本分析，不改变报废作为独立事务的统计口径
-7. 作废时执行逆操作并释放来源占用
+6. 退料在线运行时应尽量绑定原领料行，以价格对齐和回补追溯为主；若无法可靠匹配，允许无源退料，但不得伪造关系
+7. 报废可选引用领料或其他上游关系，但该关系仅用于来源追溯与成本分析，不改变报废作为独立事务的统计口径
+8. 作废时执行逆操作并释放来源占用
 
 历史数据兼容补充：
 
-- 在线运行时仍可保持“退料优先校验来源领料关系”的策略。
 - 历史迁移数据在无法证明上游领料关系时，行内 `sourceDocumentType/sourceDocumentId/sourceDocumentLineId` 可为空。
 
 审核策略补充：
 
-- `workshop_material_order.auditStatusSnapshot` 在表结构上默认按 `PENDING` 处理
-- 若某类 `orderType` 明确不走审核，由应用层在创建时显式写入 `NOT_REQUIRED`
+- 车间物料默认走轻审核，审核记录只用于追溯、说明和责任留痕
+- 审核不阻断单据创建、库存过账和实时查询；已过账即视为业务生效
+- `workshop_material_order.auditStatusSnapshot` 可按 `PENDING` 或 `NOT_REQUIRED` 落快照，具体由应用层决定，但不改变即时过账口径
 
 车间汇总口径补充：
 
 - `净耗用` 是车间维度只读核算指标，不落事务写模型字段
-- 默认计算公式为 `已生效领料 - 已生效退料 + 已生效报废`
-- 统计时仅纳入审核通过或业务定义为已生效、且未作废的单据
+- 默认计算公式为 `已过账领料 - 已过账退料 + 已过账报废`
+- 统计时仅纳入已过账且未作废的单据，轻审核状态不影响纳入时点
+- 净耗用专项只读页统一由 `reporting` / 月报承接，`workshop-material` 页面不另建第二套独立口径页
 
 NestJS `workshop-material` 模块映射补充：
 
@@ -281,7 +283,7 @@ NestJS `workshop-material` 模块映射补充：
 
 1. 创建项目主表与项目物料明细
 2. 与 RD 小仓有关的领用、退料、报废默认对 `RD_SUB` 调用 `inventory-core`，项目只承担归集
-3. 默认不接 `audit`，`auditStatusSnapshot` 固定为 `NOT_REQUIRED`
+3. 默认不接 `approval`，`auditStatusSnapshot` 固定为 `NOT_REQUIRED`
 4. 作废项目时回补库存，并保留项目历史事实
 
 NestJS `project` / `reporting` 模块映射补充：
@@ -307,7 +309,7 @@ NestJS `project` / `reporting` 模块映射补充：
 | `inventory-core`    | `inventory_log`                | 表   | 库存流水               |
 | `inventory-core`    | `inventory_source_usage`       | 表   | 来源分配 / 释放追踪        |
 | `inventory-core`    | `factory_number_reservation`   | 表   | 出厂编号区间占用           |
-| `audit`          | `audit_document`      | 表   | 审核投影表              |
+| `approval`       | `approval_document`   | 表   | 审核投影表              |
 | `inbound`           | `stock_in_order`               | 表   | 入库家族主表，承载验收单与生产入库单 |
 | `inbound`           | `stock_in_order_line`          | 表   | 入库家族明细             |
 | `inbound`           | `stock_in_price_correction_order`      | 表   | 入库调价单主表（计划中）       |
@@ -371,17 +373,18 @@ NestJS `project` / `reporting` 模块映射补充：
 - 同一物料不同来源批次允许不同成本层；入库类成本写入来源流水，出库类成本由 `inventory_source_usage` 分配
 - `inventory_warning` 不落交易表，改为读模型视图 `vw_inventory_warning`
 
-## 6.4 `audit` 表
+## 6.4 `approval` 表
 
 | 表名                        | 说明    | 关键字段                                                                                                               | 关键约束                           |
 | ------------------------- | ----- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------ |
-| `audit_document` | 审核投影表 | `documentFamily`、`documentType`、`documentId`、`documentNumber`、`auditStatus`、`submittedBy`、`decidedBy`、`resetCount` | `documentType + documentId` 唯一 |
+| `approval_document` | 审核投影表 | `documentFamily`、`documentType`、`documentId`、`documentNumber`、`auditStatus`、`submittedBy`、`decidedBy`、`resetCount` | `documentType + documentId` 唯一 |
 
 补充说明：
 
 - 审核表只保存当前有效审核状态
 - 审核动作的细粒度日志继续落 `audit-log`
-- `audit` 不和单据表建立多态外键，避免跨模块强耦合
+- `approval` 不和单据表建立多态外键，避免跨模块强耦合
+- 数据库 cutover 后只保留 `approval_document` 作为当前审核投影真源；历史 SQL / migration 需同步改到 canonical 名称
 
 ## 6.5 `inbound` 表
 
@@ -451,7 +454,7 @@ NestJS `project` / `reporting` 模块映射补充：
 
 补充说明：
 
-- 项目域虽然是事务型领域，但默认不接 `audit`
+- 项目域虽然是事务型领域，但默认不接 `approval`
 - 项目消耗或回补库存仍必须走 `inventory-core`
 - `lifecycleStatus` / `auditStatusSnapshot` / `inventoryEffectStatus` 是系统控制字段，不代表项目业务阶段管理
 - 当前最小实现不引入 `label`，归集真源统一落在 `allocation_target` 与 `inventory_log.allocationTargetId`
@@ -535,7 +538,7 @@ NestJS `project` / `reporting` 模块映射补充：
 - 主从表 `parentId + lineNo` 唯一
 - `inventory_balance(materialId, stockScopeId)` 唯一
 - `inventory_log.idempotencyKey` 唯一
-- `audit_document(documentType, documentId)` 唯一
+- `approval_document(documentType, documentId)` 唯一
 
 ### 8.2 需要应用层补充的约束
 
@@ -559,6 +562,6 @@ NestJS `project` / `reporting` 模块映射补充：
 模型分组：
 
 - 枚举：主数据状态、单据状态、库存方向、操作类型、关系类型
-- 共享核心：`Material`、`Workshop`、`StockScope`、`InventoryBalance`、`InventoryLog`、`InventorySourceUsage`、`AuditDocument`
+- 共享核心：`Material`、`Workshop`、`StockScope`、`InventoryBalance`、`InventoryLog`、`InventorySourceUsage`、`ApprovalDocument`
 - 单据家族：`StockInOrder`、`CustomerStockOrder`、`WorkshopMaterialOrder`、`Project`
 - 关系与只读协作：`DocumentRelation`、`DocumentLineRelation`

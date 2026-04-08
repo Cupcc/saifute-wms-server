@@ -2,10 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { Prisma } from "../../../generated/prisma/client";
 import { AppConfigService } from "../../../shared/config/app-config.service";
 import { StockScopeCompatibilityService } from "../../inventory-core/application/stock-scope-compatibility.service";
-import {
-  resolveStockScopeFromWorkshopIdentity,
-  type StockScopeCode,
-} from "../../session/domain/user-session";
+import { type StockScopeCode } from "../../session/domain/user-session";
 import {
   ExportReportDto,
   type QueryInventorySummaryDto,
@@ -29,9 +26,9 @@ export interface InventorySummaryItem {
   categoryCode: string | null;
   categoryName: string | null;
   stockScope: StockScopeCode | null;
-  workshopId: number;
-  workshopCode: string;
-  workshopName: string;
+  stockScopeName: string | null;
+  workshopId: number | null;
+  workshopName: string | null;
   quantityOnHand: string;
   warningMinQty: string | null;
   warningMaxQty: string | null;
@@ -275,7 +272,7 @@ export class ReportingService {
             "materialCode",
             "materialName",
             "categoryName",
-            "workshopName",
+            "stockScopeName",
             "quantityOnHand",
             "unitCode",
           ],
@@ -336,14 +333,10 @@ export class ReportingService {
       categoryCode: item.material.category?.categoryCode ?? null,
       categoryName: item.material.category?.categoryName ?? null,
       stockScope:
-        (item.stockScope?.scopeCode as StockScopeCode | undefined) ??
-        resolveStockScopeFromWorkshopIdentity({
-          workshopCode: item.workshop.workshopCode,
-          workshopName: item.workshop.workshopName,
-        }),
-      workshopId: item.workshop.id,
-      workshopCode: item.workshop.workshopCode,
-      workshopName: item.workshop.workshopName,
+        (item.stockScope?.scopeCode as StockScopeCode | undefined) ?? null,
+      stockScopeName: item.stockScope?.scopeName ?? null,
+      workshopId: item.workshop?.id ?? null,
+      workshopName: item.workshop?.workshopName ?? null,
       quantityOnHand: item.quantityOnHand.toFixed(6),
       warningMinQty: warningMinQty ? warningMinQty.toFixed(6) : null,
       warningMaxQty: warningMaxQty ? warningMaxQty.toFixed(6) : null,

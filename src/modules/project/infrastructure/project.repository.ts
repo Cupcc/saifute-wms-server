@@ -5,6 +5,7 @@ import {
   type Prisma,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
+import type { StockScopeCode } from "../../session/domain/user-session";
 
 type DbClient = Prisma.TransactionClient | PrismaService;
 
@@ -25,6 +26,7 @@ export class ProjectRepository {
       customerId?: number;
       supplierId?: number;
       workshopId?: number;
+      stockScope?: StockScopeCode;
       limit: number;
       offset: number;
     },
@@ -57,6 +59,13 @@ export class ProjectRepository {
     if (params.workshopId) {
       where.workshopId = params.workshopId;
     }
+    if (params.stockScope) {
+      where.stockScope = {
+        is: {
+          scopeCode: params.stockScope,
+        },
+      };
+    }
 
     const client = this.db(db);
     const [items, total] = await Promise.all([
@@ -65,7 +74,10 @@ export class ProjectRepository {
         take: params.limit,
         skip: params.offset,
         orderBy: { bizDate: "desc" },
-        include: { materialLines: { orderBy: { lineNo: "asc" } } },
+        include: {
+          stockScope: true,
+          materialLines: { orderBy: { lineNo: "asc" } },
+        },
       }),
       client.project.count({ where }),
     ]);
@@ -76,14 +88,17 @@ export class ProjectRepository {
   async findProjectById(id: number, db?: DbClient) {
     return this.db(db).project.findUnique({
       where: { id },
-      include: { materialLines: { orderBy: { lineNo: "asc" } } },
+      include: {
+        stockScope: true,
+        materialLines: { orderBy: { lineNo: "asc" } },
+      },
     });
   }
 
   async findProjectByCode(projectCode: string, db?: DbClient) {
     return this.db(db).project.findUnique({
       where: { projectCode },
-      include: { materialLines: true },
+      include: { stockScope: true, materialLines: true },
     });
   }
 
@@ -103,7 +118,10 @@ export class ProjectRepository {
     await client.projectMaterialLine.createMany({ data: linesWithProjectId });
     const result = await client.project.findUnique({
       where: { id: project.id },
-      include: { materialLines: { orderBy: { lineNo: "asc" } } },
+      include: {
+        stockScope: true,
+        materialLines: { orderBy: { lineNo: "asc" } },
+      },
     });
     if (!result) throw new Error("Project creation failed");
     return result;
@@ -167,7 +185,10 @@ export class ProjectRepository {
     return this.db(db).project.update({
       where: { id },
       data,
-      include: { materialLines: { orderBy: { lineNo: "asc" } } },
+      include: {
+        stockScope: true,
+        materialLines: { orderBy: { lineNo: "asc" } },
+      },
     });
   }
 

@@ -116,7 +116,7 @@ const filters = ref({
 });
 
 const workshopLabel = computed(
-  () => userStore.workshopScope?.workshopName || "未绑定研发小仓",
+  () => userStore.stockScope?.stockScopeName || "未绑定研发小仓",
 );
 
 function formatDateTime(value) {

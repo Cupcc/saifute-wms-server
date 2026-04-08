@@ -243,7 +243,7 @@ export type InventoryBalanceGroupByOutputType = {
   id: number;
   materialId: number;
   stockScopeId: number | null;
-  workshopId: number;
+  workshopId: number | null;
   quantityOnHand: runtime.Decimal;
   rowVersion: number;
   createdBy: string | null;
@@ -278,7 +278,7 @@ export type InventoryBalanceWhereInput = {
   id?: Prisma.IntFilter<"InventoryBalance"> | number;
   materialId?: Prisma.IntFilter<"InventoryBalance"> | number;
   stockScopeId?: Prisma.IntNullableFilter<"InventoryBalance"> | number | null;
-  workshopId?: Prisma.IntFilter<"InventoryBalance"> | number;
+  workshopId?: Prisma.IntNullableFilter<"InventoryBalance"> | number | null;
   quantityOnHand?:
     | Prisma.DecimalFilter<"InventoryBalance">
     | runtime.Decimal
@@ -299,9 +299,9 @@ export type InventoryBalanceWhereInput = {
     Prisma.StockScopeWhereInput
   > | null;
   workshop?: Prisma.XOR<
-    Prisma.WorkshopScalarRelationFilter,
+    Prisma.WorkshopNullableScalarRelationFilter,
     Prisma.WorkshopWhereInput
-  >;
+  > | null;
   logs?: Prisma.InventoryLogListRelationFilter;
 };
 
@@ -309,7 +309,7 @@ export type InventoryBalanceOrderByWithRelationInput = {
   id?: Prisma.SortOrder;
   materialId?: Prisma.SortOrder;
   stockScopeId?: Prisma.SortOrderInput | Prisma.SortOrder;
-  workshopId?: Prisma.SortOrder;
+  workshopId?: Prisma.SortOrderInput | Prisma.SortOrder;
   quantityOnHand?: Prisma.SortOrder;
   rowVersion?: Prisma.SortOrder;
   createdBy?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -327,7 +327,6 @@ export type InventoryBalanceWhereUniqueInput = Prisma.AtLeast<
   {
     id?: number;
     materialId_stockScopeId?: Prisma.InventoryBalanceMaterialIdStockScopeIdCompoundUniqueInput;
-    materialId_workshopId?: Prisma.InventoryBalanceMaterialIdWorkshopIdCompoundUniqueInput;
     AND?:
       | Prisma.InventoryBalanceWhereInput
       | Prisma.InventoryBalanceWhereInput[];
@@ -337,7 +336,7 @@ export type InventoryBalanceWhereUniqueInput = Prisma.AtLeast<
       | Prisma.InventoryBalanceWhereInput[];
     materialId?: Prisma.IntFilter<"InventoryBalance"> | number;
     stockScopeId?: Prisma.IntNullableFilter<"InventoryBalance"> | number | null;
-    workshopId?: Prisma.IntFilter<"InventoryBalance"> | number;
+    workshopId?: Prisma.IntNullableFilter<"InventoryBalance"> | number | null;
     quantityOnHand?:
       | Prisma.DecimalFilter<"InventoryBalance">
       | runtime.Decimal
@@ -358,19 +357,19 @@ export type InventoryBalanceWhereUniqueInput = Prisma.AtLeast<
       Prisma.StockScopeWhereInput
     > | null;
     workshop?: Prisma.XOR<
-      Prisma.WorkshopScalarRelationFilter,
+      Prisma.WorkshopNullableScalarRelationFilter,
       Prisma.WorkshopWhereInput
-    >;
+    > | null;
     logs?: Prisma.InventoryLogListRelationFilter;
   },
-  "id" | "materialId_stockScopeId" | "materialId_workshopId"
+  "id" | "materialId_stockScopeId"
 >;
 
 export type InventoryBalanceOrderByWithAggregationInput = {
   id?: Prisma.SortOrder;
   materialId?: Prisma.SortOrder;
   stockScopeId?: Prisma.SortOrderInput | Prisma.SortOrder;
-  workshopId?: Prisma.SortOrder;
+  workshopId?: Prisma.SortOrderInput | Prisma.SortOrder;
   quantityOnHand?: Prisma.SortOrder;
   rowVersion?: Prisma.SortOrder;
   createdBy?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -398,7 +397,10 @@ export type InventoryBalanceScalarWhereWithAggregatesInput = {
     | Prisma.IntNullableWithAggregatesFilter<"InventoryBalance">
     | number
     | null;
-  workshopId?: Prisma.IntWithAggregatesFilter<"InventoryBalance"> | number;
+  workshopId?:
+    | Prisma.IntNullableWithAggregatesFilter<"InventoryBalance">
+    | number
+    | null;
   quantityOnHand?:
     | Prisma.DecimalWithAggregatesFilter<"InventoryBalance">
     | runtime.Decimal
@@ -433,7 +435,7 @@ export type InventoryBalanceCreateInput = {
   updatedAt?: Date | string;
   material: Prisma.MaterialCreateNestedOneWithoutInventoryBalancesInput;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutInventoryBalancesInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryBalancesInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryBalancesInput;
   logs?: Prisma.InventoryLogCreateNestedManyWithoutBalanceInput;
 };
 
@@ -441,7 +443,7 @@ export type InventoryBalanceUncheckedCreateInput = {
   id?: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   quantityOnHand?: runtime.Decimal | runtime.DecimalJsLike | number | string;
   rowVersion?: number;
   createdBy?: string | null;
@@ -465,7 +467,7 @@ export type InventoryBalanceUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryBalancesNestedInput;
   stockScope?: Prisma.StockScopeUpdateOneWithoutInventoryBalancesNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryBalancesNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryBalancesNestedInput;
   logs?: Prisma.InventoryLogUpdateManyWithoutBalanceNestedInput;
 };
 
@@ -473,7 +475,7 @@ export type InventoryBalanceUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   quantityOnHand?:
     | Prisma.DecimalFieldUpdateOperationsInput
     | runtime.Decimal
@@ -492,7 +494,7 @@ export type InventoryBalanceCreateManyInput = {
   id?: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   quantityOnHand?: runtime.Decimal | runtime.DecimalJsLike | number | string;
   rowVersion?: number;
   createdBy?: string | null;
@@ -519,7 +521,7 @@ export type InventoryBalanceUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   quantityOnHand?:
     | Prisma.DecimalFieldUpdateOperationsInput
     | runtime.Decimal
@@ -554,11 +556,6 @@ export type InventoryBalanceOrderByRelevanceInput = {
 export type InventoryBalanceMaterialIdStockScopeIdCompoundUniqueInput = {
   materialId: number;
   stockScopeId: number;
-};
-
-export type InventoryBalanceMaterialIdWorkshopIdCompoundUniqueInput = {
-  materialId: number;
-  workshopId: number;
 };
 
 export type InventoryBalanceCountOrderByAggregateInput = {
@@ -995,14 +992,14 @@ export type InventoryBalanceCreateWithoutMaterialInput = {
   updatedBy?: string | null;
   updatedAt?: Date | string;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutInventoryBalancesInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryBalancesInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryBalancesInput;
   logs?: Prisma.InventoryLogCreateNestedManyWithoutBalanceInput;
 };
 
 export type InventoryBalanceUncheckedCreateWithoutMaterialInput = {
   id?: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   quantityOnHand?: runtime.Decimal | runtime.DecimalJsLike | number | string;
   rowVersion?: number;
   createdBy?: string | null;
@@ -1066,7 +1063,7 @@ export type InventoryBalanceScalarWhereInput = {
   id?: Prisma.IntFilter<"InventoryBalance"> | number;
   materialId?: Prisma.IntFilter<"InventoryBalance"> | number;
   stockScopeId?: Prisma.IntNullableFilter<"InventoryBalance"> | number | null;
-  workshopId?: Prisma.IntFilter<"InventoryBalance"> | number;
+  workshopId?: Prisma.IntNullableFilter<"InventoryBalance"> | number | null;
   quantityOnHand?:
     | Prisma.DecimalFilter<"InventoryBalance">
     | runtime.Decimal
@@ -1156,14 +1153,14 @@ export type InventoryBalanceCreateWithoutStockScopeInput = {
   updatedBy?: string | null;
   updatedAt?: Date | string;
   material: Prisma.MaterialCreateNestedOneWithoutInventoryBalancesInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryBalancesInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryBalancesInput;
   logs?: Prisma.InventoryLogCreateNestedManyWithoutBalanceInput;
 };
 
 export type InventoryBalanceUncheckedCreateWithoutStockScopeInput = {
   id?: number;
   materialId: number;
-  workshopId: number;
+  workshopId?: number | null;
   quantityOnHand?: runtime.Decimal | runtime.DecimalJsLike | number | string;
   rowVersion?: number;
   createdBy?: string | null;
@@ -1225,14 +1222,14 @@ export type InventoryBalanceCreateWithoutLogsInput = {
   updatedAt?: Date | string;
   material: Prisma.MaterialCreateNestedOneWithoutInventoryBalancesInput;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutInventoryBalancesInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryBalancesInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryBalancesInput;
 };
 
 export type InventoryBalanceUncheckedCreateWithoutLogsInput = {
   id?: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   quantityOnHand?: runtime.Decimal | runtime.DecimalJsLike | number | string;
   rowVersion?: number;
   createdBy?: string | null;
@@ -1283,14 +1280,14 @@ export type InventoryBalanceUpdateWithoutLogsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryBalancesNestedInput;
   stockScope?: Prisma.StockScopeUpdateOneWithoutInventoryBalancesNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryBalancesNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryBalancesNestedInput;
 };
 
 export type InventoryBalanceUncheckedUpdateWithoutLogsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   quantityOnHand?:
     | Prisma.DecimalFieldUpdateOperationsInput
     | runtime.Decimal
@@ -1307,7 +1304,7 @@ export type InventoryBalanceUncheckedUpdateWithoutLogsInput = {
 export type InventoryBalanceCreateManyMaterialInput = {
   id?: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   quantityOnHand?: runtime.Decimal | runtime.DecimalJsLike | number | string;
   rowVersion?: number;
   createdBy?: string | null;
@@ -1329,14 +1326,14 @@ export type InventoryBalanceUpdateWithoutMaterialInput = {
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   stockScope?: Prisma.StockScopeUpdateOneWithoutInventoryBalancesNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryBalancesNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryBalancesNestedInput;
   logs?: Prisma.InventoryLogUpdateManyWithoutBalanceNestedInput;
 };
 
 export type InventoryBalanceUncheckedUpdateWithoutMaterialInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   quantityOnHand?:
     | Prisma.DecimalFieldUpdateOperationsInput
     | runtime.Decimal
@@ -1354,7 +1351,7 @@ export type InventoryBalanceUncheckedUpdateWithoutMaterialInput = {
 export type InventoryBalanceUncheckedUpdateManyWithoutMaterialInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   quantityOnHand?:
     | Prisma.DecimalFieldUpdateOperationsInput
     | runtime.Decimal
@@ -1435,7 +1432,7 @@ export type InventoryBalanceUncheckedUpdateManyWithoutWorkshopInput = {
 export type InventoryBalanceCreateManyStockScopeInput = {
   id?: number;
   materialId: number;
-  workshopId: number;
+  workshopId?: number | null;
   quantityOnHand?: runtime.Decimal | runtime.DecimalJsLike | number | string;
   rowVersion?: number;
   createdBy?: string | null;
@@ -1457,14 +1454,14 @@ export type InventoryBalanceUpdateWithoutStockScopeInput = {
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryBalancesNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryBalancesNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryBalancesNestedInput;
   logs?: Prisma.InventoryLogUpdateManyWithoutBalanceNestedInput;
 };
 
 export type InventoryBalanceUncheckedUpdateWithoutStockScopeInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   quantityOnHand?:
     | Prisma.DecimalFieldUpdateOperationsInput
     | runtime.Decimal
@@ -1482,7 +1479,7 @@ export type InventoryBalanceUncheckedUpdateWithoutStockScopeInput = {
 export type InventoryBalanceUncheckedUpdateManyWithoutStockScopeInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   quantityOnHand?:
     | Prisma.DecimalFieldUpdateOperationsInput
     | runtime.Decimal
@@ -1551,7 +1548,7 @@ export type InventoryBalanceSelect<
     updatedAt?: boolean;
     material?: boolean | Prisma.MaterialDefaultArgs<ExtArgs>;
     stockScope?: boolean | Prisma.InventoryBalance$stockScopeArgs<ExtArgs>;
-    workshop?: boolean | Prisma.WorkshopDefaultArgs<ExtArgs>;
+    workshop?: boolean | Prisma.InventoryBalance$workshopArgs<ExtArgs>;
     logs?: boolean | Prisma.InventoryBalance$logsArgs<ExtArgs>;
     _count?:
       | boolean
@@ -1595,7 +1592,7 @@ export type InventoryBalanceInclude<
 > = {
   material?: boolean | Prisma.MaterialDefaultArgs<ExtArgs>;
   stockScope?: boolean | Prisma.InventoryBalance$stockScopeArgs<ExtArgs>;
-  workshop?: boolean | Prisma.WorkshopDefaultArgs<ExtArgs>;
+  workshop?: boolean | Prisma.InventoryBalance$workshopArgs<ExtArgs>;
   logs?: boolean | Prisma.InventoryBalance$logsArgs<ExtArgs>;
   _count?: boolean | Prisma.InventoryBalanceCountOutputTypeDefaultArgs<ExtArgs>;
 };
@@ -1608,7 +1605,7 @@ export type $InventoryBalancePayload<
   objects: {
     material: Prisma.$MaterialPayload<ExtArgs>;
     stockScope: Prisma.$StockScopePayload<ExtArgs> | null;
-    workshop: Prisma.$WorkshopPayload<ExtArgs>;
+    workshop: Prisma.$WorkshopPayload<ExtArgs> | null;
     logs: Prisma.$InventoryLogPayload<ExtArgs>[];
   };
   scalars: runtime.Types.Extensions.GetPayloadResult<
@@ -1616,7 +1613,7 @@ export type $InventoryBalancePayload<
       id: number;
       materialId: number;
       stockScopeId: number | null;
-      workshopId: number;
+      workshopId: number | null;
       quantityOnHand: runtime.Decimal;
       rowVersion: number;
       createdBy: string | null;
@@ -2144,17 +2141,16 @@ export interface Prisma__InventoryBalanceClient<
     ExtArgs,
     GlobalOmitOptions
   >;
-  workshop<T extends Prisma.WorkshopDefaultArgs<ExtArgs> = {}>(
-    args?: Prisma.Subset<T, Prisma.WorkshopDefaultArgs<ExtArgs>>,
+  workshop<T extends Prisma.InventoryBalance$workshopArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.InventoryBalance$workshopArgs<ExtArgs>>,
   ): Prisma.Prisma__WorkshopClient<
-    | runtime.Types.Result.GetResult<
-        Prisma.$WorkshopPayload<ExtArgs>,
-        T,
-        "findUniqueOrThrow",
-        GlobalOmitOptions
-      >
-    | Null,
-    Null,
+    runtime.Types.Result.GetResult<
+      Prisma.$WorkshopPayload<ExtArgs>,
+      T,
+      "findUniqueOrThrow",
+      GlobalOmitOptions
+    > | null,
+    null,
     ExtArgs,
     GlobalOmitOptions
   >;
@@ -2652,6 +2648,28 @@ export type InventoryBalance$stockScopeArgs<
    */
   include?: Prisma.StockScopeInclude<ExtArgs> | null;
   where?: Prisma.StockScopeWhereInput;
+};
+
+/**
+ * InventoryBalance.workshop
+ */
+export type InventoryBalance$workshopArgs<
+  ExtArgs extends
+    runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the Workshop
+   */
+  select?: Prisma.WorkshopSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the Workshop
+   */
+  omit?: Prisma.WorkshopOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WorkshopInclude<ExtArgs> | null;
+  where?: Prisma.WorkshopWhereInput;
 };
 
 /**

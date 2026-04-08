@@ -2,31 +2,13 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="物料编码" prop="materialCode">
-        <el-input
-          v-model="queryParams.materialCode"
-          placeholder="请输入物料编码"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
+        <combo-input v-model="queryParams.materialCode" scope="material" field="materialCode" placeholder="请选择或输入物料编码" width="240px" />
       </el-form-item>
       <el-form-item label="物料名称" prop="materialName">
-        <el-input
-          v-model="queryParams.materialName"
-          placeholder="请输入物料名称"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
+        <combo-input v-model="queryParams.materialName" scope="material" field="materialName" placeholder="请选择或输入物料名称" width="240px" />
       </el-form-item>
       <el-form-item label="规格型号" prop="specification">
-        <el-input
-          v-model="queryParams.specification"
-          placeholder="请输入规格型号"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
+        <combo-input v-model="queryParams.specification" scope="material" field="specModel" placeholder="请选择或输入规格型号" width="240px" />
       </el-form-item>
       <el-form-item label="分类" prop="category">
         <el-select
@@ -43,13 +25,7 @@
         </el-select>
       </el-form-item>
       <el-form-item label="单位" prop="unit">
-        <el-input
-          v-model="queryParams.unit"
-          placeholder="请输入单位"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
+        <combo-input v-model="queryParams.unit" scope="material" field="unitCode" placeholder="请选择或输入单位" width="240px" />
       </el-form-item>
       <el-form-item label="安全库存" prop="stockMin">
         <el-input
@@ -114,13 +90,13 @@
         <div style="flex: 1; margin-right: 20px;">
           <el-form ref="materialRef" :model="form" :rules="rules" label-width="80px">
             <el-form-item label="物料编码" prop="materialCode">
-              <el-input v-model="form.materialCode" placeholder="请输入物料编码" />
+              <combo-input v-model="form.materialCode" scope="material" field="materialCode" placeholder="请选择或输入物料编码" />
             </el-form-item>
             <el-form-item label="物料名称" prop="materialName">
-              <el-input v-model="form.materialName" placeholder="请输入物料名称" @input="searchMaterials" />
+              <combo-input v-model="form.materialName" scope="material" field="materialName" placeholder="请选择或输入物料名称" @update:modelValue="searchMaterials" />
             </el-form-item>
             <el-form-item label="规格型号" prop="specification">
-              <el-input v-model="form.specification" placeholder="请输入规格型号" @input="searchMaterials" />
+              <combo-input v-model="form.specification" scope="material" field="specModel" placeholder="请选择或输入规格型号" @update:modelValue="searchMaterials" />
             </el-form-item>
             <el-form-item label="分类" prop="category">
               <el-select v-model="form.category" placeholder="请选择分类" @change="searchMaterials">
@@ -133,7 +109,7 @@
               </el-select>
             </el-form-item>
             <el-form-item label="单位" prop="unit">
-              <el-input v-model="form.unit" placeholder="请输入单位" />
+              <combo-input v-model="form.unit" scope="material" field="unitCode" placeholder="请选择或输入单位" />
             </el-form-item>
             <el-form-item label="安全库存" prop="stockMin">
               <el-input v-model="form.stockMin" placeholder="请输入安全库存" />
@@ -224,6 +200,7 @@ import {
   updateMaterial,
 } from "@/api/base/material";
 import { listMaterialCategory } from "@/api/base/material-category";
+import { clearSuggestionsCache } from "@/api/base/suggestions";
 
 const { proxy } = getCurrentInstance();
 const saifute_material_category = ref([]);
@@ -375,12 +352,14 @@ function submitForm() {
     if (valid) {
       if (form.value.materialId != null) {
         updateMaterial(form.value).then((response) => {
+          clearSuggestionsCache();
           proxy.$modal.msgSuccess("修改成功");
           open.value = false;
           getList();
         });
       } else {
         addMaterial(form.value).then((response) => {
+          clearSuggestionsCache();
           proxy.$modal.msgSuccess("新增成功");
           open.value = false;
           getList();

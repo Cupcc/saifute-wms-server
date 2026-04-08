@@ -99,8 +99,8 @@ async function getProjectDownstreamConsumerCounts(connection: {
     Array<{ consumer: string; total: number }>
   >(
     `
-      SELECT 'audit_document' AS consumer, COUNT(*) AS total
-      FROM audit_document
+      SELECT 'approval_document' AS consumer, COUNT(*) AS total
+      FROM approval_document
       WHERE documentFamily = 'PROJECT' OR documentType = 'Project'
       UNION ALL
       SELECT 'document_relation' AS consumer, COUNT(*) AS total

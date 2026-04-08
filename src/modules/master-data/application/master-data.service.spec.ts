@@ -11,6 +11,12 @@ describe("MasterDataService", () => {
     return {
       ensureCanonicalWorkshops: jest.fn().mockResolvedValue(undefined),
       ensureCanonicalStockScopes: jest.fn().mockResolvedValue(undefined),
+      // Field suggestions
+      findMaterialSuggestionValues: jest.fn(),
+      findCustomerSuggestionValues: jest.fn(),
+      findSupplierSuggestionValues: jest.fn(),
+      findWorkshopSuggestionValues: jest.fn(),
+      findPersonnelSuggestionValues: jest.fn(),
       // MaterialCategory
       findMaterialCategoryById: jest.fn(),
       findMaterialCategoryByCode: jest.fn(),
@@ -77,6 +83,81 @@ describe("MasterDataService", () => {
 
     expect(repository.ensureCanonicalWorkshops).toHaveBeenCalledTimes(1);
     expect(repository.ensureCanonicalStockScopes).toHaveBeenCalledTimes(1);
+  });
+
+  describe("FieldSuggestions", () => {
+    it("returns required permission by scope", () => {
+      const repository = createRepositoryMock();
+      const service = new MasterDataService(
+        repository as unknown as MasterDataRepository,
+      );
+
+      expect(service.getFieldSuggestionsRequiredPermission("material")).toBe(
+        "master:material:list",
+      );
+      expect(service.getFieldSuggestionsRequiredPermission("personnel")).toBe(
+        "master:personnel:list",
+      );
+    });
+
+    it("returns material suggestions from repository", async () => {
+      const repository = createRepositoryMock();
+      repository.findMaterialSuggestionValues.mockResolvedValue(["PCS", "套"]);
+      const service = new MasterDataService(
+        repository as unknown as MasterDataRepository,
+      );
+
+      await expect(
+        service.getFieldSuggestions("material", "unitCode"),
+      ).resolves.toEqual(["PCS", "套"]);
+
+      expect(repository.findMaterialSuggestionValues).toHaveBeenCalledWith(
+        "unitCode",
+        200,
+      );
+    });
+
+    it("returns personnel suggestions from repository", async () => {
+      const repository = createRepositoryMock();
+      repository.findPersonnelSuggestionValues.mockResolvedValue(["张三"]);
+      const service = new MasterDataService(
+        repository as unknown as MasterDataRepository,
+      );
+
+      await expect(
+        service.getFieldSuggestions("personnel", "personnelName"),
+      ).resolves.toEqual(["张三"]);
+
+      expect(repository.findPersonnelSuggestionValues).toHaveBeenCalledWith(
+        "personnelName",
+        200,
+      );
+    });
+
+    it("rejects unsupported suggestion fields", async () => {
+      const repository = createRepositoryMock();
+      const service = new MasterDataService(
+        repository as unknown as MasterDataRepository,
+      );
+
+      await expect(
+        service.getFieldSuggestions("material", "supplierName"),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it("rejects unsupported suggestion scopes", async () => {
+      const repository = createRepositoryMock();
+      const service = new MasterDataService(
+        repository as unknown as MasterDataRepository,
+      );
+
+      expect(() =>
+        service.getFieldSuggestionsRequiredPermission("unknown"),
+      ).toThrow(BadRequestException);
+      await expect(
+        service.getFieldSuggestions("unknown", "value"),
+      ).rejects.toThrow(BadRequestException);
+    });
   });
 
   // ─── MaterialCategory (F1) ──────────────────────────────────────────────────

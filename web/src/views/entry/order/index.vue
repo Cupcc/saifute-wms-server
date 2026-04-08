@@ -46,25 +46,9 @@
 				    <span style="float: left">{{ item.workshopName }}</span>
 			    </el-option>
 		    </el-select>
-	    </el-form-item>
+      </el-form-item>
       <el-form-item label="经办人" prop="attn">
-        <el-select
-          v-model="queryParams.attn"
-          filterable
-          remote
-          reserve-keyword
-          placeholder="请输入经办人姓名搜索"
-          :remote-method="searchPersonnel"
-          :loading="personnelLoading"
-          clearable
-          style="width: 240px">
-          <el-option
-            v-for="item in personnelOptions"
-            :key="item.personnelId"
-            :label="item.name"
-            :value="item.name">
-          </el-option>
-        </el-select>
+        <combo-input v-model="queryParams.attn" scope="personnel" field="personnelName" placeholder="请选择或输入经办人" width="240px" />
       </el-form-item>
 	    <el-form-item label="物料" prop="materialId">
 		    <el-select
@@ -88,13 +72,7 @@
 		    </el-select>
 	    </el-form-item>
 	    <el-form-item label="物料名称" prop="materialName">
-		    <el-input
-			    v-model="queryParams.materialName"
-			    placeholder="请输入物料名称"
-			    clearable
-			    style="width: 240px"
-			    @keyup.enter="handleQuery"
-		    />
+		    <combo-input v-model="queryParams.materialName" scope="material" field="materialName" placeholder="请选择或输入物料名称" width="240px" />
 	    </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
@@ -224,25 +202,7 @@
         <el-row>
           <el-col :span="12">
 	          <el-form-item label="经办人" prop="attn">
-		          <el-select
-			          v-model="form.attn"
-			          filterable
-			          remote
-			          reserve-keyword
-			          placeholder="请输入经办人姓名搜索"
-			          :remote-method="searchPersonnel"
-			          :loading="personnelLoading"
-			          allow-create
-			          default-first-option
-			          style="width: 100%"
-			          :disabled="form.inboundId != null">
-			          <el-option
-				          v-for="item in personnelOptions"
-				          :key="item.personnelId"
-				          :label="item.name"
-				          :value="item.name">
-			          </el-option>
-		          </el-select>
+		          <combo-input v-model="form.attn" scope="personnel" field="personnelName" placeholder="请选择或输入经办人" :disabled="form.inboundId != null" />
 	          </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -271,7 +231,7 @@
         <el-row>
           <el-col :span="12">
 	          <el-form-item label="负责人" prop="chargeBy">
-		          <el-input v-model="form.chargeBy" placeholder="请输入负责人" :disabled="form.inboundId != null"/>
+		          <combo-input v-model="form.chargeBy" scope="personnel" field="personnelName" placeholder="请选择或输入负责人" :disabled="form.inboundId != null" />
 	          </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -486,14 +446,14 @@
       <template #footer>
         <div class="dialog-footer">
 	        <el-button
-		        type="success" v-hasPermi="['audit:document:add']"
+		        type="success" v-hasPermi="['approval:document:approve']"
 		        v-if="(detailData.auditStatus === '0' || detailData.auditStatus === 0) && (username !== detailData.createBy || username === 'admin')"
 		        @click="handleAudit(1)"
 	        >
 		        通过
 	        </el-button>
 	        <el-button
-		        type="danger" v-hasPermi="['audit:document:add']"
+		        type="danger" v-hasPermi="['approval:document:reject']"
 		        v-if="(detailData.auditStatus === '0' || detailData.auditStatus === 0) && (username !== detailData.createBy || username === 'admin')"
 		        @click="handleAudit(2)"
 	        >
@@ -539,9 +499,10 @@
 </template>
 
 <script setup name="Order">
-import { auditDocument } from "@/api/audit/audit.js";
+import { approvalDocument } from "@/api/approval/approval.js";
 import { listMaterialByCodeOrName } from "@/api/base/material";
 import { listPersonnel } from "@/api/base/personnel";
+import { clearSuggestionsCache } from "@/api/base/suggestions";
 import {
   getSupplier,
   listSupplierByKeyword,
@@ -733,16 +694,23 @@ function searchWorkshopForForm(query) {
 }
 
 async function ensureMainWorkshopForLinkedRequest() {
-  const response = await listByNameOrContact({ workshopName: "主仓" });
-  const mainWorkshop =
-    response.rows?.find((item) => item.workshopCode === "MAIN") ??
-    response.rows?.find((item) => item.workshopName?.includes("主仓")) ??
+  if (form.value.workshopId) {
+    return;
+  }
+  const workshopName = form.value.rdProcurementWorkshopName;
+  if (!workshopName) {
+    return;
+  }
+  const response = await listByNameOrContact({ workshopName });
+  const linkedWorkshop =
+    response.rows?.find((item) => item.workshopName === workshopName) ??
+    response.rows?.[0] ??
     null;
-  if (!mainWorkshop) {
+  if (!linkedWorkshop) {
     return;
   }
   workshopOptionsForForm.value = response.rows || [];
-  form.value.workshopId = mainWorkshop.workshopId;
+  form.value.workshopId = linkedWorkshop.workshopId;
 }
 
 /** 搜索人员信息 */
@@ -811,6 +779,7 @@ function reset() {
     rdProcurementRequestNo: "",
     rdProcurementProjectCode: "",
     rdProcurementProjectName: "",
+    rdProcurementWorkshopName: "",
     chargeBy: null,
     attn: null,
     totalAmount: null,
@@ -897,6 +866,7 @@ async function handleRdProcurementRequestChange(requestId) {
     form.value.rdProcurementRequestNo = "";
     form.value.rdProcurementProjectCode = "";
     form.value.rdProcurementProjectName = "";
+    form.value.rdProcurementWorkshopName = "";
     detailList.value = detailList.value.map((item) => ({
       ...item,
       rdProcurementRequestLineId: null,
@@ -915,6 +885,8 @@ async function handleRdProcurementRequestChange(requestId) {
   form.value.rdProcurementRequestNo = requestData.documentNo;
   form.value.rdProcurementProjectCode = requestData.projectCode;
   form.value.rdProcurementProjectName = requestData.projectName;
+  form.value.rdProcurementWorkshopName = requestData.workshopNameSnapshot || "";
+  form.value.workshopId = requestData.workshopId || null;
   if (requestData.supplierId) {
     form.value.supplierId = requestData.supplierId;
     supplierOptionsForForm.value = [
@@ -1066,6 +1038,7 @@ function handleUpdate(row) {
         rdProcurementRequestNo: orderData.rdProcurementRequestNo,
         rdProcurementProjectCode: orderData.rdProcurementProjectCode,
         rdProcurementProjectName: orderData.rdProcurementProjectName,
+        rdProcurementWorkshopName: orderData.workshopName,
         chargeBy: orderData.chargeBy,
         attn: orderData.attn,
         totalAmount: orderData.totalAmount,
@@ -1142,12 +1115,14 @@ function submitForm() {
       // 直接提交表单，后端会处理经办人创建逻辑
       if (form.value.inboundId != null) {
         updateOrder(form.value).then(() => {
+          clearSuggestionsCache();
           proxy.$modal.msgSuccess("修改成功");
           open.value = false;
           getList();
         });
       } else {
         addOrder(form.value).then(() => {
+          clearSuggestionsCache();
           proxy.$modal.msgSuccess("新增成功");
           open.value = false;
           getList();
@@ -1212,7 +1187,7 @@ function handleAudit(status) {
   proxy.$modal
     .confirm(`确定要${status === 1 ? "审核通过" : "审核不通过"}该验收单吗？`)
     .then(() => {
-      return auditDocument(auditData);
+      return approvalDocument(auditData);
     })
     .then(() => {
       proxy.$modal.msgSuccess(status === 1 ? "审核通过成功" : "审核不通过成功");

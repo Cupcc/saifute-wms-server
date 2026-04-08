@@ -14,7 +14,7 @@ import {
   StockInOrderType,
 } from "../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
-import { AuditService } from "../../audit/application/audit.service";
+import { ApprovalService } from "../../approval/application/approval.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import {
@@ -29,7 +29,6 @@ import { InboundRepository } from "../infrastructure/inbound.repository";
 
 const DOCUMENT_TYPE = "StockInOrder";
 const BUSINESS_MODULE = "inbound";
-const MAIN_WAREHOUSE_CODE = "MAIN";
 
 function toOperationType(orderType: StockInOrderType): InventoryOperationType {
   switch (orderType) {
@@ -49,7 +48,7 @@ export class InboundService {
     private readonly repository: InboundRepository,
     private readonly masterDataService: MasterDataService,
     private readonly inventoryService: InventoryService,
-    private readonly auditService: AuditService,
+    private readonly approvalService: ApprovalService,
     private readonly rdProcurementRequestService: RdProcurementRequestService,
   ) {}
 
@@ -101,10 +100,8 @@ export class InboundService {
     const workshop = await this.masterDataService.getWorkshopById(
       dto.workshopId,
     );
-    this.assertMainWarehouse(workshop);
     const rdProcurementLink = await this.resolveRdProcurementLink(
       dto.orderType,
-      workshop,
       dto.rdProcurementRequestId,
       dto.supplierId,
     );
@@ -221,7 +218,7 @@ export class InboundService {
         tx,
       );
 
-      await this.auditService.createOrRefreshAuditDocument(
+      await this.approvalService.createOrRefreshApprovalDocument(
         {
           documentFamily: DocumentFamily.STOCK_IN,
           documentType: DOCUMENT_TYPE,
@@ -269,10 +266,8 @@ export class InboundService {
     const workshop = await this.masterDataService.getWorkshopById(
       dto.workshopId ?? existing.workshopId,
     );
-    this.assertMainWarehouse(workshop);
     const rdProcurementLink = await this.resolveRdProcurementLink(
       existing.orderType,
-      workshop,
       linkedRdProcurementRequestId,
       dto.supplierId ?? existing.supplierId ?? undefined,
     );
@@ -597,7 +592,7 @@ export class InboundService {
         tx,
       );
 
-      await this.auditService.createOrRefreshAuditDocument(
+      await this.approvalService.createOrRefreshApprovalDocument(
         {
           documentFamily: DocumentFamily.STOCK_IN,
           documentType: DOCUMENT_TYPE,
@@ -686,7 +681,7 @@ export class InboundService {
         tx,
       );
 
-      await this.auditService.markAuditNotRequired(
+      await this.approvalService.markApprovalNotRequired(
         DOCUMENT_TYPE,
         id,
         voidedBy,
@@ -762,15 +757,6 @@ export class InboundService {
     }
   }
 
-  private assertMainWarehouse(workshop: {
-    workshopCode: string;
-    workshopName: string;
-  }) {
-    if (workshop.workshopCode !== MAIN_WAREHOUSE_CODE) {
-      throw new BadRequestException("入库单只能归属主仓");
-    }
-  }
-
   private async buildLineWriteData(
     line: {
       materialId: number;
@@ -823,7 +809,6 @@ export class InboundService {
 
   private async resolveRdProcurementLink(
     orderType: StockInOrderType,
-    workshop: { id: number; workshopCode: string; workshopName: string },
     rdProcurementRequestId?: number,
     supplierId?: number,
   ) {
@@ -837,9 +822,6 @@ export class InboundService {
 
     if (orderType !== StockInOrderType.ACCEPTANCE) {
       throw new BadRequestException("只有验收单可以关联 RD 采购需求");
-    }
-    if (workshop.workshopCode !== MAIN_WAREHOUSE_CODE) {
-      throw new BadRequestException("关联 RD 采购需求的验收单必须先入主仓");
     }
 
     const request = await this.rdProcurementRequestService.getRequestById(

@@ -1,8 +1,8 @@
-# `audit` 模块设计
+# `approval` 模块设计
 
 ## 模块目标与职责
 
-第一阶段作为“轻量审核域”而不是 BPM 引擎，统一收口当前 `audit_document` 模式下的审核记录、审核状态查询和改单重置逻辑。
+当前作为“轻量审核域”而不是 BPM 引擎，统一收口 `approval_document` 模式下的审核记录、审核状态查询和改单重置逻辑。当前运行态只保留 `approval` 模块、`/approval/documents/**` 路由、`approval:document:*` 权限和 `approval_document` 持久化表。
 
 ## 原 Java 来源与映射范围
 
@@ -14,9 +14,9 @@
 
 核心对象：
 
-- `AuditDocument`
+- `ApprovalDocument`
 - `AuditStatus`
-- `DocumentAuditReference`
+- `DocumentApprovalReference`
 
 核心用例：
 
@@ -28,30 +28,30 @@
 
 ## Controller 接口草案
 
-- `GET /audit/documents/status`
-- `GET /audit/documents/detail`
-- `GET /audit/documents`
-- `POST /audit/documents`
-- `POST /audit/documents/:id/approve`
-- `POST /audit/documents/:id/reject`
-- `POST /audit/documents/:id/reset`
+- `GET /approval/documents/status`
+- `GET /approval/documents/detail`
+- `GET /approval/documents`
+- `POST /approval/documents`
+- `POST /approval/documents/:id/approve`
+- `POST /approval/documents/:id/reject`
+- `POST /approval/documents/:id/reset`
 
 说明：
 
-- 业务模块不直接访问审核底表，统一通过 `AuditService` 协作
+- 业务模块不直接访问审核底表，统一通过 `ApprovalService` 协作
 
 ## Application 层编排
 
-- `CreateAuditDocumentUseCase`
+- `CreateApprovalDocumentUseCase`
 - `ApproveDocumentUseCase`
 - `RejectDocumentUseCase`
-- `ResetAuditStatusUseCase`
-- `ValidateDownstreamDependencyUseCase`
+- `ResetApprovalStatusUseCase`
+- `ValidateDownstreamApprovalDependencyUseCase`
 
 ## Domain 规则与约束
 
 - 第一阶段只兼容当前三态：待审、通过、拒绝
-- 单据修改后是否重置审核由业务规则决定，但统一经 `audit` 执行
+- 单据修改后是否重置审核由业务规则决定，但统一经 `approval` 执行
 - 审核记录是单据的横切投影，不替代业务单据主状态
 - 下游依赖校验结果必须明确失败原因
 
@@ -72,7 +72,7 @@
 - 单据创建与审核记录创建优先保持同事务
 - 单据修改触发审核重置时，改单与重置必须同事务提交
 - 作废前的下游依赖校验必须发生在命令执行前
-- `approve`、`reject`、`reset` 默认作为独立审核动作执行；若业务模块需要与单据写入同事务完成，应由业务模块应用层显式包裹事务并编排 `audit`
+- `approve`、`reject`、`reset` 默认作为独立审核动作执行；若业务模块需要与单据写入同事务完成，应由业务模块应用层显式包裹事务并编排 `approval`
 
 ## 权限点、数据权限、审计要求
 
@@ -82,10 +82,10 @@
 
 ## 优化后表设计冻结
 
-- 对应核心表：`audit_document`
+- 对应核心表：`approval_document`
 - 审核表保存当前有效审核投影，不替代业务单据主状态
-- 单据表仅保留 `auditStatusSnapshot` 方便列表查询，真实审核状态以 `audit` 为准
-- `audit` 不直接建立指向各单据表的多态外键，避免共享核心反向耦合业务模块
+- 单据表仅保留 `auditStatusSnapshot` 方便列表查询，真实审核状态以 `approval` 域为准
+- `approval` 不直接建立指向各单据表的多态外键，避免共享核心反向耦合业务模块
 - 详细业务流程与字段建议见 `docs/architecture/20-wms-database-tables-and-schema.md`
 
 ## 待补测试清单

@@ -121,7 +121,7 @@ describe("outbound execute guard", () => {
           factory_number_reservation: 0,
           inventory_log: 0,
           inventory_source_usage: 0,
-          audit_document: 0,
+          approval_document: 0,
         },
       }),
     ).toEqual([

@@ -47,13 +47,7 @@
         />
       </el-form-item>
       <el-form-item label="单位" prop="unit">
-        <el-input
-          v-model="queryParams.unit"
-          placeholder="请输入单位"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
+        <combo-input v-model="queryParams.unit" scope="material" field="unitCode" placeholder="请选择或输入单位" width="240px" />
       </el-form-item>
       <el-form-item label="预估损失金额" prop="estimatedLoss">
         <el-input
@@ -149,7 +143,7 @@
           <el-input v-model="form.scrapReason" placeholder="请输入报废原因：1-过期 2-损坏 3-不合格 4-呆滞料 5-其他" />
         </el-form-item>
         <el-form-item label="单位" prop="unit">
-          <el-input v-model="form.unit" placeholder="请输入单位" />
+          <combo-input v-model="form.unit" scope="material" field="unitCode" placeholder="请选择或输入单位" />
         </el-form-item>
         <el-form-item label="预估损失金额" prop="estimatedLoss">
           <el-input v-model="form.estimatedLoss" placeholder="请输入预估损失金额" />

@@ -1,6 +1,6 @@
 export type * from "./commonInputTypes";
 export type * from "./models/AllocationTarget";
-export type * from "./models/AuditDocument";
+export type * from "./models/ApprovalDocument";
 export type * from "./models/Customer";
 export type * from "./models/CustomerStockOrder";
 export type * from "./models/CustomerStockOrderLine";

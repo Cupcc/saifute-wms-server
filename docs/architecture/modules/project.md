@@ -60,7 +60,7 @@
 - 不引入 `立项 / 暂停 / 关闭` 这类项目状态管理
 - 项目修改不能直接覆盖旧明细，必须先算差量
 - 项目删除若兼容现状，应保留恢复库存语义
-- 项目域不直接维护审核流，必要时后续再接 `audit`
+- 项目域不直接维护审核流，必要时后续再接 `approval`
 
 ## Infrastructure 设计
 
@@ -92,7 +92,7 @@
 - 统一归集对象使用 `allocation_target`；当前只有 `RD_PROJECT` 与 `project` 一对一绑定
 - 不并入通用单据家族表，避免项目业务事实被普通出入库语义稀释
 - 库存消耗与回补仍通过 `inventory-core` 执行
-- 第一阶段不接 `audit`，主表 `auditStatusSnapshot` 固定走 `NOT_REQUIRED`
+- 第一阶段不接 `approval`，主表 `auditStatusSnapshot` 固定走 `NOT_REQUIRED`
 - 详细业务流程与字段建议见 `docs/architecture/20-wms-database-tables-and-schema.md`
 
 ## 待补测试清单

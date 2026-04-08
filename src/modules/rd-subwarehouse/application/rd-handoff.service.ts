@@ -30,8 +30,6 @@ import {
 
 const DOCUMENT_TYPE = "RdHandoffOrder";
 const BUSINESS_MODULE = "rd-subwarehouse";
-const RD_SUBWAREHOUSE_CODE = "RD";
-const MAIN_WAREHOUSE_CODE = "MAIN";
 
 @Injectable()
 export class RdHandoffService {
@@ -76,19 +74,6 @@ export class RdHandoffService {
       throw new ConflictException(`单据编号已存在: ${dto.documentNo}`);
     }
 
-    const [sourceWorkshop, targetWorkshop] = await Promise.all([
-      this.masterDataService.getWorkshopById(dto.sourceWorkshopId),
-      this.masterDataService.getWorkshopByCode(RD_SUBWAREHOUSE_CODE),
-    ]);
-    if (sourceWorkshop.id === targetWorkshop.id) {
-      throw new BadRequestException("主仓与 RD 小仓不能是同一车间");
-    }
-    if (sourceWorkshop.workshopCode === RD_SUBWAREHOUSE_CODE) {
-      throw new BadRequestException("RD 小仓不能作为主仓交接来源");
-    }
-    if (sourceWorkshop.workshopCode !== MAIN_WAREHOUSE_CODE) {
-      throw new BadRequestException("当前切片只允许主仓发起到 RD 小仓的交接");
-    }
     const [sourceStockScopeRecord, targetStockScopeRecord] = await Promise.all([
       this.masterDataService.getStockScopeByCode("MAIN"),
       this.masterDataService.getStockScopeByCode("RD_SUB"),
@@ -169,12 +154,12 @@ export class RdHandoffService {
           handlerPersonnelId: dto.handlerPersonnelId,
           sourceStockScopeId: sourceStockScopeRecord.id,
           targetStockScopeId: targetStockScopeRecord.id,
-          sourceWorkshopId: sourceWorkshop.id,
-          targetWorkshopId: targetWorkshop.id,
+          sourceWorkshopId: null,
+          targetWorkshopId: null,
           auditStatusSnapshot: AuditStatusSnapshot.NOT_REQUIRED,
           handlerNameSnapshot: handlerSnapshot.handlerNameSnapshot,
-          sourceWorkshopNameSnapshot: sourceWorkshop.workshopName,
-          targetWorkshopNameSnapshot: targetWorkshop.workshopName,
+          sourceWorkshopNameSnapshot: sourceStockScopeRecord.scopeName,
+          targetWorkshopNameSnapshot: targetStockScopeRecord.scopeName,
           totalQty,
           totalAmount,
           remark: dto.remark,

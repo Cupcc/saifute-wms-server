@@ -1,0 +1,87 @@
+{
+  "module": "workshop-material",
+  "description": "F1-F3 未代码化的 live API / browser 验收记录",
+  "cases": [
+    {
+      "id": "WM-API-1",
+      "name": "统一家族 API create / revise / void 与库存补偿",
+      "capability": "F1-F3",
+      "covers": ["AC-2", "AC-3", "AC-4"],
+      "surface": "api",
+      "precondition": ".env.dev; backend http://127.0.0.1:8112; admin/admin123; supplierId=3; handlerPersonnelId=1; materialId=7; 通过 inbound into-order 向 MAIN 补 8 个库存",
+      "steps": [
+        "POST /api/inbound/into-orders 为 materialId=7 建立 MAIN 正库存",
+        "POST /api/workshop-material/pick-orders 创建领料单，确认 inventory_log 写入 PICK_OUT，inventory_source_usage 写入 ALLOCATED",
+        "POST /api/workshop-material/return-orders 创建退料单并回指 pick line",
+        "PUT /api/workshop-material/pick-orders/1，确认存在有效退料下游时返回 400 阻断",
+        "PUT /api/workshop-material/return-orders/2 与 /api/workshop-material/scrap-orders/3，确认出现 reversal + replay、revisionNo 递增",
+        "POST /api/workshop-material/*/void，确认三单 inventoryEffectStatus=REVERSED，source usage 全量 RELEASED"
+      ],
+      "expected": "统一家族 API 可完成真实 create / revise / void；库存副作用和来源追溯经 inventory-core 统一落表；pick revise 被下游退料阻断；return/scrap revise 发生补偿重放；void 后副作用全部回滚。",
+      "lastRun": {
+        "date": "2026-04-07",
+        "tool": "live-api + mysql",
+        "target": "http://127.0.0.1:8112 / saifute-wsm",
+        "result": "pass"
+      }
+    },
+    {
+      "id": "WM-BROWSER-1",
+      "name": "领料单页面修改闭环",
+      "capability": "F1",
+      "covers": ["AC-1", "AC-5"],
+      "surface": "browser",
+      "precondition": ".env.dev; backend :8112; web :90; 系统管理员已登录；存在一条领料单 PICK-QA-1775552384856",
+      "steps": [
+        "访问 /take/pickOrder",
+        "确认列表能展示已创建领料单",
+        "点击行内“修改”"
+      ],
+      "expected": "修改弹窗应载入现有表头与明细，可继续完成真实改单。",
+      "actual": "弹窗出现“暂无数据”；网络触发 GET /api/workshop-material/pick-orders/undefined -> 400，以及 GET /api/audit/documents/detail?documentType=WorkshopMaterialOrder -> 404。",
+      "lastRun": {
+        "date": "2026-04-07",
+        "tool": "chrome-devtools-mcp",
+        "target": "http://localhost:90/take/pickOrder",
+        "result": "fail"
+      }
+    },
+    {
+      "id": "WM-BROWSER-2",
+      "name": "退料单页面路由可用性",
+      "capability": "F1",
+      "covers": ["AC-1", "AC-5"],
+      "surface": "browser",
+      "precondition": ".env.dev; backend :8112; web :90; 系统管理员已登录",
+      "steps": ["访问 /take/returnOrder"],
+      "expected": "页面应正常加载退料单列表并允许继续录单/改单/作废。",
+      "actual": "路由启动即失败；浏览器报 Failed to fetch dynamically imported module，网络显示 GET /src/api/audit/audit.js?t=* -> 404。",
+      "lastRun": {
+        "date": "2026-04-07",
+        "tool": "chrome-devtools-mcp",
+        "target": "http://localhost:90/take/returnOrder",
+        "result": "fail"
+      }
+    },
+    {
+      "id": "WM-BROWSER-3",
+      "name": "报废单页面列表与修改弹窗冒烟",
+      "capability": "F1",
+      "covers": ["AC-1"],
+      "surface": "browser",
+      "precondition": ".env.dev; backend :8112; web :90; 系统管理员已登录；存在一条报废单 SCRAP-QA-1775552486995",
+      "steps": [
+        "访问 /take/scrapOrder",
+        "确认列表展示报废单号 SCRAP-QA-1775552486995",
+        "点击“修改”并确认弹窗加载已有表头与明细"
+      ],
+      "expected": "页面至少能完成真实列表和编辑前置回显。",
+      "lastRun": {
+        "date": "2026-04-07",
+        "tool": "chrome-devtools-mcp",
+        "target": "http://localhost:90/take/scrapOrder",
+        "result": "pass"
+      }
+    }
+  ]
+}

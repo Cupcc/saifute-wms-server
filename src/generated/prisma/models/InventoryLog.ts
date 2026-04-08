@@ -351,7 +351,7 @@ export type InventoryLogGroupByOutputType = {
   balanceId: number;
   materialId: number;
   stockScopeId: number | null;
-  workshopId: number;
+  workshopId: number | null;
   allocationTargetId: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -398,7 +398,7 @@ export type InventoryLogWhereInput = {
   balanceId?: Prisma.IntFilter<"InventoryLog"> | number;
   materialId?: Prisma.IntFilter<"InventoryLog"> | number;
   stockScopeId?: Prisma.IntNullableFilter<"InventoryLog"> | number | null;
-  workshopId?: Prisma.IntFilter<"InventoryLog"> | number;
+  workshopId?: Prisma.IntNullableFilter<"InventoryLog"> | number | null;
   allocationTargetId?: Prisma.IntNullableFilter<"InventoryLog"> | number | null;
   direction?:
     | Prisma.EnumStockDirectionFilter<"InventoryLog">
@@ -464,9 +464,9 @@ export type InventoryLogWhereInput = {
     Prisma.StockScopeWhereInput
   > | null;
   workshop?: Prisma.XOR<
-    Prisma.WorkshopScalarRelationFilter,
+    Prisma.WorkshopNullableScalarRelationFilter,
     Prisma.WorkshopWhereInput
-  >;
+  > | null;
   allocationTarget?: Prisma.XOR<
     Prisma.AllocationTargetNullableScalarRelationFilter,
     Prisma.AllocationTargetWhereInput
@@ -501,7 +501,7 @@ export type InventoryLogOrderByWithRelationInput = {
   balanceId?: Prisma.SortOrder;
   materialId?: Prisma.SortOrder;
   stockScopeId?: Prisma.SortOrderInput | Prisma.SortOrder;
-  workshopId?: Prisma.SortOrder;
+  workshopId?: Prisma.SortOrderInput | Prisma.SortOrder;
   allocationTargetId?: Prisma.SortOrderInput | Prisma.SortOrder;
   direction?: Prisma.SortOrder;
   operationType?: Prisma.SortOrder;
@@ -547,7 +547,7 @@ export type InventoryLogWhereUniqueInput = Prisma.AtLeast<
     balanceId?: Prisma.IntFilter<"InventoryLog"> | number;
     materialId?: Prisma.IntFilter<"InventoryLog"> | number;
     stockScopeId?: Prisma.IntNullableFilter<"InventoryLog"> | number | null;
-    workshopId?: Prisma.IntFilter<"InventoryLog"> | number;
+    workshopId?: Prisma.IntNullableFilter<"InventoryLog"> | number | null;
     allocationTargetId?:
       | Prisma.IntNullableFilter<"InventoryLog">
       | number
@@ -614,9 +614,9 @@ export type InventoryLogWhereUniqueInput = Prisma.AtLeast<
       Prisma.StockScopeWhereInput
     > | null;
     workshop?: Prisma.XOR<
-      Prisma.WorkshopScalarRelationFilter,
+      Prisma.WorkshopNullableScalarRelationFilter,
       Prisma.WorkshopWhereInput
-    >;
+    > | null;
     allocationTarget?: Prisma.XOR<
       Prisma.AllocationTargetNullableScalarRelationFilter,
       Prisma.AllocationTargetWhereInput
@@ -653,7 +653,7 @@ export type InventoryLogOrderByWithAggregationInput = {
   balanceId?: Prisma.SortOrder;
   materialId?: Prisma.SortOrder;
   stockScopeId?: Prisma.SortOrderInput | Prisma.SortOrder;
-  workshopId?: Prisma.SortOrder;
+  workshopId?: Prisma.SortOrderInput | Prisma.SortOrder;
   allocationTargetId?: Prisma.SortOrderInput | Prisma.SortOrder;
   direction?: Prisma.SortOrder;
   operationType?: Prisma.SortOrder;
@@ -694,7 +694,10 @@ export type InventoryLogScalarWhereWithAggregatesInput = {
     | Prisma.IntNullableWithAggregatesFilter<"InventoryLog">
     | number
     | null;
-  workshopId?: Prisma.IntWithAggregatesFilter<"InventoryLog"> | number;
+  workshopId?:
+    | Prisma.IntNullableWithAggregatesFilter<"InventoryLog">
+    | number
+    | null;
   allocationTargetId?:
     | Prisma.IntNullableWithAggregatesFilter<"InventoryLog">
     | number
@@ -788,7 +791,7 @@ export type InventoryLogCreateInput = {
   balance: Prisma.InventoryBalanceCreateNestedOneWithoutLogsInput;
   material: Prisma.MaterialCreateNestedOneWithoutInventoryLogsInput;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutInventoryLogsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   allocationTarget?: Prisma.AllocationTargetCreateNestedOneWithoutInventoryLogsInput;
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
@@ -805,7 +808,7 @@ export type InventoryLogUncheckedCreateInput = {
   balanceId: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -887,7 +890,7 @@ export type InventoryLogUpdateInput = {
   balance?: Prisma.InventoryBalanceUpdateOneRequiredWithoutLogsNestedInput;
   material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryLogsNestedInput;
   stockScope?: Prisma.StockScopeUpdateOneWithoutInventoryLogsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryLogsNestedInput;
   allocationTarget?: Prisma.AllocationTargetUpdateOneWithoutInventoryLogsNestedInput;
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
@@ -904,7 +907,7 @@ export type InventoryLogUncheckedUpdateInput = {
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -977,7 +980,7 @@ export type InventoryLogCreateManyInput = {
   balanceId: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -1056,7 +1059,7 @@ export type InventoryLogUncheckedUpdateManyInput = {
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -2142,7 +2145,7 @@ export type InventoryLogCreateWithoutMaterialInput = {
   note?: string | null;
   balance: Prisma.InventoryBalanceCreateNestedOneWithoutLogsInput;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutInventoryLogsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   allocationTarget?: Prisma.AllocationTargetCreateNestedOneWithoutInventoryLogsInput;
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
@@ -2158,7 +2161,7 @@ export type InventoryLogUncheckedCreateWithoutMaterialInput = {
   id?: number;
   balanceId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -2241,7 +2244,7 @@ export type InventoryLogScalarWhereInput = {
   balanceId?: Prisma.IntFilter<"InventoryLog"> | number;
   materialId?: Prisma.IntFilter<"InventoryLog"> | number;
   stockScopeId?: Prisma.IntNullableFilter<"InventoryLog"> | number | null;
-  workshopId?: Prisma.IntFilter<"InventoryLog"> | number;
+  workshopId?: Prisma.IntNullableFilter<"InventoryLog"> | number | null;
   allocationTargetId?: Prisma.IntNullableFilter<"InventoryLog"> | number | null;
   direction?:
     | Prisma.EnumStockDirectionFilter<"InventoryLog">
@@ -2421,7 +2424,7 @@ export type InventoryLogCreateWithoutStockScopeInput = {
   note?: string | null;
   balance: Prisma.InventoryBalanceCreateNestedOneWithoutLogsInput;
   material: Prisma.MaterialCreateNestedOneWithoutInventoryLogsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   allocationTarget?: Prisma.AllocationTargetCreateNestedOneWithoutInventoryLogsInput;
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
@@ -2437,7 +2440,7 @@ export type InventoryLogUncheckedCreateWithoutStockScopeInput = {
   id?: number;
   balanceId: number;
   materialId: number;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -2527,7 +2530,7 @@ export type InventoryLogCreateWithoutBalanceInput = {
   note?: string | null;
   material: Prisma.MaterialCreateNestedOneWithoutInventoryLogsInput;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutInventoryLogsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   allocationTarget?: Prisma.AllocationTargetCreateNestedOneWithoutInventoryLogsInput;
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
@@ -2543,7 +2546,7 @@ export type InventoryLogUncheckedCreateWithoutBalanceInput = {
   id?: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -2634,7 +2637,7 @@ export type InventoryLogCreateWithoutAllocationTargetInput = {
   balance: Prisma.InventoryBalanceCreateNestedOneWithoutLogsInput;
   material: Prisma.MaterialCreateNestedOneWithoutInventoryLogsInput;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutInventoryLogsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageCreateNestedManyWithoutSourceLogInput;
@@ -2650,7 +2653,7 @@ export type InventoryLogUncheckedCreateWithoutAllocationTargetInput = {
   balanceId: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
   businessModule: string;
@@ -2740,7 +2743,7 @@ export type InventoryLogCreateWithoutReversedByLogsInput = {
   balance: Prisma.InventoryBalanceCreateNestedOneWithoutLogsInput;
   material: Prisma.MaterialCreateNestedOneWithoutInventoryLogsInput;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutInventoryLogsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   allocationTarget?: Prisma.AllocationTargetCreateNestedOneWithoutInventoryLogsInput;
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageCreateNestedManyWithoutSourceLogInput;
@@ -2756,7 +2759,7 @@ export type InventoryLogUncheckedCreateWithoutReversedByLogsInput = {
   balanceId: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -2811,7 +2814,7 @@ export type InventoryLogCreateWithoutReversalOfLogInput = {
   balance: Prisma.InventoryBalanceCreateNestedOneWithoutLogsInput;
   material: Prisma.MaterialCreateNestedOneWithoutInventoryLogsInput;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutInventoryLogsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   allocationTarget?: Prisma.AllocationTargetCreateNestedOneWithoutInventoryLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageCreateNestedManyWithoutSourceLogInput;
@@ -2827,7 +2830,7 @@ export type InventoryLogUncheckedCreateWithoutReversalOfLogInput = {
   balanceId: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -2943,7 +2946,7 @@ export type InventoryLogUpdateWithoutReversedByLogsInput = {
   balance?: Prisma.InventoryBalanceUpdateOneRequiredWithoutLogsNestedInput;
   material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryLogsNestedInput;
   stockScope?: Prisma.StockScopeUpdateOneWithoutInventoryLogsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryLogsNestedInput;
   allocationTarget?: Prisma.AllocationTargetUpdateOneWithoutInventoryLogsNestedInput;
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUpdateManyWithoutSourceLogNestedInput;
@@ -2959,7 +2962,7 @@ export type InventoryLogUncheckedUpdateWithoutReversedByLogsInput = {
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -3074,7 +3077,7 @@ export type InventoryLogCreateWithoutAllocatedSourceUsagesInput = {
   balance: Prisma.InventoryBalanceCreateNestedOneWithoutLogsInput;
   material: Prisma.MaterialCreateNestedOneWithoutInventoryLogsInput;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutInventoryLogsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   allocationTarget?: Prisma.AllocationTargetCreateNestedOneWithoutInventoryLogsInput;
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
@@ -3090,7 +3093,7 @@ export type InventoryLogUncheckedCreateWithoutAllocatedSourceUsagesInput = {
   balanceId: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -3200,7 +3203,7 @@ export type InventoryLogUpdateWithoutAllocatedSourceUsagesInput = {
   balance?: Prisma.InventoryBalanceUpdateOneRequiredWithoutLogsNestedInput;
   material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryLogsNestedInput;
   stockScope?: Prisma.StockScopeUpdateOneWithoutInventoryLogsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryLogsNestedInput;
   allocationTarget?: Prisma.AllocationTargetUpdateOneWithoutInventoryLogsNestedInput;
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
@@ -3216,7 +3219,7 @@ export type InventoryLogUncheckedUpdateWithoutAllocatedSourceUsagesInput = {
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -3303,7 +3306,7 @@ export type InventoryLogCreateWithoutSourcePriceCorrectionLineInput = {
   balance: Prisma.InventoryBalanceCreateNestedOneWithoutLogsInput;
   material: Prisma.MaterialCreateNestedOneWithoutInventoryLogsInput;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutInventoryLogsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   allocationTarget?: Prisma.AllocationTargetCreateNestedOneWithoutInventoryLogsInput;
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
@@ -3319,7 +3322,7 @@ export type InventoryLogUncheckedCreateWithoutSourcePriceCorrectionLineInput = {
   balanceId: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -3374,7 +3377,7 @@ export type InventoryLogCreateWithoutGeneratedOutCorrectionLineInput = {
   balance: Prisma.InventoryBalanceCreateNestedOneWithoutLogsInput;
   material: Prisma.MaterialCreateNestedOneWithoutInventoryLogsInput;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutInventoryLogsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   allocationTarget?: Prisma.AllocationTargetCreateNestedOneWithoutInventoryLogsInput;
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
@@ -3391,7 +3394,7 @@ export type InventoryLogUncheckedCreateWithoutGeneratedOutCorrectionLineInput =
     balanceId: number;
     materialId: number;
     stockScopeId?: number | null;
-    workshopId: number;
+    workshopId?: number | null;
     allocationTargetId?: number | null;
     direction: $Enums.StockDirection;
     operationType: $Enums.InventoryOperationType;
@@ -3452,7 +3455,7 @@ export type InventoryLogCreateWithoutGeneratedInCorrectionLineInput = {
   balance: Prisma.InventoryBalanceCreateNestedOneWithoutLogsInput;
   material: Prisma.MaterialCreateNestedOneWithoutInventoryLogsInput;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutInventoryLogsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   allocationTarget?: Prisma.AllocationTargetCreateNestedOneWithoutInventoryLogsInput;
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
@@ -3468,7 +3471,7 @@ export type InventoryLogUncheckedCreateWithoutGeneratedInCorrectionLineInput = {
   balanceId: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -3578,7 +3581,7 @@ export type InventoryLogUpdateWithoutSourcePriceCorrectionLineInput = {
   balance?: Prisma.InventoryBalanceUpdateOneRequiredWithoutLogsNestedInput;
   material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryLogsNestedInput;
   stockScope?: Prisma.StockScopeUpdateOneWithoutInventoryLogsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryLogsNestedInput;
   allocationTarget?: Prisma.AllocationTargetUpdateOneWithoutInventoryLogsNestedInput;
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
@@ -3594,7 +3597,7 @@ export type InventoryLogUncheckedUpdateWithoutSourcePriceCorrectionLineInput = {
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -3736,7 +3739,7 @@ export type InventoryLogUpdateWithoutGeneratedOutCorrectionLineInput = {
   balance?: Prisma.InventoryBalanceUpdateOneRequiredWithoutLogsNestedInput;
   material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryLogsNestedInput;
   stockScope?: Prisma.StockScopeUpdateOneWithoutInventoryLogsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryLogsNestedInput;
   allocationTarget?: Prisma.AllocationTargetUpdateOneWithoutInventoryLogsNestedInput;
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
@@ -3753,7 +3756,7 @@ export type InventoryLogUncheckedUpdateWithoutGeneratedOutCorrectionLineInput =
     balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
     materialId?: Prisma.IntFieldUpdateOperationsInput | number;
     stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-    workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+    workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
     allocationTargetId?:
       | Prisma.NullableIntFieldUpdateOperationsInput
       | number
@@ -3898,7 +3901,7 @@ export type InventoryLogUpdateWithoutGeneratedInCorrectionLineInput = {
   balance?: Prisma.InventoryBalanceUpdateOneRequiredWithoutLogsNestedInput;
   material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryLogsNestedInput;
   stockScope?: Prisma.StockScopeUpdateOneWithoutInventoryLogsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryLogsNestedInput;
   allocationTarget?: Prisma.AllocationTargetUpdateOneWithoutInventoryLogsNestedInput;
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
@@ -3914,7 +3917,7 @@ export type InventoryLogUncheckedUpdateWithoutGeneratedInCorrectionLineInput = {
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -4001,7 +4004,7 @@ export type InventoryLogCreateWithoutRdMaterialStatusHistoriesInput = {
   balance: Prisma.InventoryBalanceCreateNestedOneWithoutLogsInput;
   material: Prisma.MaterialCreateNestedOneWithoutInventoryLogsInput;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutInventoryLogsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   allocationTarget?: Prisma.AllocationTargetCreateNestedOneWithoutInventoryLogsInput;
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
@@ -4017,7 +4020,7 @@ export type InventoryLogUncheckedCreateWithoutRdMaterialStatusHistoriesInput = {
   balanceId: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -4127,7 +4130,7 @@ export type InventoryLogUpdateWithoutRdMaterialStatusHistoriesInput = {
   balance?: Prisma.InventoryBalanceUpdateOneRequiredWithoutLogsNestedInput;
   material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryLogsNestedInput;
   stockScope?: Prisma.StockScopeUpdateOneWithoutInventoryLogsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryLogsNestedInput;
   allocationTarget?: Prisma.AllocationTargetUpdateOneWithoutInventoryLogsNestedInput;
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
@@ -4143,7 +4146,7 @@ export type InventoryLogUncheckedUpdateWithoutRdMaterialStatusHistoriesInput = {
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -4230,7 +4233,7 @@ export type InventoryLogCreateWithoutRdStocktakeOrderLineInput = {
   balance: Prisma.InventoryBalanceCreateNestedOneWithoutLogsInput;
   material: Prisma.MaterialCreateNestedOneWithoutInventoryLogsInput;
   stockScope?: Prisma.StockScopeCreateNestedOneWithoutInventoryLogsInput;
-  workshop: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
+  workshop?: Prisma.WorkshopCreateNestedOneWithoutInventoryLogsInput;
   allocationTarget?: Prisma.AllocationTargetCreateNestedOneWithoutInventoryLogsInput;
   reversalOfLog?: Prisma.InventoryLogCreateNestedOneWithoutReversedByLogsInput;
   reversedByLogs?: Prisma.InventoryLogCreateNestedManyWithoutReversalOfLogInput;
@@ -4246,7 +4249,7 @@ export type InventoryLogUncheckedCreateWithoutRdStocktakeOrderLineInput = {
   balanceId: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -4355,7 +4358,7 @@ export type InventoryLogUpdateWithoutRdStocktakeOrderLineInput = {
   balance?: Prisma.InventoryBalanceUpdateOneRequiredWithoutLogsNestedInput;
   material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryLogsNestedInput;
   stockScope?: Prisma.StockScopeUpdateOneWithoutInventoryLogsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryLogsNestedInput;
   allocationTarget?: Prisma.AllocationTargetUpdateOneWithoutInventoryLogsNestedInput;
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
@@ -4371,7 +4374,7 @@ export type InventoryLogUncheckedUpdateWithoutRdStocktakeOrderLineInput = {
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -4442,7 +4445,7 @@ export type InventoryLogCreateManyMaterialInput = {
   id?: number;
   balanceId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -4516,7 +4519,7 @@ export type InventoryLogUpdateWithoutMaterialInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   balance?: Prisma.InventoryBalanceUpdateOneRequiredWithoutLogsNestedInput;
   stockScope?: Prisma.StockScopeUpdateOneWithoutInventoryLogsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryLogsNestedInput;
   allocationTarget?: Prisma.AllocationTargetUpdateOneWithoutInventoryLogsNestedInput;
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
@@ -4532,7 +4535,7 @@ export type InventoryLogUncheckedUpdateWithoutMaterialInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -4604,7 +4607,7 @@ export type InventoryLogUncheckedUpdateManyWithoutMaterialInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -4896,7 +4899,7 @@ export type InventoryLogCreateManyStockScopeInput = {
   id?: number;
   balanceId: number;
   materialId: number;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -4970,7 +4973,7 @@ export type InventoryLogUpdateWithoutStockScopeInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   balance?: Prisma.InventoryBalanceUpdateOneRequiredWithoutLogsNestedInput;
   material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryLogsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryLogsNestedInput;
   allocationTarget?: Prisma.AllocationTargetUpdateOneWithoutInventoryLogsNestedInput;
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
@@ -4986,7 +4989,7 @@ export type InventoryLogUncheckedUpdateWithoutStockScopeInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -5058,7 +5061,7 @@ export type InventoryLogUncheckedUpdateManyWithoutStockScopeInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -5123,7 +5126,7 @@ export type InventoryLogCreateManyBalanceInput = {
   id?: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -5197,7 +5200,7 @@ export type InventoryLogUpdateWithoutBalanceInput = {
   note?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryLogsNestedInput;
   stockScope?: Prisma.StockScopeUpdateOneWithoutInventoryLogsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryLogsNestedInput;
   allocationTarget?: Prisma.AllocationTargetUpdateOneWithoutInventoryLogsNestedInput;
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
@@ -5213,7 +5216,7 @@ export type InventoryLogUncheckedUpdateWithoutBalanceInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -5285,7 +5288,7 @@ export type InventoryLogUncheckedUpdateManyWithoutBalanceInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -5351,7 +5354,7 @@ export type InventoryLogCreateManyAllocationTargetInput = {
   balanceId: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
   businessModule: string;
@@ -5425,7 +5428,7 @@ export type InventoryLogUpdateWithoutAllocationTargetInput = {
   balance?: Prisma.InventoryBalanceUpdateOneRequiredWithoutLogsNestedInput;
   material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryLogsNestedInput;
   stockScope?: Prisma.StockScopeUpdateOneWithoutInventoryLogsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryLogsNestedInput;
   reversalOfLog?: Prisma.InventoryLogUpdateOneWithoutReversedByLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUpdateManyWithoutSourceLogNestedInput;
@@ -5441,7 +5444,7 @@ export type InventoryLogUncheckedUpdateWithoutAllocationTargetInput = {
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   direction?:
     | Prisma.EnumStockDirectionFieldUpdateOperationsInput
     | $Enums.StockDirection;
@@ -5510,7 +5513,7 @@ export type InventoryLogUncheckedUpdateManyWithoutAllocationTargetInput = {
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   direction?:
     | Prisma.EnumStockDirectionFieldUpdateOperationsInput
     | $Enums.StockDirection;
@@ -5572,7 +5575,7 @@ export type InventoryLogCreateManyReversalOfLogInput = {
   balanceId: number;
   materialId: number;
   stockScopeId?: number | null;
-  workshopId: number;
+  workshopId?: number | null;
   allocationTargetId?: number | null;
   direction: $Enums.StockDirection;
   operationType: $Enums.InventoryOperationType;
@@ -5646,7 +5649,7 @@ export type InventoryLogUpdateWithoutReversalOfLogInput = {
   balance?: Prisma.InventoryBalanceUpdateOneRequiredWithoutLogsNestedInput;
   material?: Prisma.MaterialUpdateOneRequiredWithoutInventoryLogsNestedInput;
   stockScope?: Prisma.StockScopeUpdateOneWithoutInventoryLogsNestedInput;
-  workshop?: Prisma.WorkshopUpdateOneRequiredWithoutInventoryLogsNestedInput;
+  workshop?: Prisma.WorkshopUpdateOneWithoutInventoryLogsNestedInput;
   allocationTarget?: Prisma.AllocationTargetUpdateOneWithoutInventoryLogsNestedInput;
   reversedByLogs?: Prisma.InventoryLogUpdateManyWithoutReversalOfLogNestedInput;
   allocatedSourceUsages?: Prisma.InventorySourceUsageUpdateManyWithoutSourceLogNestedInput;
@@ -5662,7 +5665,7 @@ export type InventoryLogUncheckedUpdateWithoutReversalOfLogInput = {
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -5731,7 +5734,7 @@ export type InventoryLogUncheckedUpdateManyWithoutReversalOfLogInput = {
   balanceId?: Prisma.IntFieldUpdateOperationsInput | number;
   materialId?: Prisma.IntFieldUpdateOperationsInput | number;
   stockScopeId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
-  workshopId?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null;
   allocationTargetId?:
     | Prisma.NullableIntFieldUpdateOperationsInput
     | number
@@ -5885,7 +5888,7 @@ export type InventoryLogSelect<
     balance?: boolean | Prisma.InventoryBalanceDefaultArgs<ExtArgs>;
     material?: boolean | Prisma.MaterialDefaultArgs<ExtArgs>;
     stockScope?: boolean | Prisma.InventoryLog$stockScopeArgs<ExtArgs>;
-    workshop?: boolean | Prisma.WorkshopDefaultArgs<ExtArgs>;
+    workshop?: boolean | Prisma.InventoryLog$workshopArgs<ExtArgs>;
     allocationTarget?:
       | boolean
       | Prisma.InventoryLog$allocationTargetArgs<ExtArgs>;
@@ -5976,7 +5979,7 @@ export type InventoryLogInclude<
   balance?: boolean | Prisma.InventoryBalanceDefaultArgs<ExtArgs>;
   material?: boolean | Prisma.MaterialDefaultArgs<ExtArgs>;
   stockScope?: boolean | Prisma.InventoryLog$stockScopeArgs<ExtArgs>;
-  workshop?: boolean | Prisma.WorkshopDefaultArgs<ExtArgs>;
+  workshop?: boolean | Prisma.InventoryLog$workshopArgs<ExtArgs>;
   allocationTarget?:
     | boolean
     | Prisma.InventoryLog$allocationTargetArgs<ExtArgs>;
@@ -6012,7 +6015,7 @@ export type $InventoryLogPayload<
     balance: Prisma.$InventoryBalancePayload<ExtArgs>;
     material: Prisma.$MaterialPayload<ExtArgs>;
     stockScope: Prisma.$StockScopePayload<ExtArgs> | null;
-    workshop: Prisma.$WorkshopPayload<ExtArgs>;
+    workshop: Prisma.$WorkshopPayload<ExtArgs> | null;
     allocationTarget: Prisma.$AllocationTargetPayload<ExtArgs> | null;
     reversalOfLog: Prisma.$InventoryLogPayload<ExtArgs> | null;
     reversedByLogs: Prisma.$InventoryLogPayload<ExtArgs>[];
@@ -6029,7 +6032,7 @@ export type $InventoryLogPayload<
       balanceId: number;
       materialId: number;
       stockScopeId: number | null;
-      workshopId: number;
+      workshopId: number | null;
       allocationTargetId: number | null;
       direction: $Enums.StockDirection;
       operationType: $Enums.InventoryOperationType;
@@ -6573,17 +6576,16 @@ export interface Prisma__InventoryLogClient<
     ExtArgs,
     GlobalOmitOptions
   >;
-  workshop<T extends Prisma.WorkshopDefaultArgs<ExtArgs> = {}>(
-    args?: Prisma.Subset<T, Prisma.WorkshopDefaultArgs<ExtArgs>>,
+  workshop<T extends Prisma.InventoryLog$workshopArgs<ExtArgs> = {}>(
+    args?: Prisma.Subset<T, Prisma.InventoryLog$workshopArgs<ExtArgs>>,
   ): Prisma.Prisma__WorkshopClient<
-    | runtime.Types.Result.GetResult<
-        Prisma.$WorkshopPayload<ExtArgs>,
-        T,
-        "findUniqueOrThrow",
-        GlobalOmitOptions
-      >
-    | Null,
-    Null,
+    runtime.Types.Result.GetResult<
+      Prisma.$WorkshopPayload<ExtArgs>,
+      T,
+      "findUniqueOrThrow",
+      GlobalOmitOptions
+    > | null,
+    null,
     ExtArgs,
     GlobalOmitOptions
   >;
@@ -7231,6 +7233,28 @@ export type InventoryLog$stockScopeArgs<
    */
   include?: Prisma.StockScopeInclude<ExtArgs> | null;
   where?: Prisma.StockScopeWhereInput;
+};
+
+/**
+ * InventoryLog.workshop
+ */
+export type InventoryLog$workshopArgs<
+  ExtArgs extends
+    runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the Workshop
+   */
+  select?: Prisma.WorkshopSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the Workshop
+   */
+  omit?: Prisma.WorkshopOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WorkshopInclude<ExtArgs> | null;
+  where?: Prisma.WorkshopWhereInput;
 };
 
 /**

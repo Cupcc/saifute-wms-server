@@ -86,6 +86,7 @@ export type SysUserCountAggregateOutputType = {
   remark: number;
   passwordHash: number;
   consoleMode: number;
+  stockScope: number;
   workshopScope: number;
   extraPermissions: number;
   createdAt: number;
@@ -153,6 +154,7 @@ export type SysUserCountAggregateInputType = {
   remark?: true;
   passwordHash?: true;
   consoleMode?: true;
+  stockScope?: true;
   workshopScope?: true;
   extraPermissions?: true;
   createdAt?: true;
@@ -267,6 +269,7 @@ export type SysUserGroupByOutputType = {
   remark: string;
   passwordHash: string;
   consoleMode: string;
+  stockScope: runtime.JsonValue | null;
   workshopScope: runtime.JsonValue | null;
   extraPermissions: runtime.JsonValue | null;
   createdAt: Date;
@@ -308,6 +311,7 @@ export type SysUserWhereInput = {
   remark?: Prisma.StringFilter<"SysUser"> | string;
   passwordHash?: Prisma.StringFilter<"SysUser"> | string;
   consoleMode?: Prisma.StringFilter<"SysUser"> | string;
+  stockScope?: Prisma.JsonNullableFilter<"SysUser">;
   workshopScope?: Prisma.JsonNullableFilter<"SysUser">;
   extraPermissions?: Prisma.JsonNullableFilter<"SysUser">;
   createdAt?: Prisma.DateTimeFilter<"SysUser"> | Date | string;
@@ -334,6 +338,7 @@ export type SysUserOrderByWithRelationInput = {
   remark?: Prisma.SortOrder;
   passwordHash?: Prisma.SortOrder;
   consoleMode?: Prisma.SortOrder;
+  stockScope?: Prisma.SortOrderInput | Prisma.SortOrder;
   workshopScope?: Prisma.SortOrderInput | Prisma.SortOrder;
   extraPermissions?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -362,6 +367,7 @@ export type SysUserWhereUniqueInput = Prisma.AtLeast<
     remark?: Prisma.StringFilter<"SysUser"> | string;
     passwordHash?: Prisma.StringFilter<"SysUser"> | string;
     consoleMode?: Prisma.StringFilter<"SysUser"> | string;
+    stockScope?: Prisma.JsonNullableFilter<"SysUser">;
     workshopScope?: Prisma.JsonNullableFilter<"SysUser">;
     extraPermissions?: Prisma.JsonNullableFilter<"SysUser">;
     createdAt?: Prisma.DateTimeFilter<"SysUser"> | Date | string;
@@ -390,6 +396,7 @@ export type SysUserOrderByWithAggregationInput = {
   remark?: Prisma.SortOrder;
   passwordHash?: Prisma.SortOrder;
   consoleMode?: Prisma.SortOrder;
+  stockScope?: Prisma.SortOrderInput | Prisma.SortOrder;
   workshopScope?: Prisma.SortOrderInput | Prisma.SortOrder;
   extraPermissions?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -425,6 +432,7 @@ export type SysUserScalarWhereWithAggregatesInput = {
   remark?: Prisma.StringWithAggregatesFilter<"SysUser"> | string;
   passwordHash?: Prisma.StringWithAggregatesFilter<"SysUser"> | string;
   consoleMode?: Prisma.StringWithAggregatesFilter<"SysUser"> | string;
+  stockScope?: Prisma.JsonNullableWithAggregatesFilter<"SysUser">;
   workshopScope?: Prisma.JsonNullableWithAggregatesFilter<"SysUser">;
   extraPermissions?: Prisma.JsonNullableWithAggregatesFilter<"SysUser">;
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"SysUser"> | Date | string;
@@ -443,6 +451,7 @@ export type SysUserCreateInput = {
   remark?: string;
   passwordHash: string;
   consoleMode?: string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
@@ -466,6 +475,7 @@ export type SysUserUncheckedCreateInput = {
   remark?: string;
   passwordHash: string;
   consoleMode?: string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
@@ -486,6 +496,7 @@ export type SysUserUpdateInput = {
   remark?: Prisma.StringFieldUpdateOperationsInput | string;
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string;
   consoleMode?: Prisma.StringFieldUpdateOperationsInput | string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -509,6 +520,7 @@ export type SysUserUncheckedUpdateInput = {
   remark?: Prisma.StringFieldUpdateOperationsInput | string;
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string;
   consoleMode?: Prisma.StringFieldUpdateOperationsInput | string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -531,6 +543,7 @@ export type SysUserCreateManyInput = {
   remark?: string;
   passwordHash: string;
   consoleMode?: string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
@@ -549,6 +562,7 @@ export type SysUserUpdateManyMutationInput = {
   remark?: Prisma.StringFieldUpdateOperationsInput | string;
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string;
   consoleMode?: Prisma.StringFieldUpdateOperationsInput | string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -569,6 +583,7 @@ export type SysUserUncheckedUpdateManyInput = {
   remark?: Prisma.StringFieldUpdateOperationsInput | string;
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string;
   consoleMode?: Prisma.StringFieldUpdateOperationsInput | string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -607,6 +622,7 @@ export type SysUserCountOrderByAggregateInput = {
   remark?: Prisma.SortOrder;
   passwordHash?: Prisma.SortOrder;
   consoleMode?: Prisma.SortOrder;
+  stockScope?: Prisma.SortOrder;
   workshopScope?: Prisma.SortOrder;
   extraPermissions?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -822,6 +838,7 @@ export type SysUserCreateWithoutDeptInput = {
   remark?: string;
   passwordHash: string;
   consoleMode?: string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
@@ -843,6 +860,7 @@ export type SysUserUncheckedCreateWithoutDeptInput = {
   remark?: string;
   passwordHash: string;
   consoleMode?: string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
@@ -909,6 +927,7 @@ export type SysUserScalarWhereInput = {
   remark?: Prisma.StringFilter<"SysUser"> | string;
   passwordHash?: Prisma.StringFilter<"SysUser"> | string;
   consoleMode?: Prisma.StringFilter<"SysUser"> | string;
+  stockScope?: Prisma.JsonNullableFilter<"SysUser">;
   workshopScope?: Prisma.JsonNullableFilter<"SysUser">;
   extraPermissions?: Prisma.JsonNullableFilter<"SysUser">;
   createdAt?: Prisma.DateTimeFilter<"SysUser"> | Date | string;
@@ -927,6 +946,7 @@ export type SysUserCreateWithoutUserRolesInput = {
   remark?: string;
   passwordHash: string;
   consoleMode?: string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
@@ -949,6 +969,7 @@ export type SysUserUncheckedCreateWithoutUserRolesInput = {
   remark?: string;
   passwordHash: string;
   consoleMode?: string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
@@ -996,6 +1017,7 @@ export type SysUserUpdateWithoutUserRolesInput = {
   remark?: Prisma.StringFieldUpdateOperationsInput | string;
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string;
   consoleMode?: Prisma.StringFieldUpdateOperationsInput | string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1018,6 +1040,7 @@ export type SysUserUncheckedUpdateWithoutUserRolesInput = {
   remark?: Prisma.StringFieldUpdateOperationsInput | string;
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string;
   consoleMode?: Prisma.StringFieldUpdateOperationsInput | string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1037,6 +1060,7 @@ export type SysUserCreateWithoutUserPostsInput = {
   remark?: string;
   passwordHash: string;
   consoleMode?: string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
@@ -1059,6 +1083,7 @@ export type SysUserUncheckedCreateWithoutUserPostsInput = {
   remark?: string;
   passwordHash: string;
   consoleMode?: string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
@@ -1106,6 +1131,7 @@ export type SysUserUpdateWithoutUserPostsInput = {
   remark?: Prisma.StringFieldUpdateOperationsInput | string;
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string;
   consoleMode?: Prisma.StringFieldUpdateOperationsInput | string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1128,6 +1154,7 @@ export type SysUserUncheckedUpdateWithoutUserPostsInput = {
   remark?: Prisma.StringFieldUpdateOperationsInput | string;
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string;
   consoleMode?: Prisma.StringFieldUpdateOperationsInput | string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1148,6 +1175,7 @@ export type SysUserCreateManyDeptInput = {
   remark?: string;
   passwordHash: string;
   consoleMode?: string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Date | string;
@@ -1166,6 +1194,7 @@ export type SysUserUpdateWithoutDeptInput = {
   remark?: Prisma.StringFieldUpdateOperationsInput | string;
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string;
   consoleMode?: Prisma.StringFieldUpdateOperationsInput | string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1187,6 +1216,7 @@ export type SysUserUncheckedUpdateWithoutDeptInput = {
   remark?: Prisma.StringFieldUpdateOperationsInput | string;
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string;
   consoleMode?: Prisma.StringFieldUpdateOperationsInput | string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1208,6 +1238,7 @@ export type SysUserUncheckedUpdateManyWithoutDeptInput = {
   remark?: Prisma.StringFieldUpdateOperationsInput | string;
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string;
   consoleMode?: Prisma.StringFieldUpdateOperationsInput | string;
+  stockScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   workshopScope?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   extraPermissions?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
@@ -1282,6 +1313,7 @@ export type SysUserSelect<
     remark?: boolean;
     passwordHash?: boolean;
     consoleMode?: boolean;
+    stockScope?: boolean;
     workshopScope?: boolean;
     extraPermissions?: boolean;
     createdAt?: boolean;
@@ -1308,6 +1340,7 @@ export type SysUserSelectScalar = {
   remark?: boolean;
   passwordHash?: boolean;
   consoleMode?: boolean;
+  stockScope?: boolean;
   workshopScope?: boolean;
   extraPermissions?: boolean;
   createdAt?: boolean;
@@ -1331,6 +1364,7 @@ export type SysUserOmit<
   | "remark"
   | "passwordHash"
   | "consoleMode"
+  | "stockScope"
   | "workshopScope"
   | "extraPermissions"
   | "createdAt"
@@ -1372,6 +1406,7 @@ export type $SysUserPayload<
       remark: string;
       passwordHash: string;
       consoleMode: string;
+      stockScope: runtime.JsonValue | null;
       workshopScope: runtime.JsonValue | null;
       extraPermissions: runtime.JsonValue | null;
       createdAt: Date;
@@ -1944,6 +1979,7 @@ export interface SysUserFieldRefs {
   readonly remark: Prisma.FieldRef<"SysUser", "String">;
   readonly passwordHash: Prisma.FieldRef<"SysUser", "String">;
   readonly consoleMode: Prisma.FieldRef<"SysUser", "String">;
+  readonly stockScope: Prisma.FieldRef<"SysUser", "Json">;
   readonly workshopScope: Prisma.FieldRef<"SysUser", "Json">;
   readonly extraPermissions: Prisma.FieldRef<"SysUser", "Json">;
   readonly createdAt: Prisma.FieldRef<"SysUser", "DateTime">;

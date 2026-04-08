@@ -210,7 +210,7 @@
           <el-descriptions-item label="业务日期">
             {{ formatDate(detailRow.bizDate) }}
           </el-descriptions-item>
-          <el-descriptions-item label="仓别">
+          <el-descriptions-item label="关联车间">
             {{ detailRow.workshopNameSnapshot }}
           </el-descriptions-item>
           <el-descriptions-item label="总数量">
@@ -281,7 +281,7 @@ const filters = ref({
 const form = ref(createEmptyForm());
 
 const workshopLabel = computed(
-  () => userStore.workshopScope?.workshopName || "未绑定研发小仓",
+  () => userStore.stockScope?.stockScopeName || "未绑定研发小仓",
 );
 
 function createEmptyLine() {
@@ -444,8 +444,12 @@ function removeLine(index) {
 }
 
 function openCreateDialog() {
+  if (!userStore.stockScope?.stockScope) {
+    ElMessage.error("当前账号未绑定研发库存范围，无法创建报废单");
+    return;
+  }
   if (!userStore.workshopScope?.workshopId) {
-    ElMessage.error("当前账号未绑定研发小仓，无法创建报废单");
+    ElMessage.error("当前账号未绑定业务车间，无法创建报废单");
     return;
   }
   form.value = createEmptyForm();

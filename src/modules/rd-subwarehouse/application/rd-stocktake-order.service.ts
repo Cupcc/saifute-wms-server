@@ -20,7 +20,6 @@ import { RdStocktakeOrderRepository } from "../infrastructure/rd-stocktake-order
 
 const DOCUMENT_TYPE = "RdStocktakeOrder";
 const BUSINESS_MODULE = "rd-subwarehouse";
-const RD_SUBWAREHOUSE_CODE = "RD";
 
 @Injectable()
 export class RdStocktakeOrderService {
@@ -65,9 +64,6 @@ export class RdStocktakeOrderService {
     const workshop = await this.masterDataService.getWorkshopById(
       dto.workshopId,
     );
-    if (workshop.workshopCode !== RD_SUBWAREHOUSE_CODE) {
-      throw new BadRequestException("RD 盘点调整单只能归属研发小仓");
-    }
     const stockScopeRecord =
       await this.masterDataService.getStockScopeByCode("RD_SUB");
 

@@ -5,7 +5,7 @@ import {
   DocumentFamily,
 } from "../../../generated/prisma/client";
 
-export class QueryAuditsDto {
+export class QueryApprovalsDto {
   @IsOptional()
   @IsEnum(DocumentFamily)
   documentFamily?: DocumentFamily;

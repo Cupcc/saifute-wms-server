@@ -26,8 +26,9 @@
 ### 相邻共享边界
 
 - `inventory-core` 继续作为所有库存变动的唯一写入口；客户收发只负责组织单据语义，不旁路改库存。
-- `audit` 第一阶段默认采用轻量审核模式。
+- `approval` 第一阶段默认采用轻量审核模式。
 - `inbound` 的来源层与 FIFO 追溯（`F4`/`F5`）是本 domain 价格层出库的上游前置依赖。
+- 注意：当前客户收发家族上的历史字段名 `auditStatusSnapshot`，以及页面读模型中的 `auditStatus` / `auditor` / `auditTime`，仍保持冻结命名；语义上它们都属于 `approval` 审批协作面。状态：`注意`
 
 ## 长期约束
 

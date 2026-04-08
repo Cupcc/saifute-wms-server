@@ -18,10 +18,7 @@ import {
   InventoryService,
 } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
-import {
-  resolveStockScopeFromWorkshopIdentity,
-  type StockScopeCode,
-} from "../../session/domain/user-session";
+import { type StockScopeCode } from "../../session/domain/user-session";
 import type { CreateProjectDto } from "../dto/create-project.dto";
 import type { QueryProjectDto } from "../dto/query-project.dto";
 import type { UpdateProjectDto } from "../dto/update-project.dto";
@@ -39,7 +36,7 @@ export class ProjectService {
     private readonly inventoryService: InventoryService,
   ) {}
 
-  async listProjects(query: QueryProjectDto) {
+  async listProjects(query: QueryProjectDto & { stockScope?: StockScopeCode }) {
     const limit = Math.min(query.limit ?? 50, 100);
     const offset = query.offset ?? 0;
     return this.repository.findProjects({
@@ -50,6 +47,7 @@ export class ProjectService {
       customerId: query.customerId,
       supplierId: query.supplierId,
       workshopId: query.workshopId,
+      stockScope: query.stockScope,
       limit,
       offset,
     });
@@ -63,7 +61,10 @@ export class ProjectService {
     return project;
   }
 
-  async createProject(dto: CreateProjectDto, createdBy?: string) {
+  async createProject(
+    dto: CreateProjectDto & { stockScope?: StockScopeCode },
+    createdBy?: string,
+  ) {
     const existing = await this.repository.findProjectByCode(dto.projectCode);
     if (existing) {
       throw new ConflictException(`项目编码已存在: ${dto.projectCode}`);
@@ -84,7 +85,7 @@ export class ProjectService {
     const workshop = await this.masterDataService.getWorkshopById(
       dto.workshopId,
     );
-    const inventoryStockScope = this.resolveInventoryStockScope(workshop);
+    const inventoryStockScope = dto.stockScope ?? "RD_SUB";
     const stockScopeRecord =
       await this.masterDataService.getStockScopeByCode(inventoryStockScope);
 
@@ -196,7 +197,11 @@ export class ProjectService {
     });
   }
 
-  async updateProject(id: number, dto: UpdateProjectDto, updatedBy?: string) {
+  async updateProject(
+    id: number,
+    dto: UpdateProjectDto & { stockScope?: StockScopeCode },
+    updatedBy?: string,
+  ) {
     const existing = await this.repository.findProjectById(id);
     if (!existing) {
       throw new NotFoundException(`项目不存在: ${id}`);
@@ -235,14 +240,15 @@ export class ProjectService {
     const workshop = await this.masterDataService.getWorkshopById(
       dto.workshopId ?? existing.workshopId,
     );
-    const inventoryStockScope = this.resolveInventoryStockScope(workshop);
+    const inventoryStockScope =
+      dto.stockScope ??
+      (existing.stockScope?.scopeCode as StockScopeCode | undefined) ??
+      "RD_SUB";
     const stockScopeRecord =
       await this.masterDataService.getStockScopeByCode(inventoryStockScope);
-    const currentWorkshop = await this.masterDataService.getWorkshopById(
-      existing.workshopId,
-    );
     const currentInventoryStockScope =
-      this.resolveInventoryStockScope(currentWorkshop);
+      (existing.stockScope?.scopeCode as StockScopeCode | undefined) ??
+      "RD_SUB";
     const inventoryScopeChanged =
       currentInventoryStockScope !== inventoryStockScope;
 
@@ -751,17 +757,5 @@ export class ProjectService {
       tx,
     );
     return created.id;
-  }
-
-  private resolveInventoryStockScope(workshop: {
-    workshopCode: string;
-    workshopName: string;
-  }): StockScopeCode {
-    return (
-      resolveStockScopeFromWorkshopIdentity({
-        workshopCode: workshop.workshopCode,
-        workshopName: workshop.workshopName,
-      }) ?? "MAIN"
-    );
   }
 }

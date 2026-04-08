@@ -1,7 +1,8 @@
 import {
   getWorkshopOrder,
   listWorkshopOrders,
-  unsupportedWorkshopOrderAction,
+  submitWorkshopOrder,
+  voidWorkshopOrder,
 } from "./compat";
 
 // 查询退料单列表
@@ -15,16 +16,16 @@ export function getReturnOrder(returnId) {
 }
 
 // 新增退料单
-export function addReturnOrder() {
-  return unsupportedWorkshopOrderAction("当前退料单写操作仍在适配中");
+export function addReturnOrder(data) {
+  return submitWorkshopOrder(data, "returnOrder");
 }
 
 // 修改退料单
-export function updateReturnOrder() {
-  return unsupportedWorkshopOrderAction("当前退料单修改仍在适配中");
+export function updateReturnOrder(data) {
+  return submitWorkshopOrder(data, "returnOrder");
 }
 
 // 删除退料单（作废）
-export function delReturnOrder() {
-  return unsupportedWorkshopOrderAction("当前退料单作废仍在适配中");
+export function delReturnOrder(data) {
+  return voidWorkshopOrder(data, "returnOrder");
 }

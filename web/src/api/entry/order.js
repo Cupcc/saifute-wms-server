@@ -36,6 +36,6 @@ export function delOrder(data) {
 }
 
 // 审核单据
-export function auditOrder() {
-  throw new Error("请改用 @/api/audit/audit 中的审核兼容入口");
+export function approvalOrder() {
+  throw new Error("请改用 @/api/approval/approval 中的审批入口");
 }
