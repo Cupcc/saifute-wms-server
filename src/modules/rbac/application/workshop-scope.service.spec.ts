@@ -46,6 +46,11 @@ describe("WorkshopScopeService", () => {
     permissions: [],
     department: null,
     consoleMode: "rd-subwarehouse",
+    stockScope: {
+      mode: "FIXED",
+      stockScope: "RD_SUB",
+      stockScopeName: "研发小仓",
+    },
     workshopScope: {
       mode: "FIXED",
       workshopId: null,

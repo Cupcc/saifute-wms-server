@@ -247,21 +247,68 @@ describe("RdStocktakeOrderService", () => {
     );
   });
 
-  it("rejects non-RD workshop stocktake orders", async () => {
+  it("allows any workshop id while keeping RD_SUB as the stock scope", async () => {
     masterDataService.getWorkshopById.mockResolvedValueOnce({
       id: 1,
       workshopCode: "MAIN",
       workshopName: "主仓",
     } as Awaited<ReturnType<MasterDataService["getWorkshopById"]>>);
 
-    await expect(
-      service.createOrder({
-        documentNo: "RDSTK-002",
-        bizDate: "2026-03-30",
+    masterDataService.getMaterialById.mockResolvedValueOnce({
+      id: 100,
+      materialCode: "MAT001",
+      materialName: "Material A",
+      specModel: "Spec-A",
+      unitCode: "PCS",
+    } as Awaited<ReturnType<MasterDataService["getMaterialById"]>>);
+    inventoryService.getBalanceSnapshot.mockResolvedValueOnce({
+      quantityOnHand: new Prisma.Decimal(0),
+    } as never);
+    inventoryService.increaseStock.mockResolvedValueOnce({ id: 9003 } as never);
+
+    repository.createOrder.mockResolvedValue({
+      id: 2,
+      documentNo: "RDSTK-002",
+      lines: [
+        {
+          id: 21,
+          materialId: 100,
+          adjustmentQty: new Prisma.Decimal(1),
+          bookQty: new Prisma.Decimal(0),
+          countedQty: new Prisma.Decimal(1),
+        },
+      ],
+    } as never);
+    repository.findOrderById.mockResolvedValue({
+      id: 2,
+      documentNo: "RDSTK-002",
+      stockScopeId: 2,
+      workshopId: 1,
+      lines: [],
+    } as never);
+
+    await service.createOrder({
+      documentNo: "RDSTK-002",
+      bizDate: "2026-03-30",
+      workshopId: 1,
+      lines: [{ materialId: 100, countedQty: "1", reason: "误建单" }],
+    });
+
+    expect(repository.createOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stockScopeId: 2,
         workshopId: 1,
-        lines: [{ materialId: 100, countedQty: "1", reason: "误建单" }],
       }),
-    ).rejects.toThrow(BadRequestException);
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(inventoryService.getBalanceSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({
+        materialId: 100,
+        stockScope: "RD_SUB",
+      }),
+      expect.anything(),
+    );
   });
 
   it("voids a posted stocktake order by reversing inventory logs", async () => {

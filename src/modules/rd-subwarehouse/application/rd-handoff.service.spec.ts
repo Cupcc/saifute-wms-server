@@ -150,11 +150,6 @@ describe("RdHandoffService", () => {
               workshopCode: "MAIN",
               workshopName: "主仓",
             }),
-            getWorkshopByCode: jest.fn().mockResolvedValue({
-              id: 9,
-              workshopCode: "RD",
-              workshopName: "研发小仓",
-            }),
             getPersonnelById: jest.fn().mockResolvedValue({
               id: 20,
               personnelName: "Handler A",
@@ -240,7 +235,10 @@ describe("RdHandoffService", () => {
       5,
     );
     expect(applyHandoffStatusesForOrder).toHaveBeenCalled();
-    expect(masterDataService.getWorkshopByCode).toHaveBeenCalledWith("RD");
+    expect(masterDataService.getStockScopeByCode).toHaveBeenCalledWith("MAIN");
+    expect(masterDataService.getStockScopeByCode).toHaveBeenCalledWith(
+      "RD_SUB",
+    );
   });
 
   it("throws when documentNo already exists", async () => {
@@ -263,30 +261,46 @@ describe("RdHandoffService", () => {
     ).rejects.toThrow(ConflictException);
   });
 
-  it("rejects non-main workshops as the handoff source", async () => {
+  it("ignores source workshop ids and still bridges MAIN to RD_SUB stock", async () => {
     repository.findOrderByDocumentNo.mockResolvedValue(null);
-    masterDataService.getWorkshopById.mockResolvedValueOnce({
-      id: 2,
-      workshopCode: "WIP",
-      workshopName: "装配车间",
-    } as Awaited<ReturnType<MasterDataService["getWorkshopById"]>>);
+    repository.createOrder.mockResolvedValue(mockOrder);
 
-    await expect(
-      service.createOrder({
-        documentNo: "RDH-002",
-        bizDate: "2026-03-28",
-        sourceWorkshopId: 2,
-        lines: [
-          {
-            materialId: 100,
-            quantity: "2",
-            sourceDocumentId: 5,
-            sourceDocumentLineId: 501,
-          },
-        ],
+    await service.createOrder({
+      documentNo: "RDH-002",
+      bizDate: "2026-03-28",
+      sourceWorkshopId: 2,
+      lines: [
+        {
+          materialId: 100,
+          quantity: "2",
+          sourceDocumentId: 5,
+          sourceDocumentLineId: 501,
+        },
+      ],
+    });
+
+    expect(repository.createOrder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sourceWorkshopId: null,
+        targetWorkshopId: null,
+        sourceWorkshopNameSnapshot: "主仓",
+        targetWorkshopNameSnapshot: "研发小仓",
       }),
-    ).rejects.toThrow("当前切片只允许主仓发起到 RD 小仓的交接");
-    expect(repository.createOrder).not.toHaveBeenCalled();
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(inventoryService.settleConsumerOut).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stockScope: "MAIN",
+      }),
+      expect.anything(),
+    );
+    expect(inventoryService.increaseStock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stockScope: "RD_SUB",
+      }),
+      expect.anything(),
+    );
   });
 
   it("voids a handoff order and reverses RD-side stock first", async () => {

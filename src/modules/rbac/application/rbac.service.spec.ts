@@ -88,9 +88,13 @@ describe("RbacService", () => {
     expect(user.consoleMode).toBe("rd-subwarehouse");
     expect(user.workshopScope).toEqual({
       mode: "FIXED",
-      workshopId: 6,
-      workshopCode: "RD",
+      workshopId: 99,
       workshopName: "研发小仓",
+    });
+    expect(user.stockScope).toEqual({
+      mode: "FIXED",
+      stockScope: "RD_SUB",
+      stockScopeName: "研发小仓",
     });
   });
 

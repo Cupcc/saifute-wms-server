@@ -136,11 +136,13 @@ describe("ProjectService", () => {
           useValue: {
             getMaterialById: jest.fn(),
             getWorkshopById: jest.fn(),
-            getStockScopeByCode: jest.fn().mockResolvedValue({
-              id: 1,
-              scopeCode: "MAIN",
-              scopeName: "主仓",
-            }),
+            getStockScopeByCode: jest
+              .fn()
+              .mockImplementation(async (scopeCode: string) => ({
+                id: scopeCode === "RD_SUB" ? 2 : 1,
+                scopeCode,
+                scopeName: scopeCode === "RD_SUB" ? "研发小仓" : "主仓",
+              })),
             getCustomerById: jest.fn(),
             getSupplierById: jest.fn(),
             getPersonnelById: jest.fn(),
@@ -223,7 +225,7 @@ describe("ProjectService", () => {
         expect.objectContaining({
           allocationTargetId: 5001,
           materialId: 100,
-          stockScope: "MAIN",
+          stockScope: "RD_SUB",
           operationType: "PROJECT_CONSUMPTION_OUT",
           businessDocumentType: "Project",
           businessDocumentId: 1,

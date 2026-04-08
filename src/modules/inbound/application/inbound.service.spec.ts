@@ -5,6 +5,7 @@ import {
   DocumentFamily,
   DocumentLifecycleStatus,
   InventoryEffectStatus,
+  InventoryOperationType,
   Prisma,
   StockInOrderType,
 } from "../../../generated/prisma/client";
@@ -350,78 +351,134 @@ describe("InboundService", () => {
       expect(applyAcceptanceStatusesForOrder).toHaveBeenCalled();
     });
 
-    it("should reject linked acceptance when workshop is not main", async () => {
+    it("should allow linked acceptance for non-main workshops while still posting to MAIN stock", async () => {
       (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(null);
+      (repository.createOrder as jest.Mock).mockResolvedValue({
+        ...mockOrder,
+        workshopId: 6,
+        workshopNameSnapshot: "研发小仓",
+      });
       (masterDataService.getWorkshopById as jest.Mock).mockResolvedValueOnce({
         id: 6,
         workshopCode: "RD",
         workshopName: "研发小仓",
       });
 
-      await expect(
-        service.createOrder(
-          {
-            documentNo: "SI-002",
-            orderType: StockInOrderType.ACCEPTANCE,
-            bizDate: "2025-03-14",
-            workshopId: 6,
-            rdProcurementRequestId: 9,
-            lines: [
-              {
-                materialId: 100,
-                rdProcurementRequestLineId: 500,
-                quantity: "10",
-              },
-            ],
-          },
-          "1",
-        ),
-      ).rejects.toThrow("入库单只能归属主仓");
+      await service.createOrder(
+        {
+          documentNo: "SI-002",
+          orderType: StockInOrderType.ACCEPTANCE,
+          bizDate: "2025-03-14",
+          workshopId: 6,
+          rdProcurementRequestId: 9,
+          lines: [
+            {
+              materialId: 100,
+              rdProcurementRequestLineId: 500,
+              quantity: "10",
+            },
+          ],
+        },
+        "1",
+      );
+
+      expect(repository.createOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workshopId: 6,
+          workshopNameSnapshot: "研发小仓",
+        }),
+        expect.anything(),
+        expect.anything(),
+      );
+      expect(inventoryService.increaseStock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stockScope: "MAIN",
+        }),
+        expect.anything(),
+      );
     });
 
-    it("should reject plain acceptance when workshop is not main", async () => {
+    it("should allow plain acceptance for non-main workshops while still posting to MAIN stock", async () => {
       (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(null);
+      (repository.createOrder as jest.Mock).mockResolvedValue({
+        ...mockOrder,
+        workshopId: 6,
+        workshopNameSnapshot: "研发小仓",
+      });
       (masterDataService.getWorkshopById as jest.Mock).mockResolvedValueOnce({
         id: 6,
         workshopCode: "RD",
         workshopName: "研发小仓",
       });
 
-      await expect(
-        service.createOrder(
-          {
-            documentNo: "SI-PLAIN-RD",
-            orderType: StockInOrderType.ACCEPTANCE,
-            bizDate: "2025-03-14",
-            workshopId: 6,
-            supplierId: 10,
-            lines: [{ materialId: 100, quantity: "10", unitPrice: "10" }],
-          },
-          "1",
-        ),
-      ).rejects.toThrow("入库单只能归属主仓");
+      await service.createOrder(
+        {
+          documentNo: "SI-PLAIN-RD",
+          orderType: StockInOrderType.ACCEPTANCE,
+          bizDate: "2025-03-14",
+          workshopId: 6,
+          supplierId: 10,
+          lines: [{ materialId: 100, quantity: "10", unitPrice: "10" }],
+        },
+        "1",
+      );
+
+      expect(repository.createOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workshopId: 6,
+          workshopNameSnapshot: "研发小仓",
+        }),
+        expect.anything(),
+        expect.anything(),
+      );
+      expect(inventoryService.increaseStock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stockScope: "MAIN",
+        }),
+        expect.anything(),
+      );
     });
 
-    it("should reject production receipt when workshop is not main", async () => {
+    it("should allow production receipt for non-main workshops while still posting to MAIN stock", async () => {
       (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(null);
+      (repository.createOrder as jest.Mock).mockResolvedValue({
+        ...mockOrder,
+        workshopId: 6,
+        workshopNameSnapshot: "研发小仓",
+        orderType: StockInOrderType.PRODUCTION_RECEIPT,
+      });
       (masterDataService.getWorkshopById as jest.Mock).mockResolvedValueOnce({
         id: 6,
         workshopCode: "RD",
         workshopName: "研发小仓",
       });
 
-      await expect(
-        service.createIntoOrder(
-          {
-            documentNo: "INTO-RD-001",
-            orderType: StockInOrderType.PRODUCTION_RECEIPT,
-            bizDate: "2025-03-14",
-            workshopId: 6,
-            lines: [{ materialId: 100, quantity: "10", unitPrice: "10" }],
-          },
-          "1",
-        ),
-      ).rejects.toThrow("入库单只能归属主仓");
+      await service.createIntoOrder(
+        {
+          documentNo: "INTO-RD-001",
+          orderType: StockInOrderType.PRODUCTION_RECEIPT,
+          bizDate: "2025-03-14",
+          workshopId: 6,
+          lines: [{ materialId: 100, quantity: "10", unitPrice: "10" }],
+        },
+        "1",
+      );
+
+      expect(repository.createOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workshopId: 6,
+          workshopNameSnapshot: "研发小仓",
+        }),
+        expect.anything(),
+        expect.anything(),
+      );
+      expect(inventoryService.increaseStock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stockScope: "MAIN",
+          operationType: InventoryOperationType.PRODUCTION_RECEIPT_IN,
+        }),
+        expect.anything(),
+      );
     });
 
     it("should reject linked acceptance when cumulative quantity exceeds request", async () => {

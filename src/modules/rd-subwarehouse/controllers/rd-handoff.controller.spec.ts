@@ -18,7 +18,7 @@ describe("RdHandoffController", () => {
             listOrders: jest.fn().mockResolvedValue({ items: [], total: 0 }),
             getOrderById: jest.fn().mockResolvedValue({
               id: 1,
-              targetWorkshopId: 6,
+              targetStockScopeId: 2,
             }),
             createOrder: jest.fn().mockResolvedValue({ id: 1 }),
             voidOrder: jest.fn().mockResolvedValue({ id: 1 }),
@@ -27,8 +27,14 @@ describe("RdHandoffController", () => {
         {
           provide: WorkshopScopeService,
           useValue: {
-            resolveQueryWorkshopId: jest.fn().mockResolvedValue(6),
-            assertWorkshopAccess: jest.fn().mockResolvedValue(undefined),
+            getResolvedStockScope: jest.fn().mockResolvedValue({
+              stockScopeId: 2,
+              stockScope: "RD_SUB",
+              stockScopeName: "研发小仓",
+            }),
+            assertInventoryStockScopeAccess: jest
+              .fn()
+              .mockResolvedValue(undefined),
           },
         },
       ],
@@ -45,13 +51,12 @@ describe("RdHandoffController", () => {
       undefined,
     );
 
-    expect(workshopScopeService.resolveQueryWorkshopId).toHaveBeenCalledWith(
+    expect(workshopScopeService.getResolvedStockScope).toHaveBeenCalledWith(
       undefined,
-      999,
     );
     expect(rdHandoffService.listOrders).toHaveBeenCalledWith(
       expect.objectContaining({
-        targetWorkshopId: 6,
+        targetWorkshopId: 999,
         limit: 10,
         offset: 0,
       }),
@@ -62,9 +67,8 @@ describe("RdHandoffController", () => {
     await controller.getOrder(1, undefined);
 
     expect(rdHandoffService.getOrderById).toHaveBeenCalledWith(1);
-    expect(workshopScopeService.assertWorkshopAccess).toHaveBeenCalledWith(
-      undefined,
-      6,
-    );
+    expect(
+      workshopScopeService.assertInventoryStockScopeAccess,
+    ).toHaveBeenCalledWith(undefined, 2);
   });
 });

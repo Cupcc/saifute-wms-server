@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  NotFoundException,
-} from "@nestjs/common";
+import { ConflictException, NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import {
   AuditStatusSnapshot,
@@ -212,24 +208,39 @@ describe("RdProcurementRequestService", () => {
     ).rejects.toThrow(ConflictException);
   });
 
-  it("rejects non-RD workshops", async () => {
+  it("allows any workshop id while keeping RD_SUB ownership", async () => {
     repository.findRequestByDocumentNo.mockResolvedValue(null);
     masterDataService.getWorkshopById.mockResolvedValueOnce({
       id: 1,
       workshopCode: "MAIN",
       workshopName: "主仓",
     } as Awaited<ReturnType<MasterDataService["getWorkshopById"]>>);
+    repository.createRequest.mockResolvedValue({
+      ...mockRequest,
+      id: 2,
+      documentNo: "RDPUR-002",
+      workshopId: 1,
+      workshopNameSnapshot: "主仓",
+    });
 
-    await expect(
-      service.createRequest({
-        documentNo: "RDPUR-002",
-        bizDate: "2026-03-29",
-        projectCode: "RD-PJT-002",
-        projectName: "研发夹具归集",
+    await service.createRequest({
+      documentNo: "RDPUR-002",
+      bizDate: "2026-03-29",
+      projectCode: "RD-PJT-002",
+      projectName: "研发夹具归集",
+      workshopId: 1,
+      lines: [{ materialId: 100, quantity: "2" }],
+    });
+
+    expect(repository.createRequest).toHaveBeenCalledWith(
+      expect.objectContaining({
+        stockScopeId: 2,
         workshopId: 1,
-        lines: [{ materialId: 100, quantity: "2" }],
+        workshopNameSnapshot: "主仓",
       }),
-    ).rejects.toThrow(BadRequestException);
+      expect.anything(),
+      expect.anything(),
+    );
   });
 
   it("blocks void when active acceptance orders exist", async () => {
