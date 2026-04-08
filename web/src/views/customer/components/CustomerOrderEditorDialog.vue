@@ -8,26 +8,25 @@
     @update:model-value="handleVisibleChange"
   >
     <div v-loading="dialogLoading || submitting">
-      <el-form ref="formRef" :model="form" label-width="96px">
+      <el-form ref="formRef" :model="form" :rules="formRules" label-width="96px">
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item :label="documentLabel">
               <el-input
                 v-model="form.documentNo"
-                :disabled="isOrderEditMode"
-                placeholder="请输入单号"
+                disabled
+                placeholder="保存后自动生成"
               />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="业务日期">
+            <el-form-item label="业务日期" prop="bizDate">
               <el-date-picker
                 v-model="form.bizDate"
                 type="date"
                 value-format="YYYY-MM-DD"
                 placeholder="请选择业务日期"
                 style="width: 100%"
-                @change="handleBizDateChange"
               />
             </el-form-item>
           </el-col>
@@ -35,7 +34,7 @@
 
         <el-row v-if="isSalesReturnMode" :gutter="16">
           <el-col :span="12">
-            <el-form-item label="来源出库单">
+            <el-form-item label="来源出库单" prop="sourceOutboundOrderId">
               <el-select
                 v-model="form.sourceOutboundOrderId"
                 filterable
@@ -119,7 +118,7 @@
 
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="车间">
+            <el-form-item label="车间" prop="workshopId">
               <template v-if="isSalesReturnMode">
                 <el-input :model-value="form.workshopName || '-'" disabled />
               </template>
@@ -340,9 +339,8 @@ import {
 } from "@/api/customer/order";
 import {
   addSalesReturnOrder,
-  listSalesReturnOrder,
 } from "@/api/customer/salesReturnOrder";
-import { formatDateToYYYYMMDD, generateOrderNo } from "@/utils/orderNumber";
+import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
 
 const props = defineProps({
   modelValue: {
@@ -388,6 +386,17 @@ const isOrderEditMode = computed(
 const documentLabel = computed(() =>
   isSalesReturnMode.value ? "销售退货单号" : "出库单号",
 );
+const formRules = computed(() => ({
+  bizDate: [{ required: true, message: "业务日期不能为空", trigger: "change" }],
+  workshopId: [{ required: true, message: "车间不能为空", trigger: "change" }],
+  ...(isSalesReturnMode.value
+    ? {
+        sourceOutboundOrderId: [
+          { required: true, message: "请选择来源出库单", trigger: "change" },
+        ],
+      }
+    : {}),
+}));
 const dialogTitle = computed(() => {
   if (isSalesReturnMode.value) {
     return "新增销售退货单";
@@ -446,6 +455,7 @@ function resetFormState() {
   materialOptions.value = [];
   sourceOrderOptions.value = [];
   sourceLineOptions.value = [];
+  formRef.value?.clearValidate();
 }
 
 async function initializeDialog() {
@@ -456,8 +466,6 @@ async function initializeDialog() {
       await loadOrderForEdit(props.orderId);
       return;
     }
-
-    await regenerateDocumentNo(form.bizDate);
   } finally {
     dialogLoading.value = false;
   }
@@ -606,39 +614,8 @@ function ensureMaterialOption(item) {
   });
 }
 
-async function regenerateDocumentNo(dateValue) {
-  if (!dateValue || isOrderEditMode.value) {
-    return;
-  }
-
-  const currentDate = new Date(dateValue);
-  const listFunction = isSalesReturnMode.value
-    ? listSalesReturnOrder
-    : listOrder;
-  const prefix = isSalesReturnMode.value ? "XSTH" : "CK";
-
-  form.documentNo = await generateOrderNo(
-    currentDate,
-    prefix,
-    listFunction,
-    {
-      pageNum: 1,
-      pageSize: 100,
-      params: {
-        beginTime: formatDateToYYYYMMDD(currentDate),
-        endTime: formatDateToYYYYMMDD(currentDate),
-      },
-    },
-    "documentNo",
-  );
-}
-
 function handleVisibleChange(value) {
   emit("update:modelValue", value);
-}
-
-function handleBizDateChange() {
-  regenerateDocumentNo(form.bizDate);
 }
 
 function handleAddLine() {
@@ -836,21 +813,9 @@ async function searchSourceOrders(keyword) {
   }
 }
 
-function validateForm() {
-  if (!form.documentNo) {
-    proxy.$modal.msgError(`${documentLabel.value}不能为空`);
-    return false;
-  }
-  if (!form.bizDate) {
-    proxy.$modal.msgError("业务日期不能为空");
-    return false;
-  }
-  if (isSalesReturnMode.value && !form.sourceOutboundOrderId) {
-    proxy.$modal.msgError("请选择来源出库单");
-    return false;
-  }
-  if (!form.workshopId) {
-    proxy.$modal.msgError("车间不能为空");
+async function validateForm() {
+  const valid = await formRef.value.validate().catch(() => false);
+  if (!valid) {
     return false;
   }
   if (!Array.isArray(form.details) || form.details.length === 0) {
@@ -880,7 +845,7 @@ function validateForm() {
 function buildSubmitPayload() {
   return {
     orderId: form.orderId,
-    documentNo: form.documentNo,
+    ...(form.orderId ? { documentNo: form.documentNo } : {}),
     bizDate: form.bizDate,
     customerId: form.customerId,
     handlerPersonnelId: form.handlerPersonnelId,
@@ -901,7 +866,7 @@ function buildSubmitPayload() {
 }
 
 async function submitForm() {
-  if (!validateForm()) {
+  if (!(await validateForm())) {
     return;
   }
 
@@ -943,7 +908,6 @@ void [
   materialLoading,
   sourceOrderLoading,
   handleVisibleChange,
-  handleBizDateChange,
   handleAddLine,
   handleRemoveLine,
   handleMaterialChange,

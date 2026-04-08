@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -9,6 +8,10 @@ import {
   DocumentLifecycleStatus,
   Prisma,
 } from "../../../generated/prisma/client";
+import {
+  buildDashedTimestampDocumentNo,
+  createWithGeneratedDocumentNo,
+} from "../../../shared/common/document-number.util";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import type { ApplyRdProcurementStatusActionDto } from "../dto/apply-rd-procurement-status-action.dto";
@@ -67,16 +70,9 @@ export class RdProcurementRequestService {
   }
 
   async createRequest(dto: CreateRdProcurementRequestDto, createdBy?: string) {
-    const existing = await this.repository.findRequestByDocumentNo(
-      dto.documentNo,
-    );
-    if (existing) {
-      throw new ConflictException(`单据编号已存在: ${dto.documentNo}`);
-    }
+    const workshopId = this.requireWorkshopId(dto.workshopId);
 
-    const workshop = await this.masterDataService.getWorkshopById(
-      dto.workshopId,
-    );
+    const workshop = await this.masterDataService.getWorkshopById(workshopId);
     const stockScopeRecord =
       await this.masterDataService.getStockScopeByCode("RD_SUB");
 
@@ -120,50 +116,57 @@ export class RdProcurementRequestService {
       new Prisma.Decimal(0),
     );
 
-    return this.prisma.runInTransaction(async (tx) => {
-      const request = await this.repository.createRequest(
-        {
-          documentNo: dto.documentNo,
-          bizDate,
-          projectCode: dto.projectCode,
-          projectName: dto.projectName,
-          supplierId: dto.supplierId,
-          handlerPersonnelId: dto.handlerPersonnelId,
-          stockScopeId: stockScopeRecord.id,
-          workshopId: dto.workshopId,
-          auditStatusSnapshot: AuditStatusSnapshot.NOT_REQUIRED,
-          supplierCodeSnapshot: supplierSnapshot.supplierCodeSnapshot,
-          supplierNameSnapshot: supplierSnapshot.supplierNameSnapshot,
-          handlerNameSnapshot: handlerSnapshot.handlerNameSnapshot,
-          workshopNameSnapshot: workshop.workshopName,
-          totalQty,
-          totalAmount,
-          remark: dto.remark,
-          createdBy,
-          updatedBy: createdBy,
-        },
-        linesWithSnapshots.map((line) => ({
-          ...line,
-          createdBy,
-          updatedBy: createdBy,
-        })),
-        tx,
+    return createWithGeneratedDocumentNo((attempt) => {
+      const documentNo = buildDashedTimestampDocumentNo(
+        "RDPUR",
+        bizDate,
+        attempt,
       );
-
-      await initializeRequestStatusTruth(
-        {
-          requestId: request.id,
-          documentNo: request.documentNo,
-          lines: request.lines.map((line) => ({
-            id: line.id,
-            quantity: line.quantity,
+      return this.prisma.runInTransaction(async (tx) => {
+        const request = await this.repository.createRequest(
+          {
+            documentNo,
+            bizDate,
+            projectCode: dto.projectCode,
+            projectName: dto.projectName,
+            supplierId: dto.supplierId,
+            handlerPersonnelId: dto.handlerPersonnelId,
+            stockScopeId: stockScopeRecord.id,
+            workshopId,
+            auditStatusSnapshot: AuditStatusSnapshot.NOT_REQUIRED,
+            supplierCodeSnapshot: supplierSnapshot.supplierCodeSnapshot,
+            supplierNameSnapshot: supplierSnapshot.supplierNameSnapshot,
+            handlerNameSnapshot: handlerSnapshot.handlerNameSnapshot,
+            workshopNameSnapshot: workshop.workshopName,
+            totalQty,
+            totalAmount,
+            remark: dto.remark,
+            createdBy,
+            updatedBy: createdBy,
+          },
+          linesWithSnapshots.map((line) => ({
+            ...line,
+            createdBy,
+            updatedBy: createdBy,
           })),
-          operatorId: createdBy,
-        },
-        tx,
-      );
+          tx,
+        );
 
-      return this.withStatusProjection(request, tx);
+        await initializeRequestStatusTruth(
+          {
+            requestId: request.id,
+            documentNo: request.documentNo,
+            lines: request.lines.map((line) => ({
+              id: line.id,
+              quantity: line.quantity,
+            })),
+            operatorId: createdBy,
+          },
+          tx,
+        );
+
+        return this.withStatusProjection(request, tx);
+      });
     });
   }
 
@@ -353,5 +356,12 @@ export class RdProcurementRequestService {
 
   private assertNeverAction(actionType: never): never {
     throw new BadRequestException(`不支持的 RD 状态动作: ${actionType}`);
+  }
+
+  private requireWorkshopId(workshopId?: number) {
+    if (!workshopId || workshopId < 1) {
+      throw new BadRequestException("workshopId 必填");
+    }
+    return workshopId;
   }
 }

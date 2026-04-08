@@ -14,10 +14,10 @@ import {
 import { CreateOutboundOrderLineDto } from "./create-outbound-order-line.dto";
 
 export class CreateOutboundOrderDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(64)
-  documentNo!: string;
+  documentNo?: string;
 
   @IsDateString()
   bizDate!: string;

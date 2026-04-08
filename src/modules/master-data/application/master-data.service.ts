@@ -45,11 +45,11 @@ const FIELD_SUGGESTION_SCOPE_CONFIG = {
   },
   workshop: {
     permission: "master:workshop:list",
-    fields: new Set(["workshopCode", "workshopName"]),
+    fields: new Set(["workshopName"]),
   },
   personnel: {
     permission: "master:personnel:list",
-    fields: new Set(["personnelCode", "personnelName"]),
+    fields: new Set(["personnelName"]),
   },
 } as const;
 
@@ -94,12 +94,12 @@ export class MasterDataService implements OnModuleInit {
         );
       case "workshop":
         return this.repository.findWorkshopSuggestionValues(
-          field as "workshopCode" | "workshopName",
+          field as "workshopName",
           MasterDataService.FIELD_SUGGESTION_LIMIT,
         );
       case "personnel":
         return this.repository.findPersonnelSuggestionValues(
-          field as "personnelCode" | "personnelName",
+          field as "personnelName",
           MasterDataService.FIELD_SUGGESTION_LIMIT,
         );
     }
@@ -635,24 +635,10 @@ export class MasterDataService implements OnModuleInit {
   }
 
   async createPersonnel(dto: CreatePersonnelDto, createdBy?: string) {
-    const existing = await this.repository.findPersonnelByCode(
-      dto.personnelCode,
+    return this.repository.createPersonnel(
+      { personnelName: dto.personnelName },
+      createdBy,
     );
-    if (existing) {
-      throw new ConflictException(`人员编码已存在: ${dto.personnelCode}`);
-    }
-
-    try {
-      return await this.repository.createPersonnel(
-        {
-          personnelCode: dto.personnelCode,
-          personnelName: dto.personnelName,
-        },
-        createdBy,
-      );
-    } catch (error) {
-      this.throwCodeConflict(error, "personnel", dto.personnelCode);
-    }
   }
 
   async updatePersonnel(
@@ -688,39 +674,6 @@ export class MasterDataService implements OnModuleInit {
     );
   }
 
-  async ensurePersonnel(
-    params: {
-      personnelCode: string;
-      personnelName: string;
-      sourceDocumentType?: string;
-      sourceDocumentId?: number;
-    },
-    createdBy?: string,
-  ) {
-    const existing = await this.repository.findPersonnelByCode(
-      params.personnelCode,
-    );
-    if (existing) {
-      return existing;
-    }
-
-    if (!params.sourceDocumentType || !params.sourceDocumentId) {
-      throw new BadRequestException(
-        "自动补建人员必须提供来源单据类型和来源单据 ID",
-      );
-    }
-
-    return this.repository.createAutoPersonnel(
-      {
-        personnelCode: params.personnelCode,
-        personnelName: params.personnelName,
-        sourceDocumentType: params.sourceDocumentType,
-        sourceDocumentId: params.sourceDocumentId,
-      },
-      createdBy,
-    );
-  }
-
   // ─── Workshop (F6) ──────────────────────────────────────────────────────────
 
   async listWorkshops(query: QueryMasterDataDto) {
@@ -742,19 +695,6 @@ export class MasterDataService implements OnModuleInit {
     return workshop;
   }
 
-  async getWorkshopByCode(workshopCode: string) {
-    const workshop = await this.repository.findWorkshopByCode(workshopCode);
-    if (!workshop) {
-      throw new NotFoundException(`车间不存在: ${workshopCode}`);
-    }
-    if (workshop.status === "DISABLED") {
-      throw new BadRequestException(
-        `车间已停用，无法用于新单据: ${workshopCode}`,
-      );
-    }
-    return workshop;
-  }
-
   async getWorkshopByName(workshopName: string) {
     const workshop = await this.repository.findWorkshopByName(workshopName);
     if (!workshop) {
@@ -769,22 +709,22 @@ export class MasterDataService implements OnModuleInit {
   }
 
   async createWorkshop(dto: CreateWorkshopDto, createdBy?: string) {
-    const existing = await this.repository.findWorkshopByCode(dto.workshopCode);
+    const existing = await this.repository.findWorkshopByName(dto.workshopName);
     if (existing) {
-      throw new ConflictException(`车间编码已存在: ${dto.workshopCode}`);
+      throw new ConflictException(`车间名称已存在: ${dto.workshopName}`);
     }
 
-    try {
-      return await this.repository.createWorkshop(
-        {
-          workshopCode: dto.workshopCode,
-          workshopName: dto.workshopName,
-        },
-        createdBy,
-      );
-    } catch (error) {
-      this.throwCodeConflict(error, "workshop", dto.workshopCode);
+    if (dto.defaultHandlerPersonnelId) {
+      await this.getPersonnelById(dto.defaultHandlerPersonnelId);
     }
+
+    return this.repository.createWorkshop(
+      {
+        workshopName: dto.workshopName,
+        defaultHandlerPersonnelId: dto.defaultHandlerPersonnelId ?? null,
+      },
+      createdBy,
+    );
   }
 
   async updateWorkshop(id: number, dto: UpdateWorkshopDto, updatedBy?: string) {
@@ -793,13 +733,27 @@ export class MasterDataService implements OnModuleInit {
       throw new NotFoundException(`车间不存在: ${id}`);
     }
 
-    return this.repository.updateWorkshop(
-      id,
-      {
-        workshopName: dto.workshopName,
-      },
-      updatedBy,
-    );
+    if (
+      dto.workshopName &&
+      dto.workshopName !== existing.workshopName &&
+      (await this.repository.findWorkshopByName(dto.workshopName))
+    ) {
+      throw new ConflictException(`车间名称已存在: ${dto.workshopName}`);
+    }
+
+    if (dto.defaultHandlerPersonnelId) {
+      await this.getPersonnelById(dto.defaultHandlerPersonnelId);
+    }
+
+    const payload: Prisma.WorkshopUncheckedUpdateInput = {
+      workshopName: dto.workshopName,
+    };
+
+    if (Object.hasOwn(dto, "defaultHandlerPersonnelId")) {
+      payload.defaultHandlerPersonnelId = dto.defaultHandlerPersonnelId ?? null;
+    }
+
+    return this.repository.updateWorkshop(id, payload, updatedBy);
   }
 
   async deactivateWorkshop(id: number, updatedBy?: string) {

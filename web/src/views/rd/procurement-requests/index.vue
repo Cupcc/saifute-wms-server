@@ -115,15 +115,21 @@
     </el-card>
 
     <el-dialog v-model="createOpen" title="新增研发采购需求" width="1100px">
-      <el-form label-width="100px" class="create-form">
+      <el-form
+        ref="createFormRef"
+        :model="form"
+        :rules="formRules"
+        label-width="100px"
+        class="create-form"
+      >
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="需求单号">
-              <el-input v-model="form.documentNo" />
+              <el-input v-model="form.documentNo" disabled placeholder="保存后自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="业务日期">
+            <el-form-item label="业务日期" prop="bizDate">
               <el-date-picker
                 v-model="form.bizDate"
                 type="date"
@@ -135,12 +141,12 @@
         </el-row>
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="项目编码">
+            <el-form-item label="项目编码" prop="projectCode">
               <el-input v-model="form.projectCode" placeholder="请输入项目编码" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="项目名称">
+            <el-form-item label="项目名称" prop="projectName">
               <el-input
                 v-model="form.projectName"
                 placeholder="请输入项目名称或项目式归集项"
@@ -201,7 +207,7 @@
         </el-row>
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="研发仓别">
+            <el-form-item label="研发仓别" prop="workshopId">
               <el-input :model-value="workshopLabel" disabled />
             </el-form-item>
           </el-col>
@@ -507,7 +513,7 @@ import {
   voidRdProcurementRequest,
 } from "@/api/rd-subwarehouse";
 import useUserStore from "@/store/modules/user";
-import { formatDateOnly, generateRdDocumentNo } from "@/utils/rd-documents";
+import { formatDateOnly } from "@/utils/rd-documents";
 
 const userStore = useUserStore();
 const loading = ref(false);
@@ -523,6 +529,7 @@ const materialOptions = ref([]);
 const supplierOptions = ref([]);
 const personnelOptions = ref([]);
 const createOpen = ref(false);
+const createFormRef = ref();
 const detailOpen = ref(false);
 const detailRow = ref(null);
 const statusActionOpen = ref(false);
@@ -543,6 +550,12 @@ const canCreate = computed(
     Boolean(userStore.stockScope?.stockScope) &&
     Boolean(userStore.workshopScope?.workshopId),
 );
+const formRules = {
+  bizDate: [{ required: true, message: "请选择业务日期", trigger: "change" }],
+  projectCode: [{ required: true, message: "请输入项目编码", trigger: "blur" }],
+  projectName: [{ required: true, message: "请输入项目名称", trigger: "blur" }],
+  workshopId: [{ required: true, message: "当前账号未绑定业务车间", trigger: "change" }],
+};
 const statusActionTitle = computed(() => {
   switch (statusActionForm.value.actionType) {
     case "PROCUREMENT_STARTED":
@@ -558,8 +571,9 @@ const statusActionTitle = computed(() => {
 
 function createEmptyForm() {
   return {
-    documentNo: generateRdDocumentNo("RDPUR"),
+    documentNo: "",
     bizDate: formatDateOnly(),
+    workshopId: userStore.workshopScope?.workshopId || null,
     projectCode: "",
     projectName: "",
     supplierId: null,
@@ -814,6 +828,7 @@ function openCreateDialog() {
     return;
   }
   form.value = createEmptyForm();
+  createFormRef.value?.clearValidate();
   createOpen.value = true;
 }
 
@@ -845,13 +860,9 @@ function openStatusAction(line, actionType) {
   statusActionOpen.value = true;
 }
 
-function validateForm() {
-  if (!form.value.documentNo || !form.value.bizDate) {
-    ElMessage.error("请先填写完整的需求单头信息");
-    return false;
-  }
-  if (!form.value.projectCode || !form.value.projectName) {
-    ElMessage.error("请填写项目编码和项目名称");
+async function validateForm() {
+  const valid = await createFormRef.value?.validate().catch(() => false);
+  if (!valid) {
     return false;
   }
   if (!Array.isArray(form.value.lines) || form.value.lines.length === 0) {
@@ -875,20 +886,19 @@ function validateForm() {
 }
 
 async function submitCreate() {
-  if (!validateForm()) {
+  if (!(await validateForm())) {
     return;
   }
 
   submitting.value = true;
   try {
     await createRdProcurementRequest({
-      documentNo: form.value.documentNo,
       bizDate: form.value.bizDate,
       projectCode: form.value.projectCode,
       projectName: form.value.projectName,
       supplierId: form.value.supplierId || undefined,
       handlerPersonnelId: form.value.handlerPersonnelId || undefined,
-      workshopId: userStore.workshopScope.workshopId,
+      workshopId: form.value.workshopId,
       remark: form.value.remark || undefined,
       lines: form.value.lines.map((line) => ({
         materialId: line.materialId,

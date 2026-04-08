@@ -108,7 +108,6 @@ async function upsertWorkshop(
     connection,
     `
       INSERT INTO workshop (
-        workshopCode,
         workshopName,
         status,
         createdBy,
@@ -116,10 +115,9 @@ async function upsertWorkshop(
         updatedBy,
         updatedAt
       ) VALUES (
-        ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, COALESCE(?, CURRENT_TIMESTAMP)
+        ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, COALESCE(?, CURRENT_TIMESTAMP)
       )
       ON DUPLICATE KEY UPDATE
-        workshopName = VALUES(workshopName),
         status = VALUES(status),
         createdBy = VALUES(createdBy),
         createdAt = COALESCE(VALUES(createdAt), createdAt),
@@ -128,7 +126,6 @@ async function upsertWorkshop(
         id = LAST_INSERT_ID(id)
     `,
     [
-      record.target.workshopCode,
       record.target.workshopName,
       record.target.status,
       record.target.createdBy,
@@ -195,25 +192,18 @@ async function upsertPersonnel(
     connection,
     `
       INSERT INTO personnel (
-        personnelCode,
         personnelName,
         status,
-        creationMode,
-        sourceDocumentType,
-        sourceDocumentId,
         createdBy,
         createdAt,
         updatedBy,
         updatedAt
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, COALESCE(?, CURRENT_TIMESTAMP)
+        ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, COALESCE(?, CURRENT_TIMESTAMP)
       )
       ON DUPLICATE KEY UPDATE
         personnelName = VALUES(personnelName),
         status = VALUES(status),
-        creationMode = VALUES(creationMode),
-        sourceDocumentType = VALUES(sourceDocumentType),
-        sourceDocumentId = VALUES(sourceDocumentId),
         createdBy = VALUES(createdBy),
         createdAt = COALESCE(VALUES(createdAt), createdAt),
         updatedBy = VALUES(updatedBy),
@@ -221,12 +211,8 @@ async function upsertPersonnel(
         id = LAST_INSERT_ID(id)
     `,
     [
-      record.target.personnelCode,
       record.target.personnelName,
       record.target.status,
-      record.target.creationMode,
-      record.target.sourceDocumentType,
-      record.target.sourceDocumentId,
       record.target.createdBy,
       record.target.createdAt,
       record.target.updatedBy,

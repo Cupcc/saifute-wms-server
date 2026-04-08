@@ -14,10 +14,10 @@ import {
 import { CreateRdProcurementRequestLineDto } from "./create-rd-procurement-request-line.dto";
 
 export class CreateRdProcurementRequestDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(64)
-  documentNo!: string;
+  documentNo?: string;
 
   @IsDateString()
   bizDate!: string;
@@ -43,8 +43,9 @@ export class CreateRdProcurementRequestDto {
   handlerPersonnelId?: number;
 
   @IsInt()
+  @IsOptional()
   @Min(1)
-  workshopId!: number;
+  workshopId?: number;
 
   @IsString()
   @IsOptional()

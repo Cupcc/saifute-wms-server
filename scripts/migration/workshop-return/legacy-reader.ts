@@ -200,7 +200,6 @@ async function readMappedWorkshops(
       legacyTable: string;
       legacyId: number;
       targetId: number;
-      workshopCode: string;
       workshopName: string;
     }>
   >(
@@ -209,7 +208,6 @@ async function readMappedWorkshops(
         map_row.legacy_table AS legacyTable,
         map_row.legacy_id AS legacyId,
         map_row.target_id AS targetId,
-        workshop.workshopCode AS workshopCode,
         workshop.workshopName AS workshopName
       FROM migration_staging.map_workshop map_row
       INNER JOIN workshop
@@ -224,7 +222,6 @@ async function readMappedWorkshops(
   for (const row of rows) {
     const dependency: ResolvedWorkshopDependency = {
       targetId: row.targetId,
-      workshopCode: row.workshopCode,
       workshopName: row.workshopName,
     };
 
@@ -254,14 +251,12 @@ async function readPersonnelDependencies(
   const rows = await connection.query<
     Array<{
       targetId: number;
-      personnelCode: string;
       personnelName: string;
     }>
   >(
     `
       SELECT
         personnel.id AS targetId,
-        personnel.personnelCode AS personnelCode,
         personnel.personnelName AS personnelName
       FROM migration_staging.map_personnel map_row
       INNER JOIN personnel
@@ -284,7 +279,6 @@ async function readPersonnelDependencies(
     const existingRows = groupedPersonnel.get(normalizedName) ?? [];
     existingRows.push({
       targetId: row.targetId,
-      personnelCode: row.personnelCode,
       personnelName: row.personnelName,
     });
     groupedPersonnel.set(normalizedName, existingRows);

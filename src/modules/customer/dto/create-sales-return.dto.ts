@@ -14,10 +14,10 @@ import {
 import { CreateSalesReturnLineDto } from "./create-sales-return-line.dto";
 
 export class CreateSalesReturnDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(64)
-  documentNo!: string;
+  documentNo?: string;
 
   @IsDateString()
   bizDate!: string;

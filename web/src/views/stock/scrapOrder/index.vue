@@ -133,7 +133,7 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="报废单号" prop="scrapNo">
-              <el-input v-model="form.scrapNo" placeholder="系统自动生成或手动输入" @input="handleScrapNoInput" />
+              <el-input v-model="form.scrapNo" placeholder="保存后自动生成" disabled />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -142,8 +142,7 @@
                 v-model="form.scrapDate"
                 type="date"
                 value-format="YYYY-MM-DD"
-                placeholder="请选择报废日期"
-                @change="handleScrapDateChange">
+                placeholder="请选择报废日期">
               </el-date-picker>
             </el-form-item>
           </el-col>
@@ -351,7 +350,7 @@ import {
   updateScrapOrder,
   voidScrapOrder,
 } from "@/api/stock/scrapOrder";
-import { formatDateToYYYYMMDD, generateOrderNo } from "@/utils/orderNumber";
+import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
 
 const { proxy } = getCurrentInstance();
 const { saifute_disposal_method, scrap_reason } = proxy.useDict(
@@ -400,7 +399,6 @@ const data = reactive({
     attn: null,
   },
   rules: {
-    scrapNo: [{ required: true, message: "报废单号不能为空", trigger: "blur" }],
     scrapDate: [
       { required: true, message: "报废日期不能为空", trigger: "blur" },
     ],
@@ -458,7 +456,7 @@ function cancel() {
 function reset() {
   form.value = {
     scrapId: null,
-    scrapNo: null,
+    scrapNo: "",
     scrapDate: null,
     workshopId: null,
     disposalMethod: 1,
@@ -470,7 +468,6 @@ function reset() {
     createBy: null,
     createTime: null,
     updateTime: null,
-    scrapNoManuallyChanged: false,
   };
   detailList.value = [
     {
@@ -596,49 +593,18 @@ function getFilteredMaterialOptions(rowIndex) {
   );
 }
 
-/**
- * 生成报废单号
- */
-async function generateScrapNo(date) {
-  // 查询当天已有的报废单号，找出最大流水号
-  const params = {
-    beginScrapDate: formatDateToYYYYMMDD(date),
-    endScrapDate: formatDateToYYYYMMDD(date),
-  };
-
-  return generateOrderNo(date, "BF", listScrapOrder, params, "scrapNo");
-}
-
-/** 报废日期变更事件 */
-async function handleScrapDateChange(val) {
-  // 只有在新增模式下，并且报废单号尚未手动修改过时，才重新生成报废单号
-  if (val && !form.value.scrapId && !form.value.scrapNoManuallyChanged) {
-    const newDate = new Date(val);
-    const newScrapNo = await generateScrapNo(newDate);
-    form.value.scrapNo = newScrapNo;
-  }
-}
-
-/** 报废单号输入事件 */
-function handleScrapNoInput() {
-  // 标记报废单号已被手动修改
-  form.value.scrapNoManuallyChanged = true;
-}
-
 /** 新增按钮操作 */
 function handleAdd() {
   reset();
   const today = new Date();
   form.value.scrapDate = formatDateToYYYYMMDD(today);
   form.value.disposalMethod = 1;
-  form.value.scrapNoManuallyChanged = false;
   title.value = "添加报废单";
   isView.value = false;
   open.value = true;
   dialogLoading.value = true;
-  generateScrapNo(today)
-    .then((scrapNo) => {
-      form.value.scrapNo = scrapNo;
+  Promise.resolve()
+    .then(() => {
       searchWorkshop("");
       loadMaterialOptions();
     })
@@ -702,12 +668,6 @@ function handleRowClick(row) {
   ids.value = [row.scrapId];
   single.value = false;
   multiple.value = false;
-}
-
-/** 当报废单号输入框发生变化时 */
-function handleScrapNoChange() {
-  // 标记报废单号已被手动修改
-  form.value.scrapNoManuallyChanged = true;
 }
 
 /** 提交按钮 */

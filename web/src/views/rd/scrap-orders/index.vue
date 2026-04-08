@@ -72,15 +72,15 @@
     </el-card>
 
     <el-dialog v-model="createOpen" title="新增报废单" width="1000px">
-      <el-form label-width="100px">
+      <el-form ref="createFormRef" :model="form" :rules="formRules" label-width="100px">
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="单据编号">
-              <el-input v-model="form.documentNo" />
+              <el-input v-model="form.documentNo" disabled placeholder="保存后自动生成" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="业务日期">
+            <el-form-item label="业务日期" prop="bizDate">
               <el-date-picker
                 v-model="form.bizDate"
                 type="date"
@@ -92,7 +92,7 @@
         </el-row>
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="研发仓别">
+            <el-form-item label="研发仓别" prop="workshopId">
               <el-input :model-value="workshopLabel" disabled />
             </el-form-item>
           </el-col>
@@ -259,7 +259,7 @@ import {
   voidRdScrapOrder,
 } from "@/api/rd-subwarehouse";
 import useUserStore from "@/store/modules/user";
-import { formatDateOnly, generateRdDocumentNo } from "@/utils/rd-documents";
+import { formatDateOnly } from "@/utils/rd-documents";
 
 const userStore = useUserStore();
 const loading = ref(false);
@@ -273,6 +273,7 @@ const pageSize = ref(10);
 const materialOptions = ref([]);
 const procurementSourceOptions = ref([]);
 const createOpen = ref(false);
+const createFormRef = ref();
 const detailOpen = ref(false);
 const detailRow = ref(null);
 const filters = ref({
@@ -283,6 +284,10 @@ const form = ref(createEmptyForm());
 const workshopLabel = computed(
   () => userStore.stockScope?.stockScopeName || "未绑定研发小仓",
 );
+const formRules = {
+  bizDate: [{ required: true, message: "请选择业务日期", trigger: "change" }],
+  workshopId: [{ required: true, message: "当前账号未绑定业务车间", trigger: "change" }],
+};
 
 function createEmptyLine() {
   return {
@@ -299,8 +304,9 @@ function createEmptyLine() {
 
 function createEmptyForm() {
   return {
-    documentNo: generateRdDocumentNo("RDSC"),
+    documentNo: "",
     bizDate: formatDateOnly(),
+    workshopId: userStore.workshopScope?.workshopId || null,
     remark: "",
     lines: [createEmptyLine()],
   };
@@ -453,6 +459,7 @@ function openCreateDialog() {
     return;
   }
   form.value = createEmptyForm();
+  createFormRef.value?.clearValidate();
   searchProcurementSources("");
   createOpen.value = true;
 }
@@ -463,12 +470,11 @@ async function openDetail(orderId) {
   detailOpen.value = true;
 }
 
-function validateForm() {
-  if (!form.value.documentNo || !form.value.bizDate) {
-    ElMessage.error("请先填写完整的报废单头信息");
+async function validateForm() {
+  const valid = await createFormRef.value?.validate().catch(() => false);
+  if (!valid) {
     return false;
   }
-
   if (!Array.isArray(form.value.lines) || form.value.lines.length === 0) {
     ElMessage.error("至少需要一条报废明细");
     return false;
@@ -494,17 +500,16 @@ function validateForm() {
 }
 
 async function submitCreate() {
-  if (!validateForm()) {
+  if (!(await validateForm())) {
     return;
   }
 
   submitting.value = true;
   try {
     await createRdScrapOrder({
-      documentNo: form.value.documentNo,
       orderType: "SCRAP",
       bizDate: form.value.bizDate,
-      workshopId: userStore.workshopScope.workshopId,
+      workshopId: form.value.workshopId,
       remark: form.value.remark || undefined,
       lines: form.value.lines.map((line) => ({
         sourceDocumentType: line.sourceDocumentType,

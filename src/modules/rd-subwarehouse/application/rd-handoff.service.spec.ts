@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from "@nestjs/common";
+import { NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import {
   AuditStatusSnapshot,
@@ -147,8 +147,14 @@ describe("RdHandoffService", () => {
             }),
             getWorkshopById: jest.fn().mockResolvedValue({
               id: 1,
-              workshopCode: "MAIN",
               workshopName: "主仓",
+              defaultHandlerPersonnelId: null,
+              defaultHandlerPersonnel: null,
+              status: "ACTIVE",
+              createdBy: null,
+              createdAt: new Date("2026-03-29T00:00:00.000Z"),
+              updatedBy: null,
+              updatedAt: new Date("2026-03-29T00:00:00.000Z"),
             }),
             getPersonnelById: jest.fn().mockResolvedValue({
               id: 20,
@@ -239,26 +245,6 @@ describe("RdHandoffService", () => {
     expect(masterDataService.getStockScopeByCode).toHaveBeenCalledWith(
       "RD_SUB",
     );
-  });
-
-  it("throws when documentNo already exists", async () => {
-    repository.findOrderByDocumentNo.mockResolvedValue(mockOrder);
-
-    await expect(
-      service.createOrder({
-        documentNo: "RDH-001",
-        bizDate: "2026-03-28",
-        sourceWorkshopId: 1,
-        lines: [
-          {
-            materialId: 100,
-            quantity: "8",
-            sourceDocumentId: 5,
-            sourceDocumentLineId: 501,
-          },
-        ],
-      }),
-    ).rejects.toThrow(ConflictException);
   });
 
   it("ignores source workshop ids and still bridges MAIN to RD_SUB stock", async () => {

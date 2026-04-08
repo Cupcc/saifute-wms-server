@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from "@nestjs/common";
+import { NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import {
   AuditStatusSnapshot,
@@ -235,7 +235,6 @@ describe("InboundService", () => {
       const result = await service.createOrder(dto, "1");
 
       expect(result).toEqual(mockOrder);
-      expect(repository.findOrderByDocumentNo).toHaveBeenCalledWith("SI-001");
       expect(repository.createOrder).toHaveBeenCalled();
       expect(inventoryService.increaseStock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -507,25 +506,6 @@ describe("InboundService", () => {
           "1",
         ),
       ).rejects.toThrow("累计验收数量不能大于对应 RD 采购需求数量");
-    });
-
-    it("should throw ConflictException when documentNo exists", async () => {
-      (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(
-        mockOrder,
-      );
-
-      const dto = {
-        documentNo: "SI-001",
-        orderType: StockInOrderType.ACCEPTANCE,
-        bizDate: "2025-03-14",
-        workshopId: 1,
-        lines: [{ materialId: 100, quantity: "100" }],
-      };
-
-      await expect(service.createOrder(dto, "1")).rejects.toThrow(
-        ConflictException,
-      );
-      expect(repository.createOrder).not.toHaveBeenCalled();
     });
   });
 

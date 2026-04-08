@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -12,6 +11,10 @@ import {
   Prisma,
   StockDirection,
 } from "../../../generated/prisma/client";
+import {
+  buildDashedTimestampDocumentNo,
+  createWithGeneratedDocumentNo,
+} from "../../../shared/common/document-number.util";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import {
   FIFO_SOURCE_OPERATION_TYPES,
@@ -67,13 +70,6 @@ export class RdHandoffService {
   }
 
   async createOrder(dto: CreateRdHandoffOrderDto, createdBy?: string) {
-    const existing = await this.repository.findOrderByDocumentNo(
-      dto.documentNo,
-    );
-    if (existing) {
-      throw new ConflictException(`单据编号已存在: ${dto.documentNo}`);
-    }
-
     const [sourceStockScopeRecord, targetStockScopeRecord] = await Promise.all([
       this.masterDataService.getStockScopeByCode("MAIN"),
       this.masterDataService.getStockScopeByCode("RD_SUB"),
@@ -146,138 +142,145 @@ export class RdHandoffService {
       new Prisma.Decimal(0),
     );
 
-    return this.prisma.runInTransaction(async (tx) => {
-      const order = await this.repository.createOrder(
-        {
-          documentNo: dto.documentNo,
-          bizDate,
-          handlerPersonnelId: dto.handlerPersonnelId,
-          sourceStockScopeId: sourceStockScopeRecord.id,
-          targetStockScopeId: targetStockScopeRecord.id,
-          sourceWorkshopId: null,
-          targetWorkshopId: null,
-          auditStatusSnapshot: AuditStatusSnapshot.NOT_REQUIRED,
-          handlerNameSnapshot: handlerSnapshot.handlerNameSnapshot,
-          sourceWorkshopNameSnapshot: sourceStockScopeRecord.scopeName,
-          targetWorkshopNameSnapshot: targetStockScopeRecord.scopeName,
-          totalQty,
-          totalAmount,
-          remark: dto.remark,
-          createdBy,
-          updatedBy: createdBy,
-        },
-        linesWithSnapshots.map((line) => ({
-          ...line,
-          createdBy,
-          updatedBy: createdBy,
-        })),
-        tx,
+    return createWithGeneratedDocumentNo((attempt) => {
+      const documentNo = buildDashedTimestampDocumentNo(
+        "RDH",
+        bizDate,
+        attempt,
       );
-
-      const inboundLogIdByLineId = new Map<number, number>();
-      const mainSourceTypes = FIFO_SOURCE_OPERATION_TYPES.filter(
-        (t) => t !== "RD_HANDOFF_IN",
-      );
-      for (const line of order.lines) {
-        // MAIN OUT: settle against MAIN source layers via FIFO.
-        const outSettlement = await this.inventoryService.settleConsumerOut(
+      return this.prisma.runInTransaction(async (tx) => {
+        const order = await this.repository.createOrder(
           {
-            materialId: line.materialId,
-            stockScope: "MAIN",
-            quantity: line.quantity,
-            operationType: InventoryOperationType.RD_HANDOFF_OUT,
-            businessModule: BUSINESS_MODULE,
-            businessDocumentType: DOCUMENT_TYPE,
-            businessDocumentId: order.id,
-            businessDocumentNumber: order.documentNo,
-            businessDocumentLineId: line.id,
-            operatorId: createdBy,
-            idempotencyKey: `${DOCUMENT_TYPE}:${order.id}:out:${line.id}`,
-            note: `主仓交接到 RD 小仓: ${order.sourceWorkshopNameSnapshot} -> ${order.targetWorkshopNameSnapshot}`,
-            consumerLineId: line.id,
-            sourceOperationTypes: mainSourceTypes,
+            documentNo,
+            bizDate,
+            handlerPersonnelId: dto.handlerPersonnelId,
+            sourceStockScopeId: sourceStockScopeRecord.id,
+            targetStockScopeId: targetStockScopeRecord.id,
+            sourceWorkshopId: null,
+            targetWorkshopId: null,
+            auditStatusSnapshot: AuditStatusSnapshot.NOT_REQUIRED,
+            handlerNameSnapshot: handlerSnapshot.handlerNameSnapshot,
+            sourceWorkshopNameSnapshot: sourceStockScopeRecord.scopeName,
+            targetWorkshopNameSnapshot: targetStockScopeRecord.scopeName,
+            totalQty,
+            totalAmount,
+            remark: dto.remark,
+            createdBy,
+            updatedBy: createdBy,
           },
+          linesWithSnapshots.map((line) => ({
+            ...line,
+            createdBy,
+            updatedBy: createdBy,
+          })),
           tx,
         );
 
-        // RD_SUB IN: create one IN log per FIFO allocation piece to preserve the
-        // original MAIN source layer granularity (cost bridge). Each piece gets its
-        // own deterministic idempotency key so the bridge is idempotent and auditable.
-        // The first piece's log is used as the representative for status-helper mapping.
-        let representativeInLogId: number | undefined;
-        const allocationsToCreate =
-          outSettlement.allocations.length > 0
-            ? outSettlement.allocations
-            : [
-                // Fallback: single synthetic piece covering the full line qty with
-                // aggregated cost (only used if FIFO returned empty allocations,
-                // which should not occur in normal operation).
-                {
-                  sourceLogId: 0,
-                  allocatedQty: new Prisma.Decimal(line.quantity),
-                  unitCost: outSettlement.settledUnitCost,
-                  costAmount: outSettlement.settledCostAmount,
-                },
-              ];
-
-        for (const allocation of allocationsToCreate) {
-          const bridgeIdempotencyKey =
-            allocation.sourceLogId > 0
-              ? `${DOCUMENT_TYPE}:${order.id}:in:${line.id}:src:${allocation.sourceLogId}`
-              : `${DOCUMENT_TYPE}:${order.id}:in:${line.id}`;
-
-          const bridgeLog = await this.inventoryService.increaseStock(
+        const inboundLogIdByLineId = new Map<number, number>();
+        const mainSourceTypes = FIFO_SOURCE_OPERATION_TYPES.filter(
+          (t) => t !== "RD_HANDOFF_IN",
+        );
+        for (const line of order.lines) {
+          // MAIN OUT: settle against MAIN source layers via FIFO.
+          const outSettlement = await this.inventoryService.settleConsumerOut(
             {
               materialId: line.materialId,
-              stockScope: "RD_SUB",
-              quantity: allocation.allocatedQty,
-              operationType: InventoryOperationType.RD_HANDOFF_IN,
+              stockScope: "MAIN",
+              quantity: line.quantity,
+              operationType: InventoryOperationType.RD_HANDOFF_OUT,
               businessModule: BUSINESS_MODULE,
               businessDocumentType: DOCUMENT_TYPE,
               businessDocumentId: order.id,
               businessDocumentNumber: order.documentNo,
               businessDocumentLineId: line.id,
               operatorId: createdBy,
-              idempotencyKey: bridgeIdempotencyKey,
-              note: `主仓交接到 RD 小仓 (MAIN 来源层 ${allocation.sourceLogId}): ${order.sourceWorkshopNameSnapshot} -> ${order.targetWorkshopNameSnapshot}`,
-              unitCost: allocation.unitCost,
-              costAmount: allocation.costAmount,
+              idempotencyKey: `${DOCUMENT_TYPE}:${order.id}:out:${line.id}`,
+              note: `主仓交接到 RD 小仓: ${order.sourceWorkshopNameSnapshot} -> ${order.targetWorkshopNameSnapshot}`,
+              consumerLineId: line.id,
+              sourceOperationTypes: mainSourceTypes,
             },
             tx,
           );
 
-          if (representativeInLogId === undefined) {
-            representativeInLogId = bridgeLog.id;
+          // RD_SUB IN: create one IN log per FIFO allocation piece to preserve the
+          // original MAIN source layer granularity (cost bridge). Each piece gets its
+          // own deterministic idempotency key so the bridge is idempotent and auditable.
+          // The first piece's log is used as the representative for status-helper mapping.
+          let representativeInLogId: number | undefined;
+          const allocationsToCreate =
+            outSettlement.allocations.length > 0
+              ? outSettlement.allocations
+              : [
+                  // Fallback: single synthetic piece covering the full line qty with
+                  // aggregated cost (only used if FIFO returned empty allocations,
+                  // which should not occur in normal operation).
+                  {
+                    sourceLogId: 0,
+                    allocatedQty: new Prisma.Decimal(line.quantity),
+                    unitCost: outSettlement.settledUnitCost,
+                    costAmount: outSettlement.settledCostAmount,
+                  },
+                ];
+
+          for (const allocation of allocationsToCreate) {
+            const bridgeIdempotencyKey =
+              allocation.sourceLogId > 0
+                ? `${DOCUMENT_TYPE}:${order.id}:in:${line.id}:src:${allocation.sourceLogId}`
+                : `${DOCUMENT_TYPE}:${order.id}:in:${line.id}`;
+
+            const bridgeLog = await this.inventoryService.increaseStock(
+              {
+                materialId: line.materialId,
+                stockScope: "RD_SUB",
+                quantity: allocation.allocatedQty,
+                operationType: InventoryOperationType.RD_HANDOFF_IN,
+                businessModule: BUSINESS_MODULE,
+                businessDocumentType: DOCUMENT_TYPE,
+                businessDocumentId: order.id,
+                businessDocumentNumber: order.documentNo,
+                businessDocumentLineId: line.id,
+                operatorId: createdBy,
+                idempotencyKey: bridgeIdempotencyKey,
+                note: `主仓交接到 RD 小仓 (MAIN 来源层 ${allocation.sourceLogId}): ${order.sourceWorkshopNameSnapshot} -> ${order.targetWorkshopNameSnapshot}`,
+                unitCost: allocation.unitCost,
+                costAmount: allocation.costAmount,
+              },
+              tx,
+            );
+
+            if (representativeInLogId === undefined) {
+              representativeInLogId = bridgeLog.id;
+            }
           }
+
+          if (representativeInLogId !== undefined) {
+            inboundLogIdByLineId.set(line.id, representativeInLogId);
+          }
+
+          // Persist aggregated cost snapshot on the handoff order line.
+          await this.repository.updateOrderLineCost(
+            line.id,
+            {
+              costUnitPrice: outSettlement.settledUnitCost,
+              costAmount: outSettlement.settledCostAmount,
+            },
+            tx,
+          );
         }
 
-        if (representativeInLogId !== undefined) {
-          inboundLogIdByLineId.set(line.id, representativeInLogId);
-        }
-
-        // Persist aggregated cost snapshot on the handoff order line.
-        await this.repository.updateOrderLineCost(
-          line.id,
+        await applyHandoffStatusesForOrder(
           {
-            costUnitPrice: outSettlement.settledUnitCost,
-            costAmount: outSettlement.settledCostAmount,
+            orderId: order.id,
+            documentNo: order.documentNo,
+            lines: order.lines,
+            operatorId: createdBy,
+            logIdByLineId: inboundLogIdByLineId,
           },
           tx,
         );
-      }
 
-      await applyHandoffStatusesForOrder(
-        {
-          orderId: order.id,
-          documentNo: order.documentNo,
-          lines: order.lines,
-          operatorId: createdBy,
-          logIdByLineId: inboundLogIdByLineId,
-        },
-        tx,
-      );
-
-      return order;
+        return order;
+      });
     });
   }
 

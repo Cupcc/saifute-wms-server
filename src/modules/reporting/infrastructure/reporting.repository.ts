@@ -34,7 +34,6 @@ export interface InventoryBalanceSnapshot {
   };
   workshop: {
     id: number;
-    workshopCode?: string | null;
     workshopName: string;
   } | null;
 }

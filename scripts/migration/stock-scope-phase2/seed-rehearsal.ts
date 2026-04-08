@@ -121,45 +121,42 @@ async function seed(connection: Queryable) {
     connection,
     `
       INSERT INTO workshop (
-        workshopCode, workshopName, createdBy, createdAt, updatedBy, updatedAt
+        workshopName, createdBy, createdAt, updatedBy, updatedAt
       )
-      VALUES (?, ?, ?, NOW(), ?, NOW())
+      VALUES (?, ?, NOW(), ?, NOW())
       ON DUPLICATE KEY UPDATE
-        workshopName = VALUES(workshopName),
         updatedBy = VALUES(updatedBy),
         id = LAST_INSERT_ID(id)
     `,
-    ["MAIN", "主仓", REHEARSAL_CREATED_BY, REHEARSAL_CREATED_BY],
+    ["主仓", REHEARSAL_CREATED_BY, REHEARSAL_CREATED_BY],
   );
 
   const rdWorkshopId = await insertOne(
     connection,
     `
       INSERT INTO workshop (
-        workshopCode, workshopName, createdBy, createdAt, updatedBy, updatedAt
+        workshopName, createdBy, createdAt, updatedBy, updatedAt
       )
-      VALUES (?, ?, ?, NOW(), ?, NOW())
+      VALUES (?, ?, NOW(), ?, NOW())
       ON DUPLICATE KEY UPDATE
-        workshopName = VALUES(workshopName),
         updatedBy = VALUES(updatedBy),
         id = LAST_INSERT_ID(id)
     `,
-    ["RD", "研发小仓", REHEARSAL_CREATED_BY, REHEARSAL_CREATED_BY],
+    ["研发小仓", REHEARSAL_CREATED_BY, REHEARSAL_CREATED_BY],
   );
 
   const workshopAttrId = await insertOne(
     connection,
     `
       INSERT INTO workshop (
-        workshopCode, workshopName, createdBy, createdAt, updatedBy, updatedAt
+        workshopName, createdBy, createdAt, updatedBy, updatedAt
       )
-      VALUES (?, ?, ?, NOW(), ?, NOW())
+      VALUES (?, ?, NOW(), ?, NOW())
       ON DUPLICATE KEY UPDATE
-        workshopName = VALUES(workshopName),
         updatedBy = VALUES(updatedBy),
         id = LAST_INSERT_ID(id)
     `,
-    ["WS-ATTR", "装配车间", REHEARSAL_CREATED_BY, REHEARSAL_CREATED_BY],
+    ["装配车间", REHEARSAL_CREATED_BY, REHEARSAL_CREATED_BY],
   );
 
   const materialId = await insertOne(

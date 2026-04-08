@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -14,6 +13,10 @@ import {
   InventoryOperationType,
   Prisma,
 } from "../../../generated/prisma/client";
+import {
+  buildCompactDocumentNo,
+  createWithGeneratedDocumentNo,
+} from "../../../shared/common/document-number.util";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { ApprovalService } from "../../approval/application/approval.service";
 import {
@@ -87,13 +90,6 @@ export class CustomerService {
   }
 
   async createOrder(dto: CreateOutboundOrderDto, createdBy?: string) {
-    const existing = await this.repository.findOrderByDocumentNo(
-      dto.documentNo,
-    );
-    if (existing) {
-      throw new ConflictException(`单据编号已存在: ${dto.documentNo}`);
-    }
-
     await this.validateMasterDataForOutbound(dto);
 
     const bizDate = new Date(dto.bizDate);
@@ -128,98 +124,104 @@ export class CustomerService {
       new Prisma.Decimal(0),
     );
 
-    const createdOrder = await this.prisma.runInTransaction(async (tx) => {
-      const order = await this.repository.createOrder(
-        {
-          documentNo: dto.documentNo,
-          orderType: CustomerStockOrderType.OUTBOUND,
-          bizDate,
-          customerId: dto.customerId,
-          handlerPersonnelId: dto.handlerPersonnelId,
-          stockScopeId: stockScopeRecord.id,
-          workshopId: dto.workshopId,
-          customerCodeSnapshot,
-          customerNameSnapshot,
-          handlerNameSnapshot,
-          workshopNameSnapshot: workshop.workshopName,
-          totalQty,
-          totalAmount,
-          remark: dto.remark,
-          auditStatusSnapshot: AuditStatusSnapshot.PENDING,
-          createdBy,
-          updatedBy: createdBy,
-        },
-        linesWithSnapshots.map((l) => ({
-          ...l,
-          createdBy,
-          updatedBy: createdBy,
-        })),
-        tx,
-      );
-
-      for (const line of order.lines) {
-        const settlement = await this.inventoryService.settleConsumerOut(
+    const createdOrder = await createWithGeneratedDocumentNo((attempt) => {
+      const documentNo = buildCompactDocumentNo("CK", bizDate, attempt);
+      return this.prisma.runInTransaction(async (tx) => {
+        const order = await this.repository.createOrder(
           {
-            materialId: line.materialId,
-            stockScope: "MAIN",
-            quantity: line.quantity,
-            selectedUnitCost: line.selectedUnitCost,
-            operationType: InventoryOperationType.OUTBOUND_OUT,
-            businessModule: BUSINESS_MODULE,
-            businessDocumentType: DOCUMENT_TYPE,
-            businessDocumentId: order.id,
-            businessDocumentNumber: order.documentNo,
-            businessDocumentLineId: line.id,
-            operatorId: createdBy,
-            idempotencyKey: `CustomerStockOrder:${order.id}:line:${line.id}`,
-            consumerLineId: line.id,
-            sourceOperationTypes: OUTBOUND_SOURCE_OPERATION_TYPES,
+            documentNo,
+            orderType: CustomerStockOrderType.OUTBOUND,
+            bizDate,
+            customerId: dto.customerId,
+            handlerPersonnelId: dto.handlerPersonnelId,
+            stockScopeId: stockScopeRecord.id,
+            workshopId: dto.workshopId,
+            customerCodeSnapshot,
+            customerNameSnapshot,
+            handlerNameSnapshot,
+            workshopNameSnapshot: workshop.workshopName,
+            totalQty,
+            totalAmount,
+            remark: dto.remark,
+            auditStatusSnapshot: AuditStatusSnapshot.PENDING,
+            createdBy,
+            updatedBy: createdBy,
           },
-          tx,
-        );
-        await this.repository.updateOrderLine(
-          line.id,
-          {
-            costUnitPrice: settlement.settledUnitCost,
-            costAmount: settlement.settledCostAmount,
-          },
+          linesWithSnapshots.map((l) => ({
+            ...l,
+            createdBy,
+            updatedBy: createdBy,
+          })),
           tx,
         );
 
-        if (line.startNumber && line.endNumber) {
-          await this.inventoryService.reserveFactoryNumber(
+        for (const line of order.lines) {
+          const settlement = await this.inventoryService.settleConsumerOut(
             {
               materialId: line.materialId,
               stockScope: "MAIN",
+              quantity: line.quantity,
+              selectedUnitCost: line.selectedUnitCost,
+              operationType: InventoryOperationType.OUTBOUND_OUT,
+              businessModule: BUSINESS_MODULE,
               businessDocumentType: DOCUMENT_TYPE,
               businessDocumentId: order.id,
+              businessDocumentNumber: order.documentNo,
               businessDocumentLineId: line.id,
-              startNumber: line.startNumber,
-              endNumber: line.endNumber,
               operatorId: createdBy,
+              idempotencyKey: `CustomerStockOrder:${order.id}:line:${line.id}`,
+              consumerLineId: line.id,
+              sourceOperationTypes: OUTBOUND_SOURCE_OPERATION_TYPES,
             },
             tx,
           );
+          await this.repository.updateOrderLine(
+            line.id,
+            {
+              costUnitPrice: settlement.settledUnitCost,
+              costAmount: settlement.settledCostAmount,
+            },
+            tx,
+          );
+
+          if (line.startNumber && line.endNumber) {
+            await this.inventoryService.reserveFactoryNumber(
+              {
+                materialId: line.materialId,
+                stockScope: "MAIN",
+                businessDocumentType: DOCUMENT_TYPE,
+                businessDocumentId: order.id,
+                businessDocumentLineId: line.id,
+                startNumber: line.startNumber,
+                endNumber: line.endNumber,
+                operatorId: createdBy,
+              },
+              tx,
+            );
+          }
         }
-      }
 
-      await this.approvalService.createOrRefreshApprovalDocument(
-        {
-          documentFamily: DocumentFamily.CUSTOMER_STOCK,
-          documentType: DOCUMENT_TYPE,
-          documentId: order.id,
-          documentNumber: order.documentNo,
-          submittedBy: createdBy,
-          createdBy,
-        },
-        tx,
-      );
+        await this.approvalService.createOrRefreshApprovalDocument(
+          {
+            documentFamily: DocumentFamily.CUSTOMER_STOCK,
+            documentType: DOCUMENT_TYPE,
+            documentId: order.id,
+            documentNumber: order.documentNo,
+            submittedBy: createdBy,
+            createdBy,
+          },
+          tx,
+        );
 
-      const refreshedOrder = await this.repository.findOrderById(order.id, tx);
-      if (!refreshedOrder) {
-        throw new NotFoundException(`出库单不存在: ${order.id}`);
-      }
-      return refreshedOrder;
+        const refreshedOrder = await this.repository.findOrderById(
+          order.id,
+          tx,
+        );
+        if (!refreshedOrder) {
+          throw new NotFoundException(`出库单不存在: ${order.id}`);
+        }
+        return refreshedOrder;
+      });
     });
 
     return this.attachOutboundTraceability(createdOrder);
@@ -730,13 +732,6 @@ export class CustomerService {
   }
 
   async createSalesReturn(dto: CreateSalesReturnDto, createdBy?: string) {
-    const existing = await this.repository.findOrderByDocumentNo(
-      dto.documentNo,
-    );
-    if (existing) {
-      throw new ConflictException(`单据编号已存在: ${dto.documentNo}`);
-    }
-
     const sourceOutbound = await this.repository.findOrderById(
       dto.sourceOutboundOrderId,
     );
@@ -866,131 +861,134 @@ export class CustomerService {
       new Prisma.Decimal(0),
     );
 
-    return this.prisma.runInTransaction(async (tx) => {
-      const order = await this.repository.createOrder(
-        {
-          documentNo: dto.documentNo,
-          orderType: CustomerStockOrderType.SALES_RETURN,
-          bizDate,
-          customerId,
-          handlerPersonnelId: dto.handlerPersonnelId,
-          stockScopeId: stockScopeRecord.id,
-          workshopId: dto.workshopId,
-          customerCodeSnapshot,
-          customerNameSnapshot,
-          handlerNameSnapshot,
-          workshopNameSnapshot: workshop.workshopName,
-          totalQty,
-          totalAmount,
-          remark: dto.remark,
-          auditStatusSnapshot: AuditStatusSnapshot.PENDING,
-          createdBy,
-          updatedBy: createdBy,
-        },
-        linesWithSnapshots.map((l) => ({
-          ...l,
-          createdBy,
-          updatedBy: createdBy,
-        })),
-        tx,
-      );
-
-      await this.repository.createDocumentRelation(
-        {
-          relationType: DocumentRelationType.SALES_RETURN_FROM_OUTBOUND,
-          upstreamFamily: DocumentFamily.CUSTOMER_STOCK,
-          upstreamDocumentType: DOCUMENT_TYPE,
-          upstreamDocumentId: dto.sourceOutboundOrderId,
-          downstreamFamily: DocumentFamily.CUSTOMER_STOCK,
-          downstreamDocumentType: DOCUMENT_TYPE,
-          downstreamDocumentId: order.id,
-          isActive: true,
-          createdBy,
-          updatedBy: createdBy,
-        },
-        tx,
-      );
-
-      for (const line of order.lines) {
-        // Release original outbound source allocations proportional to return qty,
-        // and derive settled return cost from released allocation cost layers.
-        let returnCostUnitPrice: Prisma.Decimal | null = null;
-        let returnCostAmount: Prisma.Decimal | null = null;
-        if (line.sourceDocumentLineId) {
-          const releaseResult = await this.releaseOutboundSourceForReturn(
-            dto.sourceOutboundOrderId,
-            line.sourceDocumentLineId,
-            new Prisma.Decimal(line.quantity),
-            createdBy,
-            tx,
-          );
-          returnCostUnitPrice = releaseResult.releasedUnitCost;
-          returnCostAmount = releaseResult.releasedCostAmount;
-        }
-
-        await this.inventoryService.increaseStock(
+    return createWithGeneratedDocumentNo((attempt) => {
+      const documentNo = buildCompactDocumentNo("XSTH", bizDate, attempt);
+      return this.prisma.runInTransaction(async (tx) => {
+        const order = await this.repository.createOrder(
           {
-            materialId: line.materialId,
-            stockScope: "MAIN",
-            quantity: line.quantity,
-            operationType: InventoryOperationType.SALES_RETURN_IN,
-            businessModule: BUSINESS_MODULE,
-            businessDocumentType: DOCUMENT_TYPE,
-            businessDocumentId: order.id,
-            businessDocumentNumber: order.documentNo,
-            businessDocumentLineId: line.id,
-            operatorId: createdBy,
-            idempotencyKey: `CustomerStockOrder:${order.id}:line:${line.id}`,
+            documentNo,
+            orderType: CustomerStockOrderType.SALES_RETURN,
+            bizDate,
+            customerId,
+            handlerPersonnelId: dto.handlerPersonnelId,
+            stockScopeId: stockScopeRecord.id,
+            workshopId: dto.workshopId,
+            customerCodeSnapshot,
+            customerNameSnapshot,
+            handlerNameSnapshot,
+            workshopNameSnapshot: workshop.workshopName,
+            totalQty,
+            totalAmount,
+            remark: dto.remark,
+            auditStatusSnapshot: AuditStatusSnapshot.PENDING,
+            createdBy,
+            updatedBy: createdBy,
+          },
+          linesWithSnapshots.map((l) => ({
+            ...l,
+            createdBy,
+            updatedBy: createdBy,
+          })),
+          tx,
+        );
+
+        await this.repository.createDocumentRelation(
+          {
+            relationType: DocumentRelationType.SALES_RETURN_FROM_OUTBOUND,
+            upstreamFamily: DocumentFamily.CUSTOMER_STOCK,
+            upstreamDocumentType: DOCUMENT_TYPE,
+            upstreamDocumentId: dto.sourceOutboundOrderId,
+            downstreamFamily: DocumentFamily.CUSTOMER_STOCK,
+            downstreamDocumentType: DOCUMENT_TYPE,
+            downstreamDocumentId: order.id,
+            isActive: true,
+            createdBy,
+            updatedBy: createdBy,
           },
           tx,
         );
 
-        // Persist settled return cost on the return line.
-        if (returnCostUnitPrice !== null) {
-          await this.repository.updateOrderLine(
-            line.id,
-            {
-              costUnitPrice: returnCostUnitPrice,
-              costAmount: returnCostAmount ?? undefined,
-            },
-            tx,
-          );
-        }
-
-        if (line.sourceDocumentLineId) {
-          await this.repository.createDocumentLineRelation(
-            {
-              relationType: DocumentRelationType.SALES_RETURN_FROM_OUTBOUND,
-              upstreamFamily: DocumentFamily.CUSTOMER_STOCK,
-              upstreamDocumentType: DOCUMENT_TYPE,
-              upstreamDocumentId: dto.sourceOutboundOrderId,
-              upstreamLineId: line.sourceDocumentLineId,
-              downstreamFamily: DocumentFamily.CUSTOMER_STOCK,
-              downstreamDocumentType: DOCUMENT_TYPE,
-              downstreamDocumentId: order.id,
-              downstreamLineId: line.id,
-              linkedQty: line.quantity,
+        for (const line of order.lines) {
+          // Release original outbound source allocations proportional to return qty,
+          // and derive settled return cost from released allocation cost layers.
+          let returnCostUnitPrice: Prisma.Decimal | null = null;
+          let returnCostAmount: Prisma.Decimal | null = null;
+          if (line.sourceDocumentLineId) {
+            const releaseResult = await this.releaseOutboundSourceForReturn(
+              dto.sourceOutboundOrderId,
+              line.sourceDocumentLineId,
+              new Prisma.Decimal(line.quantity),
               createdBy,
-              updatedBy: createdBy,
+              tx,
+            );
+            returnCostUnitPrice = releaseResult.releasedUnitCost;
+            returnCostAmount = releaseResult.releasedCostAmount;
+          }
+
+          await this.inventoryService.increaseStock(
+            {
+              materialId: line.materialId,
+              stockScope: "MAIN",
+              quantity: line.quantity,
+              operationType: InventoryOperationType.SALES_RETURN_IN,
+              businessModule: BUSINESS_MODULE,
+              businessDocumentType: DOCUMENT_TYPE,
+              businessDocumentId: order.id,
+              businessDocumentNumber: order.documentNo,
+              businessDocumentLineId: line.id,
+              operatorId: createdBy,
+              idempotencyKey: `CustomerStockOrder:${order.id}:line:${line.id}`,
             },
             tx,
           );
+
+          // Persist settled return cost on the return line.
+          if (returnCostUnitPrice !== null) {
+            await this.repository.updateOrderLine(
+              line.id,
+              {
+                costUnitPrice: returnCostUnitPrice,
+                costAmount: returnCostAmount ?? undefined,
+              },
+              tx,
+            );
+          }
+
+          if (line.sourceDocumentLineId) {
+            await this.repository.createDocumentLineRelation(
+              {
+                relationType: DocumentRelationType.SALES_RETURN_FROM_OUTBOUND,
+                upstreamFamily: DocumentFamily.CUSTOMER_STOCK,
+                upstreamDocumentType: DOCUMENT_TYPE,
+                upstreamDocumentId: dto.sourceOutboundOrderId,
+                upstreamLineId: line.sourceDocumentLineId,
+                downstreamFamily: DocumentFamily.CUSTOMER_STOCK,
+                downstreamDocumentType: DOCUMENT_TYPE,
+                downstreamDocumentId: order.id,
+                downstreamLineId: line.id,
+                linkedQty: line.quantity,
+                createdBy,
+                updatedBy: createdBy,
+              },
+              tx,
+            );
+          }
         }
-      }
 
-      await this.approvalService.createOrRefreshApprovalDocument(
-        {
-          documentFamily: DocumentFamily.CUSTOMER_STOCK,
-          documentType: DOCUMENT_TYPE,
-          documentId: order.id,
-          documentNumber: order.documentNo,
-          submittedBy: createdBy,
-          createdBy,
-        },
-        tx,
-      );
+        await this.approvalService.createOrRefreshApprovalDocument(
+          {
+            documentFamily: DocumentFamily.CUSTOMER_STOCK,
+            documentType: DOCUMENT_TYPE,
+            documentId: order.id,
+            documentNumber: order.documentNo,
+            submittedBy: createdBy,
+            createdBy,
+          },
+          tx,
+        );
 
-      return order;
+        return order;
+      });
     });
   }
 

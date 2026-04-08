@@ -28,16 +28,18 @@ export type AggregateWorkshop = {
 
 export type WorkshopAvgAggregateOutputType = {
   id: number | null;
+  defaultHandlerPersonnelId: number | null;
 };
 
 export type WorkshopSumAggregateOutputType = {
   id: number | null;
+  defaultHandlerPersonnelId: number | null;
 };
 
 export type WorkshopMinAggregateOutputType = {
   id: number | null;
-  workshopCode: string | null;
   workshopName: string | null;
+  defaultHandlerPersonnelId: number | null;
   status: $Enums.MasterDataStatus | null;
   createdBy: string | null;
   createdAt: Date | null;
@@ -47,8 +49,8 @@ export type WorkshopMinAggregateOutputType = {
 
 export type WorkshopMaxAggregateOutputType = {
   id: number | null;
-  workshopCode: string | null;
   workshopName: string | null;
+  defaultHandlerPersonnelId: number | null;
   status: $Enums.MasterDataStatus | null;
   createdBy: string | null;
   createdAt: Date | null;
@@ -58,8 +60,8 @@ export type WorkshopMaxAggregateOutputType = {
 
 export type WorkshopCountAggregateOutputType = {
   id: number;
-  workshopCode: number;
   workshopName: number;
+  defaultHandlerPersonnelId: number;
   status: number;
   createdBy: number;
   createdAt: number;
@@ -70,16 +72,18 @@ export type WorkshopCountAggregateOutputType = {
 
 export type WorkshopAvgAggregateInputType = {
   id?: true;
+  defaultHandlerPersonnelId?: true;
 };
 
 export type WorkshopSumAggregateInputType = {
   id?: true;
+  defaultHandlerPersonnelId?: true;
 };
 
 export type WorkshopMinAggregateInputType = {
   id?: true;
-  workshopCode?: true;
   workshopName?: true;
+  defaultHandlerPersonnelId?: true;
   status?: true;
   createdBy?: true;
   createdAt?: true;
@@ -89,8 +93,8 @@ export type WorkshopMinAggregateInputType = {
 
 export type WorkshopMaxAggregateInputType = {
   id?: true;
-  workshopCode?: true;
   workshopName?: true;
+  defaultHandlerPersonnelId?: true;
   status?: true;
   createdBy?: true;
   createdAt?: true;
@@ -100,8 +104,8 @@ export type WorkshopMaxAggregateInputType = {
 
 export type WorkshopCountAggregateInputType = {
   id?: true;
-  workshopCode?: true;
   workshopName?: true;
+  defaultHandlerPersonnelId?: true;
   status?: true;
   createdBy?: true;
   createdAt?: true;
@@ -205,8 +209,8 @@ export type WorkshopGroupByArgs<
 
 export type WorkshopGroupByOutputType = {
   id: number;
-  workshopCode: string;
   workshopName: string;
+  defaultHandlerPersonnelId: number | null;
   status: $Enums.MasterDataStatus;
   createdBy: string | null;
   createdAt: Date;
@@ -237,8 +241,11 @@ export type WorkshopWhereInput = {
   OR?: Prisma.WorkshopWhereInput[];
   NOT?: Prisma.WorkshopWhereInput | Prisma.WorkshopWhereInput[];
   id?: Prisma.IntFilter<"Workshop"> | number;
-  workshopCode?: Prisma.StringFilter<"Workshop"> | string;
   workshopName?: Prisma.StringFilter<"Workshop"> | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.IntNullableFilter<"Workshop">
+    | number
+    | null;
   status?:
     | Prisma.EnumMasterDataStatusFilter<"Workshop">
     | $Enums.MasterDataStatus;
@@ -253,6 +260,10 @@ export type WorkshopWhereInput = {
   customerStockOrders?: Prisma.CustomerStockOrderListRelationFilter;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderListRelationFilter;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderListRelationFilter;
+  defaultHandlerPersonnel?: Prisma.XOR<
+    Prisma.PersonnelNullableScalarRelationFilter,
+    Prisma.PersonnelWhereInput
+  > | null;
   projects?: Prisma.ProjectListRelationFilter;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderListRelationFilter;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderListRelationFilter;
@@ -262,8 +273,8 @@ export type WorkshopWhereInput = {
 
 export type WorkshopOrderByWithRelationInput = {
   id?: Prisma.SortOrder;
-  workshopCode?: Prisma.SortOrder;
   workshopName?: Prisma.SortOrder;
+  defaultHandlerPersonnelId?: Prisma.SortOrderInput | Prisma.SortOrder;
   status?: Prisma.SortOrder;
   createdBy?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -276,6 +287,7 @@ export type WorkshopOrderByWithRelationInput = {
   customerStockOrders?: Prisma.CustomerStockOrderOrderByRelationAggregateInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderOrderByRelationAggregateInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderOrderByRelationAggregateInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelOrderByWithRelationInput;
   projects?: Prisma.ProjectOrderByRelationAggregateInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderOrderByRelationAggregateInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderOrderByRelationAggregateInput;
@@ -287,11 +299,14 @@ export type WorkshopOrderByWithRelationInput = {
 export type WorkshopWhereUniqueInput = Prisma.AtLeast<
   {
     id?: number;
-    workshopCode?: string;
+    workshopName?: string;
     AND?: Prisma.WorkshopWhereInput | Prisma.WorkshopWhereInput[];
     OR?: Prisma.WorkshopWhereInput[];
     NOT?: Prisma.WorkshopWhereInput | Prisma.WorkshopWhereInput[];
-    workshopName?: Prisma.StringFilter<"Workshop"> | string;
+    defaultHandlerPersonnelId?:
+      | Prisma.IntNullableFilter<"Workshop">
+      | number
+      | null;
     status?:
       | Prisma.EnumMasterDataStatusFilter<"Workshop">
       | $Enums.MasterDataStatus;
@@ -306,19 +321,23 @@ export type WorkshopWhereUniqueInput = Prisma.AtLeast<
     customerStockOrders?: Prisma.CustomerStockOrderListRelationFilter;
     stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderListRelationFilter;
     workshopMaterialOrders?: Prisma.WorkshopMaterialOrderListRelationFilter;
+    defaultHandlerPersonnel?: Prisma.XOR<
+      Prisma.PersonnelNullableScalarRelationFilter,
+      Prisma.PersonnelWhereInput
+    > | null;
     projects?: Prisma.ProjectListRelationFilter;
     rdHandoffSourceOrders?: Prisma.RdHandoffOrderListRelationFilter;
     rdHandoffTargetOrders?: Prisma.RdHandoffOrderListRelationFilter;
     rdProcurementRequests?: Prisma.RdProcurementRequestListRelationFilter;
     rdStocktakeOrders?: Prisma.RdStocktakeOrderListRelationFilter;
   },
-  "id" | "workshopCode"
+  "id" | "workshopName"
 >;
 
 export type WorkshopOrderByWithAggregationInput = {
   id?: Prisma.SortOrder;
-  workshopCode?: Prisma.SortOrder;
   workshopName?: Prisma.SortOrder;
+  defaultHandlerPersonnelId?: Prisma.SortOrderInput | Prisma.SortOrder;
   status?: Prisma.SortOrder;
   createdBy?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -340,8 +359,11 @@ export type WorkshopScalarWhereWithAggregatesInput = {
     | Prisma.WorkshopScalarWhereWithAggregatesInput
     | Prisma.WorkshopScalarWhereWithAggregatesInput[];
   id?: Prisma.IntWithAggregatesFilter<"Workshop"> | number;
-  workshopCode?: Prisma.StringWithAggregatesFilter<"Workshop"> | string;
   workshopName?: Prisma.StringWithAggregatesFilter<"Workshop"> | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.IntNullableWithAggregatesFilter<"Workshop">
+    | number
+    | null;
   status?:
     | Prisma.EnumMasterDataStatusWithAggregatesFilter<"Workshop">
     | $Enums.MasterDataStatus;
@@ -358,7 +380,6 @@ export type WorkshopScalarWhereWithAggregatesInput = {
 };
 
 export type WorkshopCreateInput = {
-  workshopCode: string;
   workshopName: string;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
@@ -372,6 +393,7 @@ export type WorkshopCreateInput = {
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutWorkshopInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderCreateNestedManyWithoutWorkshopInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutWorkshopInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelCreateNestedOneWithoutDefaultHandlerWorkshopsInput;
   projects?: Prisma.ProjectCreateNestedManyWithoutWorkshopInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutSourceWorkshopInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutTargetWorkshopInput;
@@ -381,8 +403,8 @@ export type WorkshopCreateInput = {
 
 export type WorkshopUncheckedCreateInput = {
   id?: number;
-  workshopCode: string;
   workshopName: string;
+  defaultHandlerPersonnelId?: number | null;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
@@ -403,7 +425,6 @@ export type WorkshopUncheckedCreateInput = {
 };
 
 export type WorkshopUpdateInput = {
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
@@ -419,6 +440,7 @@ export type WorkshopUpdateInput = {
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutWorkshopNestedInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderUpdateManyWithoutWorkshopNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutWorkshopNestedInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelUpdateOneWithoutDefaultHandlerWorkshopsNestedInput;
   projects?: Prisma.ProjectUpdateManyWithoutWorkshopNestedInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderUpdateManyWithoutSourceWorkshopNestedInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderUpdateManyWithoutTargetWorkshopNestedInput;
@@ -428,8 +450,11 @@ export type WorkshopUpdateInput = {
 
 export type WorkshopUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
@@ -453,8 +478,8 @@ export type WorkshopUncheckedUpdateInput = {
 
 export type WorkshopCreateManyInput = {
   id?: number;
-  workshopCode: string;
   workshopName: string;
+  defaultHandlerPersonnelId?: number | null;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
@@ -463,7 +488,6 @@ export type WorkshopCreateManyInput = {
 };
 
 export type WorkshopUpdateManyMutationInput = {
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
@@ -476,8 +500,11 @@ export type WorkshopUpdateManyMutationInput = {
 
 export type WorkshopUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
@@ -485,6 +512,16 @@ export type WorkshopUncheckedUpdateManyInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+};
+
+export type WorkshopListRelationFilter = {
+  every?: Prisma.WorkshopWhereInput;
+  some?: Prisma.WorkshopWhereInput;
+  none?: Prisma.WorkshopWhereInput;
+};
+
+export type WorkshopOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder;
 };
 
 export type WorkshopOrderByRelevanceInput = {
@@ -497,8 +534,8 @@ export type WorkshopOrderByRelevanceInput = {
 
 export type WorkshopCountOrderByAggregateInput = {
   id?: Prisma.SortOrder;
-  workshopCode?: Prisma.SortOrder;
   workshopName?: Prisma.SortOrder;
+  defaultHandlerPersonnelId?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
   createdBy?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -508,12 +545,13 @@ export type WorkshopCountOrderByAggregateInput = {
 
 export type WorkshopAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder;
+  defaultHandlerPersonnelId?: Prisma.SortOrder;
 };
 
 export type WorkshopMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder;
-  workshopCode?: Prisma.SortOrder;
   workshopName?: Prisma.SortOrder;
+  defaultHandlerPersonnelId?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
   createdBy?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -523,8 +561,8 @@ export type WorkshopMaxOrderByAggregateInput = {
 
 export type WorkshopMinOrderByAggregateInput = {
   id?: Prisma.SortOrder;
-  workshopCode?: Prisma.SortOrder;
   workshopName?: Prisma.SortOrder;
+  defaultHandlerPersonnelId?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
   createdBy?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
@@ -534,6 +572,7 @@ export type WorkshopMinOrderByAggregateInput = {
 
 export type WorkshopSumOrderByAggregateInput = {
   id?: Prisma.SortOrder;
+  defaultHandlerPersonnelId?: Prisma.SortOrder;
 };
 
 export type WorkshopNullableScalarRelationFilter = {
@@ -545,6 +584,108 @@ export type WorkshopScalarRelationFilter = {
   is?: Prisma.WorkshopWhereInput;
   isNot?: Prisma.WorkshopWhereInput;
 };
+
+export type WorkshopCreateNestedManyWithoutDefaultHandlerPersonnelInput = {
+  create?:
+    | Prisma.XOR<
+        Prisma.WorkshopCreateWithoutDefaultHandlerPersonnelInput,
+        Prisma.WorkshopUncheckedCreateWithoutDefaultHandlerPersonnelInput
+      >
+    | Prisma.WorkshopCreateWithoutDefaultHandlerPersonnelInput[]
+    | Prisma.WorkshopUncheckedCreateWithoutDefaultHandlerPersonnelInput[];
+  connectOrCreate?:
+    | Prisma.WorkshopCreateOrConnectWithoutDefaultHandlerPersonnelInput
+    | Prisma.WorkshopCreateOrConnectWithoutDefaultHandlerPersonnelInput[];
+  createMany?: Prisma.WorkshopCreateManyDefaultHandlerPersonnelInputEnvelope;
+  connect?: Prisma.WorkshopWhereUniqueInput | Prisma.WorkshopWhereUniqueInput[];
+};
+
+export type WorkshopUncheckedCreateNestedManyWithoutDefaultHandlerPersonnelInput =
+  {
+    create?:
+      | Prisma.XOR<
+          Prisma.WorkshopCreateWithoutDefaultHandlerPersonnelInput,
+          Prisma.WorkshopUncheckedCreateWithoutDefaultHandlerPersonnelInput
+        >
+      | Prisma.WorkshopCreateWithoutDefaultHandlerPersonnelInput[]
+      | Prisma.WorkshopUncheckedCreateWithoutDefaultHandlerPersonnelInput[];
+    connectOrCreate?:
+      | Prisma.WorkshopCreateOrConnectWithoutDefaultHandlerPersonnelInput
+      | Prisma.WorkshopCreateOrConnectWithoutDefaultHandlerPersonnelInput[];
+    createMany?: Prisma.WorkshopCreateManyDefaultHandlerPersonnelInputEnvelope;
+    connect?:
+      | Prisma.WorkshopWhereUniqueInput
+      | Prisma.WorkshopWhereUniqueInput[];
+  };
+
+export type WorkshopUpdateManyWithoutDefaultHandlerPersonnelNestedInput = {
+  create?:
+    | Prisma.XOR<
+        Prisma.WorkshopCreateWithoutDefaultHandlerPersonnelInput,
+        Prisma.WorkshopUncheckedCreateWithoutDefaultHandlerPersonnelInput
+      >
+    | Prisma.WorkshopCreateWithoutDefaultHandlerPersonnelInput[]
+    | Prisma.WorkshopUncheckedCreateWithoutDefaultHandlerPersonnelInput[];
+  connectOrCreate?:
+    | Prisma.WorkshopCreateOrConnectWithoutDefaultHandlerPersonnelInput
+    | Prisma.WorkshopCreateOrConnectWithoutDefaultHandlerPersonnelInput[];
+  upsert?:
+    | Prisma.WorkshopUpsertWithWhereUniqueWithoutDefaultHandlerPersonnelInput
+    | Prisma.WorkshopUpsertWithWhereUniqueWithoutDefaultHandlerPersonnelInput[];
+  createMany?: Prisma.WorkshopCreateManyDefaultHandlerPersonnelInputEnvelope;
+  set?: Prisma.WorkshopWhereUniqueInput | Prisma.WorkshopWhereUniqueInput[];
+  disconnect?:
+    | Prisma.WorkshopWhereUniqueInput
+    | Prisma.WorkshopWhereUniqueInput[];
+  delete?: Prisma.WorkshopWhereUniqueInput | Prisma.WorkshopWhereUniqueInput[];
+  connect?: Prisma.WorkshopWhereUniqueInput | Prisma.WorkshopWhereUniqueInput[];
+  update?:
+    | Prisma.WorkshopUpdateWithWhereUniqueWithoutDefaultHandlerPersonnelInput
+    | Prisma.WorkshopUpdateWithWhereUniqueWithoutDefaultHandlerPersonnelInput[];
+  updateMany?:
+    | Prisma.WorkshopUpdateManyWithWhereWithoutDefaultHandlerPersonnelInput
+    | Prisma.WorkshopUpdateManyWithWhereWithoutDefaultHandlerPersonnelInput[];
+  deleteMany?:
+    | Prisma.WorkshopScalarWhereInput
+    | Prisma.WorkshopScalarWhereInput[];
+};
+
+export type WorkshopUncheckedUpdateManyWithoutDefaultHandlerPersonnelNestedInput =
+  {
+    create?:
+      | Prisma.XOR<
+          Prisma.WorkshopCreateWithoutDefaultHandlerPersonnelInput,
+          Prisma.WorkshopUncheckedCreateWithoutDefaultHandlerPersonnelInput
+        >
+      | Prisma.WorkshopCreateWithoutDefaultHandlerPersonnelInput[]
+      | Prisma.WorkshopUncheckedCreateWithoutDefaultHandlerPersonnelInput[];
+    connectOrCreate?:
+      | Prisma.WorkshopCreateOrConnectWithoutDefaultHandlerPersonnelInput
+      | Prisma.WorkshopCreateOrConnectWithoutDefaultHandlerPersonnelInput[];
+    upsert?:
+      | Prisma.WorkshopUpsertWithWhereUniqueWithoutDefaultHandlerPersonnelInput
+      | Prisma.WorkshopUpsertWithWhereUniqueWithoutDefaultHandlerPersonnelInput[];
+    createMany?: Prisma.WorkshopCreateManyDefaultHandlerPersonnelInputEnvelope;
+    set?: Prisma.WorkshopWhereUniqueInput | Prisma.WorkshopWhereUniqueInput[];
+    disconnect?:
+      | Prisma.WorkshopWhereUniqueInput
+      | Prisma.WorkshopWhereUniqueInput[];
+    delete?:
+      | Prisma.WorkshopWhereUniqueInput
+      | Prisma.WorkshopWhereUniqueInput[];
+    connect?:
+      | Prisma.WorkshopWhereUniqueInput
+      | Prisma.WorkshopWhereUniqueInput[];
+    update?:
+      | Prisma.WorkshopUpdateWithWhereUniqueWithoutDefaultHandlerPersonnelInput
+      | Prisma.WorkshopUpdateWithWhereUniqueWithoutDefaultHandlerPersonnelInput[];
+    updateMany?:
+      | Prisma.WorkshopUpdateManyWithWhereWithoutDefaultHandlerPersonnelInput
+      | Prisma.WorkshopUpdateManyWithWhereWithoutDefaultHandlerPersonnelInput[];
+    deleteMany?:
+      | Prisma.WorkshopScalarWhereInput
+      | Prisma.WorkshopScalarWhereInput[];
+  };
 
 export type WorkshopCreateNestedOneWithoutInventoryBalancesInput = {
   create?: Prisma.XOR<
@@ -870,14 +1011,14 @@ export type WorkshopUpdateOneRequiredWithoutRdStocktakeOrdersNestedInput = {
   >;
 };
 
-export type WorkshopCreateWithoutInventoryBalancesInput = {
-  workshopCode: string;
+export type WorkshopCreateWithoutDefaultHandlerPersonnelInput = {
   workshopName: string;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
   updatedAt?: Date | string;
+  inventoryBalances?: Prisma.InventoryBalanceCreateNestedManyWithoutWorkshopInput;
   inventoryLogs?: Prisma.InventoryLogCreateNestedManyWithoutWorkshopInput;
   factoryNumberReservations?: Prisma.FactoryNumberReservationCreateNestedManyWithoutWorkshopInput;
   stockInOrders?: Prisma.StockInOrderCreateNestedManyWithoutWorkshopInput;
@@ -891,10 +1032,115 @@ export type WorkshopCreateWithoutInventoryBalancesInput = {
   rdStocktakeOrders?: Prisma.RdStocktakeOrderCreateNestedManyWithoutWorkshopInput;
 };
 
+export type WorkshopUncheckedCreateWithoutDefaultHandlerPersonnelInput = {
+  id?: number;
+  workshopName: string;
+  status?: $Enums.MasterDataStatus;
+  createdBy?: string | null;
+  createdAt?: Date | string;
+  updatedBy?: string | null;
+  updatedAt?: Date | string;
+  inventoryBalances?: Prisma.InventoryBalanceUncheckedCreateNestedManyWithoutWorkshopInput;
+  inventoryLogs?: Prisma.InventoryLogUncheckedCreateNestedManyWithoutWorkshopInput;
+  factoryNumberReservations?: Prisma.FactoryNumberReservationUncheckedCreateNestedManyWithoutWorkshopInput;
+  stockInOrders?: Prisma.StockInOrderUncheckedCreateNestedManyWithoutWorkshopInput;
+  customerStockOrders?: Prisma.CustomerStockOrderUncheckedCreateNestedManyWithoutWorkshopInput;
+  stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderUncheckedCreateNestedManyWithoutWorkshopInput;
+  workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedCreateNestedManyWithoutWorkshopInput;
+  projects?: Prisma.ProjectUncheckedCreateNestedManyWithoutWorkshopInput;
+  rdHandoffSourceOrders?: Prisma.RdHandoffOrderUncheckedCreateNestedManyWithoutSourceWorkshopInput;
+  rdHandoffTargetOrders?: Prisma.RdHandoffOrderUncheckedCreateNestedManyWithoutTargetWorkshopInput;
+  rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedCreateNestedManyWithoutWorkshopInput;
+  rdStocktakeOrders?: Prisma.RdStocktakeOrderUncheckedCreateNestedManyWithoutWorkshopInput;
+};
+
+export type WorkshopCreateOrConnectWithoutDefaultHandlerPersonnelInput = {
+  where: Prisma.WorkshopWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.WorkshopCreateWithoutDefaultHandlerPersonnelInput,
+    Prisma.WorkshopUncheckedCreateWithoutDefaultHandlerPersonnelInput
+  >;
+};
+
+export type WorkshopCreateManyDefaultHandlerPersonnelInputEnvelope = {
+  data:
+    | Prisma.WorkshopCreateManyDefaultHandlerPersonnelInput
+    | Prisma.WorkshopCreateManyDefaultHandlerPersonnelInput[];
+  skipDuplicates?: boolean;
+};
+
+export type WorkshopUpsertWithWhereUniqueWithoutDefaultHandlerPersonnelInput = {
+  where: Prisma.WorkshopWhereUniqueInput;
+  update: Prisma.XOR<
+    Prisma.WorkshopUpdateWithoutDefaultHandlerPersonnelInput,
+    Prisma.WorkshopUncheckedUpdateWithoutDefaultHandlerPersonnelInput
+  >;
+  create: Prisma.XOR<
+    Prisma.WorkshopCreateWithoutDefaultHandlerPersonnelInput,
+    Prisma.WorkshopUncheckedCreateWithoutDefaultHandlerPersonnelInput
+  >;
+};
+
+export type WorkshopUpdateWithWhereUniqueWithoutDefaultHandlerPersonnelInput = {
+  where: Prisma.WorkshopWhereUniqueInput;
+  data: Prisma.XOR<
+    Prisma.WorkshopUpdateWithoutDefaultHandlerPersonnelInput,
+    Prisma.WorkshopUncheckedUpdateWithoutDefaultHandlerPersonnelInput
+  >;
+};
+
+export type WorkshopUpdateManyWithWhereWithoutDefaultHandlerPersonnelInput = {
+  where: Prisma.WorkshopScalarWhereInput;
+  data: Prisma.XOR<
+    Prisma.WorkshopUpdateManyMutationInput,
+    Prisma.WorkshopUncheckedUpdateManyWithoutDefaultHandlerPersonnelInput
+  >;
+};
+
+export type WorkshopScalarWhereInput = {
+  AND?: Prisma.WorkshopScalarWhereInput | Prisma.WorkshopScalarWhereInput[];
+  OR?: Prisma.WorkshopScalarWhereInput[];
+  NOT?: Prisma.WorkshopScalarWhereInput | Prisma.WorkshopScalarWhereInput[];
+  id?: Prisma.IntFilter<"Workshop"> | number;
+  workshopName?: Prisma.StringFilter<"Workshop"> | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.IntNullableFilter<"Workshop">
+    | number
+    | null;
+  status?:
+    | Prisma.EnumMasterDataStatusFilter<"Workshop">
+    | $Enums.MasterDataStatus;
+  createdBy?: Prisma.StringNullableFilter<"Workshop"> | string | null;
+  createdAt?: Prisma.DateTimeFilter<"Workshop"> | Date | string;
+  updatedBy?: Prisma.StringNullableFilter<"Workshop"> | string | null;
+  updatedAt?: Prisma.DateTimeFilter<"Workshop"> | Date | string;
+};
+
+export type WorkshopCreateWithoutInventoryBalancesInput = {
+  workshopName: string;
+  status?: $Enums.MasterDataStatus;
+  createdBy?: string | null;
+  createdAt?: Date | string;
+  updatedBy?: string | null;
+  updatedAt?: Date | string;
+  inventoryLogs?: Prisma.InventoryLogCreateNestedManyWithoutWorkshopInput;
+  factoryNumberReservations?: Prisma.FactoryNumberReservationCreateNestedManyWithoutWorkshopInput;
+  stockInOrders?: Prisma.StockInOrderCreateNestedManyWithoutWorkshopInput;
+  customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutWorkshopInput;
+  stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderCreateNestedManyWithoutWorkshopInput;
+  workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutWorkshopInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelCreateNestedOneWithoutDefaultHandlerWorkshopsInput;
+  projects?: Prisma.ProjectCreateNestedManyWithoutWorkshopInput;
+  rdHandoffSourceOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutSourceWorkshopInput;
+  rdHandoffTargetOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutTargetWorkshopInput;
+  rdProcurementRequests?: Prisma.RdProcurementRequestCreateNestedManyWithoutWorkshopInput;
+  rdStocktakeOrders?: Prisma.RdStocktakeOrderCreateNestedManyWithoutWorkshopInput;
+};
+
 export type WorkshopUncheckedCreateWithoutInventoryBalancesInput = {
   id?: number;
-  workshopCode: string;
   workshopName: string;
+  defaultHandlerPersonnelId?: number | null;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
@@ -942,7 +1188,6 @@ export type WorkshopUpdateToOneWithWhereWithoutInventoryBalancesInput = {
 };
 
 export type WorkshopUpdateWithoutInventoryBalancesInput = {
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
@@ -957,6 +1202,7 @@ export type WorkshopUpdateWithoutInventoryBalancesInput = {
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutWorkshopNestedInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderUpdateManyWithoutWorkshopNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutWorkshopNestedInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelUpdateOneWithoutDefaultHandlerWorkshopsNestedInput;
   projects?: Prisma.ProjectUpdateManyWithoutWorkshopNestedInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderUpdateManyWithoutSourceWorkshopNestedInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderUpdateManyWithoutTargetWorkshopNestedInput;
@@ -966,8 +1212,11 @@ export type WorkshopUpdateWithoutInventoryBalancesInput = {
 
 export type WorkshopUncheckedUpdateWithoutInventoryBalancesInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
@@ -989,7 +1238,6 @@ export type WorkshopUncheckedUpdateWithoutInventoryBalancesInput = {
 };
 
 export type WorkshopCreateWithoutInventoryLogsInput = {
-  workshopCode: string;
   workshopName: string;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
@@ -1002,6 +1250,7 @@ export type WorkshopCreateWithoutInventoryLogsInput = {
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutWorkshopInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderCreateNestedManyWithoutWorkshopInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutWorkshopInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelCreateNestedOneWithoutDefaultHandlerWorkshopsInput;
   projects?: Prisma.ProjectCreateNestedManyWithoutWorkshopInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutSourceWorkshopInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutTargetWorkshopInput;
@@ -1011,8 +1260,8 @@ export type WorkshopCreateWithoutInventoryLogsInput = {
 
 export type WorkshopUncheckedCreateWithoutInventoryLogsInput = {
   id?: number;
-  workshopCode: string;
   workshopName: string;
+  defaultHandlerPersonnelId?: number | null;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
@@ -1060,7 +1309,6 @@ export type WorkshopUpdateToOneWithWhereWithoutInventoryLogsInput = {
 };
 
 export type WorkshopUpdateWithoutInventoryLogsInput = {
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
@@ -1075,6 +1323,7 @@ export type WorkshopUpdateWithoutInventoryLogsInput = {
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutWorkshopNestedInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderUpdateManyWithoutWorkshopNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutWorkshopNestedInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelUpdateOneWithoutDefaultHandlerWorkshopsNestedInput;
   projects?: Prisma.ProjectUpdateManyWithoutWorkshopNestedInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderUpdateManyWithoutSourceWorkshopNestedInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderUpdateManyWithoutTargetWorkshopNestedInput;
@@ -1084,8 +1333,11 @@ export type WorkshopUpdateWithoutInventoryLogsInput = {
 
 export type WorkshopUncheckedUpdateWithoutInventoryLogsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
@@ -1107,7 +1359,6 @@ export type WorkshopUncheckedUpdateWithoutInventoryLogsInput = {
 };
 
 export type WorkshopCreateWithoutFactoryNumberReservationsInput = {
-  workshopCode: string;
   workshopName: string;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
@@ -1120,6 +1371,7 @@ export type WorkshopCreateWithoutFactoryNumberReservationsInput = {
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutWorkshopInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderCreateNestedManyWithoutWorkshopInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutWorkshopInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelCreateNestedOneWithoutDefaultHandlerWorkshopsInput;
   projects?: Prisma.ProjectCreateNestedManyWithoutWorkshopInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutSourceWorkshopInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutTargetWorkshopInput;
@@ -1129,8 +1381,8 @@ export type WorkshopCreateWithoutFactoryNumberReservationsInput = {
 
 export type WorkshopUncheckedCreateWithoutFactoryNumberReservationsInput = {
   id?: number;
-  workshopCode: string;
   workshopName: string;
+  defaultHandlerPersonnelId?: number | null;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
@@ -1179,7 +1431,6 @@ export type WorkshopUpdateToOneWithWhereWithoutFactoryNumberReservationsInput =
   };
 
 export type WorkshopUpdateWithoutFactoryNumberReservationsInput = {
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
@@ -1194,6 +1445,7 @@ export type WorkshopUpdateWithoutFactoryNumberReservationsInput = {
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutWorkshopNestedInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderUpdateManyWithoutWorkshopNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutWorkshopNestedInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelUpdateOneWithoutDefaultHandlerWorkshopsNestedInput;
   projects?: Prisma.ProjectUpdateManyWithoutWorkshopNestedInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderUpdateManyWithoutSourceWorkshopNestedInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderUpdateManyWithoutTargetWorkshopNestedInput;
@@ -1203,8 +1455,11 @@ export type WorkshopUpdateWithoutFactoryNumberReservationsInput = {
 
 export type WorkshopUncheckedUpdateWithoutFactoryNumberReservationsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
@@ -1226,7 +1481,6 @@ export type WorkshopUncheckedUpdateWithoutFactoryNumberReservationsInput = {
 };
 
 export type WorkshopCreateWithoutStockInOrdersInput = {
-  workshopCode: string;
   workshopName: string;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
@@ -1239,6 +1493,7 @@ export type WorkshopCreateWithoutStockInOrdersInput = {
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutWorkshopInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderCreateNestedManyWithoutWorkshopInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutWorkshopInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelCreateNestedOneWithoutDefaultHandlerWorkshopsInput;
   projects?: Prisma.ProjectCreateNestedManyWithoutWorkshopInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutSourceWorkshopInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutTargetWorkshopInput;
@@ -1248,8 +1503,8 @@ export type WorkshopCreateWithoutStockInOrdersInput = {
 
 export type WorkshopUncheckedCreateWithoutStockInOrdersInput = {
   id?: number;
-  workshopCode: string;
   workshopName: string;
+  defaultHandlerPersonnelId?: number | null;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
@@ -1297,7 +1552,6 @@ export type WorkshopUpdateToOneWithWhereWithoutStockInOrdersInput = {
 };
 
 export type WorkshopUpdateWithoutStockInOrdersInput = {
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
@@ -1312,6 +1566,7 @@ export type WorkshopUpdateWithoutStockInOrdersInput = {
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutWorkshopNestedInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderUpdateManyWithoutWorkshopNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutWorkshopNestedInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelUpdateOneWithoutDefaultHandlerWorkshopsNestedInput;
   projects?: Prisma.ProjectUpdateManyWithoutWorkshopNestedInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderUpdateManyWithoutSourceWorkshopNestedInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderUpdateManyWithoutTargetWorkshopNestedInput;
@@ -1321,8 +1576,11 @@ export type WorkshopUpdateWithoutStockInOrdersInput = {
 
 export type WorkshopUncheckedUpdateWithoutStockInOrdersInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
@@ -1344,7 +1602,6 @@ export type WorkshopUncheckedUpdateWithoutStockInOrdersInput = {
 };
 
 export type WorkshopCreateWithoutCustomerStockOrdersInput = {
-  workshopCode: string;
   workshopName: string;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
@@ -1357,6 +1614,7 @@ export type WorkshopCreateWithoutCustomerStockOrdersInput = {
   stockInOrders?: Prisma.StockInOrderCreateNestedManyWithoutWorkshopInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderCreateNestedManyWithoutWorkshopInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutWorkshopInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelCreateNestedOneWithoutDefaultHandlerWorkshopsInput;
   projects?: Prisma.ProjectCreateNestedManyWithoutWorkshopInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutSourceWorkshopInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutTargetWorkshopInput;
@@ -1366,8 +1624,8 @@ export type WorkshopCreateWithoutCustomerStockOrdersInput = {
 
 export type WorkshopUncheckedCreateWithoutCustomerStockOrdersInput = {
   id?: number;
-  workshopCode: string;
   workshopName: string;
+  defaultHandlerPersonnelId?: number | null;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
@@ -1415,7 +1673,6 @@ export type WorkshopUpdateToOneWithWhereWithoutCustomerStockOrdersInput = {
 };
 
 export type WorkshopUpdateWithoutCustomerStockOrdersInput = {
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
@@ -1430,6 +1687,7 @@ export type WorkshopUpdateWithoutCustomerStockOrdersInput = {
   stockInOrders?: Prisma.StockInOrderUpdateManyWithoutWorkshopNestedInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderUpdateManyWithoutWorkshopNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutWorkshopNestedInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelUpdateOneWithoutDefaultHandlerWorkshopsNestedInput;
   projects?: Prisma.ProjectUpdateManyWithoutWorkshopNestedInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderUpdateManyWithoutSourceWorkshopNestedInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderUpdateManyWithoutTargetWorkshopNestedInput;
@@ -1439,8 +1697,11 @@ export type WorkshopUpdateWithoutCustomerStockOrdersInput = {
 
 export type WorkshopUncheckedUpdateWithoutCustomerStockOrdersInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
@@ -1462,7 +1723,6 @@ export type WorkshopUncheckedUpdateWithoutCustomerStockOrdersInput = {
 };
 
 export type WorkshopCreateWithoutStockInPriceCorrectionOrdersInput = {
-  workshopCode: string;
   workshopName: string;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
@@ -1475,6 +1735,7 @@ export type WorkshopCreateWithoutStockInPriceCorrectionOrdersInput = {
   stockInOrders?: Prisma.StockInOrderCreateNestedManyWithoutWorkshopInput;
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutWorkshopInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutWorkshopInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelCreateNestedOneWithoutDefaultHandlerWorkshopsInput;
   projects?: Prisma.ProjectCreateNestedManyWithoutWorkshopInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutSourceWorkshopInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutTargetWorkshopInput;
@@ -1484,8 +1745,8 @@ export type WorkshopCreateWithoutStockInPriceCorrectionOrdersInput = {
 
 export type WorkshopUncheckedCreateWithoutStockInPriceCorrectionOrdersInput = {
   id?: number;
-  workshopCode: string;
   workshopName: string;
+  defaultHandlerPersonnelId?: number | null;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
@@ -1534,7 +1795,6 @@ export type WorkshopUpdateToOneWithWhereWithoutStockInPriceCorrectionOrdersInput
   };
 
 export type WorkshopUpdateWithoutStockInPriceCorrectionOrdersInput = {
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
@@ -1549,6 +1809,7 @@ export type WorkshopUpdateWithoutStockInPriceCorrectionOrdersInput = {
   stockInOrders?: Prisma.StockInOrderUpdateManyWithoutWorkshopNestedInput;
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutWorkshopNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutWorkshopNestedInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelUpdateOneWithoutDefaultHandlerWorkshopsNestedInput;
   projects?: Prisma.ProjectUpdateManyWithoutWorkshopNestedInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderUpdateManyWithoutSourceWorkshopNestedInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderUpdateManyWithoutTargetWorkshopNestedInput;
@@ -1558,8 +1819,11 @@ export type WorkshopUpdateWithoutStockInPriceCorrectionOrdersInput = {
 
 export type WorkshopUncheckedUpdateWithoutStockInPriceCorrectionOrdersInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
@@ -1581,7 +1845,6 @@ export type WorkshopUncheckedUpdateWithoutStockInPriceCorrectionOrdersInput = {
 };
 
 export type WorkshopCreateWithoutWorkshopMaterialOrdersInput = {
-  workshopCode: string;
   workshopName: string;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
@@ -1594,6 +1857,7 @@ export type WorkshopCreateWithoutWorkshopMaterialOrdersInput = {
   stockInOrders?: Prisma.StockInOrderCreateNestedManyWithoutWorkshopInput;
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutWorkshopInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderCreateNestedManyWithoutWorkshopInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelCreateNestedOneWithoutDefaultHandlerWorkshopsInput;
   projects?: Prisma.ProjectCreateNestedManyWithoutWorkshopInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutSourceWorkshopInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutTargetWorkshopInput;
@@ -1603,8 +1867,8 @@ export type WorkshopCreateWithoutWorkshopMaterialOrdersInput = {
 
 export type WorkshopUncheckedCreateWithoutWorkshopMaterialOrdersInput = {
   id?: number;
-  workshopCode: string;
   workshopName: string;
+  defaultHandlerPersonnelId?: number | null;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
@@ -1652,7 +1916,6 @@ export type WorkshopUpdateToOneWithWhereWithoutWorkshopMaterialOrdersInput = {
 };
 
 export type WorkshopUpdateWithoutWorkshopMaterialOrdersInput = {
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
@@ -1667,6 +1930,7 @@ export type WorkshopUpdateWithoutWorkshopMaterialOrdersInput = {
   stockInOrders?: Prisma.StockInOrderUpdateManyWithoutWorkshopNestedInput;
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutWorkshopNestedInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderUpdateManyWithoutWorkshopNestedInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelUpdateOneWithoutDefaultHandlerWorkshopsNestedInput;
   projects?: Prisma.ProjectUpdateManyWithoutWorkshopNestedInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderUpdateManyWithoutSourceWorkshopNestedInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderUpdateManyWithoutTargetWorkshopNestedInput;
@@ -1676,8 +1940,11 @@ export type WorkshopUpdateWithoutWorkshopMaterialOrdersInput = {
 
 export type WorkshopUncheckedUpdateWithoutWorkshopMaterialOrdersInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
@@ -1699,7 +1966,6 @@ export type WorkshopUncheckedUpdateWithoutWorkshopMaterialOrdersInput = {
 };
 
 export type WorkshopCreateWithoutProjectsInput = {
-  workshopCode: string;
   workshopName: string;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
@@ -1713,6 +1979,7 @@ export type WorkshopCreateWithoutProjectsInput = {
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutWorkshopInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderCreateNestedManyWithoutWorkshopInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutWorkshopInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelCreateNestedOneWithoutDefaultHandlerWorkshopsInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutSourceWorkshopInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutTargetWorkshopInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestCreateNestedManyWithoutWorkshopInput;
@@ -1721,8 +1988,8 @@ export type WorkshopCreateWithoutProjectsInput = {
 
 export type WorkshopUncheckedCreateWithoutProjectsInput = {
   id?: number;
-  workshopCode: string;
   workshopName: string;
+  defaultHandlerPersonnelId?: number | null;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
@@ -1770,7 +2037,6 @@ export type WorkshopUpdateToOneWithWhereWithoutProjectsInput = {
 };
 
 export type WorkshopUpdateWithoutProjectsInput = {
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
@@ -1786,6 +2052,7 @@ export type WorkshopUpdateWithoutProjectsInput = {
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutWorkshopNestedInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderUpdateManyWithoutWorkshopNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutWorkshopNestedInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelUpdateOneWithoutDefaultHandlerWorkshopsNestedInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderUpdateManyWithoutSourceWorkshopNestedInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderUpdateManyWithoutTargetWorkshopNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUpdateManyWithoutWorkshopNestedInput;
@@ -1794,8 +2061,11 @@ export type WorkshopUpdateWithoutProjectsInput = {
 
 export type WorkshopUncheckedUpdateWithoutProjectsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
@@ -1817,7 +2087,6 @@ export type WorkshopUncheckedUpdateWithoutProjectsInput = {
 };
 
 export type WorkshopCreateWithoutRdHandoffSourceOrdersInput = {
-  workshopCode: string;
   workshopName: string;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
@@ -1831,6 +2100,7 @@ export type WorkshopCreateWithoutRdHandoffSourceOrdersInput = {
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutWorkshopInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderCreateNestedManyWithoutWorkshopInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutWorkshopInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelCreateNestedOneWithoutDefaultHandlerWorkshopsInput;
   projects?: Prisma.ProjectCreateNestedManyWithoutWorkshopInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutTargetWorkshopInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestCreateNestedManyWithoutWorkshopInput;
@@ -1839,8 +2109,8 @@ export type WorkshopCreateWithoutRdHandoffSourceOrdersInput = {
 
 export type WorkshopUncheckedCreateWithoutRdHandoffSourceOrdersInput = {
   id?: number;
-  workshopCode: string;
   workshopName: string;
+  defaultHandlerPersonnelId?: number | null;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
@@ -1868,7 +2138,6 @@ export type WorkshopCreateOrConnectWithoutRdHandoffSourceOrdersInput = {
 };
 
 export type WorkshopCreateWithoutRdHandoffTargetOrdersInput = {
-  workshopCode: string;
   workshopName: string;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
@@ -1882,6 +2151,7 @@ export type WorkshopCreateWithoutRdHandoffTargetOrdersInput = {
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutWorkshopInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderCreateNestedManyWithoutWorkshopInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutWorkshopInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelCreateNestedOneWithoutDefaultHandlerWorkshopsInput;
   projects?: Prisma.ProjectCreateNestedManyWithoutWorkshopInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutSourceWorkshopInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestCreateNestedManyWithoutWorkshopInput;
@@ -1890,8 +2160,8 @@ export type WorkshopCreateWithoutRdHandoffTargetOrdersInput = {
 
 export type WorkshopUncheckedCreateWithoutRdHandoffTargetOrdersInput = {
   id?: number;
-  workshopCode: string;
   workshopName: string;
+  defaultHandlerPersonnelId?: number | null;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
@@ -1939,7 +2209,6 @@ export type WorkshopUpdateToOneWithWhereWithoutRdHandoffSourceOrdersInput = {
 };
 
 export type WorkshopUpdateWithoutRdHandoffSourceOrdersInput = {
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
@@ -1955,6 +2224,7 @@ export type WorkshopUpdateWithoutRdHandoffSourceOrdersInput = {
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutWorkshopNestedInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderUpdateManyWithoutWorkshopNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutWorkshopNestedInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelUpdateOneWithoutDefaultHandlerWorkshopsNestedInput;
   projects?: Prisma.ProjectUpdateManyWithoutWorkshopNestedInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderUpdateManyWithoutTargetWorkshopNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUpdateManyWithoutWorkshopNestedInput;
@@ -1963,8 +2233,11 @@ export type WorkshopUpdateWithoutRdHandoffSourceOrdersInput = {
 
 export type WorkshopUncheckedUpdateWithoutRdHandoffSourceOrdersInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
@@ -2006,7 +2279,6 @@ export type WorkshopUpdateToOneWithWhereWithoutRdHandoffTargetOrdersInput = {
 };
 
 export type WorkshopUpdateWithoutRdHandoffTargetOrdersInput = {
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
@@ -2022,6 +2294,7 @@ export type WorkshopUpdateWithoutRdHandoffTargetOrdersInput = {
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutWorkshopNestedInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderUpdateManyWithoutWorkshopNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutWorkshopNestedInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelUpdateOneWithoutDefaultHandlerWorkshopsNestedInput;
   projects?: Prisma.ProjectUpdateManyWithoutWorkshopNestedInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderUpdateManyWithoutSourceWorkshopNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUpdateManyWithoutWorkshopNestedInput;
@@ -2030,8 +2303,11 @@ export type WorkshopUpdateWithoutRdHandoffTargetOrdersInput = {
 
 export type WorkshopUncheckedUpdateWithoutRdHandoffTargetOrdersInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
@@ -2053,7 +2329,6 @@ export type WorkshopUncheckedUpdateWithoutRdHandoffTargetOrdersInput = {
 };
 
 export type WorkshopCreateWithoutRdProcurementRequestsInput = {
-  workshopCode: string;
   workshopName: string;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
@@ -2067,6 +2342,7 @@ export type WorkshopCreateWithoutRdProcurementRequestsInput = {
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutWorkshopInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderCreateNestedManyWithoutWorkshopInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutWorkshopInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelCreateNestedOneWithoutDefaultHandlerWorkshopsInput;
   projects?: Prisma.ProjectCreateNestedManyWithoutWorkshopInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutSourceWorkshopInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutTargetWorkshopInput;
@@ -2075,8 +2351,8 @@ export type WorkshopCreateWithoutRdProcurementRequestsInput = {
 
 export type WorkshopUncheckedCreateWithoutRdProcurementRequestsInput = {
   id?: number;
-  workshopCode: string;
   workshopName: string;
+  defaultHandlerPersonnelId?: number | null;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
@@ -2124,7 +2400,6 @@ export type WorkshopUpdateToOneWithWhereWithoutRdProcurementRequestsInput = {
 };
 
 export type WorkshopUpdateWithoutRdProcurementRequestsInput = {
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
@@ -2140,6 +2415,7 @@ export type WorkshopUpdateWithoutRdProcurementRequestsInput = {
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutWorkshopNestedInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderUpdateManyWithoutWorkshopNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutWorkshopNestedInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelUpdateOneWithoutDefaultHandlerWorkshopsNestedInput;
   projects?: Prisma.ProjectUpdateManyWithoutWorkshopNestedInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderUpdateManyWithoutSourceWorkshopNestedInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderUpdateManyWithoutTargetWorkshopNestedInput;
@@ -2148,8 +2424,11 @@ export type WorkshopUpdateWithoutRdProcurementRequestsInput = {
 
 export type WorkshopUncheckedUpdateWithoutRdProcurementRequestsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
@@ -2171,7 +2450,6 @@ export type WorkshopUncheckedUpdateWithoutRdProcurementRequestsInput = {
 };
 
 export type WorkshopCreateWithoutRdStocktakeOrdersInput = {
-  workshopCode: string;
   workshopName: string;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
@@ -2185,6 +2463,7 @@ export type WorkshopCreateWithoutRdStocktakeOrdersInput = {
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutWorkshopInput;
   stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderCreateNestedManyWithoutWorkshopInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutWorkshopInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelCreateNestedOneWithoutDefaultHandlerWorkshopsInput;
   projects?: Prisma.ProjectCreateNestedManyWithoutWorkshopInput;
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutSourceWorkshopInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutTargetWorkshopInput;
@@ -2193,8 +2472,8 @@ export type WorkshopCreateWithoutRdStocktakeOrdersInput = {
 
 export type WorkshopUncheckedCreateWithoutRdStocktakeOrdersInput = {
   id?: number;
-  workshopCode: string;
   workshopName: string;
+  defaultHandlerPersonnelId?: number | null;
   status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
@@ -2242,7 +2521,66 @@ export type WorkshopUpdateToOneWithWhereWithoutRdStocktakeOrdersInput = {
 };
 
 export type WorkshopUpdateWithoutRdStocktakeOrdersInput = {
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
+  workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  status?:
+    | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
+    | $Enums.MasterDataStatus;
+  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  inventoryBalances?: Prisma.InventoryBalanceUpdateManyWithoutWorkshopNestedInput;
+  inventoryLogs?: Prisma.InventoryLogUpdateManyWithoutWorkshopNestedInput;
+  factoryNumberReservations?: Prisma.FactoryNumberReservationUpdateManyWithoutWorkshopNestedInput;
+  stockInOrders?: Prisma.StockInOrderUpdateManyWithoutWorkshopNestedInput;
+  customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutWorkshopNestedInput;
+  stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderUpdateManyWithoutWorkshopNestedInput;
+  workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutWorkshopNestedInput;
+  defaultHandlerPersonnel?: Prisma.PersonnelUpdateOneWithoutDefaultHandlerWorkshopsNestedInput;
+  projects?: Prisma.ProjectUpdateManyWithoutWorkshopNestedInput;
+  rdHandoffSourceOrders?: Prisma.RdHandoffOrderUpdateManyWithoutSourceWorkshopNestedInput;
+  rdHandoffTargetOrders?: Prisma.RdHandoffOrderUpdateManyWithoutTargetWorkshopNestedInput;
+  rdProcurementRequests?: Prisma.RdProcurementRequestUpdateManyWithoutWorkshopNestedInput;
+};
+
+export type WorkshopUncheckedUpdateWithoutRdStocktakeOrdersInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  defaultHandlerPersonnelId?:
+    | Prisma.NullableIntFieldUpdateOperationsInput
+    | number
+    | null;
+  status?:
+    | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
+    | $Enums.MasterDataStatus;
+  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  inventoryBalances?: Prisma.InventoryBalanceUncheckedUpdateManyWithoutWorkshopNestedInput;
+  inventoryLogs?: Prisma.InventoryLogUncheckedUpdateManyWithoutWorkshopNestedInput;
+  factoryNumberReservations?: Prisma.FactoryNumberReservationUncheckedUpdateManyWithoutWorkshopNestedInput;
+  stockInOrders?: Prisma.StockInOrderUncheckedUpdateManyWithoutWorkshopNestedInput;
+  customerStockOrders?: Prisma.CustomerStockOrderUncheckedUpdateManyWithoutWorkshopNestedInput;
+  stockInPriceCorrectionOrders?: Prisma.StockInPriceCorrectionOrderUncheckedUpdateManyWithoutWorkshopNestedInput;
+  workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedUpdateManyWithoutWorkshopNestedInput;
+  projects?: Prisma.ProjectUncheckedUpdateManyWithoutWorkshopNestedInput;
+  rdHandoffSourceOrders?: Prisma.RdHandoffOrderUncheckedUpdateManyWithoutSourceWorkshopNestedInput;
+  rdHandoffTargetOrders?: Prisma.RdHandoffOrderUncheckedUpdateManyWithoutTargetWorkshopNestedInput;
+  rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedUpdateManyWithoutWorkshopNestedInput;
+};
+
+export type WorkshopCreateManyDefaultHandlerPersonnelInput = {
+  id?: number;
+  workshopName: string;
+  status?: $Enums.MasterDataStatus;
+  createdBy?: string | null;
+  createdAt?: Date | string;
+  updatedBy?: string | null;
+  updatedAt?: Date | string;
+};
+
+export type WorkshopUpdateWithoutDefaultHandlerPersonnelInput = {
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
@@ -2262,11 +2600,11 @@ export type WorkshopUpdateWithoutRdStocktakeOrdersInput = {
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderUpdateManyWithoutSourceWorkshopNestedInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderUpdateManyWithoutTargetWorkshopNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUpdateManyWithoutWorkshopNestedInput;
+  rdStocktakeOrders?: Prisma.RdStocktakeOrderUpdateManyWithoutWorkshopNestedInput;
 };
 
-export type WorkshopUncheckedUpdateWithoutRdStocktakeOrdersInput = {
+export type WorkshopUncheckedUpdateWithoutDefaultHandlerPersonnelInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  workshopCode?: Prisma.StringFieldUpdateOperationsInput | string;
   workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
@@ -2286,6 +2624,19 @@ export type WorkshopUncheckedUpdateWithoutRdStocktakeOrdersInput = {
   rdHandoffSourceOrders?: Prisma.RdHandoffOrderUncheckedUpdateManyWithoutSourceWorkshopNestedInput;
   rdHandoffTargetOrders?: Prisma.RdHandoffOrderUncheckedUpdateManyWithoutTargetWorkshopNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedUpdateManyWithoutWorkshopNestedInput;
+  rdStocktakeOrders?: Prisma.RdStocktakeOrderUncheckedUpdateManyWithoutWorkshopNestedInput;
+};
+
+export type WorkshopUncheckedUpdateManyWithoutDefaultHandlerPersonnelInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number;
+  workshopName?: Prisma.StringFieldUpdateOperationsInput | string;
+  status?:
+    | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
+    | $Enums.MasterDataStatus;
+  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 
 /**
@@ -2482,8 +2833,8 @@ export type WorkshopSelect<
 > = runtime.Types.Extensions.GetSelect<
   {
     id?: boolean;
-    workshopCode?: boolean;
     workshopName?: boolean;
+    defaultHandlerPersonnelId?: boolean;
     status?: boolean;
     createdBy?: boolean;
     createdAt?: boolean;
@@ -2506,6 +2857,9 @@ export type WorkshopSelect<
     workshopMaterialOrders?:
       | boolean
       | Prisma.Workshop$workshopMaterialOrdersArgs<ExtArgs>;
+    defaultHandlerPersonnel?:
+      | boolean
+      | Prisma.Workshop$defaultHandlerPersonnelArgs<ExtArgs>;
     projects?: boolean | Prisma.Workshop$projectsArgs<ExtArgs>;
     rdHandoffSourceOrders?:
       | boolean
@@ -2526,8 +2880,8 @@ export type WorkshopSelect<
 
 export type WorkshopSelectScalar = {
   id?: boolean;
-  workshopCode?: boolean;
   workshopName?: boolean;
+  defaultHandlerPersonnelId?: boolean;
   status?: boolean;
   createdBy?: boolean;
   createdAt?: boolean;
@@ -2540,8 +2894,8 @@ export type WorkshopOmit<
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
   | "id"
-  | "workshopCode"
   | "workshopName"
+  | "defaultHandlerPersonnelId"
   | "status"
   | "createdBy"
   | "createdAt"
@@ -2568,6 +2922,9 @@ export type WorkshopInclude<
   workshopMaterialOrders?:
     | boolean
     | Prisma.Workshop$workshopMaterialOrdersArgs<ExtArgs>;
+  defaultHandlerPersonnel?:
+    | boolean
+    | Prisma.Workshop$defaultHandlerPersonnelArgs<ExtArgs>;
   projects?: boolean | Prisma.Workshop$projectsArgs<ExtArgs>;
   rdHandoffSourceOrders?:
     | boolean
@@ -2595,6 +2952,7 @@ export type $WorkshopPayload<
     customerStockOrders: Prisma.$CustomerStockOrderPayload<ExtArgs>[];
     stockInPriceCorrectionOrders: Prisma.$StockInPriceCorrectionOrderPayload<ExtArgs>[];
     workshopMaterialOrders: Prisma.$WorkshopMaterialOrderPayload<ExtArgs>[];
+    defaultHandlerPersonnel: Prisma.$PersonnelPayload<ExtArgs> | null;
     projects: Prisma.$ProjectPayload<ExtArgs>[];
     rdHandoffSourceOrders: Prisma.$RdHandoffOrderPayload<ExtArgs>[];
     rdHandoffTargetOrders: Prisma.$RdHandoffOrderPayload<ExtArgs>[];
@@ -2604,8 +2962,8 @@ export type $WorkshopPayload<
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
       id: number;
-      workshopCode: string;
       workshopName: string;
+      defaultHandlerPersonnelId: number | null;
       status: $Enums.MasterDataStatus;
       createdBy: string | null;
       createdAt: Date;
@@ -3185,6 +3543,24 @@ export interface Prisma__WorkshopClient<
       >
     | Null
   >;
+  defaultHandlerPersonnel<
+    T extends Prisma.Workshop$defaultHandlerPersonnelArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<
+      T,
+      Prisma.Workshop$defaultHandlerPersonnelArgs<ExtArgs>
+    >,
+  ): Prisma.Prisma__PersonnelClient<
+    runtime.Types.Result.GetResult<
+      Prisma.$PersonnelPayload<ExtArgs>,
+      T,
+      "findUniqueOrThrow",
+      GlobalOmitOptions
+    > | null,
+    null,
+    ExtArgs,
+    GlobalOmitOptions
+  >;
   projects<T extends Prisma.Workshop$projectsArgs<ExtArgs> = {}>(
     args?: Prisma.Subset<T, Prisma.Workshop$projectsArgs<ExtArgs>>,
   ): Prisma.PrismaPromise<
@@ -3291,8 +3667,8 @@ export interface Prisma__WorkshopClient<
  */
 export interface WorkshopFieldRefs {
   readonly id: Prisma.FieldRef<"Workshop", "Int">;
-  readonly workshopCode: Prisma.FieldRef<"Workshop", "String">;
   readonly workshopName: Prisma.FieldRef<"Workshop", "String">;
+  readonly defaultHandlerPersonnelId: Prisma.FieldRef<"Workshop", "Int">;
   readonly status: Prisma.FieldRef<"Workshop", "MasterDataStatus">;
   readonly createdBy: Prisma.FieldRef<"Workshop", "String">;
   readonly createdAt: Prisma.FieldRef<"Workshop", "DateTime">;
@@ -3916,6 +4292,28 @@ export type Workshop$workshopMaterialOrdersArgs<
   distinct?:
     | Prisma.WorkshopMaterialOrderScalarFieldEnum
     | Prisma.WorkshopMaterialOrderScalarFieldEnum[];
+};
+
+/**
+ * Workshop.defaultHandlerPersonnel
+ */
+export type Workshop$defaultHandlerPersonnelArgs<
+  ExtArgs extends
+    runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the Personnel
+   */
+  select?: Prisma.PersonnelSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the Personnel
+   */
+  omit?: Prisma.PersonnelOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PersonnelInclude<ExtArgs> | null;
+  where?: Prisma.PersonnelWhereInput;
 };
 
 /**

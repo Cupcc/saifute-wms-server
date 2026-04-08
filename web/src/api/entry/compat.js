@@ -155,10 +155,16 @@ async function resolveSupplierId(data) {
   return response.rows?.[0]?.supplierId;
 }
 
-function buildInboundPayload(data, config, handlerPersonnelId, supplierId) {
+function buildInboundPayload(
+  data,
+  config,
+  handlerPersonnelId,
+  supplierId,
+  isUpdate,
+) {
   const lines = Array.isArray(data.details) ? data.details : [];
   return {
-    documentNo: data[config.noKey],
+    ...(isUpdate ? { documentNo: data[config.noKey] } : {}),
     orderType: config.orderType,
     bizDate: data[config.dateKey],
     supplierId,
@@ -228,6 +234,7 @@ export async function getInboundOrder(id, mode = "order") {
 
 export async function submitInboundOrder(data, mode = "order") {
   const config = MODE_CONFIG[mode];
+  const orderId = data[config.idKey];
   const [handlerPersonnelId, supplierId] = await Promise.all([
     resolveHandlerPersonnelId(data.attn).catch(() => undefined),
     mode === "order"
@@ -240,8 +247,8 @@ export async function submitInboundOrder(data, mode = "order") {
     config,
     handlerPersonnelId,
     supplierId,
+    Boolean(orderId),
   );
-  const orderId = data[config.idKey];
 
   return request({
     url: orderId ? `${config.itemUrl}/${orderId}` : config.itemUrl,

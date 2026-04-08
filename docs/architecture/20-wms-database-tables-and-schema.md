@@ -343,13 +343,13 @@ NestJS `project` / `reporting` 模块映射补充：
 | `material`          | 物料主档  | `materialCode`、`materialName`、`specModel`、`categoryId`、`unitCode`、`warningMinQty`、`warningMaxQty`、`status` | `materialCode` 唯一  |
 | `customer`          | 客户主档  | `customerCode`、`customerName`、`parentId`、`status`                                                          | `customerCode` 唯一  |
 | `supplier`          | 供应商主档 | `supplierCode`、`supplierName`、`status`                                                                     | `supplierCode` 唯一  |
-| `personnel`         | 人员主档  | `personnelCode`、`personnelName`、`status`                                                                   | `personnelCode` 唯一 |
-| `workshop`          | 车间主档  | `workshopCode`、`workshopName`、`status`                                                                     | `workshopCode` 唯一  |
+| `personnel`         | 人员主档  | `personnelName`、`status`                                                                                   | —                  |
+| `workshop`          | 车间主档  | `workshopName`、`defaultHandlerPersonnelId`、`status`                                                       | `workshopName` 唯一 |
 | `stock_scope`       | 库存范围  | `scopeCode`、`scopeName`、`scopeType`、`status`                                                               | `scopeCode` 唯一     |
 
 补充说明：
 
-- 自动补建不单独拆交易表，在主数据主表保留 `creationMode`、`sourceDocumentType`、`sourceDocumentId` 追溯来源
+- 自动补建不单独拆交易表，但只保留在 `material`、`customer`、`supplier` 三张主表；`personnel`、`workshop` 不保留来源追溯字段
 - 物料分类与主数据字典分离，不把分类字段直接塞进 `material`
 - 客户、供应商、人员保持分表，不并表为通用主体
 - `stock_scope` 用于表达主仓、研发小仓等真实库存范围，不等同标准 WMS 的仓库 / 库位体系

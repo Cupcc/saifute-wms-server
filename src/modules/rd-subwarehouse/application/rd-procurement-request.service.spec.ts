@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from "@nestjs/common";
+import { NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import {
   AuditStatusSnapshot,
@@ -148,8 +148,14 @@ describe("RdProcurementRequestService", () => {
             }),
             getWorkshopById: jest.fn().mockResolvedValue({
               id: 9,
-              workshopCode: "RD",
               workshopName: "研发小仓",
+              defaultHandlerPersonnelId: null,
+              defaultHandlerPersonnel: null,
+              status: "ACTIVE",
+              createdBy: null,
+              createdAt: new Date("2026-03-29T00:00:00.000Z"),
+              updatedBy: null,
+              updatedAt: new Date("2026-03-29T00:00:00.000Z"),
             }),
             getSupplierById: jest.fn().mockResolvedValue({
               id: 10,
@@ -193,27 +199,18 @@ describe("RdProcurementRequestService", () => {
     expect(initializeRequestStatusTruth).toHaveBeenCalled();
   });
 
-  it("throws when documentNo already exists", async () => {
-    repository.findRequestByDocumentNo.mockResolvedValue(mockRequest);
-
-    await expect(
-      service.createRequest({
-        documentNo: "RDPUR-001",
-        bizDate: "2026-03-29",
-        projectCode: "RD-PJT-001",
-        projectName: "研发治具归集",
-        workshopId: 9,
-        lines: [{ materialId: 100, quantity: "5" }],
-      }),
-    ).rejects.toThrow(ConflictException);
-  });
-
   it("allows any workshop id while keeping RD_SUB ownership", async () => {
     repository.findRequestByDocumentNo.mockResolvedValue(null);
     masterDataService.getWorkshopById.mockResolvedValueOnce({
       id: 1,
-      workshopCode: "MAIN",
       workshopName: "主仓",
+      defaultHandlerPersonnelId: null,
+      defaultHandlerPersonnel: null,
+      status: "ACTIVE",
+      createdBy: null,
+      createdAt: new Date("2026-03-29T00:00:00.000Z"),
+      updatedBy: null,
+      updatedAt: new Date("2026-03-29T00:00:00.000Z"),
     } as Awaited<ReturnType<MasterDataService["getWorkshopById"]>>);
     repository.createRequest.mockResolvedValue({
       ...mockRequest,

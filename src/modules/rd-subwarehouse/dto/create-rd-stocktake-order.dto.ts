@@ -15,17 +15,18 @@ import {
 import { CreateRdStocktakeOrderLineDto } from "./create-rd-stocktake-order-line.dto";
 
 export class CreateRdStocktakeOrderDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(64)
-  documentNo!: string;
+  documentNo?: string;
 
   @IsDateString()
   bizDate!: string;
 
   @IsInt()
+  @IsOptional()
   @Min(1)
-  workshopId!: number;
+  workshopId?: number;
 
   @IsString()
   @IsOptional()

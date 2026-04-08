@@ -1,7 +1,5 @@
 import {
   buildFallbackCode,
-  buildLegacyWorkshopCode,
-  DEFAULT_WORKSHOP_CODE,
   DEFAULT_WORKSHOP_NAME,
   normalizeOptionalText,
   resolveDeterministicCodes,
@@ -312,9 +310,8 @@ function transformWorkshops(rows: readonly LegacyWorkshopRow[]): {
       legacyTable: "migration_default_workshop",
       legacyId: 0,
       targetTable: "workshop",
-      targetCode: DEFAULT_WORKSHOP_CODE,
+      targetCode: DEFAULT_WORKSHOP_NAME,
       target: {
-        workshopCode: DEFAULT_WORKSHOP_CODE,
         workshopName: DEFAULT_WORKSHOP_NAME,
         status: "ACTIVE",
         createdBy: "migration",
@@ -348,7 +345,8 @@ function transformWorkshops(rows: readonly LegacyWorkshopRow[]): {
       );
     }
 
-    const targetCode = buildLegacyWorkshopCode(row.workshopId);
+    const targetCode =
+      workshopName ?? `MISSING-WORKSHOP-NAME-${row.workshopId}`;
     const archivedPayload =
       blockers.length > 0
         ? toBlockedPayload(
@@ -385,8 +383,7 @@ function transformWorkshops(rows: readonly LegacyWorkshopRow[]): {
       targetTable: "workshop",
       targetCode,
       target: {
-        workshopCode: targetCode,
-        workshopName: workshopName ?? `MISSING-WORKSHOP-NAME-${row.workshopId}`,
+        workshopName: targetCode,
         status: toStatus(row.delFlag),
         createdBy: normalizeOptionalText(row.createBy),
         createdAt: row.createTime,
@@ -587,13 +584,9 @@ function transformPersonnel(rows: readonly LegacyPersonnelRow[]): {
         targetTable: "personnel",
         targetCode,
         target: {
-          personnelCode: targetCode,
           personnelName:
             personnelName ?? `MISSING-PERSONNEL-NAME-${row.personnelId}`,
           status: toStatus(row.delFlag),
-          creationMode: "MANUAL" as const,
-          sourceDocumentType: null,
-          sourceDocumentId: null,
           createdBy: normalizeOptionalText(row.createBy),
           createdAt: row.createTime,
           updatedBy: normalizeOptionalText(row.updateBy),

@@ -30,7 +30,6 @@ type ConflictRow = {
 type WorkshopRefRow = {
   tableName: string;
   workshopId: number;
-  workshopCode: string | null;
   workshopName: string | null;
   totalRows: number;
 };
@@ -131,8 +130,8 @@ async function getInventoryBalanceConflicts(
       SELECT
         ib.materialId AS materialId,
         CASE
-          WHEN w.workshopCode = 'MAIN' THEN 'MAIN'
-          WHEN w.workshopCode IN ('RD', 'RD_SUB') THEN 'RD_SUB'
+          WHEN w.workshopName = '主仓' THEN 'MAIN'
+          WHEN w.workshopName = '研发小仓' THEN 'RD_SUB'
           ELSE '__UNMAPPED__'
         END AS targetScopeCode,
         COUNT(*) AS duplicateCount
@@ -141,8 +140,8 @@ async function getInventoryBalanceConflicts(
       GROUP BY
         ib.materialId,
         CASE
-          WHEN w.workshopCode = 'MAIN' THEN 'MAIN'
-          WHEN w.workshopCode IN ('RD', 'RD_SUB') THEN 'RD_SUB'
+          WHEN w.workshopName = '主仓' THEN 'MAIN'
+          WHEN w.workshopName = '研发小仓' THEN 'RD_SUB'
           ELSE '__UNMAPPED__'
         END
       HAVING targetScopeCode <> '__UNMAPPED__' AND COUNT(*) > 1
@@ -159,7 +158,6 @@ async function getUnmappedWorkshopReferences(
       SELECT
         refs.tableName AS tableName,
         refs.workshopId AS workshopId,
-        w.workshopCode AS workshopCode,
         w.workshopName AS workshopName,
         COUNT(*) AS totalRows
       FROM (
@@ -178,8 +176,8 @@ async function getUnmappedWorkshopReferences(
         SELECT 'rd_handoff_order.target' AS tableName, targetWorkshopId AS workshopId FROM rd_handoff_order WHERE targetStockScopeId IS NULL
       ) refs
       JOIN workshop w ON w.id = refs.workshopId
-      WHERE w.workshopCode NOT IN ('MAIN', 'RD', 'RD_SUB')
-      GROUP BY refs.tableName, refs.workshopId, w.workshopCode, w.workshopName
+      WHERE w.workshopName NOT IN ('主仓', '研发小仓')
+      GROUP BY refs.tableName, refs.workshopId, w.workshopName
       ORDER BY refs.tableName ASC, refs.workshopId ASC
     `,
   );
@@ -219,7 +217,7 @@ async function executeBackfill(
       JOIN workshop w ON w.id = wmo.workshopId
       SET wmo.stockScopeId =
         CASE
-          WHEN wmo.orderType = 'SCRAP' AND w.workshopCode IN ('RD', 'RD_SUB') THEN ?
+          WHEN wmo.orderType = 'SCRAP' AND w.workshopName = '研发小仓' THEN ?
           ELSE ?
         END
       WHERE wmo.stockScopeId IS NULL
@@ -236,7 +234,7 @@ async function executeBackfill(
       JOIN workshop w ON w.id = p.workshopId
       SET p.stockScopeId =
         CASE
-          WHEN w.workshopCode IN ('RD', 'RD_SUB') THEN ?
+          WHEN w.workshopName = '研发小仓' THEN ?
           ELSE ?
         END
       WHERE p.stockScopeId IS NULL
@@ -253,14 +251,14 @@ async function executeBackfill(
       SET
         rho.sourceStockScopeId =
           CASE
-            WHEN sw.workshopCode IN ('RD', 'RD_SUB') THEN ?
-            WHEN sw.workshopCode = 'MAIN' THEN ?
+            WHEN sw.workshopName = '研发小仓' THEN ?
+            WHEN sw.workshopName = '主仓' THEN ?
             ELSE rho.sourceStockScopeId
           END,
         rho.targetStockScopeId =
           CASE
-            WHEN tw.workshopCode IN ('RD', 'RD_SUB') THEN ?
-            WHEN tw.workshopCode = 'MAIN' THEN ?
+            WHEN tw.workshopName = '研发小仓' THEN ?
+            WHEN tw.workshopName = '主仓' THEN ?
             ELSE rho.targetStockScopeId
           END
       WHERE rho.sourceStockScopeId IS NULL OR rho.targetStockScopeId IS NULL
@@ -300,8 +298,8 @@ async function executeBackfill(
       JOIN workshop w ON w.id = il.workshopId
       SET il.stockScopeId =
         CASE
-          WHEN w.workshopCode IN ('RD', 'RD_SUB') THEN ?
-          WHEN w.workshopCode = 'MAIN' THEN ?
+          WHEN w.workshopName = '研发小仓' THEN ?
+          WHEN w.workshopName = '主仓' THEN ?
           ELSE il.stockScopeId
         END
       WHERE il.stockScopeId IS NULL
@@ -316,8 +314,8 @@ async function executeBackfill(
       JOIN workshop w ON w.id = fnr.workshopId
       SET fnr.stockScopeId =
         CASE
-          WHEN w.workshopCode IN ('RD', 'RD_SUB') THEN ?
-          WHEN w.workshopCode = 'MAIN' THEN ?
+          WHEN w.workshopName = '研发小仓' THEN ?
+          WHEN w.workshopName = '主仓' THEN ?
           ELSE fnr.stockScopeId
         END
       WHERE fnr.stockScopeId IS NULL
@@ -334,8 +332,8 @@ async function executeBackfill(
       JOIN workshop w ON w.id = ib.workshopId
       SET ib.stockScopeId =
         CASE
-          WHEN w.workshopCode IN ('RD', 'RD_SUB') THEN ?
-          WHEN w.workshopCode = 'MAIN' THEN ?
+          WHEN w.workshopName = '研发小仓' THEN ?
+          WHEN w.workshopName = '主仓' THEN ?
           ELSE ib.stockScopeId
         END
       WHERE ib.stockScopeId IS NULL

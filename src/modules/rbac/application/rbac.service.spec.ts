@@ -83,13 +83,13 @@ describe("RbacService", () => {
     expect(routeNames).toContain("RdWorkbench");
   });
 
-  it("should keep fixed workshop scope for current user", async () => {
+  it("should avoid binding rd users to a pseudo workshop scope", async () => {
     const user = await rbacService.getCurrentUser(5);
     expect(user.consoleMode).toBe("rd-subwarehouse");
     expect(user.workshopScope).toEqual({
-      mode: "FIXED",
-      workshopId: 99,
-      workshopName: "研发小仓",
+      mode: "ALL",
+      workshopId: null,
+      workshopName: null,
     });
     expect(user.stockScope).toEqual({
       mode: "FIXED",

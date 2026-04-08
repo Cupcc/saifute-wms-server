@@ -9,56 +9,83 @@ type MaterialSuggestionField =
   | "materialCode";
 type CustomerSuggestionField = "customerCode" | "customerName";
 type SupplierSuggestionField = "supplierCode" | "supplierName";
-type WorkshopSuggestionField = "workshopCode" | "workshopName";
-type PersonnelSuggestionField = "personnelCode" | "personnelName";
+type WorkshopSuggestionField = "workshopName";
+type PersonnelSuggestionField = "personnelName";
 
 type SuggestionSource = {
   field: string;
   load: () => Promise<Array<Record<string, unknown>>>;
 };
 
-const CANONICAL_WORKSHOPS: Prisma.WorkshopCreateManyInput[] = [
+const SYSTEM_BOOTSTRAP_ACTOR = "system-bootstrap";
+const LEGACY_BOOTSTRAP_WORKSHOP_NAMES = ["主仓", "研发小仓"] as const;
+
+const CANONICAL_WORKSHOPS = [
   {
-    workshopCode: "MAIN",
-    workshopName: "主仓",
-    status: "ACTIVE",
-    createdBy: "system-bootstrap",
-    updatedBy: "system-bootstrap",
+    workshopName: "装备车间",
   },
   {
-    workshopCode: "RD",
-    workshopName: "研发小仓",
-    status: "ACTIVE",
-    createdBy: "system-bootstrap",
-    updatedBy: "system-bootstrap",
+    workshopName: "硐室车间",
   },
-];
+  {
+    workshopName: "配件车间",
+  },
+  {
+    workshopName: "电子车间",
+  },
+] as const satisfies ReadonlyArray<
+  Pick<Prisma.WorkshopCreateManyInput, "workshopName">
+>;
 
 const CANONICAL_STOCK_SCOPES: Prisma.StockScopeCreateManyInput[] = [
   {
     scopeCode: "MAIN",
     scopeName: "主仓",
     status: "ACTIVE",
-    createdBy: "system-bootstrap",
-    updatedBy: "system-bootstrap",
+    createdBy: SYSTEM_BOOTSTRAP_ACTOR,
+    updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
   },
   {
     scopeCode: "RD_SUB",
     scopeName: "研发小仓",
     status: "ACTIVE",
-    createdBy: "system-bootstrap",
-    updatedBy: "system-bootstrap",
+    createdBy: SYSTEM_BOOTSTRAP_ACTOR,
+    updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
   },
 ];
+
+type CanonicalWorkshop = (typeof CANONICAL_WORKSHOPS)[number];
+
+const WORKSHOP_WITH_DEFAULT_HANDLER_INCLUDE = {
+  defaultHandlerPersonnel: {
+    select: {
+      id: true,
+      personnelName: true,
+    },
+  },
+} as const satisfies Prisma.WorkshopInclude;
 
 @Injectable()
 export class MasterDataRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async ensureCanonicalWorkshops() {
-    await this.prisma.workshop.createMany({
-      data: CANONICAL_WORKSHOPS,
-      skipDuplicates: true,
+    await this.prisma.$transaction(async (tx) => {
+      for (const workshop of CANONICAL_WORKSHOPS) {
+        await this.ensureCanonicalWorkshop(tx, workshop);
+      }
+
+      await tx.workshop.updateMany({
+        where: {
+          workshopName: { in: [...LEGACY_BOOTSTRAP_WORKSHOP_NAMES] },
+          createdBy: SYSTEM_BOOTSTRAP_ACTOR,
+          status: "ACTIVE",
+        },
+        data: {
+          status: "DISABLED",
+          updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
+        },
+      });
     });
   }
 
@@ -66,6 +93,43 @@ export class MasterDataRepository {
     await this.prisma.stockScope.createMany({
       data: CANONICAL_STOCK_SCOPES,
       skipDuplicates: true,
+    });
+  }
+
+  private async ensureCanonicalWorkshop(
+    tx: Prisma.TransactionClient,
+    workshop: CanonicalWorkshop,
+  ) {
+    const existing = await tx.workshop.findFirst({
+      where: {
+        workshopName: workshop.workshopName,
+      },
+      orderBy: {
+        id: "asc",
+      },
+    });
+
+    const data = {
+      workshopName: workshop.workshopName,
+      status: "ACTIVE" as const,
+      updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
+    };
+
+    if (existing) {
+      await tx.workshop.update({
+        where: {
+          id: existing.id,
+        },
+        data,
+      });
+      return;
+    }
+
+    await tx.workshop.create({
+      data: {
+        ...data,
+        createdBy: SYSTEM_BOOTSTRAP_ACTOR,
+      },
     });
   }
 
@@ -372,24 +436,9 @@ export class MasterDataRepository {
   }
 
   async findWorkshopSuggestionValues(
-    field: WorkshopSuggestionField,
+    _field: WorkshopSuggestionField,
     limit: number,
   ): Promise<string[]> {
-    if (field === "workshopCode") {
-      return this.createDistinctStringSource(
-        this.prisma.workshop,
-        "workshopCode",
-        limit,
-      )
-        .load()
-        .then((rows) =>
-          rows
-            .map((row) => row.workshopCode)
-            .filter((value): value is string => typeof value === "string")
-            .slice(0, limit),
-        );
-    }
-
     return this.mergeSuggestionSources(
       [
         this.createDistinctStringSource(
@@ -438,22 +487,9 @@ export class MasterDataRepository {
   }
 
   async findPersonnelSuggestionValues(
-    field: PersonnelSuggestionField,
+    _field: PersonnelSuggestionField,
     limit: number,
   ): Promise<string[]> {
-    if (field === "personnelCode") {
-      return this.mergeSuggestionSources(
-        [
-          this.createDistinctStringSource(
-            this.prisma.personnel,
-            "personnelCode",
-            limit,
-          ),
-        ],
-        limit,
-      );
-    }
-
     return this.mergeSuggestionSources(
       [
         this.createDistinctStringSource(
@@ -983,10 +1019,7 @@ export class MasterDataRepository {
       where.status = params.status;
     }
     if (params.keyword) {
-      where.OR = [
-        { personnelCode: { contains: params.keyword } },
-        { personnelName: { contains: params.keyword } },
-      ];
+      where.personnelName = { contains: params.keyword };
     }
 
     const [items, total] = await Promise.all([
@@ -994,7 +1027,7 @@ export class MasterDataRepository {
         where,
         take: params.limit,
         skip: params.offset,
-        orderBy: { personnelCode: "asc" },
+        orderBy: { personnelName: "asc" },
       }),
       this.prisma.personnel.count({ where }),
     ]);
@@ -1008,45 +1041,14 @@ export class MasterDataRepository {
     });
   }
 
-  async findPersonnelByCode(personnelCode: string) {
-    return this.prisma.personnel.findUnique({
-      where: { personnelCode },
-    });
-  }
-
   async createPersonnel(
-    data: Pick<
-      Prisma.PersonnelUncheckedCreateInput,
-      "personnelCode" | "personnelName"
-    >,
+    data: Pick<Prisma.PersonnelUncheckedCreateInput, "personnelName">,
     createdBy?: string,
   ) {
     return this.prisma.personnel.create({
       data: {
         ...data,
         status: "ACTIVE",
-        creationMode: "MANUAL",
-        createdBy,
-        updatedBy: createdBy,
-      },
-    });
-  }
-
-  async createAutoPersonnel(
-    data: Pick<
-      Prisma.PersonnelUncheckedCreateInput,
-      | "personnelCode"
-      | "personnelName"
-      | "sourceDocumentType"
-      | "sourceDocumentId"
-    >,
-    createdBy?: string,
-  ) {
-    return this.prisma.personnel.create({
-      data: {
-        ...data,
-        status: "ACTIVE",
-        creationMode: "AUTO_CREATED",
         createdBy,
         updatedBy: createdBy,
       },
@@ -1078,17 +1080,26 @@ export class MasterDataRepository {
     }
     if (params.keyword) {
       where.OR = [
-        { workshopCode: { contains: params.keyword } },
         { workshopName: { contains: params.keyword } },
+        {
+          defaultHandlerPersonnel: {
+            is: {
+              personnelName: {
+                contains: params.keyword,
+              },
+            },
+          },
+        },
       ];
     }
 
     const [items, total] = await Promise.all([
       this.prisma.workshop.findMany({
         where,
+        include: WORKSHOP_WITH_DEFAULT_HANDLER_INCLUDE,
         take: params.limit,
         skip: params.offset,
-        orderBy: { workshopCode: "asc" },
+        orderBy: [{ workshopName: "asc" }, { id: "asc" }],
       }),
       this.prisma.workshop.count({ where }),
     ]);
@@ -1099,22 +1110,16 @@ export class MasterDataRepository {
   async findWorkshopById(id: number) {
     return this.prisma.workshop.findUnique({
       where: { id },
-    });
-  }
-
-  async findWorkshopByCode(workshopCode: string) {
-    return this.prisma.workshop.findUnique({
-      where: { workshopCode },
+      include: WORKSHOP_WITH_DEFAULT_HANDLER_INCLUDE,
     });
   }
 
   async findWorkshopByName(workshopName: string) {
     return this.prisma.workshop.findFirst({
       where: {
-        workshopName: {
-          contains: workshopName,
-        },
+        workshopName,
       },
+      include: WORKSHOP_WITH_DEFAULT_HANDLER_INCLUDE,
       orderBy: {
         id: "asc",
       },
@@ -1124,7 +1129,7 @@ export class MasterDataRepository {
   async createWorkshop(
     data: Pick<
       Prisma.WorkshopUncheckedCreateInput,
-      "workshopCode" | "workshopName"
+      "defaultHandlerPersonnelId" | "workshopName"
     >,
     createdBy?: string,
   ) {
@@ -1135,6 +1140,7 @@ export class MasterDataRepository {
         createdBy,
         updatedBy: createdBy,
       },
+      include: WORKSHOP_WITH_DEFAULT_HANDLER_INCLUDE,
     });
   }
 
@@ -1146,6 +1152,7 @@ export class MasterDataRepository {
     return this.prisma.workshop.update({
       where: { id },
       data: { ...data, updatedBy },
+      include: WORKSHOP_WITH_DEFAULT_HANDLER_INCLUDE,
     });
   }
 

@@ -107,7 +107,6 @@ export interface ResolvedCustomerDependency {
 
 export interface ResolvedPersonnelDependency {
   targetId: number;
-  personnelCode: string;
   personnelName: string;
 }
 
@@ -154,7 +153,6 @@ export interface CurrentOutboundLineRecord {
 
 export interface ResolvedWorkshopDependency {
   targetId: number;
-  workshopCode: string;
   workshopName: string;
 }
 

@@ -120,7 +120,6 @@ describe("ReportingService", () => {
         },
         workshop: {
           id: 1,
-          workshopCode: "MAIN",
           workshopName: "主仓",
         },
       },
@@ -149,7 +148,6 @@ describe("ReportingService", () => {
         },
         workshop: {
           id: 1,
-          workshopCode: "MAIN",
           workshopName: "主仓",
         },
       },
@@ -218,7 +216,6 @@ describe("ReportingService", () => {
         },
         workshop: {
           id: 1,
-          workshopCode: "MAIN",
           workshopName: "主仓",
         },
       },

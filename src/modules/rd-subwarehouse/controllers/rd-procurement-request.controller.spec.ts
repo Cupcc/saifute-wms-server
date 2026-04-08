@@ -24,7 +24,6 @@ describe("RdProcurementRequestController", () => {
     workshopScope: {
       mode: "FIXED",
       workshopId: 6,
-      workshopCode: "RD",
       workshopName: "研发小仓",
     },
   };
@@ -43,7 +42,6 @@ describe("RdProcurementRequestController", () => {
     workshopScope: {
       mode: "ALL",
       workshopId: null,
-      workshopCode: null,
       workshopName: null,
     },
   };

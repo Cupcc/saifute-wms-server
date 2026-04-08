@@ -171,7 +171,7 @@ function buildCustomerPayload(data, mode, handlerPersonnelId) {
   if (mode === "salesReturn") {
     return {
       ...basePayload,
-      documentNo: data.documentNo,
+      ...(data.orderId ? { documentNo: data.documentNo } : {}),
       sourceOutboundOrderId: data.sourceOutboundOrderId,
       lines: lines.map((line) => ({
         materialId: line.materialId,
@@ -185,7 +185,7 @@ function buildCustomerPayload(data, mode, handlerPersonnelId) {
 
   return {
     ...basePayload,
-    ...(data.orderId ? {} : { documentNo: data.documentNo }),
+    ...(data.orderId ? { documentNo: data.documentNo } : {}),
     lines: lines.map((line) => ({
       ...(line.detailId ? { id: line.detailId } : {}),
       materialId: line.materialId,

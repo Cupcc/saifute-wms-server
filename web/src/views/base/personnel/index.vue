@@ -1,42 +1,10 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="类型" prop="type">
-        <el-select
-          v-model="queryParams.type"
-          placeholder="请选择类型"
-          clearable
-          style="width: 240px">
-          <el-option
-            v-for="dict in related_order_type"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="编码" prop="code">
-        <el-input
-          v-model="queryParams.code"
-          placeholder="请输入编码"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
       <el-form-item label="姓名" prop="name">
         <el-input
           v-model="queryParams.name"
           placeholder="请输入姓名"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item label="联系电话" prop="contactPhone">
-        <el-input
-          v-model="queryParams.contactPhone"
-          placeholder="请输入联系电话"
           clearable
           style="width: 240px"
           @keyup.enter="handleQuery"
@@ -63,14 +31,7 @@
 
     <adaptive-table border stripe v-loading="loading" :data="personnelList">
       <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="类型" align="center" prop="type" v-if="columns[0].visible">
-        <template #default="scope">
-          <dict-tag :options="related_order_type" :value="scope.row.type"/>
-        </template>
-      </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="编码" align="center" prop="code" v-if="columns[1].visible" />
-      <el-table-column sortable show-overflow-tooltip label="姓名" align="center" prop="name" v-if="columns[2].visible" />
-      <el-table-column sortable show-overflow-tooltip label="联系电话" align="center" prop="contactPhone" v-if="columns[3].visible" />
+      <el-table-column sortable show-overflow-tooltip label="姓名" align="center" prop="name" v-if="columns[0].visible" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['base:personnel:edit']">修改</el-button>
@@ -78,7 +39,7 @@
         </template>
       </el-table-column>
     </adaptive-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -90,26 +51,9 @@
     <!-- 添加或修改人员信息对话框 -->
     <el-dialog :title="title" v-model="open" width="500px" append-to-body draggable v-loading="dialogLoading">
       <el-form ref="personnelRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="类型" prop="type">
-          <el-select v-model="form.type" placeholder="请选择类型">
-            <el-option
-              v-for="dict in related_order_type"
-              :key="dict.value"
-              :label="dict.label"
-              :value="parseInt(dict.value)"
-            ></el-option>
-          </el-select>
-        </el-form-item>
-        <el-form-item label="编码" prop="code">
-          <el-input v-model="form.code" placeholder="请输入编码" />
-        </el-form-item>
         <el-form-item label="姓名" prop="name">
           <el-input v-model="form.name" placeholder="请输入姓名" />
         </el-form-item>
-        <el-form-item label="联系电话" prop="contactPhone">
-          <el-input v-model="form.contactPhone" placeholder="请输入联系电话" />
-        </el-form-item>
-        <!-- 删除标志和作废说明字段只在作废时显示 -->
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -131,7 +75,6 @@ import {
 } from "@/api/base/personnel";
 
 const { proxy } = getCurrentInstance();
-const { related_order_type } = proxy.useDict("related_order_type");
 
 const personnelList = ref([]);
 const open = ref(false);
@@ -149,25 +92,17 @@ const data = reactive({
   queryParams: {
     pageNum: 1,
     pageSize: 30,
-    type: null,
-    code: null,
     name: null,
-    contactPhone: null,
   },
   rules: {
-    type: [{ required: true, message: "类型不能为空", trigger: "change" }],
     name: [{ required: true, message: "姓名不能为空", trigger: "blur" }],
   },
 });
 
 const { queryParams, form, rules } = toRefs(data);
 
-// 添加columns数组定义（已删除 personnelId 列）
 const columns = ref([
-  { key: 0, label: `类型`, visible: true },
-  { key: 1, label: `编码`, visible: true },
-  { key: 2, label: `姓名`, visible: true },
-  { key: 3, label: `联系电话`, visible: true },
+  { key: 0, label: `姓名`, visible: true },
 ]);
 
 /** 查询人员信息列表 */
@@ -190,16 +125,7 @@ function cancel() {
 function reset() {
   form.value = {
     personnelId: null,
-    type: null,
-    code: null,
     name: null,
-    contactPhone: null,
-    delFlag: null,
-    voidDescription: null,
-    createBy: null,
-    createTime: null,
-    updateBy: null,
-    updateTime: null,
   };
   proxy.resetForm("personnelRef");
 }
@@ -267,7 +193,7 @@ function submitForm() {
   });
 }
 
-/** 作废按钮操作 */
+/** 停用按钮操作 */
 async function handleDelete(row) {
   const personnelId = row.personnelId || ids.value;
 

@@ -19,7 +19,6 @@ describe("MasterDataController", () => {
     workshopScope: {
       mode: "ALL",
       workshopId: null,
-      workshopCode: null,
       workshopName: null,
     },
   };
@@ -245,13 +244,10 @@ describe("MasterDataController", () => {
   // ─── Personnel (F5) ─────────────────────────────────────────────────────────
 
   it("creates personnel with the current user id", async () => {
-    await controller.createPersonnel(
-      { personnelCode: "P-001", personnelName: "张三" },
-      adminUser,
-    );
+    await controller.createPersonnel({ personnelName: "张三" }, adminUser);
 
     expect(masterDataService.createPersonnel).toHaveBeenCalledWith(
-      { personnelCode: "P-001", personnelName: "张三" },
+      { personnelName: "张三" },
       "1",
     );
   });
@@ -266,12 +262,12 @@ describe("MasterDataController", () => {
 
   it("creates workshops with the current user id", async () => {
     await controller.createWorkshop(
-      { workshopCode: "W-001", workshopName: "装配车间" },
+      { workshopName: "装配车间", defaultHandlerPersonnelId: 20 },
       adminUser,
     );
 
     expect(masterDataService.createWorkshop).toHaveBeenCalledWith(
-      { workshopCode: "W-001", workshopName: "装配车间" },
+      { workshopName: "装配车间", defaultHandlerPersonnelId: 20 },
       "1",
     );
   });

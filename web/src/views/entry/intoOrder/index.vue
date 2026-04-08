@@ -172,7 +172,11 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="入库单号" prop="intoNo">
-              <el-input v-model="form.intoNo" placeholder="请输入入库单号" :disabled="form.intoId != null"/>
+              <el-input
+                v-model="form.intoNo"
+                :placeholder="form.intoId ? '入库单号' : '保存后自动生成'"
+                disabled
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -182,7 +186,6 @@
                 type="date"
                 value-format="YYYY-MM-DD"
                 placeholder="请选择入库日期"
-                @change="handleDateChange"
                 :disabled="form.intoId != null">
               </el-date-picker>
             </el-form-item>
@@ -436,7 +439,7 @@ import {
 } from "@/api/entry/intoOrder";
 import useAiActionStore from "@/store/modules/aiAction";
 import useUserStore from "@/store/modules/user";
-import { formatDateToYYYYMMDD, generateOrderNo } from "@/utils/orderNumber";
+import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
 
 const { proxy } = getCurrentInstance();
 
@@ -487,7 +490,6 @@ const data = reactive({
     interval: null,
   },
   rules: {
-    intoNo: [{ required: true, message: "入库单号不能为空", trigger: "blur" }],
     intoDate: [
       { required: true, message: "入库日期不能为空", trigger: "change" },
     ],
@@ -740,40 +742,7 @@ function handleAdd() {
   isView.value = false;
   title.value = "添加入库单";
   open.value = true;
-  dialogLoading.value = true;
-  generateIntoNo(today)
-    .then((intoNo) => {
-      form.value.intoNo = intoNo;
-    })
-    .finally(() => {
-      dialogLoading.value = false;
-    });
-}
-
-/**
- * 生成入库单号
- */
-async function generateIntoNo(date) {
-  // 查询当天已有的入库单号，找出最大流水号
-  const params = {
-    params: {
-      beginTime: formatDateToYYYYMMDD(date),
-      endTime: formatDateToYYYYMMDD(date),
-    },
-  };
-
-  return generateOrderNo(date, "RK", listIntoOrder, params, "intoNo");
-}
-
-/**
- * 处理日期更改事件，重新生成入库单号
- */
-async function handleDateChange(val) {
-  if (val) {
-    const newDate = new Date(val);
-    const newIntoNo = await generateIntoNo(newDate);
-    form.value.intoNo = newIntoNo;
-  }
+  dialogLoading.value = false;
 }
 
 /** 修改按钮操作 */

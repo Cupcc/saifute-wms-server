@@ -1,4 +1,7 @@
-import { normalizeOptionalText } from "../shared/deterministic";
+import {
+  DEFAULT_WORKSHOP_NAME,
+  normalizeOptionalText,
+} from "../shared/deterministic";
 import type {
   ArchivedFieldPayloadRecord,
   AuditStatusSnapshotValue,
@@ -582,7 +585,6 @@ function resolveHandlerDependency(
 ): {
   handler: {
     targetId: number;
-    personnelCode: string;
     personnelName: string;
   } | null;
   handlerNameSnapshot: string | null;
@@ -590,7 +592,6 @@ function resolveHandlerDependency(
   const normalizedAttn = normalizePersonnelLookupName(order.attn);
   let handler: {
     targetId: number;
-    personnelCode: string;
     personnelName: string;
   } | null = null;
   let handlerNameSnapshot: string | null = normalizeOptionalText(order.attn);
@@ -740,10 +741,7 @@ function buildExcludedSalesReturnPlan(
  */
 function deriveWorkshopForOrder(
   admittedLines: PreparedDetail[],
-  workshopByTargetId: Map<
-    number,
-    { targetId: number; workshopCode: string; workshopName: string }
-  >,
+  workshopByTargetId: Map<number, { targetId: number; workshopName: string }>,
   warnings: Array<{
     legacyTable: string;
     legacyId: number | null;
@@ -754,7 +752,7 @@ function deriveWorkshopForOrder(
 ): { workshopId: number | null; conflict: boolean } {
   const defaultWorkshop =
     Array.from(workshopByTargetId.values()).find(
-      (workshop) => workshop.workshopCode === "WS-LEGACY-DEFAULT",
+      (workshop) => workshop.workshopName === DEFAULT_WORKSHOP_NAME,
     ) ?? null;
   const resolvedWorkshopIds = new Set(
     admittedLines

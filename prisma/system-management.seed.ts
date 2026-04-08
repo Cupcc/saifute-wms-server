@@ -3336,9 +3336,9 @@ export function createSystemManagementSeedState(): SystemManagementState {
         stockScopeName: "研发小仓",
       },
       workshopScope: {
-        mode: "FIXED",
+        mode: "ALL",
         workshopId: null,
-        workshopName: "研发技术",
+        workshopName: null,
       },
       extraPermissions: [],
     },

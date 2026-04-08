@@ -103,7 +103,7 @@ async function getWorkshopMaterialDrift(connection: Queryable) {
   return connection.query<
     Array<{
       orderType: string;
-      workshopCode: string;
+      workshopName: string;
       scopeCode: string;
       totalRows: number;
     }>
@@ -111,7 +111,7 @@ async function getWorkshopMaterialDrift(connection: Queryable) {
     `
       SELECT
         wmo.orderType AS orderType,
-        w.workshopCode AS workshopCode,
+        w.workshopName AS workshopName,
         ss.scopeCode AS scopeCode,
         COUNT(*) AS totalRows
       FROM workshop_material_order wmo
@@ -120,10 +120,10 @@ async function getWorkshopMaterialDrift(connection: Queryable) {
       WHERE
         (wmo.orderType IN ('PICK', 'RETURN') AND ss.scopeCode <> 'MAIN')
         OR
-        (wmo.orderType = 'SCRAP' AND w.workshopCode IN ('RD', 'RD_SUB') AND ss.scopeCode <> 'RD_SUB')
+        (wmo.orderType = 'SCRAP' AND w.workshopName = '研发小仓' AND ss.scopeCode <> 'RD_SUB')
         OR
-        (wmo.orderType = 'SCRAP' AND w.workshopCode = 'MAIN' AND ss.scopeCode <> 'MAIN')
-      GROUP BY wmo.orderType, w.workshopCode, ss.scopeCode
+        (wmo.orderType = 'SCRAP' AND w.workshopName = '主仓' AND ss.scopeCode <> 'MAIN')
+      GROUP BY wmo.orderType, w.workshopName, ss.scopeCode
     `,
   );
 }

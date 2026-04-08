@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import {
   AuditStatusSnapshot,
@@ -218,9 +214,6 @@ describe("WorkshopMaterialService", () => {
       const result = await service.createPickOrder(dto, "1");
 
       expect(result).toEqual(mockPickOrder);
-      expect(repository.findOrderByDocumentNo).toHaveBeenCalledWith(
-        "WM-PICK-001",
-      );
       expect(inventoryService.settleConsumerOut).toHaveBeenCalledWith(
         expect.objectContaining({
           materialId: 100,
@@ -243,25 +236,6 @@ describe("WorkshopMaterialService", () => {
         }),
         expect.anything(),
       );
-    });
-
-    it("should throw ConflictException when documentNo exists", async () => {
-      (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(
-        mockPickOrder,
-      );
-
-      const dto = {
-        documentNo: "WM-PICK-001",
-        orderType: WorkshopMaterialOrderType.PICK,
-        bizDate: "2025-03-14",
-        workshopId: 1,
-        lines: [{ materialId: 100, quantity: "50" }],
-      };
-
-      await expect(service.createPickOrder(dto, "1")).rejects.toThrow(
-        ConflictException,
-      );
-      expect(repository.createOrder).not.toHaveBeenCalled();
     });
   });
 

@@ -95,7 +95,7 @@
 
 - 对应主表：`material_category`、`material`、`customer`、`supplier`、`personnel`、`workshop`
 - 第一阶段不把客户、供应商、人员合并成统一主体表
-- 自动补建先保留在各主表，通过 `creationMode`、`sourceDocumentType`、`sourceDocumentId` 追溯来源
+- 自动补建只保留在 `material`、`customer`、`supplier` 三张主表，通过 `creationMode`、`sourceDocumentType`、`sourceDocumentId` 追溯来源；`personnel`、`workshop` 仅支持手工维护
 - 单据侧只拿快照，不允许直接联查主数据内部结构
 - 详细业务流程与字段建议见 `docs/architecture/20-wms-database-tables-and-schema.md`
 
@@ -111,4 +111,3 @@
 - 项目/BOM
 - 主数据批量导入优化
 - 主数据版本化
-

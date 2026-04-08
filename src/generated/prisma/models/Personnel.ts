@@ -28,22 +28,16 @@ export type AggregatePersonnel = {
 
 export type PersonnelAvgAggregateOutputType = {
   id: number | null;
-  sourceDocumentId: number | null;
 };
 
 export type PersonnelSumAggregateOutputType = {
   id: number | null;
-  sourceDocumentId: number | null;
 };
 
 export type PersonnelMinAggregateOutputType = {
   id: number | null;
-  personnelCode: string | null;
   personnelName: string | null;
   status: $Enums.MasterDataStatus | null;
-  creationMode: $Enums.DataCreationMode | null;
-  sourceDocumentType: string | null;
-  sourceDocumentId: number | null;
   createdBy: string | null;
   createdAt: Date | null;
   updatedBy: string | null;
@@ -52,12 +46,8 @@ export type PersonnelMinAggregateOutputType = {
 
 export type PersonnelMaxAggregateOutputType = {
   id: number | null;
-  personnelCode: string | null;
   personnelName: string | null;
   status: $Enums.MasterDataStatus | null;
-  creationMode: $Enums.DataCreationMode | null;
-  sourceDocumentType: string | null;
-  sourceDocumentId: number | null;
   createdBy: string | null;
   createdAt: Date | null;
   updatedBy: string | null;
@@ -66,12 +56,8 @@ export type PersonnelMaxAggregateOutputType = {
 
 export type PersonnelCountAggregateOutputType = {
   id: number;
-  personnelCode: number;
   personnelName: number;
   status: number;
-  creationMode: number;
-  sourceDocumentType: number;
-  sourceDocumentId: number;
   createdBy: number;
   createdAt: number;
   updatedBy: number;
@@ -81,22 +67,16 @@ export type PersonnelCountAggregateOutputType = {
 
 export type PersonnelAvgAggregateInputType = {
   id?: true;
-  sourceDocumentId?: true;
 };
 
 export type PersonnelSumAggregateInputType = {
   id?: true;
-  sourceDocumentId?: true;
 };
 
 export type PersonnelMinAggregateInputType = {
   id?: true;
-  personnelCode?: true;
   personnelName?: true;
   status?: true;
-  creationMode?: true;
-  sourceDocumentType?: true;
-  sourceDocumentId?: true;
   createdBy?: true;
   createdAt?: true;
   updatedBy?: true;
@@ -105,12 +85,8 @@ export type PersonnelMinAggregateInputType = {
 
 export type PersonnelMaxAggregateInputType = {
   id?: true;
-  personnelCode?: true;
   personnelName?: true;
   status?: true;
-  creationMode?: true;
-  sourceDocumentType?: true;
-  sourceDocumentId?: true;
   createdBy?: true;
   createdAt?: true;
   updatedBy?: true;
@@ -119,12 +95,8 @@ export type PersonnelMaxAggregateInputType = {
 
 export type PersonnelCountAggregateInputType = {
   id?: true;
-  personnelCode?: true;
   personnelName?: true;
   status?: true;
-  creationMode?: true;
-  sourceDocumentType?: true;
-  sourceDocumentId?: true;
   createdBy?: true;
   createdAt?: true;
   updatedBy?: true;
@@ -227,12 +199,8 @@ export type PersonnelGroupByArgs<
 
 export type PersonnelGroupByOutputType = {
   id: number;
-  personnelCode: string;
   personnelName: string;
   status: $Enums.MasterDataStatus;
-  creationMode: $Enums.DataCreationMode;
-  sourceDocumentType: string | null;
-  sourceDocumentId: number | null;
   createdBy: string | null;
   createdAt: Date;
   updatedBy: string | null;
@@ -262,16 +230,10 @@ export type PersonnelWhereInput = {
   OR?: Prisma.PersonnelWhereInput[];
   NOT?: Prisma.PersonnelWhereInput | Prisma.PersonnelWhereInput[];
   id?: Prisma.IntFilter<"Personnel"> | number;
-  personnelCode?: Prisma.StringFilter<"Personnel"> | string;
   personnelName?: Prisma.StringFilter<"Personnel"> | string;
   status?:
     | Prisma.EnumMasterDataStatusFilter<"Personnel">
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFilter<"Personnel">
-    | $Enums.DataCreationMode;
-  sourceDocumentType?: Prisma.StringNullableFilter<"Personnel"> | string | null;
-  sourceDocumentId?: Prisma.IntNullableFilter<"Personnel"> | number | null;
   createdBy?: Prisma.StringNullableFilter<"Personnel"> | string | null;
   createdAt?: Prisma.DateTimeFilter<"Personnel"> | Date | string;
   updatedBy?: Prisma.StringNullableFilter<"Personnel"> | string | null;
@@ -279,6 +241,7 @@ export type PersonnelWhereInput = {
   stockInOrders?: Prisma.StockInOrderListRelationFilter;
   customerStockOrders?: Prisma.CustomerStockOrderListRelationFilter;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderListRelationFilter;
+  defaultHandlerWorkshops?: Prisma.WorkshopListRelationFilter;
   managedProjects?: Prisma.ProjectListRelationFilter;
   rdHandoffOrders?: Prisma.RdHandoffOrderListRelationFilter;
   rdProcurementRequests?: Prisma.RdProcurementRequestListRelationFilter;
@@ -286,12 +249,8 @@ export type PersonnelWhereInput = {
 
 export type PersonnelOrderByWithRelationInput = {
   id?: Prisma.SortOrder;
-  personnelCode?: Prisma.SortOrder;
   personnelName?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
-  creationMode?: Prisma.SortOrder;
-  sourceDocumentType?: Prisma.SortOrderInput | Prisma.SortOrder;
-  sourceDocumentId?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdBy?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedBy?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -299,6 +258,7 @@ export type PersonnelOrderByWithRelationInput = {
   stockInOrders?: Prisma.StockInOrderOrderByRelationAggregateInput;
   customerStockOrders?: Prisma.CustomerStockOrderOrderByRelationAggregateInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderOrderByRelationAggregateInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopOrderByRelationAggregateInput;
   managedProjects?: Prisma.ProjectOrderByRelationAggregateInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderOrderByRelationAggregateInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestOrderByRelationAggregateInput;
@@ -308,7 +268,6 @@ export type PersonnelOrderByWithRelationInput = {
 export type PersonnelWhereUniqueInput = Prisma.AtLeast<
   {
     id?: number;
-    personnelCode?: string;
     AND?: Prisma.PersonnelWhereInput | Prisma.PersonnelWhereInput[];
     OR?: Prisma.PersonnelWhereInput[];
     NOT?: Prisma.PersonnelWhereInput | Prisma.PersonnelWhereInput[];
@@ -316,14 +275,6 @@ export type PersonnelWhereUniqueInput = Prisma.AtLeast<
     status?:
       | Prisma.EnumMasterDataStatusFilter<"Personnel">
       | $Enums.MasterDataStatus;
-    creationMode?:
-      | Prisma.EnumDataCreationModeFilter<"Personnel">
-      | $Enums.DataCreationMode;
-    sourceDocumentType?:
-      | Prisma.StringNullableFilter<"Personnel">
-      | string
-      | null;
-    sourceDocumentId?: Prisma.IntNullableFilter<"Personnel"> | number | null;
     createdBy?: Prisma.StringNullableFilter<"Personnel"> | string | null;
     createdAt?: Prisma.DateTimeFilter<"Personnel"> | Date | string;
     updatedBy?: Prisma.StringNullableFilter<"Personnel"> | string | null;
@@ -331,21 +282,18 @@ export type PersonnelWhereUniqueInput = Prisma.AtLeast<
     stockInOrders?: Prisma.StockInOrderListRelationFilter;
     customerStockOrders?: Prisma.CustomerStockOrderListRelationFilter;
     workshopMaterialOrders?: Prisma.WorkshopMaterialOrderListRelationFilter;
+    defaultHandlerWorkshops?: Prisma.WorkshopListRelationFilter;
     managedProjects?: Prisma.ProjectListRelationFilter;
     rdHandoffOrders?: Prisma.RdHandoffOrderListRelationFilter;
     rdProcurementRequests?: Prisma.RdProcurementRequestListRelationFilter;
   },
-  "id" | "personnelCode"
+  "id"
 >;
 
 export type PersonnelOrderByWithAggregationInput = {
   id?: Prisma.SortOrder;
-  personnelCode?: Prisma.SortOrder;
   personnelName?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
-  creationMode?: Prisma.SortOrder;
-  sourceDocumentType?: Prisma.SortOrderInput | Prisma.SortOrder;
-  sourceDocumentId?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdBy?: Prisma.SortOrderInput | Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedBy?: Prisma.SortOrderInput | Prisma.SortOrder;
@@ -366,22 +314,10 @@ export type PersonnelScalarWhereWithAggregatesInput = {
     | Prisma.PersonnelScalarWhereWithAggregatesInput
     | Prisma.PersonnelScalarWhereWithAggregatesInput[];
   id?: Prisma.IntWithAggregatesFilter<"Personnel"> | number;
-  personnelCode?: Prisma.StringWithAggregatesFilter<"Personnel"> | string;
   personnelName?: Prisma.StringWithAggregatesFilter<"Personnel"> | string;
   status?:
     | Prisma.EnumMasterDataStatusWithAggregatesFilter<"Personnel">
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeWithAggregatesFilter<"Personnel">
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.StringNullableWithAggregatesFilter<"Personnel">
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.IntNullableWithAggregatesFilter<"Personnel">
-    | number
-    | null;
   createdBy?:
     | Prisma.StringNullableWithAggregatesFilter<"Personnel">
     | string
@@ -395,12 +331,8 @@ export type PersonnelScalarWhereWithAggregatesInput = {
 };
 
 export type PersonnelCreateInput = {
-  personnelCode: string;
   personnelName: string;
   status?: $Enums.MasterDataStatus;
-  creationMode?: $Enums.DataCreationMode;
-  sourceDocumentType?: string | null;
-  sourceDocumentId?: number | null;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
@@ -408,6 +340,7 @@ export type PersonnelCreateInput = {
   stockInOrders?: Prisma.StockInOrderCreateNestedManyWithoutHandlerPersonnelInput;
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutHandlerPersonnelInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutHandlerPersonnelInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopCreateNestedManyWithoutDefaultHandlerPersonnelInput;
   managedProjects?: Prisma.ProjectCreateNestedManyWithoutManagerPersonnelInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutHandlerPersonnelInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestCreateNestedManyWithoutHandlerPersonnelInput;
@@ -415,12 +348,8 @@ export type PersonnelCreateInput = {
 
 export type PersonnelUncheckedCreateInput = {
   id?: number;
-  personnelCode: string;
   personnelName: string;
   status?: $Enums.MasterDataStatus;
-  creationMode?: $Enums.DataCreationMode;
-  sourceDocumentType?: string | null;
-  sourceDocumentId?: number | null;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
@@ -428,28 +357,17 @@ export type PersonnelUncheckedCreateInput = {
   stockInOrders?: Prisma.StockInOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   customerStockOrders?: Prisma.CustomerStockOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUncheckedCreateNestedManyWithoutDefaultHandlerPersonnelInput;
   managedProjects?: Prisma.ProjectUncheckedCreateNestedManyWithoutManagerPersonnelInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
 };
 
 export type PersonnelUpdateInput = {
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -457,6 +375,7 @@ export type PersonnelUpdateInput = {
   stockInOrders?: Prisma.StockInOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutHandlerPersonnelNestedInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUpdateManyWithoutDefaultHandlerPersonnelNestedInput;
   managedProjects?: Prisma.ProjectUpdateManyWithoutManagerPersonnelNestedInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUpdateManyWithoutHandlerPersonnelNestedInput;
@@ -464,22 +383,10 @@ export type PersonnelUpdateInput = {
 
 export type PersonnelUncheckedUpdateInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -487,6 +394,7 @@ export type PersonnelUncheckedUpdateInput = {
   stockInOrders?: Prisma.StockInOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   customerStockOrders?: Prisma.CustomerStockOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUncheckedUpdateManyWithoutDefaultHandlerPersonnelNestedInput;
   managedProjects?: Prisma.ProjectUncheckedUpdateManyWithoutManagerPersonnelNestedInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
@@ -494,12 +402,8 @@ export type PersonnelUncheckedUpdateInput = {
 
 export type PersonnelCreateManyInput = {
   id?: number;
-  personnelCode: string;
   personnelName: string;
   status?: $Enums.MasterDataStatus;
-  creationMode?: $Enums.DataCreationMode;
-  sourceDocumentType?: string | null;
-  sourceDocumentId?: number | null;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
@@ -507,22 +411,10 @@ export type PersonnelCreateManyInput = {
 };
 
 export type PersonnelUpdateManyMutationInput = {
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -531,22 +423,10 @@ export type PersonnelUpdateManyMutationInput = {
 
 export type PersonnelUncheckedUpdateManyInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -563,12 +443,8 @@ export type PersonnelOrderByRelevanceInput = {
 
 export type PersonnelCountOrderByAggregateInput = {
   id?: Prisma.SortOrder;
-  personnelCode?: Prisma.SortOrder;
   personnelName?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
-  creationMode?: Prisma.SortOrder;
-  sourceDocumentType?: Prisma.SortOrder;
-  sourceDocumentId?: Prisma.SortOrder;
   createdBy?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedBy?: Prisma.SortOrder;
@@ -577,17 +453,12 @@ export type PersonnelCountOrderByAggregateInput = {
 
 export type PersonnelAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder;
-  sourceDocumentId?: Prisma.SortOrder;
 };
 
 export type PersonnelMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder;
-  personnelCode?: Prisma.SortOrder;
   personnelName?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
-  creationMode?: Prisma.SortOrder;
-  sourceDocumentType?: Prisma.SortOrder;
-  sourceDocumentId?: Prisma.SortOrder;
   createdBy?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedBy?: Prisma.SortOrder;
@@ -596,12 +467,8 @@ export type PersonnelMaxOrderByAggregateInput = {
 
 export type PersonnelMinOrderByAggregateInput = {
   id?: Prisma.SortOrder;
-  personnelCode?: Prisma.SortOrder;
   personnelName?: Prisma.SortOrder;
   status?: Prisma.SortOrder;
-  creationMode?: Prisma.SortOrder;
-  sourceDocumentType?: Prisma.SortOrder;
-  sourceDocumentId?: Prisma.SortOrder;
   createdBy?: Prisma.SortOrder;
   createdAt?: Prisma.SortOrder;
   updatedBy?: Prisma.SortOrder;
@@ -610,12 +477,39 @@ export type PersonnelMinOrderByAggregateInput = {
 
 export type PersonnelSumOrderByAggregateInput = {
   id?: Prisma.SortOrder;
-  sourceDocumentId?: Prisma.SortOrder;
 };
 
 export type PersonnelNullableScalarRelationFilter = {
   is?: Prisma.PersonnelWhereInput | null;
   isNot?: Prisma.PersonnelWhereInput | null;
+};
+
+export type PersonnelCreateNestedOneWithoutDefaultHandlerWorkshopsInput = {
+  create?: Prisma.XOR<
+    Prisma.PersonnelCreateWithoutDefaultHandlerWorkshopsInput,
+    Prisma.PersonnelUncheckedCreateWithoutDefaultHandlerWorkshopsInput
+  >;
+  connectOrCreate?: Prisma.PersonnelCreateOrConnectWithoutDefaultHandlerWorkshopsInput;
+  connect?: Prisma.PersonnelWhereUniqueInput;
+};
+
+export type PersonnelUpdateOneWithoutDefaultHandlerWorkshopsNestedInput = {
+  create?: Prisma.XOR<
+    Prisma.PersonnelCreateWithoutDefaultHandlerWorkshopsInput,
+    Prisma.PersonnelUncheckedCreateWithoutDefaultHandlerWorkshopsInput
+  >;
+  connectOrCreate?: Prisma.PersonnelCreateOrConnectWithoutDefaultHandlerWorkshopsInput;
+  upsert?: Prisma.PersonnelUpsertWithoutDefaultHandlerWorkshopsInput;
+  disconnect?: Prisma.PersonnelWhereInput | boolean;
+  delete?: Prisma.PersonnelWhereInput | boolean;
+  connect?: Prisma.PersonnelWhereUniqueInput;
+  update?: Prisma.XOR<
+    Prisma.XOR<
+      Prisma.PersonnelUpdateToOneWithWhereWithoutDefaultHandlerWorkshopsInput,
+      Prisma.PersonnelUpdateWithoutDefaultHandlerWorkshopsInput
+    >,
+    Prisma.PersonnelUncheckedUpdateWithoutDefaultHandlerWorkshopsInput
+  >;
 };
 
 export type PersonnelCreateNestedOneWithoutStockInOrdersInput = {
@@ -786,17 +680,14 @@ export type PersonnelUpdateOneWithoutRdProcurementRequestsNestedInput = {
   >;
 };
 
-export type PersonnelCreateWithoutStockInOrdersInput = {
-  personnelCode: string;
+export type PersonnelCreateWithoutDefaultHandlerWorkshopsInput = {
   personnelName: string;
   status?: $Enums.MasterDataStatus;
-  creationMode?: $Enums.DataCreationMode;
-  sourceDocumentType?: string | null;
-  sourceDocumentId?: number | null;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
   updatedAt?: Date | string;
+  stockInOrders?: Prisma.StockInOrderCreateNestedManyWithoutHandlerPersonnelInput;
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutHandlerPersonnelInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutHandlerPersonnelInput;
   managedProjects?: Prisma.ProjectCreateNestedManyWithoutManagerPersonnelInput;
@@ -804,20 +695,111 @@ export type PersonnelCreateWithoutStockInOrdersInput = {
   rdProcurementRequests?: Prisma.RdProcurementRequestCreateNestedManyWithoutHandlerPersonnelInput;
 };
 
-export type PersonnelUncheckedCreateWithoutStockInOrdersInput = {
+export type PersonnelUncheckedCreateWithoutDefaultHandlerWorkshopsInput = {
   id?: number;
-  personnelCode: string;
   personnelName: string;
   status?: $Enums.MasterDataStatus;
-  creationMode?: $Enums.DataCreationMode;
-  sourceDocumentType?: string | null;
-  sourceDocumentId?: number | null;
+  createdBy?: string | null;
+  createdAt?: Date | string;
+  updatedBy?: string | null;
+  updatedAt?: Date | string;
+  stockInOrders?: Prisma.StockInOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
+  customerStockOrders?: Prisma.CustomerStockOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
+  workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
+  managedProjects?: Prisma.ProjectUncheckedCreateNestedManyWithoutManagerPersonnelInput;
+  rdHandoffOrders?: Prisma.RdHandoffOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
+  rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
+};
+
+export type PersonnelCreateOrConnectWithoutDefaultHandlerWorkshopsInput = {
+  where: Prisma.PersonnelWhereUniqueInput;
+  create: Prisma.XOR<
+    Prisma.PersonnelCreateWithoutDefaultHandlerWorkshopsInput,
+    Prisma.PersonnelUncheckedCreateWithoutDefaultHandlerWorkshopsInput
+  >;
+};
+
+export type PersonnelUpsertWithoutDefaultHandlerWorkshopsInput = {
+  update: Prisma.XOR<
+    Prisma.PersonnelUpdateWithoutDefaultHandlerWorkshopsInput,
+    Prisma.PersonnelUncheckedUpdateWithoutDefaultHandlerWorkshopsInput
+  >;
+  create: Prisma.XOR<
+    Prisma.PersonnelCreateWithoutDefaultHandlerWorkshopsInput,
+    Prisma.PersonnelUncheckedCreateWithoutDefaultHandlerWorkshopsInput
+  >;
+  where?: Prisma.PersonnelWhereInput;
+};
+
+export type PersonnelUpdateToOneWithWhereWithoutDefaultHandlerWorkshopsInput = {
+  where?: Prisma.PersonnelWhereInput;
+  data: Prisma.XOR<
+    Prisma.PersonnelUpdateWithoutDefaultHandlerWorkshopsInput,
+    Prisma.PersonnelUncheckedUpdateWithoutDefaultHandlerWorkshopsInput
+  >;
+};
+
+export type PersonnelUpdateWithoutDefaultHandlerWorkshopsInput = {
+  personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
+  status?:
+    | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
+    | $Enums.MasterDataStatus;
+  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  stockInOrders?: Prisma.StockInOrderUpdateManyWithoutHandlerPersonnelNestedInput;
+  customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutHandlerPersonnelNestedInput;
+  workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutHandlerPersonnelNestedInput;
+  managedProjects?: Prisma.ProjectUpdateManyWithoutManagerPersonnelNestedInput;
+  rdHandoffOrders?: Prisma.RdHandoffOrderUpdateManyWithoutHandlerPersonnelNestedInput;
+  rdProcurementRequests?: Prisma.RdProcurementRequestUpdateManyWithoutHandlerPersonnelNestedInput;
+};
+
+export type PersonnelUncheckedUpdateWithoutDefaultHandlerWorkshopsInput = {
+  id?: Prisma.IntFieldUpdateOperationsInput | number;
+  personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
+  status?:
+    | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
+    | $Enums.MasterDataStatus;
+  createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+  stockInOrders?: Prisma.StockInOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
+  customerStockOrders?: Prisma.CustomerStockOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
+  workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
+  managedProjects?: Prisma.ProjectUncheckedUpdateManyWithoutManagerPersonnelNestedInput;
+  rdHandoffOrders?: Prisma.RdHandoffOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
+  rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
+};
+
+export type PersonnelCreateWithoutStockInOrdersInput = {
+  personnelName: string;
+  status?: $Enums.MasterDataStatus;
+  createdBy?: string | null;
+  createdAt?: Date | string;
+  updatedBy?: string | null;
+  updatedAt?: Date | string;
+  customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutHandlerPersonnelInput;
+  workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutHandlerPersonnelInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopCreateNestedManyWithoutDefaultHandlerPersonnelInput;
+  managedProjects?: Prisma.ProjectCreateNestedManyWithoutManagerPersonnelInput;
+  rdHandoffOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutHandlerPersonnelInput;
+  rdProcurementRequests?: Prisma.RdProcurementRequestCreateNestedManyWithoutHandlerPersonnelInput;
+};
+
+export type PersonnelUncheckedCreateWithoutStockInOrdersInput = {
+  id?: number;
+  personnelName: string;
+  status?: $Enums.MasterDataStatus;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
   updatedAt?: Date | string;
   customerStockOrders?: Prisma.CustomerStockOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUncheckedCreateNestedManyWithoutDefaultHandlerPersonnelInput;
   managedProjects?: Prisma.ProjectUncheckedCreateNestedManyWithoutManagerPersonnelInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
@@ -852,28 +834,17 @@ export type PersonnelUpdateToOneWithWhereWithoutStockInOrdersInput = {
 };
 
 export type PersonnelUpdateWithoutStockInOrdersInput = {
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutHandlerPersonnelNestedInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUpdateManyWithoutDefaultHandlerPersonnelNestedInput;
   managedProjects?: Prisma.ProjectUpdateManyWithoutManagerPersonnelNestedInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUpdateManyWithoutHandlerPersonnelNestedInput;
@@ -881,46 +852,32 @@ export type PersonnelUpdateWithoutStockInOrdersInput = {
 
 export type PersonnelUncheckedUpdateWithoutStockInOrdersInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   customerStockOrders?: Prisma.CustomerStockOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUncheckedUpdateManyWithoutDefaultHandlerPersonnelNestedInput;
   managedProjects?: Prisma.ProjectUncheckedUpdateManyWithoutManagerPersonnelNestedInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
 };
 
 export type PersonnelCreateWithoutCustomerStockOrdersInput = {
-  personnelCode: string;
   personnelName: string;
   status?: $Enums.MasterDataStatus;
-  creationMode?: $Enums.DataCreationMode;
-  sourceDocumentType?: string | null;
-  sourceDocumentId?: number | null;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
   updatedAt?: Date | string;
   stockInOrders?: Prisma.StockInOrderCreateNestedManyWithoutHandlerPersonnelInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutHandlerPersonnelInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopCreateNestedManyWithoutDefaultHandlerPersonnelInput;
   managedProjects?: Prisma.ProjectCreateNestedManyWithoutManagerPersonnelInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutHandlerPersonnelInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestCreateNestedManyWithoutHandlerPersonnelInput;
@@ -928,18 +885,15 @@ export type PersonnelCreateWithoutCustomerStockOrdersInput = {
 
 export type PersonnelUncheckedCreateWithoutCustomerStockOrdersInput = {
   id?: number;
-  personnelCode: string;
   personnelName: string;
   status?: $Enums.MasterDataStatus;
-  creationMode?: $Enums.DataCreationMode;
-  sourceDocumentType?: string | null;
-  sourceDocumentId?: number | null;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
   updatedAt?: Date | string;
   stockInOrders?: Prisma.StockInOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUncheckedCreateNestedManyWithoutDefaultHandlerPersonnelInput;
   managedProjects?: Prisma.ProjectUncheckedCreateNestedManyWithoutManagerPersonnelInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
@@ -974,28 +928,17 @@ export type PersonnelUpdateToOneWithWhereWithoutCustomerStockOrdersInput = {
 };
 
 export type PersonnelUpdateWithoutCustomerStockOrdersInput = {
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   stockInOrders?: Prisma.StockInOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutHandlerPersonnelNestedInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUpdateManyWithoutDefaultHandlerPersonnelNestedInput;
   managedProjects?: Prisma.ProjectUpdateManyWithoutManagerPersonnelNestedInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUpdateManyWithoutHandlerPersonnelNestedInput;
@@ -1003,46 +946,32 @@ export type PersonnelUpdateWithoutCustomerStockOrdersInput = {
 
 export type PersonnelUncheckedUpdateWithoutCustomerStockOrdersInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   stockInOrders?: Prisma.StockInOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUncheckedUpdateManyWithoutDefaultHandlerPersonnelNestedInput;
   managedProjects?: Prisma.ProjectUncheckedUpdateManyWithoutManagerPersonnelNestedInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
 };
 
 export type PersonnelCreateWithoutWorkshopMaterialOrdersInput = {
-  personnelCode: string;
   personnelName: string;
   status?: $Enums.MasterDataStatus;
-  creationMode?: $Enums.DataCreationMode;
-  sourceDocumentType?: string | null;
-  sourceDocumentId?: number | null;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
   updatedAt?: Date | string;
   stockInOrders?: Prisma.StockInOrderCreateNestedManyWithoutHandlerPersonnelInput;
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutHandlerPersonnelInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopCreateNestedManyWithoutDefaultHandlerPersonnelInput;
   managedProjects?: Prisma.ProjectCreateNestedManyWithoutManagerPersonnelInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutHandlerPersonnelInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestCreateNestedManyWithoutHandlerPersonnelInput;
@@ -1050,18 +979,15 @@ export type PersonnelCreateWithoutWorkshopMaterialOrdersInput = {
 
 export type PersonnelUncheckedCreateWithoutWorkshopMaterialOrdersInput = {
   id?: number;
-  personnelCode: string;
   personnelName: string;
   status?: $Enums.MasterDataStatus;
-  creationMode?: $Enums.DataCreationMode;
-  sourceDocumentType?: string | null;
-  sourceDocumentId?: number | null;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
   updatedAt?: Date | string;
   stockInOrders?: Prisma.StockInOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   customerStockOrders?: Prisma.CustomerStockOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUncheckedCreateNestedManyWithoutDefaultHandlerPersonnelInput;
   managedProjects?: Prisma.ProjectUncheckedCreateNestedManyWithoutManagerPersonnelInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
@@ -1096,28 +1022,17 @@ export type PersonnelUpdateToOneWithWhereWithoutWorkshopMaterialOrdersInput = {
 };
 
 export type PersonnelUpdateWithoutWorkshopMaterialOrdersInput = {
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   stockInOrders?: Prisma.StockInOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutHandlerPersonnelNestedInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUpdateManyWithoutDefaultHandlerPersonnelNestedInput;
   managedProjects?: Prisma.ProjectUpdateManyWithoutManagerPersonnelNestedInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUpdateManyWithoutHandlerPersonnelNestedInput;
@@ -1125,40 +1040,25 @@ export type PersonnelUpdateWithoutWorkshopMaterialOrdersInput = {
 
 export type PersonnelUncheckedUpdateWithoutWorkshopMaterialOrdersInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   stockInOrders?: Prisma.StockInOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   customerStockOrders?: Prisma.CustomerStockOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUncheckedUpdateManyWithoutDefaultHandlerPersonnelNestedInput;
   managedProjects?: Prisma.ProjectUncheckedUpdateManyWithoutManagerPersonnelNestedInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
 };
 
 export type PersonnelCreateWithoutManagedProjectsInput = {
-  personnelCode: string;
   personnelName: string;
   status?: $Enums.MasterDataStatus;
-  creationMode?: $Enums.DataCreationMode;
-  sourceDocumentType?: string | null;
-  sourceDocumentId?: number | null;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
@@ -1166,18 +1066,15 @@ export type PersonnelCreateWithoutManagedProjectsInput = {
   stockInOrders?: Prisma.StockInOrderCreateNestedManyWithoutHandlerPersonnelInput;
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutHandlerPersonnelInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutHandlerPersonnelInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopCreateNestedManyWithoutDefaultHandlerPersonnelInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutHandlerPersonnelInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestCreateNestedManyWithoutHandlerPersonnelInput;
 };
 
 export type PersonnelUncheckedCreateWithoutManagedProjectsInput = {
   id?: number;
-  personnelCode: string;
   personnelName: string;
   status?: $Enums.MasterDataStatus;
-  creationMode?: $Enums.DataCreationMode;
-  sourceDocumentType?: string | null;
-  sourceDocumentId?: number | null;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
@@ -1185,6 +1082,7 @@ export type PersonnelUncheckedCreateWithoutManagedProjectsInput = {
   stockInOrders?: Prisma.StockInOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   customerStockOrders?: Prisma.CustomerStockOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUncheckedCreateNestedManyWithoutDefaultHandlerPersonnelInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
 };
@@ -1218,22 +1116,10 @@ export type PersonnelUpdateToOneWithWhereWithoutManagedProjectsInput = {
 };
 
 export type PersonnelUpdateWithoutManagedProjectsInput = {
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1241,28 +1127,17 @@ export type PersonnelUpdateWithoutManagedProjectsInput = {
   stockInOrders?: Prisma.StockInOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutHandlerPersonnelNestedInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUpdateManyWithoutDefaultHandlerPersonnelNestedInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUpdateManyWithoutHandlerPersonnelNestedInput;
 };
 
 export type PersonnelUncheckedUpdateWithoutManagedProjectsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1270,17 +1145,14 @@ export type PersonnelUncheckedUpdateWithoutManagedProjectsInput = {
   stockInOrders?: Prisma.StockInOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   customerStockOrders?: Prisma.CustomerStockOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUncheckedUpdateManyWithoutDefaultHandlerPersonnelNestedInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
 };
 
 export type PersonnelCreateWithoutRdHandoffOrdersInput = {
-  personnelCode: string;
   personnelName: string;
   status?: $Enums.MasterDataStatus;
-  creationMode?: $Enums.DataCreationMode;
-  sourceDocumentType?: string | null;
-  sourceDocumentId?: number | null;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
@@ -1288,18 +1160,15 @@ export type PersonnelCreateWithoutRdHandoffOrdersInput = {
   stockInOrders?: Prisma.StockInOrderCreateNestedManyWithoutHandlerPersonnelInput;
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutHandlerPersonnelInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutHandlerPersonnelInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopCreateNestedManyWithoutDefaultHandlerPersonnelInput;
   managedProjects?: Prisma.ProjectCreateNestedManyWithoutManagerPersonnelInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestCreateNestedManyWithoutHandlerPersonnelInput;
 };
 
 export type PersonnelUncheckedCreateWithoutRdHandoffOrdersInput = {
   id?: number;
-  personnelCode: string;
   personnelName: string;
   status?: $Enums.MasterDataStatus;
-  creationMode?: $Enums.DataCreationMode;
-  sourceDocumentType?: string | null;
-  sourceDocumentId?: number | null;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
@@ -1307,6 +1176,7 @@ export type PersonnelUncheckedCreateWithoutRdHandoffOrdersInput = {
   stockInOrders?: Prisma.StockInOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   customerStockOrders?: Prisma.CustomerStockOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUncheckedCreateNestedManyWithoutDefaultHandlerPersonnelInput;
   managedProjects?: Prisma.ProjectUncheckedCreateNestedManyWithoutManagerPersonnelInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
 };
@@ -1340,22 +1210,10 @@ export type PersonnelUpdateToOneWithWhereWithoutRdHandoffOrdersInput = {
 };
 
 export type PersonnelUpdateWithoutRdHandoffOrdersInput = {
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1363,28 +1221,17 @@ export type PersonnelUpdateWithoutRdHandoffOrdersInput = {
   stockInOrders?: Prisma.StockInOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutHandlerPersonnelNestedInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUpdateManyWithoutDefaultHandlerPersonnelNestedInput;
   managedProjects?: Prisma.ProjectUpdateManyWithoutManagerPersonnelNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUpdateManyWithoutHandlerPersonnelNestedInput;
 };
 
 export type PersonnelUncheckedUpdateWithoutRdHandoffOrdersInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1392,17 +1239,14 @@ export type PersonnelUncheckedUpdateWithoutRdHandoffOrdersInput = {
   stockInOrders?: Prisma.StockInOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   customerStockOrders?: Prisma.CustomerStockOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUncheckedUpdateManyWithoutDefaultHandlerPersonnelNestedInput;
   managedProjects?: Prisma.ProjectUncheckedUpdateManyWithoutManagerPersonnelNestedInput;
   rdProcurementRequests?: Prisma.RdProcurementRequestUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
 };
 
 export type PersonnelCreateWithoutRdProcurementRequestsInput = {
-  personnelCode: string;
   personnelName: string;
   status?: $Enums.MasterDataStatus;
-  creationMode?: $Enums.DataCreationMode;
-  sourceDocumentType?: string | null;
-  sourceDocumentId?: number | null;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
@@ -1410,18 +1254,15 @@ export type PersonnelCreateWithoutRdProcurementRequestsInput = {
   stockInOrders?: Prisma.StockInOrderCreateNestedManyWithoutHandlerPersonnelInput;
   customerStockOrders?: Prisma.CustomerStockOrderCreateNestedManyWithoutHandlerPersonnelInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderCreateNestedManyWithoutHandlerPersonnelInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopCreateNestedManyWithoutDefaultHandlerPersonnelInput;
   managedProjects?: Prisma.ProjectCreateNestedManyWithoutManagerPersonnelInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderCreateNestedManyWithoutHandlerPersonnelInput;
 };
 
 export type PersonnelUncheckedCreateWithoutRdProcurementRequestsInput = {
   id?: number;
-  personnelCode: string;
   personnelName: string;
   status?: $Enums.MasterDataStatus;
-  creationMode?: $Enums.DataCreationMode;
-  sourceDocumentType?: string | null;
-  sourceDocumentId?: number | null;
   createdBy?: string | null;
   createdAt?: Date | string;
   updatedBy?: string | null;
@@ -1429,6 +1270,7 @@ export type PersonnelUncheckedCreateWithoutRdProcurementRequestsInput = {
   stockInOrders?: Prisma.StockInOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   customerStockOrders?: Prisma.CustomerStockOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUncheckedCreateNestedManyWithoutDefaultHandlerPersonnelInput;
   managedProjects?: Prisma.ProjectUncheckedCreateNestedManyWithoutManagerPersonnelInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUncheckedCreateNestedManyWithoutHandlerPersonnelInput;
 };
@@ -1462,22 +1304,10 @@ export type PersonnelUpdateToOneWithWhereWithoutRdProcurementRequestsInput = {
 };
 
 export type PersonnelUpdateWithoutRdProcurementRequestsInput = {
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1485,28 +1315,17 @@ export type PersonnelUpdateWithoutRdProcurementRequestsInput = {
   stockInOrders?: Prisma.StockInOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   customerStockOrders?: Prisma.CustomerStockOrderUpdateManyWithoutHandlerPersonnelNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUpdateManyWithoutHandlerPersonnelNestedInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUpdateManyWithoutDefaultHandlerPersonnelNestedInput;
   managedProjects?: Prisma.ProjectUpdateManyWithoutManagerPersonnelNestedInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUpdateManyWithoutHandlerPersonnelNestedInput;
 };
 
 export type PersonnelUncheckedUpdateWithoutRdProcurementRequestsInput = {
   id?: Prisma.IntFieldUpdateOperationsInput | number;
-  personnelCode?: Prisma.StringFieldUpdateOperationsInput | string;
   personnelName?: Prisma.StringFieldUpdateOperationsInput | string;
   status?:
     | Prisma.EnumMasterDataStatusFieldUpdateOperationsInput
     | $Enums.MasterDataStatus;
-  creationMode?:
-    | Prisma.EnumDataCreationModeFieldUpdateOperationsInput
-    | $Enums.DataCreationMode;
-  sourceDocumentType?:
-    | Prisma.NullableStringFieldUpdateOperationsInput
-    | string
-    | null;
-  sourceDocumentId?:
-    | Prisma.NullableIntFieldUpdateOperationsInput
-    | number
-    | null;
   createdBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
   updatedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
@@ -1514,6 +1333,7 @@ export type PersonnelUncheckedUpdateWithoutRdProcurementRequestsInput = {
   stockInOrders?: Prisma.StockInOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   customerStockOrders?: Prisma.CustomerStockOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
   workshopMaterialOrders?: Prisma.WorkshopMaterialOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
+  defaultHandlerWorkshops?: Prisma.WorkshopUncheckedUpdateManyWithoutDefaultHandlerPersonnelNestedInput;
   managedProjects?: Prisma.ProjectUncheckedUpdateManyWithoutManagerPersonnelNestedInput;
   rdHandoffOrders?: Prisma.RdHandoffOrderUncheckedUpdateManyWithoutHandlerPersonnelNestedInput;
 };
@@ -1526,6 +1346,7 @@ export type PersonnelCountOutputType = {
   stockInOrders: number;
   customerStockOrders: number;
   workshopMaterialOrders: number;
+  defaultHandlerWorkshops: number;
   managedProjects: number;
   rdHandoffOrders: number;
   rdProcurementRequests: number;
@@ -1542,6 +1363,9 @@ export type PersonnelCountOutputTypeSelect<
   workshopMaterialOrders?:
     | boolean
     | PersonnelCountOutputTypeCountWorkshopMaterialOrdersArgs;
+  defaultHandlerWorkshops?:
+    | boolean
+    | PersonnelCountOutputTypeCountDefaultHandlerWorkshopsArgs;
   managedProjects?: boolean | PersonnelCountOutputTypeCountManagedProjectsArgs;
   rdHandoffOrders?: boolean | PersonnelCountOutputTypeCountRdHandoffOrdersArgs;
   rdProcurementRequests?:
@@ -1595,6 +1419,16 @@ export type PersonnelCountOutputTypeCountWorkshopMaterialOrdersArgs<
 /**
  * PersonnelCountOutputType without action
  */
+export type PersonnelCountOutputTypeCountDefaultHandlerWorkshopsArgs<
+  ExtArgs extends
+    runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  where?: Prisma.WorkshopWhereInput;
+};
+
+/**
+ * PersonnelCountOutputType without action
+ */
 export type PersonnelCountOutputTypeCountManagedProjectsArgs<
   ExtArgs extends
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
@@ -1628,12 +1462,8 @@ export type PersonnelSelect<
 > = runtime.Types.Extensions.GetSelect<
   {
     id?: boolean;
-    personnelCode?: boolean;
     personnelName?: boolean;
     status?: boolean;
-    creationMode?: boolean;
-    sourceDocumentType?: boolean;
-    sourceDocumentId?: boolean;
     createdBy?: boolean;
     createdAt?: boolean;
     updatedBy?: boolean;
@@ -1645,6 +1475,9 @@ export type PersonnelSelect<
     workshopMaterialOrders?:
       | boolean
       | Prisma.Personnel$workshopMaterialOrdersArgs<ExtArgs>;
+    defaultHandlerWorkshops?:
+      | boolean
+      | Prisma.Personnel$defaultHandlerWorkshopsArgs<ExtArgs>;
     managedProjects?: boolean | Prisma.Personnel$managedProjectsArgs<ExtArgs>;
     rdHandoffOrders?: boolean | Prisma.Personnel$rdHandoffOrdersArgs<ExtArgs>;
     rdProcurementRequests?:
@@ -1657,12 +1490,8 @@ export type PersonnelSelect<
 
 export type PersonnelSelectScalar = {
   id?: boolean;
-  personnelCode?: boolean;
   personnelName?: boolean;
   status?: boolean;
-  creationMode?: boolean;
-  sourceDocumentType?: boolean;
-  sourceDocumentId?: boolean;
   createdBy?: boolean;
   createdAt?: boolean;
   updatedBy?: boolean;
@@ -1674,12 +1503,8 @@ export type PersonnelOmit<
     runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
 > = runtime.Types.Extensions.GetOmit<
   | "id"
-  | "personnelCode"
   | "personnelName"
   | "status"
-  | "creationMode"
-  | "sourceDocumentType"
-  | "sourceDocumentId"
   | "createdBy"
   | "createdAt"
   | "updatedBy"
@@ -1697,6 +1522,9 @@ export type PersonnelInclude<
   workshopMaterialOrders?:
     | boolean
     | Prisma.Personnel$workshopMaterialOrdersArgs<ExtArgs>;
+  defaultHandlerWorkshops?:
+    | boolean
+    | Prisma.Personnel$defaultHandlerWorkshopsArgs<ExtArgs>;
   managedProjects?: boolean | Prisma.Personnel$managedProjectsArgs<ExtArgs>;
   rdHandoffOrders?: boolean | Prisma.Personnel$rdHandoffOrdersArgs<ExtArgs>;
   rdProcurementRequests?:
@@ -1714,6 +1542,7 @@ export type $PersonnelPayload<
     stockInOrders: Prisma.$StockInOrderPayload<ExtArgs>[];
     customerStockOrders: Prisma.$CustomerStockOrderPayload<ExtArgs>[];
     workshopMaterialOrders: Prisma.$WorkshopMaterialOrderPayload<ExtArgs>[];
+    defaultHandlerWorkshops: Prisma.$WorkshopPayload<ExtArgs>[];
     managedProjects: Prisma.$ProjectPayload<ExtArgs>[];
     rdHandoffOrders: Prisma.$RdHandoffOrderPayload<ExtArgs>[];
     rdProcurementRequests: Prisma.$RdProcurementRequestPayload<ExtArgs>[];
@@ -1721,12 +1550,8 @@ export type $PersonnelPayload<
   scalars: runtime.Types.Extensions.GetPayloadResult<
     {
       id: number;
-      personnelCode: string;
       personnelName: string;
       status: $Enums.MasterDataStatus;
-      creationMode: $Enums.DataCreationMode;
-      sourceDocumentType: string | null;
-      sourceDocumentId: number | null;
       createdBy: string | null;
       createdAt: Date;
       updatedBy: string | null;
@@ -2249,6 +2074,22 @@ export interface Prisma__PersonnelClient<
       >
     | Null
   >;
+  defaultHandlerWorkshops<
+    T extends Prisma.Personnel$defaultHandlerWorkshopsArgs<ExtArgs> = {},
+  >(
+    args?: Prisma.Subset<
+      T,
+      Prisma.Personnel$defaultHandlerWorkshopsArgs<ExtArgs>
+    >,
+  ): Prisma.PrismaPromise<
+    | runtime.Types.Result.GetResult<
+        Prisma.$WorkshopPayload<ExtArgs>,
+        T,
+        "findMany",
+        GlobalOmitOptions
+      >
+    | Null
+  >;
   managedProjects<T extends Prisma.Personnel$managedProjectsArgs<ExtArgs> = {}>(
     args?: Prisma.Subset<T, Prisma.Personnel$managedProjectsArgs<ExtArgs>>,
   ): Prisma.PrismaPromise<
@@ -2330,12 +2171,8 @@ export interface Prisma__PersonnelClient<
  */
 export interface PersonnelFieldRefs {
   readonly id: Prisma.FieldRef<"Personnel", "Int">;
-  readonly personnelCode: Prisma.FieldRef<"Personnel", "String">;
   readonly personnelName: Prisma.FieldRef<"Personnel", "String">;
   readonly status: Prisma.FieldRef<"Personnel", "MasterDataStatus">;
-  readonly creationMode: Prisma.FieldRef<"Personnel", "DataCreationMode">;
-  readonly sourceDocumentType: Prisma.FieldRef<"Personnel", "String">;
-  readonly sourceDocumentId: Prisma.FieldRef<"Personnel", "Int">;
   readonly createdBy: Prisma.FieldRef<"Personnel", "String">;
   readonly createdAt: Prisma.FieldRef<"Personnel", "DateTime">;
   readonly updatedBy: Prisma.FieldRef<"Personnel", "String">;
@@ -2840,6 +2677,35 @@ export type Personnel$workshopMaterialOrdersArgs<
   distinct?:
     | Prisma.WorkshopMaterialOrderScalarFieldEnum
     | Prisma.WorkshopMaterialOrderScalarFieldEnum[];
+};
+
+/**
+ * Personnel.defaultHandlerWorkshops
+ */
+export type Personnel$defaultHandlerWorkshopsArgs<
+  ExtArgs extends
+    runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs,
+> = {
+  /**
+   * Select specific fields to fetch from the Workshop
+   */
+  select?: Prisma.WorkshopSelect<ExtArgs> | null;
+  /**
+   * Omit specific fields from the Workshop
+   */
+  omit?: Prisma.WorkshopOmit<ExtArgs> | null;
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.WorkshopInclude<ExtArgs> | null;
+  where?: Prisma.WorkshopWhereInput;
+  orderBy?:
+    | Prisma.WorkshopOrderByWithRelationInput
+    | Prisma.WorkshopOrderByWithRelationInput[];
+  cursor?: Prisma.WorkshopWhereUniqueInput;
+  take?: number;
+  skip?: number;
+  distinct?: Prisma.WorkshopScalarFieldEnum | Prisma.WorkshopScalarFieldEnum[];
 };
 
 /**

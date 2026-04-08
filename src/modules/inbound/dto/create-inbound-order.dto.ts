@@ -16,10 +16,10 @@ import { StockInOrderType } from "../../../generated/prisma/client";
 import { CreateInboundOrderLineDto } from "./create-inbound-order-line.dto";
 
 export class CreateInboundOrderDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(64)
-  documentNo!: string;
+  documentNo?: string;
 
   @IsEnum(StockInOrderType)
   orderType!: StockInOrderType;
@@ -38,8 +38,9 @@ export class CreateInboundOrderDto {
   handlerPersonnelId?: number;
 
   @IsInt()
+  @IsOptional()
   @Min(1)
-  workshopId!: number;
+  workshopId?: number;
 
   @IsInt()
   @IsOptional()

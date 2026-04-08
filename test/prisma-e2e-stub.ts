@@ -227,7 +227,6 @@ function createMemoryModel<T extends MemoryRecord>() {
 function createSeededWorkshopModel() {
   const model = createMemoryModel<{
     id: number;
-    workshopCode: string;
     workshopName: string;
     status: string;
     createdAt: Date;
@@ -238,15 +237,25 @@ function createSeededWorkshopModel() {
   void model.createMany({
     data: [
       {
-        workshopCode: "MAIN",
-        workshopName: "主仓",
+        workshopName: "装备车间",
         status: "ACTIVE",
         createdAt: now,
         updatedAt: now,
       },
       {
-        workshopCode: "RD",
-        workshopName: "研发小仓",
+        workshopName: "硐室车间",
+        status: "ACTIVE",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        workshopName: "配件车间",
+        status: "ACTIVE",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        workshopName: "电子车间",
         status: "ACTIVE",
         createdAt: now,
         updatedAt: now,

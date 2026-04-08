@@ -24,7 +24,6 @@ describe("JwtAuthGuard", () => {
     workshopScope: {
       mode: "ALL",
       workshopId: null,
-      workshopCode: null,
       workshopName: null,
     },
   };

@@ -9,7 +9,6 @@ export type StockScopeCode = "MAIN" | "RD_SUB";
 export interface SessionWorkshopScopeSnapshot {
   mode: "ALL" | "FIXED";
   workshopId: number | null;
-  workshopCode?: string | null;
   workshopName: string | null;
 }
 
@@ -34,7 +33,6 @@ export function createAllSessionWorkshopScope(): SessionWorkshopScopeSnapshot {
   return {
     mode: "ALL",
     workshopId: null,
-    workshopCode: null,
     workshopName: null,
   };
 }

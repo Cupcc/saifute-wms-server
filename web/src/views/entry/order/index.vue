@@ -183,7 +183,11 @@
         <el-row>
           <el-col :span="12">
             <el-form-item label="验收单号" prop="inboundNo">
-              <el-input v-model="form.inboundNo" placeholder="请输入验收单号" :disabled="form.inboundId != null"/>
+              <el-input
+                v-model="form.inboundNo"
+                :placeholder="form.inboundId ? '验收单号' : '保存后自动生成'"
+                disabled
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -193,7 +197,6 @@
                 type="date"
                 value-format="YYYY-MM-DD"
                 placeholder="请选择验收日期"
-                @change="handleDateChange"
                 :disabled="form.inboundId != null">
               </el-date-picker>
             </el-form-item>
@@ -216,7 +219,7 @@
 			          :remote-method="searchWorkshopForForm"
 			          :loading="workshopLoadingForForm"
 			          style="width: 100%"
-			          :disabled="form.intoId != null">
+			          :disabled="form.inboundId != null">
 			          <el-option
 				          v-for="item in workshopOptionsForForm"
 				          :key="item.workshopId"
@@ -523,7 +526,7 @@ import {
 } from "@/api/rd-subwarehouse";
 import useAiActionStore from "@/store/modules/aiAction";
 import useUserStore from "@/store/modules/user";
-import { formatDateToYYYYMMDD, generateOrderNo } from "@/utils/orderNumber";
+import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
 
 const username = computed(() => useUserStore().name);
 
@@ -582,12 +585,13 @@ const data = reactive({
     materialName: null,
   },
   rules: {
-    inboundNo: [
-      { required: true, message: "验收单号不能为空", trigger: "blur" },
-    ],
     inboundDate: [
       { required: true, message: "验收日期不能为空", trigger: "change" },
     ],
+    workshopId: [
+      { required: true, message: "关联部门不能为空", trigger: "change" },
+    ],
+    supplierId: [{ required: true, message: "供应商不能为空", trigger: "change" }],
   },
   abandonForm: {},
   abandonRules: {
@@ -976,40 +980,7 @@ function handleAdd() {
   isView.value = false;
   title.value = "添加验收单";
   open.value = true;
-  dialogLoading.value = true;
-  generateInboundNo(today)
-    .then((inboundNo) => {
-      form.value.inboundNo = inboundNo;
-    })
-    .finally(() => {
-      dialogLoading.value = false;
-    });
-}
-
-/**
- * 生成验收单号
- */
-async function generateInboundNo(date) {
-  // 查询当天已有的验收单号，找出最大流水号
-  const params = {
-    params: {
-      beginTime: formatDateToYYYYMMDD(date),
-      endTime: formatDateToYYYYMMDD(date),
-    },
-  };
-
-  return generateOrderNo(date, "YS", listOrder, params, "inboundNo");
-}
-
-/**
- * 处理日期更改事件，重新生成验收单号
- */
-async function handleDateChange(val) {
-  if (val) {
-    const newDate = new Date(val);
-    const newInboundNo = await generateInboundNo(newDate);
-    form.value.inboundNo = newInboundNo;
-  }
+  dialogLoading.value = false;
 }
 
 /** 修改按钮操作 */

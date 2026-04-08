@@ -122,27 +122,31 @@ export function mapSupplier(item) {
   };
 }
 
-export function mapPersonnel(item, query = {}) {
+export function mapPersonnel(item) {
   return {
     personnelId: item.id,
-    type:
-      typeof query.type === "undefined" || query.type === null
-        ? 1
-        : Number(query.type),
-    code: item.personnelCode,
     name: item.personnelName,
-    contactPhone: "",
+    status: item.status ?? "ACTIVE",
   };
 }
 
 export function mapWorkshop(item) {
+  const defaultHandler =
+    item.defaultHandlerPersonnel && typeof item.defaultHandlerPersonnel === "object"
+      ? item.defaultHandlerPersonnel
+      : null;
+
   return {
     workshopId: item.id,
-    workshopCode: item.workshopCode,
     workshopName: item.workshopName,
+    defaultHandlerPersonnelId:
+      defaultHandler?.id ?? item.defaultHandlerPersonnelId ?? null,
+    defaultHandlerPersonnelName:
+      defaultHandler?.personnelName ?? item.defaultHandlerPersonnelName ?? "",
     status: item.status ?? "ACTIVE",
     contactPerson: "",
-    chargeBy: "",
+    chargeBy:
+      defaultHandler?.personnelName ?? item.defaultHandlerPersonnelName ?? "",
   };
 }
 

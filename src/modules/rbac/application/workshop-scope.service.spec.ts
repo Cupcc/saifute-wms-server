@@ -19,14 +19,8 @@ describe("WorkshopScopeService", () => {
               scopeCode: "RD_SUB",
               scopeName: "研发小仓",
             }),
-            getWorkshopByCode: jest.fn().mockResolvedValue({
-              id: 88,
-              workshopCode: "RD",
-              workshopName: "研发小仓",
-            }),
             getWorkshopByName: jest.fn().mockResolvedValue({
               id: 88,
-              workshopCode: "RD",
               workshopName: "研发小仓",
             }),
           },
@@ -54,7 +48,6 @@ describe("WorkshopScopeService", () => {
     workshopScope: {
       mode: "FIXED",
       workshopId: null,
-      workshopCode: "RD",
       workshopName: "研发小仓",
     },
   };

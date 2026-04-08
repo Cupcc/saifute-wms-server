@@ -115,7 +115,7 @@
 
 **使用注意**
 
-- 人员编码在系统内唯一。
+- 人员主档当前仅维护名称与启停状态，不支持单据自动补建。
 - 停用人员不会影响其出现在历史单据快照中；但新建单据时将不再出现在经办人下拉列表中。
 - 若某位仓管离职，建议及时将其停用，避免新单据误选。
 
@@ -141,7 +141,8 @@
 
 **使用注意**
 
-- 车间编码在系统内唯一。
+- 车间名称在系统内唯一。
+- 可为车间配置一个默认经办人；领料时可自动带出，但允许人工改写。
 - 停用车间后，新建单据将无法选择该车间；已完结的历史单据快照不受影响。
 
 ---
@@ -293,14 +294,13 @@
 - In scope:
   - 人员的新增、修改、逻辑停用
   - 列表与搜索查询
-  - 受控自动补建路径（历史兼容场景）
 - Out of scope / non-goals:
   - 人员与系统账号（`sys_user`）的关联或合并（已确认长期两套独立维护，见 `C6`）
   - 人员部门归属（当前阶段不建立人员-部门关系）
+  - 单据驱动的人员自动补建
 - Completion criteria:
-  - `[TC-1]` 新增人员时，人员编码全局唯一。
+  - `[TC-1]` 新增人员时，`personnelName` 必填。
   - `[TC-2]` 停用人员后，新建单据时经办人下拉列表中不再出现该人员。
-  - `[TC-3]` 自动补建人员时，`creationMode = AUTO_CREATED` 且来源字段完整。
 - Evidence expectation:
   - 接口联调可通过，停用后经办人下拉不出现有测试覆盖。
 - Default derived slice acceptance mode: `light`
@@ -316,9 +316,10 @@
   - 车间不维护独立库存余额，不作为库存池
   - 车间与部门（`sys_dept`）的映射关系在本能力中不强制要求
 - Completion criteria:
-  - `[TC-1]` 新增车间时，车间编码全局唯一。
+  - `[TC-1]` 新增车间时，车间名称全局唯一。
   - `[TC-2]` 停用车间后，新建单据时车间下拉列表中不再出现该车间。
-  - `[TC-3]` 不存在以车间维度独立计算的库存余额表；车间仅作为 `inventory_balance` 中的归属维度字段存在。
+  - `[TC-3]` 可为车间配置默认经办人；领料时自动带出但不强制锁定。
+  - `[TC-4]` 不存在以车间维度独立计算的库存余额表；车间仅作为 `inventory_balance` 中的归属维度字段存在。
 - Evidence expectation:
   - 接口联调可通过，停用后下拉不出现有测试覆盖。
 - Default derived slice acceptance mode: `light`
@@ -423,4 +424,3 @@
 - 架构设计：`docs/architecture/modules/master-data.md`
 - 数据库 Schema：`docs/architecture/20-wms-database-tables-and-schema.md`（第 4.1 节）
 - 后续交付时，直接从本 domain 能力合同创建 `docs/tasks/task-*.md`（`Related requirement` 指向本 domain 对应 `Fx`）。
-

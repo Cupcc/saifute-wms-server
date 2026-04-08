@@ -14,10 +14,10 @@ import {
 import { CreateRdHandoffOrderLineDto } from "./create-rd-handoff-order-line.dto";
 
 export class CreateRdHandoffOrderDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(64)
-  documentNo!: string;
+  documentNo?: string;
 
   @IsDateString()
   bizDate!: string;

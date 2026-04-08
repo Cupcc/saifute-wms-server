@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -11,6 +10,10 @@ import {
   InventoryOperationType,
   Prisma,
 } from "../../../generated/prisma/client";
+import {
+  buildCompactDocumentNo,
+  createWithGeneratedDocumentNo,
+} from "../../../shared/common/document-number.util";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { ApprovalService } from "../../approval/application/approval.service";
 import {
@@ -65,212 +68,214 @@ export class StockInPriceCorrectionService {
     dto: CreateStockInPriceCorrectionOrderDto,
     createdBy?: string,
   ) {
-    const existing = await this.repository.findOrderByDocumentNo(
-      dto.documentNo,
-    );
-    if (existing) {
-      throw new ConflictException(`单据编号已存在: ${dto.documentNo}`);
-    }
+    const bizDate = new Date(dto.bizDate);
+    const workshopId = this.requireWorkshopId(dto.workshopId);
 
-    const workshop = await this.masterDataService.getWorkshopById(
-      dto.workshopId,
-    );
+    const workshop = await this.masterDataService.getWorkshopById(workshopId);
     const stockScopeRecord =
       await this.masterDataService.getStockScopeByCode("MAIN");
     this.assertNoDuplicateSourceLogs(dto.lines);
 
-    const createdOrder = await this.prisma.runInTransaction(async (tx) => {
-      const order = await this.repository.createOrder(
-        {
-          documentNo: dto.documentNo,
-          bizDate: new Date(dto.bizDate),
-          stockScopeId: stockScopeRecord.id,
-          workshopId: dto.workshopId,
-          lifecycleStatus: DocumentLifecycleStatus.EFFECTIVE,
-          auditStatusSnapshot: AuditStatusSnapshot.PENDING,
-          totalLineCount: dto.lines.length,
-          totalHistoricalDiffAmount: 0,
-          remark: dto.remark,
-          createdBy,
-          updatedBy: createdBy,
-        },
-        tx,
-      );
-
-      let totalHistoricalDiffAmount = new Prisma.Decimal(0);
-
-      for (let index = 0; index < dto.lines.length; index++) {
-        const lineDto = dto.lines[index];
-        const correctUnitCost = this.toPositiveMoney(
-          lineDto.correctUnitCost,
-          "correctUnitCost",
-        );
-
-        await tx.$queryRaw`
-          SELECT id
-          FROM inventory_log
-          WHERE id = ${lineDto.sourceInventoryLogId}
-          FOR UPDATE
-        `;
-
-        const sourceLog = await tx.inventoryLog.findUnique({
-          where: { id: lineDto.sourceInventoryLogId },
-        });
-        if (!sourceLog) {
-          throw new NotFoundException(
-            `来源库存流水不存在: ${lineDto.sourceInventoryLogId}`,
-          );
-        }
-
-        await this.assertSourceLogEligible(
-          sourceLog,
-          lineDto.materialId,
-          stockScopeRecord.id,
-          dto.workshopId,
-          tx,
-        );
-
-        const sourceUsageRows = await tx.inventorySourceUsage.findMany({
-          where: { sourceLogId: sourceLog.id },
-          select: { allocatedQty: true, releasedQty: true },
-        });
-        const consumedQtyAtCorrection = sourceUsageRows.reduce(
-          (sum, usage) =>
-            sum
-              .add(new Prisma.Decimal(usage.allocatedQty))
-              .sub(new Prisma.Decimal(usage.releasedQty)),
-          new Prisma.Decimal(0),
-        );
-        const sourceInQty = new Prisma.Decimal(sourceLog.changeQty);
-        const remainingQtyAtCorrection = sourceInQty.sub(
-          consumedQtyAtCorrection,
-        );
-        if (remainingQtyAtCorrection.lt(0)) {
-          throw new BadRequestException(
-            `来源库存流水剩余数量异常: sourceLogId=${sourceLog.id}`,
-          );
-        }
-
-        const wrongUnitCost = sourceLog.unitCost
-          ? new Prisma.Decimal(sourceLog.unitCost)
-          : null;
-        if (!wrongUnitCost) {
-          throw new BadRequestException(
-            `来源库存流水缺少成本价快照: ${sourceLog.id}`,
-          );
-        }
-
-        const sourceReference = await this.resolveSourceReference(
-          sourceLog,
-          tx,
-        );
-        const historicalDiffAmount = correctUnitCost
-          .sub(wrongUnitCost)
-          .mul(consumedQtyAtCorrection);
-        totalHistoricalDiffAmount =
-          totalHistoricalDiffAmount.add(historicalDiffAmount);
-
-        const createdLine = await this.repository.createOrderLine(
+    const createdOrder = await createWithGeneratedDocumentNo((attempt) => {
+      const documentNo = buildCompactDocumentNo("PC", bizDate, attempt);
+      return this.prisma.runInTransaction(async (tx) => {
+        const order = await this.repository.createOrder(
           {
-            orderId: order.id,
-            lineNo: index + 1,
-            materialId: lineDto.materialId,
-            sourceStockInOrderId: sourceReference.sourceStockInOrderId,
-            sourceStockInOrderLineId: sourceReference.sourceStockInOrderLineId,
-            sourceInventoryLogId: sourceLog.id,
-            sourceDocumentNoSnapshot: sourceReference.sourceDocumentNoSnapshot,
-            sourceBizDateSnapshot: sourceReference.sourceBizDateSnapshot,
-            wrongUnitCost,
-            correctUnitCost,
-            sourceInQty,
-            consumedQtyAtCorrection,
-            remainingQtyAtCorrection,
-            historicalDiffAmount,
-            remark: null,
+            documentNo,
+            bizDate,
+            stockScopeId: stockScopeRecord.id,
+            workshopId,
+            lifecycleStatus: DocumentLifecycleStatus.EFFECTIVE,
+            auditStatusSnapshot: AuditStatusSnapshot.PENDING,
+            totalLineCount: dto.lines.length,
+            totalHistoricalDiffAmount: 0,
+            remark: dto.remark,
             createdBy,
             updatedBy: createdBy,
           },
           tx,
         );
 
-        if (remainingQtyAtCorrection.gt(0)) {
-          const correctionOut = await this.inventoryService.settleConsumerOut(
-            {
-              materialId: sourceLog.materialId,
-              workshopId: sourceLog.workshopId ?? undefined,
-              quantity: remainingQtyAtCorrection,
-              operationType: InventoryOperationType.PRICE_CORRECTION_OUT,
-              businessModule: BUSINESS_MODULE,
-              businessDocumentType: DOCUMENT_TYPE,
-              businessDocumentId: order.id,
-              businessDocumentNumber: order.documentNo,
-              businessDocumentLineId: createdLine.id,
-              operatorId: createdBy,
-              idempotencyKey: `StockInPriceCorrectionOrder:${order.id}:line:${createdLine.id}:out`,
-              consumerLineId: createdLine.id,
-              sourceLogId: sourceLog.id,
-              sourceOperationTypes: FIFO_SOURCE_OPERATION_TYPES,
-            },
+        let totalHistoricalDiffAmount = new Prisma.Decimal(0);
+
+        for (let index = 0; index < dto.lines.length; index++) {
+          const lineDto = dto.lines[index];
+          const correctUnitCost = this.toPositiveMoney(
+            lineDto.correctUnitCost,
+            "correctUnitCost",
+          );
+
+          await tx.$queryRaw`
+            SELECT id
+            FROM inventory_log
+            WHERE id = ${lineDto.sourceInventoryLogId}
+            FOR UPDATE
+          `;
+
+          const sourceLog = await tx.inventoryLog.findUnique({
+            where: { id: lineDto.sourceInventoryLogId },
+          });
+          if (!sourceLog) {
+            throw new NotFoundException(
+              `来源库存流水不存在: ${lineDto.sourceInventoryLogId}`,
+            );
+          }
+
+          await this.assertSourceLogEligible(
+            sourceLog,
+            lineDto.materialId,
+            stockScopeRecord.id,
+            workshopId,
             tx,
           );
 
-          const correctionIn = await this.inventoryService.increaseStock(
-            {
-              materialId: sourceLog.materialId,
-              workshopId: sourceLog.workshopId ?? undefined,
-              quantity: remainingQtyAtCorrection,
-              operationType: InventoryOperationType.PRICE_CORRECTION_IN,
-              businessModule: BUSINESS_MODULE,
-              businessDocumentType: DOCUMENT_TYPE,
-              businessDocumentId: order.id,
-              businessDocumentNumber: order.documentNo,
-              businessDocumentLineId: createdLine.id,
-              operatorId: createdBy,
-              idempotencyKey: `StockInPriceCorrectionOrder:${order.id}:line:${createdLine.id}:in`,
-              unitCost: correctUnitCost,
-              costAmount: correctUnitCost.mul(remainingQtyAtCorrection),
-            },
+          const sourceUsageRows = await tx.inventorySourceUsage.findMany({
+            where: { sourceLogId: sourceLog.id },
+            select: { allocatedQty: true, releasedQty: true },
+          });
+          const consumedQtyAtCorrection = sourceUsageRows.reduce(
+            (sum, usage) =>
+              sum
+                .add(new Prisma.Decimal(usage.allocatedQty))
+                .sub(new Prisma.Decimal(usage.releasedQty)),
+            new Prisma.Decimal(0),
+          );
+          const sourceInQty = new Prisma.Decimal(sourceLog.changeQty);
+          const remainingQtyAtCorrection = sourceInQty.sub(
+            consumedQtyAtCorrection,
+          );
+          if (remainingQtyAtCorrection.lt(0)) {
+            throw new BadRequestException(
+              `来源库存流水剩余数量异常: sourceLogId=${sourceLog.id}`,
+            );
+          }
+
+          const wrongUnitCost = sourceLog.unitCost
+            ? new Prisma.Decimal(sourceLog.unitCost)
+            : null;
+          if (!wrongUnitCost) {
+            throw new BadRequestException(
+              `来源库存流水缺少成本价快照: ${sourceLog.id}`,
+            );
+          }
+
+          const sourceReference = await this.resolveSourceReference(
+            sourceLog,
             tx,
           );
+          const historicalDiffAmount = correctUnitCost
+            .sub(wrongUnitCost)
+            .mul(consumedQtyAtCorrection);
+          totalHistoricalDiffAmount =
+            totalHistoricalDiffAmount.add(historicalDiffAmount);
 
-          await this.repository.updateOrderLine(
-            createdLine.id,
+          const createdLine = await this.repository.createOrderLine(
             {
-              generatedOutLogId: correctionOut.outLog.id,
-              generatedInLogId: correctionIn.id,
+              orderId: order.id,
+              lineNo: index + 1,
+              materialId: lineDto.materialId,
+              sourceStockInOrderId: sourceReference.sourceStockInOrderId,
+              sourceStockInOrderLineId:
+                sourceReference.sourceStockInOrderLineId,
+              sourceInventoryLogId: sourceLog.id,
+              sourceDocumentNoSnapshot:
+                sourceReference.sourceDocumentNoSnapshot,
+              sourceBizDateSnapshot: sourceReference.sourceBizDateSnapshot,
+              wrongUnitCost,
+              correctUnitCost,
+              sourceInQty,
+              consumedQtyAtCorrection,
+              remainingQtyAtCorrection,
+              historicalDiffAmount,
+              remark: null,
+              createdBy,
               updatedBy: createdBy,
             },
             tx,
           );
+
+          if (remainingQtyAtCorrection.gt(0)) {
+            const correctionOut = await this.inventoryService.settleConsumerOut(
+              {
+                materialId: sourceLog.materialId,
+                workshopId: sourceLog.workshopId ?? undefined,
+                quantity: remainingQtyAtCorrection,
+                operationType: InventoryOperationType.PRICE_CORRECTION_OUT,
+                businessModule: BUSINESS_MODULE,
+                businessDocumentType: DOCUMENT_TYPE,
+                businessDocumentId: order.id,
+                businessDocumentNumber: order.documentNo,
+                businessDocumentLineId: createdLine.id,
+                operatorId: createdBy,
+                idempotencyKey: `StockInPriceCorrectionOrder:${order.id}:line:${createdLine.id}:out`,
+                consumerLineId: createdLine.id,
+                sourceLogId: sourceLog.id,
+                sourceOperationTypes: FIFO_SOURCE_OPERATION_TYPES,
+              },
+              tx,
+            );
+
+            const correctionIn = await this.inventoryService.increaseStock(
+              {
+                materialId: sourceLog.materialId,
+                workshopId: sourceLog.workshopId ?? undefined,
+                quantity: remainingQtyAtCorrection,
+                operationType: InventoryOperationType.PRICE_CORRECTION_IN,
+                businessModule: BUSINESS_MODULE,
+                businessDocumentType: DOCUMENT_TYPE,
+                businessDocumentId: order.id,
+                businessDocumentNumber: order.documentNo,
+                businessDocumentLineId: createdLine.id,
+                operatorId: createdBy,
+                idempotencyKey: `StockInPriceCorrectionOrder:${order.id}:line:${createdLine.id}:in`,
+                unitCost: correctUnitCost,
+                costAmount: correctUnitCost.mul(remainingQtyAtCorrection),
+              },
+              tx,
+            );
+
+            await this.repository.updateOrderLine(
+              createdLine.id,
+              {
+                generatedOutLogId: correctionOut.outLog.id,
+                generatedInLogId: correctionIn.id,
+                updatedBy: createdBy,
+              },
+              tx,
+            );
+          }
         }
-      }
 
-      await this.repository.updateOrder(
-        order.id,
-        {
-          totalHistoricalDiffAmount,
-          updatedBy: createdBy,
-        },
-        tx,
-      );
+        await this.repository.updateOrder(
+          order.id,
+          {
+            totalHistoricalDiffAmount,
+            updatedBy: createdBy,
+          },
+          tx,
+        );
 
-      await this.approvalService.createOrRefreshApprovalDocument(
-        {
-          documentFamily: DocumentFamily.STOCK_IN,
-          documentType: DOCUMENT_TYPE,
-          documentId: order.id,
-          documentNumber: order.documentNo,
-          submittedBy: createdBy,
-          createdBy,
-        },
-        tx,
-      );
+        await this.approvalService.createOrRefreshApprovalDocument(
+          {
+            documentFamily: DocumentFamily.STOCK_IN,
+            documentType: DOCUMENT_TYPE,
+            documentId: order.id,
+            documentNumber: order.documentNo,
+            submittedBy: createdBy,
+            createdBy,
+          },
+          tx,
+        );
 
-      const refreshedOrder = await this.repository.findOrderById(order.id, tx);
-      if (!refreshedOrder) {
-        throw new NotFoundException(`入库调价单不存在: ${order.id}`);
-      }
-      return refreshedOrder;
+        const refreshedOrder = await this.repository.findOrderById(
+          order.id,
+          tx,
+        );
+        if (!refreshedOrder) {
+          throw new NotFoundException(`入库调价单不存在: ${order.id}`);
+        }
+        return refreshedOrder;
+      });
     });
 
     return createdOrder;
@@ -403,5 +408,12 @@ export class StockInPriceCorrectionService {
       throw new BadRequestException(`${fieldName} 必须大于 0`);
     }
     return parsed;
+  }
+
+  private requireWorkshopId(workshopId?: number) {
+    if (!workshopId || workshopId < 1) {
+      throw new BadRequestException("workshopId 必填");
+    }
+    return workshopId;
   }
 }

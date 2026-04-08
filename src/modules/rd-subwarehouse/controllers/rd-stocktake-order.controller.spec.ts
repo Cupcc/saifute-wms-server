@@ -24,7 +24,6 @@ describe("RdStocktakeOrderController", () => {
     workshopScope: {
       mode: "FIXED",
       workshopId: 6,
-      workshopCode: "RD",
       workshopName: "研发小仓",
     },
   };

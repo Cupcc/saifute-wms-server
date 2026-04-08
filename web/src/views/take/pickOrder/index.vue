@@ -197,7 +197,8 @@
 			          :remote-method="searchWorkshopForForm"
 			          :loading="workshopLoadingForForm"
 			          style="width: 100%"
-			          :disabled="form.intoId != null">
+			          :disabled="form.intoId != null"
+			          @change="handleWorkshopChange">
 			          <el-option
 				          v-for="item in workshopOptionsForForm"
 				          :key="item.workshopId"
@@ -915,6 +916,17 @@ function searchWorkshopForForm(query) {
     });
 }
 
+function handleWorkshopChange(workshopId) {
+  const selectedWorkshop = workshopOptionsForForm.value.find(
+    (item) => item.workshopId === workshopId,
+  );
+  const defaultHandlerName =
+    selectedWorkshop?.defaultHandlerPersonnelName || null;
+
+  form.value.picker = defaultHandlerName;
+  form.value.chargeBy = defaultHandlerName;
+}
+
 /**
  * 处理物料选择事件
  */
@@ -1101,7 +1113,12 @@ async function handleAiPrefill(formData) {
         workshopName: formData.workshopName,
       });
       workshopOptionsForForm.value = res.rows || [];
-      if (res.rows?.length > 0) form.value.workshopId = res.rows[0].workshopId;
+      if (res.rows?.length > 0) {
+        form.value.workshopId = res.rows[0].workshopId;
+        if (!formData.picker) {
+          handleWorkshopChange(res.rows[0].workshopId);
+        }
+      }
     } catch {
       /* 静默处理 */
     }

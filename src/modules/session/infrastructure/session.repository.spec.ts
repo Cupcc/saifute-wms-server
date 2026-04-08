@@ -24,7 +24,6 @@ function buildSession(sessionId: string, userId: number): UserSession {
       workshopScope: {
         mode: "ALL",
         workshopId: null,
-        workshopCode: null,
         workshopName: null,
       },
     },

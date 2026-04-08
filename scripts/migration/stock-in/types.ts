@@ -98,7 +98,6 @@ export interface ResolvedSupplierDependency {
 
 export interface ResolvedPersonnelDependency {
   targetId: number;
-  personnelCode: string;
   personnelName: string;
 }
 

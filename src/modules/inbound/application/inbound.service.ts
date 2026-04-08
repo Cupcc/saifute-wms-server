@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -13,6 +12,10 @@ import {
   Prisma,
   StockInOrderType,
 } from "../../../generated/prisma/client";
+import {
+  buildCompactDocumentNo,
+  createWithGeneratedDocumentNo,
+} from "../../../shared/common/document-number.util";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { ApprovalService } from "../../approval/application/approval.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
@@ -36,6 +39,17 @@ function toOperationType(orderType: StockInOrderType): InventoryOperationType {
       return InventoryOperationType.ACCEPTANCE_IN;
     case StockInOrderType.PRODUCTION_RECEIPT:
       return InventoryOperationType.PRODUCTION_RECEIPT_IN;
+    default:
+      throw new BadRequestException(`Unsupported orderType: ${orderType}`);
+  }
+}
+
+function toCreateDocumentPrefix(orderType: StockInOrderType) {
+  switch (orderType) {
+    case StockInOrderType.ACCEPTANCE:
+      return "YS";
+    case StockInOrderType.PRODUCTION_RECEIPT:
+      return "RK";
     default:
       throw new BadRequestException(`Unsupported orderType: ${orderType}`);
   }
@@ -89,17 +103,9 @@ export class InboundService {
   }
 
   async createOrder(dto: CreateInboundOrderDto, createdBy?: string) {
-    const existing = await this.repository.findOrderByDocumentNo(
-      dto.documentNo,
-    );
-    if (existing) {
-      throw new ConflictException(`单据编号已存在: ${dto.documentNo}`);
-    }
-
     const bizDate = new Date(dto.bizDate);
-    const workshop = await this.masterDataService.getWorkshopById(
-      dto.workshopId,
-    );
+    const workshopId = this.requireWorkshopId(dto.workshopId);
+    const workshop = await this.masterDataService.getWorkshopById(workshopId);
     const rdProcurementLink = await this.resolveRdProcurementLink(
       dto.orderType,
       dto.rdProcurementRequestId,
@@ -145,92 +151,97 @@ export class InboundService {
       new Prisma.Decimal(0),
     );
 
-    return this.prisma.runInTransaction(async (tx) => {
-      await this.assertRdProcurementAcceptedQtyWithinLimit(
-        rdProcurementLink.lineMap,
-        linesWithSnapshots,
-        undefined,
-        tx,
-      );
+    const prefix = toCreateDocumentPrefix(dto.orderType);
 
-      const order = await this.repository.createOrder(
-        {
-          documentNo: dto.documentNo,
-          orderType: dto.orderType,
-          bizDate,
-          supplierId: rdProcurementLink.supplierId,
-          handlerPersonnelId: dto.handlerPersonnelId,
-          stockScopeId: stockScopeRecord.id,
-          workshopId: dto.workshopId,
-          rdProcurementRequestId: rdProcurementLink.request?.id,
-          supplierCodeSnapshot,
-          supplierNameSnapshot,
-          handlerNameSnapshot,
-          workshopNameSnapshot: workshop.workshopName,
-          ...this.toRdProcurementOrderSnapshots(rdProcurementLink.request),
-          totalQty,
-          totalAmount,
-          remark: dto.remark,
-          auditStatusSnapshot: AuditStatusSnapshot.PENDING,
-          createdBy,
-          updatedBy: createdBy,
-        },
-        linesWithSnapshots.map((l) => ({
-          ...l,
-          createdBy,
-          updatedBy: createdBy,
-        })),
-        tx,
-      );
+    return createWithGeneratedDocumentNo((attempt) => {
+      const documentNo = buildCompactDocumentNo(prefix, bizDate, attempt);
+      return this.prisma.runInTransaction(async (tx) => {
+        await this.assertRdProcurementAcceptedQtyWithinLimit(
+          rdProcurementLink.lineMap,
+          linesWithSnapshots,
+          undefined,
+          tx,
+        );
 
-      const operationType = toOperationType(dto.orderType);
-      const logIdByLineId = new Map<number, number>();
-      for (const line of order.lines) {
-        const log = await this.inventoryService.increaseStock(
+        const order = await this.repository.createOrder(
           {
-            materialId: line.materialId,
-            stockScope: "MAIN",
-            quantity: line.quantity,
-            operationType,
-            businessModule: BUSINESS_MODULE,
-            businessDocumentType: DOCUMENT_TYPE,
-            businessDocumentId: order.id,
-            businessDocumentNumber: order.documentNo,
-            businessDocumentLineId: line.id,
+            documentNo,
+            orderType: dto.orderType,
+            bizDate,
+            supplierId: rdProcurementLink.supplierId,
+            handlerPersonnelId: dto.handlerPersonnelId,
+            stockScopeId: stockScopeRecord.id,
+            workshopId,
+            rdProcurementRequestId: rdProcurementLink.request?.id,
+            supplierCodeSnapshot,
+            supplierNameSnapshot,
+            handlerNameSnapshot,
+            workshopNameSnapshot: workshop.workshopName,
+            ...this.toRdProcurementOrderSnapshots(rdProcurementLink.request),
+            totalQty,
+            totalAmount,
+            remark: dto.remark,
+            auditStatusSnapshot: AuditStatusSnapshot.PENDING,
+            createdBy,
+            updatedBy: createdBy,
+          },
+          linesWithSnapshots.map((l) => ({
+            ...l,
+            createdBy,
+            updatedBy: createdBy,
+          })),
+          tx,
+        );
+
+        const operationType = toOperationType(dto.orderType);
+        const logIdByLineId = new Map<number, number>();
+        for (const line of order.lines) {
+          const log = await this.inventoryService.increaseStock(
+            {
+              materialId: line.materialId,
+              stockScope: "MAIN",
+              quantity: line.quantity,
+              operationType,
+              businessModule: BUSINESS_MODULE,
+              businessDocumentType: DOCUMENT_TYPE,
+              businessDocumentId: order.id,
+              businessDocumentNumber: order.documentNo,
+              businessDocumentLineId: line.id,
+              operatorId: createdBy,
+              idempotencyKey: `StockInOrder:${order.id}:line:${line.id}`,
+              unitCost: new Prisma.Decimal(line.unitPrice),
+              costAmount: new Prisma.Decimal(line.amount),
+            },
+            tx,
+          );
+          logIdByLineId.set(line.id, log.id);
+        }
+
+        await applyAcceptanceStatusesForOrder(
+          {
+            orderId: order.id,
+            documentNo: order.documentNo,
+            lines: order.lines,
             operatorId: createdBy,
-            idempotencyKey: `StockInOrder:${order.id}:line:${line.id}`,
-            unitCost: new Prisma.Decimal(line.unitPrice),
-            costAmount: new Prisma.Decimal(line.amount),
+            logIdByLineId,
           },
           tx,
         );
-        logIdByLineId.set(line.id, log.id);
-      }
 
-      await applyAcceptanceStatusesForOrder(
-        {
-          orderId: order.id,
-          documentNo: order.documentNo,
-          lines: order.lines,
-          operatorId: createdBy,
-          logIdByLineId,
-        },
-        tx,
-      );
+        await this.approvalService.createOrRefreshApprovalDocument(
+          {
+            documentFamily: DocumentFamily.STOCK_IN,
+            documentType: DOCUMENT_TYPE,
+            documentId: order.id,
+            documentNumber: order.documentNo,
+            submittedBy: createdBy,
+            createdBy,
+          },
+          tx,
+        );
 
-      await this.approvalService.createOrRefreshApprovalDocument(
-        {
-          documentFamily: DocumentFamily.STOCK_IN,
-          documentType: DOCUMENT_TYPE,
-          documentId: order.id,
-          documentNumber: order.documentNo,
-          submittedBy: createdBy,
-          createdBy,
-        },
-        tx,
-      );
-
-      return order;
+        return order;
+      });
     });
   }
 
@@ -697,7 +708,9 @@ export class InboundService {
     supplierId?: number,
   ) {
     this.ensureSupplierRequirement(dto.orderType, supplierId);
-    await this.masterDataService.getWorkshopById(dto.workshopId);
+    await this.masterDataService.getWorkshopById(
+      this.requireWorkshopId(dto.workshopId),
+    );
     if (supplierId) {
       await this.masterDataService.getSupplierById(supplierId);
     }
@@ -964,6 +977,13 @@ export class InboundService {
         );
       }
     });
+  }
+
+  private requireWorkshopId(workshopId?: number) {
+    if (!workshopId || workshopId < 1) {
+      throw new BadRequestException("workshopId 必填");
+    }
+    return workshopId;
   }
 
   private toRdProcurementOrderSnapshots(

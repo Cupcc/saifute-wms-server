@@ -14,13 +14,13 @@ export function listPersonnel(query = {}) {
     url: "/api/master-data/personnel",
     method: "get",
     params: {
-      keyword: pickKeyword(query, ["code", "name", "contactPhone"]),
+      keyword: pickKeyword(query, ["name"]),
       includeDisabled: query.includeDisabled || undefined,
       limit,
       offset,
     },
   }).then((response) =>
-    buildRowsResponse(response.data, (item) => mapPersonnel(item, query)),
+    buildRowsResponse(response.data, (item) => mapPersonnel(item)),
   );
 }
 
@@ -39,7 +39,6 @@ export function addPersonnel(data) {
     url: "/api/master-data/personnel",
     method: "post",
     data: {
-      personnelCode: data.code || data.personnelCode,
       personnelName: data.name || data.personnelName,
     },
   });

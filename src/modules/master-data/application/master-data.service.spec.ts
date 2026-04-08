@@ -51,14 +51,11 @@ describe("MasterDataService", () => {
       findSuppliers: jest.fn(),
       // Personnel
       findPersonnelById: jest.fn(),
-      findPersonnelByCode: jest.fn(),
       findPersonnel: jest.fn(),
       createPersonnel: jest.fn(),
-      createAutoPersonnel: jest.fn(),
       updatePersonnel: jest.fn(),
       // Workshop
       findWorkshopById: jest.fn(),
-      findWorkshopByCode: jest.fn(),
       findWorkshopByName: jest.fn(),
       findWorkshops: jest.fn(),
       createWorkshop: jest.fn(),
@@ -1000,12 +997,10 @@ describe("MasterDataService", () => {
       );
     });
 
-    it("creates a personnel record after unique-code check", async () => {
+    it("creates a personnel record", async () => {
       const repository = createRepositoryMock();
-      repository.findPersonnelByCode.mockResolvedValue(null);
       repository.createPersonnel.mockResolvedValue({
         id: 1,
-        personnelCode: "P-001",
         personnelName: "张三",
         status: "ACTIVE",
       });
@@ -1014,39 +1009,23 @@ describe("MasterDataService", () => {
       );
 
       const result = await service.createPersonnel(
-        { personnelCode: "P-001", personnelName: "张三" },
+        { personnelName: "张三" },
         "1",
       );
 
-      expect(repository.createPersonnel).toHaveBeenCalled();
+      expect(repository.createPersonnel).toHaveBeenCalledWith(
+        { personnelName: "张三" },
+        "1",
+      );
       expect(result).toEqual(
-        expect.objectContaining({ personnelCode: "P-001" }),
+        expect.objectContaining({ personnelName: "张三" }),
       );
-    });
-
-    it("rejects duplicate personnel codes on create", async () => {
-      const repository = createRepositoryMock();
-      repository.findPersonnelByCode.mockResolvedValue({
-        id: 1,
-        personnelCode: "P-001",
-      });
-      const service = new MasterDataService(
-        repository as unknown as MasterDataRepository,
-      );
-
-      await expect(
-        service.createPersonnel({
-          personnelCode: "P-001",
-          personnelName: "重复",
-        }),
-      ).rejects.toThrow(ConflictException);
     });
 
     it("deactivates active personnel", async () => {
       const repository = createRepositoryMock();
       repository.findPersonnelById.mockResolvedValue({
         id: 1,
-        personnelCode: "P-001",
         status: "ACTIVE",
       });
       repository.updatePersonnel.mockResolvedValue({
@@ -1071,7 +1050,6 @@ describe("MasterDataService", () => {
       const repository = createRepositoryMock();
       repository.findPersonnelById.mockResolvedValue({
         id: 1,
-        personnelCode: "P-001",
         status: "DISABLED",
       });
       const service = new MasterDataService(
@@ -1101,13 +1079,18 @@ describe("MasterDataService", () => {
       );
     });
 
-    it("creates a workshop after unique-code check", async () => {
+    it("creates a workshop with an optional default handler", async () => {
       const repository = createRepositoryMock();
-      repository.findWorkshopByCode.mockResolvedValue(null);
+      repository.findWorkshopByName.mockResolvedValue(null);
       repository.createWorkshop.mockResolvedValue({
         id: 1,
-        workshopCode: "W-001",
         workshopName: "装配车间",
+        defaultHandlerPersonnelId: 20,
+        status: "ACTIVE",
+      });
+      repository.findPersonnelById.mockResolvedValue({
+        id: 20,
+        personnelName: "张三",
         status: "ACTIVE",
       });
       const service = new MasterDataService(
@@ -1115,13 +1098,49 @@ describe("MasterDataService", () => {
       );
 
       const result = await service.createWorkshop(
-        { workshopCode: "W-001", workshopName: "装配车间" },
+        { workshopName: "装配车间", defaultHandlerPersonnelId: 20 },
         "1",
       );
 
-      expect(repository.createWorkshop).toHaveBeenCalled();
+      expect(repository.createWorkshop).toHaveBeenCalledWith(
+        {
+          workshopName: "装配车间",
+          defaultHandlerPersonnelId: 20,
+        },
+        "1",
+      );
       expect(result).toEqual(
-        expect.objectContaining({ workshopCode: "W-001" }),
+        expect.objectContaining({
+          workshopName: "装配车间",
+          defaultHandlerPersonnelId: 20,
+        }),
+      );
+    });
+
+    it("updates workshop default handler when explicitly cleared", async () => {
+      const repository = createRepositoryMock();
+      repository.findWorkshopById.mockResolvedValue({
+        id: 1,
+        workshopName: "装配车间",
+        defaultHandlerPersonnelId: 20,
+        status: "ACTIVE",
+      });
+      repository.updateWorkshop.mockResolvedValue({
+        id: 1,
+        workshopName: "装配车间",
+        defaultHandlerPersonnelId: null,
+        status: "ACTIVE",
+      });
+      const service = new MasterDataService(
+        repository as unknown as MasterDataRepository,
+      );
+
+      await service.updateWorkshop(1, { defaultHandlerPersonnelId: null }, "1");
+
+      expect(repository.updateWorkshop).toHaveBeenCalledWith(
+        1,
+        { workshopName: undefined, defaultHandlerPersonnelId: null },
+        "1",
       );
     });
 
@@ -1129,7 +1148,7 @@ describe("MasterDataService", () => {
       const repository = createRepositoryMock();
       repository.findWorkshopById.mockResolvedValue({
         id: 1,
-        workshopCode: "W-001",
+        workshopName: "装配车间",
         status: "ACTIVE",
       });
       repository.updateWorkshop.mockResolvedValue({
@@ -1284,27 +1303,10 @@ describe("MasterDataService", () => {
       expect(result).toEqual(expect.objectContaining({ scopeCode: "MAIN" }));
     });
 
-    it("rejects getWorkshopByCode when the record is DISABLED", async () => {
-      const repository = createRepositoryMock();
-      repository.findWorkshopByCode.mockResolvedValue({
-        id: 2,
-        workshopCode: "RD",
-        status: "DISABLED",
-      });
-      const service = new MasterDataService(
-        repository as unknown as MasterDataRepository,
-      );
-
-      await expect(service.getWorkshopByCode("RD")).rejects.toThrow(
-        BadRequestException,
-      );
-    });
-
     it("rejects getWorkshopByName when the matching record is DISABLED", async () => {
       const repository = createRepositoryMock();
       repository.findWorkshopByName.mockResolvedValue({
         id: 2,
-        workshopCode: "RD",
         workshopName: "研发小仓",
         status: "DISABLED",
       });

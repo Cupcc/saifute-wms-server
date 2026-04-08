@@ -147,12 +147,10 @@
 | 字段名                  | 数据类型                           | 必填  | 默认值      | 唯一  | 说明          |
 | -------------------- | ------------------------------ | --- | -------- | --- | ----------- |
 | `id`                 | INT                            | 是   | 自增       | PK  | 主键          |
-| `personnelCode`      | VARCHAR(64)                    | 是   | —        | 是   | 人员编码，全局唯一   |
 | `personnelName`      | VARCHAR(128)                   | 是   | —        | —   | 人员名称        |
 | `status`             | ENUM(`ACTIVE`, `DISABLED`)     | 是   | `ACTIVE` | —   | 启用状态        |
-| `creationMode`       | ENUM(`MANUAL`, `AUTO_CREATED`) | 是   | `MANUAL` | —   | 创建方式        |
-| `sourceDocumentType` | VARCHAR(64)                    | 否   | —        | —   | 自动补建来源单据类型  |
-| `sourceDocumentId`   | INT                            | 否   | —        | —   | 自动补建来源单据 ID |
+
+> 说明：`personnel` 只支持手工维护，不保留 `creationMode`、`sourceDocumentType`、`sourceDocumentId` 字段。
 
 
 ### 3.6 `workshop` — 车间主档
@@ -161,12 +159,11 @@
 | 字段名            | 数据类型                       | 必填  | 默认值      | 唯一  | 说明        |
 | -------------- | -------------------------- | --- | -------- | --- | --------- |
 | `id`           | INT                        | 是   | 自增       | PK  | 主键        |
-| `workshopCode` | VARCHAR(64)                | 是   | —        | 是   | 车间编码，全局唯一 |
-| `workshopName` | VARCHAR(128)               | 是   | —        | —   | 车间名称      |
+| `workshopName` | VARCHAR(128)               | 是   | —        | 是   | 车间名称      |
+| `defaultHandlerPersonnelId` | INT           | 否   | —        | —   | 默认经办人 ID → `personnel.id` |
 | `status`       | ENUM(`ACTIVE`, `DISABLED`) | 是   | `ACTIVE` | —   | 启用状态      |
 
-
-> 说明：`workshop` 只用于单据归属与成本核算维度，不承担库存余额。无 `creationMode` 字段。
+> 说明：`workshop` 只用于单据归属与成本核算维度，不承担库存余额。无 `workshopCode`、无 `creationMode` 字段。
 
 ### 3.7 `stock_scope` — 库存范围
 

@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException } from "@nestjs/common";
+import { BadRequestException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import {
   AuditStatusSnapshot,
@@ -77,8 +77,14 @@ describe("RdStocktakeOrderService", () => {
     repository.findOrderByDocumentNo.mockResolvedValue(null);
     masterDataService.getWorkshopById.mockResolvedValue({
       id: 6,
-      workshopCode: "RD",
       workshopName: "研发小仓",
+      defaultHandlerPersonnelId: null,
+      defaultHandlerPersonnel: null,
+      status: "ACTIVE",
+      createdBy: null,
+      createdAt: new Date("2026-03-29T00:00:00.000Z"),
+      updatedBy: null,
+      updatedAt: new Date("2026-03-29T00:00:00.000Z"),
     } as Awaited<ReturnType<MasterDataService["getWorkshopById"]>>);
   });
 
@@ -208,7 +214,7 @@ describe("RdStocktakeOrderService", () => {
 
     expect(result).toEqual(finalOrder);
     const [header, lines] = repository.createOrder.mock.calls[0];
-    expect(header.documentNo).toBe("RDSTK-001");
+    expect(header.documentNo).toMatch(/^RDST-\d{14}-\d{3}$/);
     expect(header.totalBookQty?.toString()).toBe("15");
     expect(header.totalCountQty?.toString()).toBe("14");
     expect(header.totalAdjustmentQty?.toString()).toBe("-1");
@@ -250,8 +256,14 @@ describe("RdStocktakeOrderService", () => {
   it("allows any workshop id while keeping RD_SUB as the stock scope", async () => {
     masterDataService.getWorkshopById.mockResolvedValueOnce({
       id: 1,
-      workshopCode: "MAIN",
       workshopName: "主仓",
+      defaultHandlerPersonnelId: null,
+      defaultHandlerPersonnel: null,
+      status: "ACTIVE",
+      createdBy: null,
+      createdAt: new Date("2026-03-29T00:00:00.000Z"),
+      updatedBy: null,
+      updatedAt: new Date("2026-03-29T00:00:00.000Z"),
     } as Awaited<ReturnType<MasterDataService["getWorkshopById"]>>);
 
     masterDataService.getMaterialById.mockResolvedValueOnce({
@@ -360,19 +372,6 @@ describe("RdStocktakeOrderService", () => {
       }),
       expect.anything(),
     );
-  });
-
-  it("rejects duplicate document numbers", async () => {
-    repository.findOrderByDocumentNo.mockResolvedValueOnce({ id: 1 } as never);
-
-    await expect(
-      service.createOrder({
-        documentNo: "RDSTK-001",
-        bizDate: "2026-03-30",
-        workshopId: 6,
-        lines: [{ materialId: 100, countedQty: "1", reason: "重复单号" }],
-      }),
-    ).rejects.toThrow(ConflictException);
   });
 
   it("rejects duplicate materials in a single stocktake order", async () => {

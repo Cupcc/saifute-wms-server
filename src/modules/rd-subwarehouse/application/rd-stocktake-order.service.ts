@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ConflictException,
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
@@ -11,6 +10,10 @@ import {
   InventoryOperationType,
   Prisma,
 } from "../../../generated/prisma/client";
+import {
+  buildDashedTimestampDocumentNo,
+  createWithGeneratedDocumentNo,
+} from "../../../shared/common/document-number.util";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
@@ -53,148 +56,149 @@ export class RdStocktakeOrderService {
   }
 
   async createOrder(dto: CreateRdStocktakeOrderDto, createdBy?: string) {
-    const existing = await this.repository.findOrderByDocumentNo(
-      dto.documentNo,
-    );
-    if (existing) {
-      throw new ConflictException(`单据编号已存在: ${dto.documentNo}`);
-    }
     this.assertUniqueMaterials(dto);
+    const workshopId = this.requireWorkshopId(dto.workshopId);
 
-    const workshop = await this.masterDataService.getWorkshopById(
-      dto.workshopId,
-    );
+    const workshop = await this.masterDataService.getWorkshopById(workshopId);
     const stockScopeRecord =
       await this.masterDataService.getStockScopeByCode("RD_SUB");
+    const bizDate = new Date(dto.bizDate);
 
-    return this.prisma.runInTransaction(async (tx) => {
-      const linesWithSnapshots = await Promise.all(
-        dto.lines.map(async (line, idx) => {
-          const material = await this.masterDataService.getMaterialById(
-            line.materialId,
-          );
-          const countedQty = new Prisma.Decimal(line.countedQty);
-          const balance = await this.inventoryService.getBalanceSnapshot(
-            {
-              materialId: material.id,
-              stockScope: "RD_SUB",
-            },
-            tx,
-          );
-          const bookQty = new Prisma.Decimal(balance?.quantityOnHand ?? 0);
-          const adjustmentQty = countedQty.sub(bookQty);
-
-          return {
-            lineNo: idx + 1,
-            materialId: material.id,
-            materialCodeSnapshot: material.materialCode,
-            materialNameSnapshot: material.materialName,
-            materialSpecSnapshot: material.specModel ?? "",
-            unitCodeSnapshot: material.unitCode,
-            bookQty,
-            countedQty,
-            adjustmentQty,
-            reason: line.reason,
-            remark: line.remark,
-          };
-        }),
+    return createWithGeneratedDocumentNo((attempt) => {
+      const documentNo = buildDashedTimestampDocumentNo(
+        "RDST",
+        bizDate,
+        attempt,
       );
-
-      const totalBookQty = linesWithSnapshots.reduce(
-        (sum, line) => sum.add(line.bookQty),
-        new Prisma.Decimal(0),
-      );
-      const totalCountQty = linesWithSnapshots.reduce(
-        (sum, line) => sum.add(line.countedQty),
-        new Prisma.Decimal(0),
-      );
-      const totalAdjustmentQty = linesWithSnapshots.reduce(
-        (sum, line) => sum.add(line.adjustmentQty),
-        new Prisma.Decimal(0),
-      );
-
-      const order = await this.repository.createOrder(
-        {
-          documentNo: dto.documentNo,
-          bizDate: new Date(dto.bizDate),
-          stockScopeId: stockScopeRecord.id,
-          workshopId: dto.workshopId,
-          inventoryEffectStatus: InventoryEffectStatus.POSTED,
-          auditStatusSnapshot: AuditStatusSnapshot.NOT_REQUIRED,
-          countedBy: dto.countedBy,
-          approvedBy: dto.approvedBy,
-          totalBookQty,
-          totalCountQty,
-          totalAdjustmentQty,
-          remark: dto.remark,
-          createdBy,
-          updatedBy: createdBy,
-        },
-        linesWithSnapshots.map((line) => ({
-          ...line,
-          createdBy,
-          updatedBy: createdBy,
-        })),
-        tx,
-      );
-
-      for (const line of order.lines) {
-        const adjustmentQty = new Prisma.Decimal(line.adjustmentQty);
-        if (adjustmentQty.eq(0)) {
-          continue;
-        }
-
-        const log = adjustmentQty.gt(0)
-          ? await this.inventoryService.increaseStock(
+      return this.prisma.runInTransaction(async (tx) => {
+        const linesWithSnapshots = await Promise.all(
+          dto.lines.map(async (line, idx) => {
+            const material = await this.masterDataService.getMaterialById(
+              line.materialId,
+            );
+            const countedQty = new Prisma.Decimal(line.countedQty);
+            const balance = await this.inventoryService.getBalanceSnapshot(
               {
-                materialId: line.materialId,
+                materialId: material.id,
                 stockScope: "RD_SUB",
-                quantity: adjustmentQty,
-                operationType: InventoryOperationType.RD_STOCKTAKE_IN,
-                businessModule: BUSINESS_MODULE,
-                businessDocumentType: DOCUMENT_TYPE,
-                businessDocumentId: order.id,
-                businessDocumentNumber: order.documentNo,
-                businessDocumentLineId: line.id,
-                operatorId: createdBy,
-                idempotencyKey: `${DOCUMENT_TYPE}:${order.id}:in:${line.id}`,
-                note: `RD 盘点调增: ${line.bookQty.toString()} -> ${line.countedQty.toString()}`,
-              },
-              tx,
-            )
-          : await this.inventoryService.decreaseStock(
-              {
-                materialId: line.materialId,
-                stockScope: "RD_SUB",
-                quantity: adjustmentQty.abs(),
-                operationType: InventoryOperationType.RD_STOCKTAKE_OUT,
-                businessModule: BUSINESS_MODULE,
-                businessDocumentType: DOCUMENT_TYPE,
-                businessDocumentId: order.id,
-                businessDocumentNumber: order.documentNo,
-                businessDocumentLineId: line.id,
-                operatorId: createdBy,
-                idempotencyKey: `${DOCUMENT_TYPE}:${order.id}:out:${line.id}`,
-                note: `RD 盘点调减: ${line.bookQty.toString()} -> ${line.countedQty.toString()}`,
               },
               tx,
             );
+            const bookQty = new Prisma.Decimal(balance?.quantityOnHand ?? 0);
+            const adjustmentQty = countedQty.sub(bookQty);
 
-        await this.repository.updateOrderLine(
-          line.id,
+            return {
+              lineNo: idx + 1,
+              materialId: material.id,
+              materialCodeSnapshot: material.materialCode,
+              materialNameSnapshot: material.materialName,
+              materialSpecSnapshot: material.specModel ?? "",
+              unitCodeSnapshot: material.unitCode,
+              bookQty,
+              countedQty,
+              adjustmentQty,
+              reason: line.reason,
+              remark: line.remark,
+            };
+          }),
+        );
+
+        const totalBookQty = linesWithSnapshots.reduce(
+          (sum, line) => sum.add(line.bookQty),
+          new Prisma.Decimal(0),
+        );
+        const totalCountQty = linesWithSnapshots.reduce(
+          (sum, line) => sum.add(line.countedQty),
+          new Prisma.Decimal(0),
+        );
+        const totalAdjustmentQty = linesWithSnapshots.reduce(
+          (sum, line) => sum.add(line.adjustmentQty),
+          new Prisma.Decimal(0),
+        );
+
+        const order = await this.repository.createOrder(
           {
-            inventoryLogId: log.id,
+            documentNo,
+            bizDate,
+            stockScopeId: stockScopeRecord.id,
+            workshopId,
+            inventoryEffectStatus: InventoryEffectStatus.POSTED,
+            auditStatusSnapshot: AuditStatusSnapshot.NOT_REQUIRED,
+            countedBy: dto.countedBy,
+            approvedBy: dto.approvedBy,
+            totalBookQty,
+            totalCountQty,
+            totalAdjustmentQty,
+            remark: dto.remark,
+            createdBy,
             updatedBy: createdBy,
           },
+          linesWithSnapshots.map((line) => ({
+            ...line,
+            createdBy,
+            updatedBy: createdBy,
+          })),
           tx,
         );
-      }
 
-      const result = await this.repository.findOrderById(order.id, tx);
-      if (!result) {
-        throw new NotFoundException(`RD 盘点调整单不存在: ${order.id}`);
-      }
-      return result;
+        for (const line of order.lines) {
+          const adjustmentQty = new Prisma.Decimal(line.adjustmentQty);
+          if (adjustmentQty.eq(0)) {
+            continue;
+          }
+
+          const log = adjustmentQty.gt(0)
+            ? await this.inventoryService.increaseStock(
+                {
+                  materialId: line.materialId,
+                  stockScope: "RD_SUB",
+                  quantity: adjustmentQty,
+                  operationType: InventoryOperationType.RD_STOCKTAKE_IN,
+                  businessModule: BUSINESS_MODULE,
+                  businessDocumentType: DOCUMENT_TYPE,
+                  businessDocumentId: order.id,
+                  businessDocumentNumber: order.documentNo,
+                  businessDocumentLineId: line.id,
+                  operatorId: createdBy,
+                  idempotencyKey: `${DOCUMENT_TYPE}:${order.id}:in:${line.id}`,
+                  note: `RD 盘点调增: ${line.bookQty.toString()} -> ${line.countedQty.toString()}`,
+                },
+                tx,
+              )
+            : await this.inventoryService.decreaseStock(
+                {
+                  materialId: line.materialId,
+                  stockScope: "RD_SUB",
+                  quantity: adjustmentQty.abs(),
+                  operationType: InventoryOperationType.RD_STOCKTAKE_OUT,
+                  businessModule: BUSINESS_MODULE,
+                  businessDocumentType: DOCUMENT_TYPE,
+                  businessDocumentId: order.id,
+                  businessDocumentNumber: order.documentNo,
+                  businessDocumentLineId: line.id,
+                  operatorId: createdBy,
+                  idempotencyKey: `${DOCUMENT_TYPE}:${order.id}:out:${line.id}`,
+                  note: `RD 盘点调减: ${line.bookQty.toString()} -> ${line.countedQty.toString()}`,
+                },
+                tx,
+              );
+
+          await this.repository.updateOrderLine(
+            line.id,
+            {
+              inventoryLogId: log.id,
+              updatedBy: createdBy,
+            },
+            tx,
+          );
+        }
+
+        const result = await this.repository.findOrderById(order.id, tx);
+        if (!result) {
+          throw new NotFoundException(`RD 盘点调整单不存在: ${order.id}`);
+        }
+        return result;
+      });
     });
   }
 
@@ -256,5 +260,12 @@ export class RdStocktakeOrderService {
       }
       seenMaterialIds.add(line.materialId);
     }
+  }
+
+  private requireWorkshopId(workshopId?: number) {
+    if (!workshopId || workshopId < 1) {
+      throw new BadRequestException("workshopId 必填");
+    }
+    return workshopId;
   }
 }

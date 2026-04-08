@@ -98,13 +98,11 @@ export interface ResolvedMaterialDependency {
 
 export interface ResolvedWorkshopDependency {
   targetId: number;
-  workshopCode: string;
   workshopName: string;
 }
 
 export interface ResolvedPersonnelDependency {
   targetId: number;
-  personnelCode: string;
   personnelName: string;
 }
 

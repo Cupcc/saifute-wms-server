@@ -235,14 +235,12 @@ async function readPersonnelDependencies(
   const rows = await connection.query<
     Array<{
       targetId: number;
-      personnelCode: string;
       personnelName: string;
     }>
   >(
     `
       SELECT
         personnel.id AS targetId,
-        personnel.personnelCode AS personnelCode,
         personnel.personnelName AS personnelName
       FROM migration_staging.map_personnel map_row
       INNER JOIN personnel
@@ -265,7 +263,6 @@ async function readPersonnelDependencies(
     const existingRows = groupedPersonnel.get(normalizedName) ?? [];
     existingRows.push({
       targetId: row.targetId,
-      personnelCode: row.personnelCode,
       personnelName: row.personnelName,
     });
     groupedPersonnel.set(normalizedName, existingRows);
@@ -609,14 +606,12 @@ async function readWorkshopDependencies(
   const rows = await connection.query<
     Array<{
       targetId: number;
-      workshopCode: string;
       workshopName: string;
     }>
   >(
     `
       SELECT
         workshop.id AS targetId,
-        workshop.workshopCode AS workshopCode,
         workshop.workshopName AS workshopName
       FROM migration_staging.map_workshop map_row
       INNER JOIN workshop
@@ -632,7 +627,6 @@ async function readWorkshopDependencies(
       row.targetId,
       {
         targetId: row.targetId,
-        workshopCode: row.workshopCode,
         workshopName: row.workshopName,
       },
     ]),

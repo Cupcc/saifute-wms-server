@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  ConflictException,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import {
   AuditStatusSnapshot,
@@ -289,7 +285,6 @@ describe("CustomerService", () => {
       const result = await service.createOrder(dto, "1");
 
       expect(result).toMatchObject(mockOutboundOrder);
-      expect(repository.findOrderByDocumentNo).toHaveBeenCalledWith("OB-001");
       expect(repository.createOrder).toHaveBeenCalled();
       expect(inventoryService.settleConsumerOut).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -322,24 +317,6 @@ describe("CustomerService", () => {
         }),
         expect.anything(),
       );
-    });
-
-    it("should throw ConflictException when documentNo exists", async () => {
-      (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(
-        mockOutboundOrder,
-      );
-
-      const dto = {
-        documentNo: "OB-001",
-        bizDate: "2025-03-14",
-        workshopId: 1,
-        lines: [{ materialId: 100, quantity: "100", selectedUnitCost: "10" }],
-      };
-
-      await expect(service.createOrder(dto, "1")).rejects.toThrow(
-        ConflictException,
-      );
-      expect(repository.createOrder).not.toHaveBeenCalled();
     });
 
     it("should reject duplicate material and selected-unit-cost combinations", async () => {

@@ -14,17 +14,18 @@ import {
 import { CreateStockInPriceCorrectionOrderLineDto } from "./create-stock-in-price-correction-order-line.dto";
 
 export class CreateStockInPriceCorrectionOrderDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(64)
-  documentNo!: string;
+  documentNo?: string;
 
   @IsDateString()
   bizDate!: string;
 
   @IsInt()
+  @IsOptional()
   @Min(1)
-  workshopId!: number;
+  workshopId?: number;
 
   @IsString()
   @IsOptional()

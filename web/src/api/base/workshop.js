@@ -14,7 +14,10 @@ export function listWorkshop(query = {}) {
     url: "/api/master-data/workshops",
     method: "get",
     params: {
-      keyword: pickKeyword(query, ["workshopCode", "workshopName"]),
+      keyword: pickKeyword(query, [
+        "workshopName",
+        "defaultHandlerPersonnelName",
+      ]),
       includeDisabled: query.includeDisabled || undefined,
       limit,
       offset,
@@ -40,8 +43,8 @@ export function addWorkshop(data) {
     url: "/api/master-data/workshops",
     method: "post",
     data: {
-      workshopCode: data.workshopCode,
       workshopName: data.workshopName,
+      defaultHandlerPersonnelId: data.defaultHandlerPersonnelId ?? null,
     },
   });
 }
@@ -54,6 +57,7 @@ export function updateWorkshop(data) {
     method: "patch",
     data: {
       workshopName: data.workshopName,
+      defaultHandlerPersonnelId: data.defaultHandlerPersonnelId ?? null,
     },
   });
 }

@@ -262,12 +262,8 @@ model Supplier {
 
 model Personnel {
   id                     Int                     @id @default(autoincrement())
-  personnelCode          String                  @unique @db.VarChar(64)
   personnelName          String                  @db.VarChar(128)
   status                 MasterDataStatus        @default(ACTIVE)
-  creationMode           DataCreationMode        @default(MANUAL)
-  sourceDocumentType     String?                 @db.VarChar(64)
-  sourceDocumentId       Int?
   createdBy              String?                 @db.VarChar(64)
   createdAt              DateTime                @default(now())
   updatedBy              String?                 @db.VarChar(64)
@@ -275,6 +271,7 @@ model Personnel {
   stockInOrders          StockInOrder[]          @relation("StockInOrderHandler")
   customerStockOrders    CustomerStockOrder[]    @relation("CustomerStockOrderHandler")
   workshopMaterialOrders WorkshopMaterialOrder[] @relation("WorkshopMaterialOrderHandler")
+  defaultHandlerWorkshops Workshop[]             @relation("WorkshopDefaultHandler")
   managedProjects        Project[]               @relation("ProjectManager")
   rdHandoffOrders        RdHandoffOrder[]        @relation("RdHandoffOrderHandler")
   rdProcurementRequests  RdProcurementRequest[]  @relation("RdProcurementRequestHandler")
@@ -284,8 +281,8 @@ model Personnel {
 
 model Workshop {
   id                        Int                        @id @default(autoincrement())
-  workshopCode              String                     @unique @db.VarChar(64)
-  workshopName              String                     @db.VarChar(128)
+  workshopName              String                     @unique @db.VarChar(128)
+  defaultHandlerPersonnelId Int?                       @map("default_handler_personnel_id")
   status                    MasterDataStatus           @default(ACTIVE)
   createdBy                 String?                    @db.VarChar(64)
   createdAt                 DateTime                   @default(now())
@@ -298,12 +295,14 @@ model Workshop {
   customerStockOrders       CustomerStockOrder[]
   stockInPriceCorrectionOrders StockInPriceCorrectionOrder[]
   workshopMaterialOrders    WorkshopMaterialOrder[]
+  defaultHandlerPersonnel   Personnel?                 @relation("WorkshopDefaultHandler", fields: [defaultHandlerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   projects                  Project[]
   rdHandoffSourceOrders     RdHandoffOrder[]           @relation("RdHandoffSourceWorkshop")
   rdHandoffTargetOrders     RdHandoffOrder[]           @relation("RdHandoffTargetWorkshop")
   rdProcurementRequests     RdProcurementRequest[]
   rdStocktakeOrders         RdStocktakeOrder[]
 
+  @@index([defaultHandlerPersonnelId])
   @@map("workshop")
 }
 

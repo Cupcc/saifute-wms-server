@@ -369,7 +369,7 @@ function buildWorkshopPayload(data, mode = "pickOrder", handlerPersonnelId) {
   const isUpdate = Boolean(data[config.idKey]);
 
   return {
-    documentNo: data[config.noKey],
+    ...(isUpdate ? { documentNo: data[config.noKey] } : {}),
     orderType: config.orderType,
     bizDate: data[config.dateKey],
     handlerPersonnelId,

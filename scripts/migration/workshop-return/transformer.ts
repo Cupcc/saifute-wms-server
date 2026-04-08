@@ -1,4 +1,7 @@
-import { normalizeOptionalText } from "../shared/deterministic";
+import {
+  DEFAULT_WORKSHOP_NAME,
+  normalizeOptionalText,
+} from "../shared/deterministic";
 import type {
   ArchivedFieldPayloadRecord,
   AuditStatusSnapshotValue,
@@ -1063,7 +1066,7 @@ export function buildWorkshopReturnMigrationPlan(
     } else {
       const defaultWorkshop =
         Array.from(dependencies.workshopByTargetId.values()).find(
-          (workshop) => workshop.workshopCode === "WS-LEGACY-DEFAULT",
+          (workshop) => workshop.workshopName === DEFAULT_WORKSHOP_NAME,
         ) ?? null;
 
       if (!defaultWorkshop) {

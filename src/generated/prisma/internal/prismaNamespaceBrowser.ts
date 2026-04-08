@@ -197,12 +197,8 @@ export type SupplierScalarFieldEnum =
 
 export const PersonnelScalarFieldEnum = {
   id: "id",
-  personnelCode: "personnelCode",
   personnelName: "personnelName",
   status: "status",
-  creationMode: "creationMode",
-  sourceDocumentType: "sourceDocumentType",
-  sourceDocumentId: "sourceDocumentId",
   createdBy: "createdBy",
   createdAt: "createdAt",
   updatedBy: "updatedBy",
@@ -214,8 +210,8 @@ export type PersonnelScalarFieldEnum =
 
 export const WorkshopScalarFieldEnum = {
   id: "id",
-  workshopCode: "workshopCode",
   workshopName: "workshopName",
+  defaultHandlerPersonnelId: "defaultHandlerPersonnelId",
   status: "status",
   createdBy: "createdBy",
   createdAt: "createdAt",
@@ -1234,9 +1230,7 @@ export type SupplierOrderByRelevanceFieldEnum =
   (typeof SupplierOrderByRelevanceFieldEnum)[keyof typeof SupplierOrderByRelevanceFieldEnum];
 
 export const PersonnelOrderByRelevanceFieldEnum = {
-  personnelCode: "personnelCode",
   personnelName: "personnelName",
-  sourceDocumentType: "sourceDocumentType",
   createdBy: "createdBy",
   updatedBy: "updatedBy",
 } as const;
@@ -1245,7 +1239,6 @@ export type PersonnelOrderByRelevanceFieldEnum =
   (typeof PersonnelOrderByRelevanceFieldEnum)[keyof typeof PersonnelOrderByRelevanceFieldEnum];
 
 export const WorkshopOrderByRelevanceFieldEnum = {
-  workshopCode: "workshopCode",
   workshopName: "workshopName",
   createdBy: "createdBy",
   updatedBy: "updatedBy",
