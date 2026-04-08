@@ -176,6 +176,7 @@ logs-dev
 .codex/hooks/state/
 
 # Local tooling / one-off counts
+.DS_Store
 .VSCodeCounter/
 .claude/
 __pycache__/
