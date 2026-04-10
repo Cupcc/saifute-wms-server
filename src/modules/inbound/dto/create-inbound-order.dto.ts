@@ -42,11 +42,6 @@ export class CreateInboundOrderDto {
   @Min(1)
   workshopId?: number;
 
-  @IsInt()
-  @IsOptional()
-  @Min(1)
-  rdProcurementRequestId?: number;
-
   @IsString()
   @IsOptional()
   @MaxLength(500)

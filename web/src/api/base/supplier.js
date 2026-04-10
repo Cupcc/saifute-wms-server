@@ -7,6 +7,15 @@ import {
   pickKeyword,
 } from "./compat";
 
+function normalizeOptionalText(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
 // 查询供应商列表
 export function listSupplier(query = {}, options = {}) {
   const { limit, offset } = buildPageQuery(query);
@@ -17,7 +26,6 @@ export function listSupplier(query = {}, options = {}) {
       keyword: pickKeyword(query, [
         "supplierCode",
         "supplierName",
-        "supplierShortName",
         "contactPerson",
         "contactPhone",
         "address",
@@ -29,7 +37,7 @@ export function listSupplier(query = {}, options = {}) {
   }).then((response) => buildRowsResponse(response.data, mapSupplier));
 }
 
-// 根据关键字查询供应商列表（根据编号、名称或简称搜索）
+// 根据关键字查询供应商列表（根据编号、名称搜索）
 export function listSupplierByKeyword(keyword, options = {}) {
   return listSupplier({ keyword, pageNum: 1, pageSize: 100 }, options);
 }
@@ -55,6 +63,9 @@ export function addSupplier(data) {
     data: {
       supplierCode: data.supplierCode,
       supplierName: data.supplierName,
+      contactPerson: normalizeOptionalText(data.contactPerson),
+      contactPhone: normalizeOptionalText(data.contactPhone),
+      address: normalizeOptionalText(data.address),
     },
   });
 }
@@ -67,6 +78,9 @@ export function updateSupplier(data) {
     data: {
       supplierCode: data.supplierCode,
       supplierName: data.supplierName,
+      contactPerson: normalizeOptionalText(data.contactPerson),
+      contactPhone: normalizeOptionalText(data.contactPhone),
+      address: normalizeOptionalText(data.address),
     },
   });
 }

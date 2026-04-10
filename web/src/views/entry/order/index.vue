@@ -22,7 +22,7 @@
         ></el-date-picker>
       </el-form-item>
       <el-form-item label="供应商" prop="supplierId">
-        <el-select v-model="queryParams.supplierId" filterable remote reserve-keyword placeholder="请输入供应商编码、名称或简称搜索"
+        <el-select v-model="queryParams.supplierId" filterable remote reserve-keyword placeholder="请输入供应商编码或名称搜索"
                  :remote-method="searchSupplier" :loading="supplierLoading" style="width: 240px">
           <el-option
             v-for="item in supplierOptions"
@@ -31,7 +31,6 @@
             :value="item.supplierId">
             <span style="float: left">{{ item.supplierCode }}</span>
             <span style="float: left; margin-left: 10px;">{{ item.supplierName }}</span>
-            <span style="float: right; color: #8492a6; font-size: 13px; margin-left: 20px;">{{ item.supplierShortName }}</span>
           </el-option>
         </el-select>
       </el-form-item>
@@ -215,6 +214,7 @@
 			          filterable
 			          remote
 			          reserve-keyword
+			          clearable
 			          placeholder="请输入关联部门名称搜索"
 			          :remote-method="searchWorkshopForForm"
 			          :loading="workshopLoadingForForm"
@@ -245,7 +245,7 @@
 			          remote
 			          reserve-keyword
 			          allow-create
-			          placeholder="请输入供应商编码或名称或简称搜索"
+			          placeholder="请输入供应商编码或名称搜索"
 			          :remote-method="searchSupplierForForm"
 			          :loading="supplierLoadingForForm"
 			          style="width: 100%"
@@ -257,41 +257,9 @@
 				          :value="item.supplierId">
 				          <span style="float: left">{{ item.supplierCode }}</span>
 				          <span style="float: left; margin-left: 10px;">{{ item.supplierName }}</span>
-				          <span style="float: right; color: #8492a6; font-size: 13px; margin-left: 20px;">{{ item.supplierShortName }}</span>
 			          </el-option>
 		          </el-select>
 	          </el-form-item>
-          </el-col>
-        </el-row>
-        <el-row>
-          <el-col :span="24">
-            <el-form-item label="研发采购需求">
-              <el-select
-                v-model="form.rdProcurementRequestId"
-                filterable
-                remote
-                reserve-keyword
-                clearable
-                placeholder="请输入需求单号、项目编码、项目名称或物料搜索"
-                :remote-method="searchRdProcurementRequest"
-                :loading="rdProcurementRequestLoading"
-                style="width: 100%"
-                :disabled="form.inboundId != null"
-                @change="handleRdProcurementRequestChange"
-              >
-                <el-option
-                  v-for="item in rdProcurementRequestOptions"
-                  :key="item.id"
-                  :label="`${item.documentNo} / ${item.projectName}`"
-                  :value="item.id"
-                >
-                  <span style="float: left">{{ item.documentNo }}</span>
-                  <span style="float: left; margin-left: 10px;">
-                    {{ item.projectCode }} / {{ item.projectName }}
-                  </span>
-                </el-option>
-              </el-select>
-            </el-form-item>
           </el-col>
         </el-row>
 	      <el-row>
@@ -394,16 +362,6 @@
               <el-descriptions-item label="验收日期">{{ parseTime(detailData.inboundDate, '{y}-{m}-{d}') }}</el-descriptions-item>
               <el-descriptions-item label="总金额">{{ detailData.totalAmount }}</el-descriptions-item>
               <el-descriptions-item label="供应商">{{ detailData.supplierName }}</el-descriptions-item>
-              <el-descriptions-item label="研发采购需求">
-                {{ detailData.rdProcurementRequestNo || "-" }}
-              </el-descriptions-item>
-              <el-descriptions-item label="关联项目">
-                {{
-                  detailData.rdProcurementProjectCode || detailData.rdProcurementProjectName
-                    ? `${detailData.rdProcurementProjectCode || "-"} / ${detailData.rdProcurementProjectName || "-"}`
-                    : "-"
-                }}
-              </el-descriptions-item>
               <el-descriptions-item label="负责人">{{ detailData.chargeBy }}</el-descriptions-item>
               <el-descriptions-item label="经办人">{{ detailData.attn }}</el-descriptions-item>
               <el-descriptions-item label="关联部门">{{ detailData.workshopName }}</el-descriptions-item>
@@ -487,7 +445,6 @@
 		  <el-descriptions :column="1" border>
 			  <el-descriptions-item label="供应商编码">{{ supplierDetail.supplierCode }}</el-descriptions-item>
 			  <el-descriptions-item label="供应商名称">{{ supplierDetail.supplierName }}</el-descriptions-item>
-			  <el-descriptions-item label="简称">{{ supplierDetail.supplierShortName }}</el-descriptions-item>
 			  <el-descriptions-item label="联系人">{{ supplierDetail.contactPerson }}</el-descriptions-item>
 			  <el-descriptions-item label="联系方式">{{ supplierDetail.contactPhone }}</el-descriptions-item>
 			  <el-descriptions-item label="地址">{{ supplierDetail.address }}</el-descriptions-item>
@@ -520,10 +477,6 @@ import {
   listOrder,
   updateOrder,
 } from "@/api/entry/order";
-import {
-  getRdProcurementRequest,
-  listRdProcurementRequests,
-} from "@/api/rd-subwarehouse";
 import useAiActionStore from "@/store/modules/aiAction";
 import useUserStore from "@/store/modules/user";
 import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
@@ -549,8 +502,6 @@ const supplierOptions = ref([]);
 const supplierOptionsForForm = ref([]);
 const supplierLoading = ref(false);
 const supplierLoadingForForm = ref(false);
-const rdProcurementRequestOptions = ref([]);
-const rdProcurementRequestLoading = ref(false);
 
 // 人员信息相关
 const personnelOptions = ref([]);
@@ -587,9 +538,6 @@ const data = reactive({
   rules: {
     inboundDate: [
       { required: true, message: "验收日期不能为空", trigger: "change" },
-    ],
-    workshopId: [
-      { required: true, message: "关联部门不能为空", trigger: "change" },
     ],
     supplierId: [{ required: true, message: "供应商不能为空", trigger: "change" }],
   },
@@ -654,23 +602,6 @@ function searchSupplierForForm(query) {
     });
 }
 
-/** 搜索 RD 采购需求（用于表单） */
-function searchRdProcurementRequest(query) {
-  rdProcurementRequestLoading.value = true;
-  listRdProcurementRequests({
-    keyword: query || undefined,
-    limit: 20,
-    offset: 0,
-  })
-    .then((response) => {
-      rdProcurementRequestOptions.value = response.data?.items || [];
-      rdProcurementRequestLoading.value = false;
-    })
-    .catch(() => {
-      rdProcurementRequestLoading.value = false;
-    });
-}
-
 /** 搜索部门（用于查询条件） */
 function searchWorkshop(query) {
   workshopLoading.value = true;
@@ -695,26 +626,6 @@ function searchWorkshopForForm(query) {
     .catch(() => {
       workshopLoadingForForm.value = false;
     });
-}
-
-async function ensureMainWorkshopForLinkedRequest() {
-  if (form.value.workshopId) {
-    return;
-  }
-  const workshopName = form.value.rdProcurementWorkshopName;
-  if (!workshopName) {
-    return;
-  }
-  const response = await listByNameOrContact({ workshopName });
-  const linkedWorkshop =
-    response.rows?.find((item) => item.workshopName === workshopName) ??
-    response.rows?.[0] ??
-    null;
-  if (!linkedWorkshop) {
-    return;
-  }
-  workshopOptionsForForm.value = response.rows || [];
-  form.value.workshopId = linkedWorkshop.workshopId;
 }
 
 /** 搜索人员信息 */
@@ -779,11 +690,7 @@ function reset() {
     inboundNo: null,
     inboundDate: null,
     supplierId: null,
-    rdProcurementRequestId: null,
-    rdProcurementRequestNo: "",
-    rdProcurementProjectCode: "",
-    rdProcurementProjectName: "",
-    rdProcurementWorkshopName: "",
+    workshopId: null,
     chargeBy: null,
     attn: null,
     totalAmount: null,
@@ -793,7 +700,6 @@ function reset() {
   detailList.value = [
     {
       materialId: null,
-      rdProcurementRequestLineId: null,
       quantity: null,
       unitPrice: null,
       taxPrice: null,
@@ -802,7 +708,6 @@ function reset() {
     },
   ];
   materialOptions.value = [];
-  rdProcurementRequestOptions.value = [];
   materialLoading.value = false;
   proxy.resetForm("orderRef");
 }
@@ -824,7 +729,6 @@ function handleQuery() {
 function addDetailItem() {
   detailList.value.push({
     materialId: null,
-    rdProcurementRequestLineId: null,
     quantity: null,
     unitPrice: null,
     taxPrice: null,
@@ -862,67 +766,6 @@ function handleMaterialChange(val, index) {
         proxy.$modal.msgError("获取物料最新单价失败");
       });
   }
-}
-
-async function handleRdProcurementRequestChange(requestId) {
-  if (!requestId) {
-    form.value.rdProcurementRequestId = null;
-    form.value.rdProcurementRequestNo = "";
-    form.value.rdProcurementProjectCode = "";
-    form.value.rdProcurementProjectName = "";
-    form.value.rdProcurementWorkshopName = "";
-    detailList.value = detailList.value.map((item) => ({
-      ...item,
-      rdProcurementRequestLineId: null,
-    }));
-    return;
-  }
-
-  const response = await getRdProcurementRequest(requestId);
-  const requestData = response.data;
-  if (!requestData) {
-    return;
-  }
-
-  rdProcurementRequestOptions.value = [requestData];
-  form.value.rdProcurementRequestId = requestData.id;
-  form.value.rdProcurementRequestNo = requestData.documentNo;
-  form.value.rdProcurementProjectCode = requestData.projectCode;
-  form.value.rdProcurementProjectName = requestData.projectName;
-  form.value.rdProcurementWorkshopName = requestData.workshopNameSnapshot || "";
-  form.value.workshopId = requestData.workshopId || null;
-  if (requestData.supplierId) {
-    form.value.supplierId = requestData.supplierId;
-    supplierOptionsForForm.value = [
-      {
-        supplierId: requestData.supplierId,
-        supplierCode: requestData.supplierCodeSnapshot,
-        supplierName: requestData.supplierNameSnapshot,
-      },
-    ];
-  }
-  if (!form.value.remark && requestData.remark) {
-    form.value.remark = requestData.remark;
-  }
-  detailList.value = (requestData.lines || []).map((line) => ({
-    materialId: line.materialId,
-    rdProcurementRequestLineId: line.id,
-    quantity: Number(line.quantity),
-    unitPrice: Number(line.unitPrice || 0),
-    taxPrice: Number(line.unitPrice || 0),
-    remark: line.remark || "",
-    subtotal: (
-      Number(line.quantity || 0) * Number(line.unitPrice || 0)
-    ).toFixed(2),
-  }));
-  materialOptions.value = (requestData.lines || []).map((line) => ({
-    materialId: line.materialId,
-    materialCode: line.materialCodeSnapshot,
-    materialName: line.materialNameSnapshot,
-    specification: line.materialSpecSnapshot || "",
-  }));
-  calculateTotalAmount();
-  await ensureMainWorkshopForLinkedRequest();
 }
 
 /** 计算小计和总金额 */
@@ -1005,31 +848,15 @@ function handleUpdate(row) {
         inboundDate: orderData.inboundDate,
         supplierId: orderData.supplierId,
         workshopId: orderData.workshopId,
-        rdProcurementRequestId: orderData.rdProcurementRequestId,
-        rdProcurementRequestNo: orderData.rdProcurementRequestNo,
-        rdProcurementProjectCode: orderData.rdProcurementProjectCode,
-        rdProcurementProjectName: orderData.rdProcurementProjectName,
-        rdProcurementWorkshopName: orderData.workshopName,
         chargeBy: orderData.chargeBy,
         attn: orderData.attn,
         totalAmount: orderData.totalAmount,
         remark: orderData.remark,
       };
-      if (orderData.rdProcurementRequestId) {
-        rdProcurementRequestOptions.value = [
-          {
-            id: orderData.rdProcurementRequestId,
-            documentNo: orderData.rdProcurementRequestNo,
-            projectCode: orderData.rdProcurementProjectCode,
-            projectName: orderData.rdProcurementProjectName,
-          },
-        ];
-      }
       if (orderData.details && orderData.details.length > 0) {
         detailList.value = orderData.details.map((detail) => ({
           detailId: detail.detailId,
           materialId: detail.materialId,
-          rdProcurementRequestLineId: detail.rdProcurementRequestLineId ?? null,
           quantity: detail.quantity,
           unitPrice: detail.unitPrice,
           taxPrice: detail.taxPrice,
@@ -1260,7 +1087,6 @@ async function handleAiPrefill(formData) {
       }
       const row = {
         materialId: null,
-        rdProcurementRequestLineId: null,
         quantity,
         unitPrice: item.unitPrice || null,
         taxPrice: item.taxPrice || null,

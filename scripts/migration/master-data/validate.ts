@@ -589,19 +589,24 @@ async function main(): Promise<void> {
           id: number;
           supplierCode: string;
           supplierName: string;
+          supplierShortName: string | null;
+          contactPerson: string | null;
+          contactPhone: string | null;
+          address: string | null;
           status: string;
         }>(
           targetConnection,
-          "SELECT id, supplierCode, supplierName, status FROM supplier",
+          "SELECT id, supplierCode, supplierName, supplierShortName, contactPerson, contactPhone, address, status FROM supplier",
           "supplierCode",
         );
         const personnelRowsByName = await getTargetRowsByCode<{
           id: number;
           personnelName: string;
+          contactPhone: string | null;
           status: string;
         }>(
           targetConnection,
-          "SELECT id, personnelName, status FROM personnel",
+          "SELECT id, personnelName, contact_phone AS contactPhone, status FROM personnel",
           "personnelName",
         );
         const customerRowsByCode = await getTargetRowsByCode<{
@@ -761,6 +766,34 @@ async function main(): Promise<void> {
           pushValueMismatch(
             validationIssues,
             context,
+            "supplier.supplierShortName",
+            record.target.supplierShortName,
+            targetRow.supplierShortName,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "supplier.contactPerson",
+            record.target.contactPerson,
+            targetRow.contactPerson,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "supplier.contactPhone",
+            record.target.contactPhone,
+            targetRow.contactPhone,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "supplier.address",
+            record.target.address,
+            targetRow.address,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
             "supplier.status",
             record.target.status,
             targetRow.status,
@@ -802,6 +835,13 @@ async function main(): Promise<void> {
             "personnel.personnelName",
             record.target.personnelName,
             targetRow.personnelName,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "personnel.contactPhone",
+            record.target.contactPhone,
+            targetRow.contactPhone,
           );
           pushValueMismatch(
             validationIssues,

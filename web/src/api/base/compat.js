@@ -113,11 +113,10 @@ export function mapSupplier(item) {
     supplierId: item.id,
     supplierCode: item.supplierCode,
     supplierName: item.supplierName,
-    supplierShortName: item.supplierName,
     status: item.status ?? "ACTIVE",
-    contactPerson: "",
-    contactPhone: "",
-    address: "",
+    contactPerson: item.contactPerson ?? "",
+    contactPhone: item.contactPhone ?? "",
+    address: item.address ?? "",
     remark: "",
   };
 }
@@ -126,6 +125,7 @@ export function mapPersonnel(item) {
   return {
     personnelId: item.id,
     name: item.personnelName,
+    contactPhone: item.contactPhone ?? "",
     status: item.status ?? "ACTIVE",
   };
 }

@@ -202,6 +202,9 @@ describe("MasterDataRepository", () => {
         OR: [
           { supplierCode: { contains: "赛福特" } },
           { supplierName: { contains: "赛福特" } },
+          { contactPerson: { contains: "赛福特" } },
+          { contactPhone: { contains: "赛福特" } },
+          { address: { contains: "赛福特" } },
         ],
       },
       take: 20,
@@ -214,6 +217,9 @@ describe("MasterDataRepository", () => {
         OR: [
           { supplierCode: { contains: "赛福特" } },
           { supplierName: { contains: "赛福特" } },
+          { contactPerson: { contains: "赛福特" } },
+          { contactPhone: { contains: "赛福特" } },
+          { address: { contains: "赛福特" } },
         ],
       },
     });
@@ -231,6 +237,9 @@ describe("MasterDataRepository", () => {
       {
         supplierCode: "SUP-001",
         supplierName: "赛福特供应商",
+        contactPerson: "张三",
+        contactPhone: "13800000000",
+        address: "苏州工业园区",
       },
       "1",
     );
@@ -239,6 +248,9 @@ describe("MasterDataRepository", () => {
       data: {
         supplierCode: "SUP-001",
         supplierName: "赛福特供应商",
+        contactPerson: "张三",
+        contactPhone: "13800000000",
+        address: "苏州工业园区",
         status: "ACTIVE",
         creationMode: "MANUAL",
         createdBy: "1",
@@ -291,6 +303,7 @@ describe("MasterDataRepository", () => {
       1,
       {
         supplierName: "已更新供应商",
+        contactPhone: "13800000000",
         status: "DISABLED",
       },
       "9",
@@ -300,6 +313,7 @@ describe("MasterDataRepository", () => {
       where: { id: 1 },
       data: {
         supplierName: "已更新供应商",
+        contactPhone: "13800000000",
         status: "DISABLED",
         updatedBy: "9",
       },

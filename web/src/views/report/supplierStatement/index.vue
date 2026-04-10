@@ -240,7 +240,7 @@ function handleExport() {
           filterable
           remote
           reserve-keyword
-          placeholder="请输入供应商名称搜索"
+          placeholder="请输入供应商编码或名称搜索"
           :remote-method="searchSupplier"
           :loading="supplierLoading"
           style="width: 280px"
@@ -254,7 +254,6 @@ function handleExport() {
           >
             <span style="float: left">{{ item.supplierCode }}</span>
             <span style="float: left; margin-left: 10px;">{{ item.supplierName }}</span>
-            <span style="float: right; color: #8492a6; font-size: 13px; margin-left: 20px;">{{ item.supplierShortName }}</span>
           </el-option>
         </el-select>
       </el-form-item>

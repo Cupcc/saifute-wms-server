@@ -641,6 +641,42 @@ export async function applyProcurementStartedStatus(
   );
 }
 
+export async function applyManualAcceptanceStatus(
+  params: {
+    requestLineId: number;
+    quantity: DecimalLike;
+    requestId: number;
+    requestDocumentNo: string;
+    operatorId?: string;
+    note?: string;
+    reason?: string;
+    referenceNo?: string;
+  },
+  db: DbClient,
+) {
+  return transferStatusQuantity(
+    {
+      requestLineId: params.requestLineId,
+      eventType: RdMaterialStatusEventType.ACCEPTANCE_CONFIRMED,
+      toStatus: RdMaterialStatus.ACCEPTED,
+      quantity: params.quantity,
+      fromStatuses: [
+        RdMaterialStatus.IN_PROCUREMENT,
+        RdMaterialStatus.PENDING_PROCUREMENT,
+      ],
+      sourceDocumentType: RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE,
+      sourceDocumentId: params.requestId,
+      sourceDocumentLineId: params.requestLineId,
+      sourceDocumentNumber: params.requestDocumentNo,
+      referenceNo: params.referenceNo,
+      reason: params.reason,
+      note: params.note,
+      operatorId: params.operatorId,
+    },
+    db,
+  );
+}
+
 export async function applyManualCancelStatus(
   params: {
     requestLineId: number;

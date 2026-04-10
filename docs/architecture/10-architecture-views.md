@@ -69,6 +69,24 @@
 - `reporting` 是只读聚合层，面向报表与导出，不拥有事务写模型。
 - `ai-assistant` 是受控辅助能力，只能查询、解释和辅助录入，不能直接提交业务事实。
 
+### 3.2 库存真实范围与归属维度分离图
+
+![库存真实范围与归属维度分离图](./images/inventory-scope-vs-dimension.svg)
+
+结构说明：
+
+- 本图表达的是一条架构规则，不是业务流程：库存唯一键只包含仓别（`MAIN` / `RD_SUB`），其余维度不进入库存唯一键。
+- 左侧是所有会触发库存变动的业务单据模块：`inbound`、`customer`、`workshop-material`、`rd-project`、`rd-subwarehouse`；它们统一通过 `inventory-core` 写入库存。
+- 右侧是仅有的两个真实库存落点：`MAIN` 主仓和 `RD_SUB` 研发小仓。
+- 底部黄色虚线区域列出 `department`、`workshop`、`rd-project`、`sales-project`、`project_target` —— 这些是组织归属或核算维度，不是库存池，不进入 `inventory_balance` 的唯一键。
+
+复核重点：
+
+- 系统中仅存在 `MAIN` 和 `RD_SUB` 两个真实库存范围，不允许出现第三个物理仓。
+- `workshop` 是领料归属维度，不持有独立库存余额。
+- `rd-project` 和 `sales-project` 是核算维度，不是库存池；研发项目领用虽然固定在 `RD_SUB`，但项目本身不构成独立仓别。
+- 所有库存写入必须经过 `inventory-core`，单据模块不能旁路改库存底表。
+
 ### 3.3 运行时容器图
 
 ```mermaid

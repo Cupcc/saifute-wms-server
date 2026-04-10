@@ -96,7 +96,6 @@
             :value="item.supplierId">
             <span style="float: left">{{ item.supplierCode }}</span>
             <span style="float: left; margin-left: 10px;">{{ item.supplierName }}</span>
-            <span style="float: right; color: #8492a6; font-size: 13px; margin-left: 20px;">{{ item.supplierShortName }}</span>
           </el-option>
         </el-select>
       </el-form-item>
@@ -380,7 +379,6 @@
 					        :value="item.supplierId">
 					        <span style="float: left">{{ item.supplierCode }}</span>
 					        <span style="float: left; margin-left: 10px;">{{ item.supplierName }}</span>
-					        <span style="float: right; color: #8492a6; font-size: 13px; margin-left: 20px;">{{ item.supplierShortName }}</span>
 				        </el-option>
 			        </el-select>
 		        </template>

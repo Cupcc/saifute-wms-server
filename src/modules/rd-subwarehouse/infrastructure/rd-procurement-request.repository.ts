@@ -101,10 +101,6 @@ export class RdProcurementRequestRepository {
             orderBy: { lineNo: "asc" },
             include: { statusLedger: true },
           },
-          acceptanceOrders: {
-            where: { lifecycleStatus: "EFFECTIVE" },
-            select: { id: true },
-          },
         },
       }),
       client.rdProcurementRequest.count({ where }),
@@ -123,16 +119,6 @@ export class RdProcurementRequestRepository {
             statusLedger: true,
             statusHistories: {
               orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-            },
-          },
-        },
-        acceptanceOrders: {
-          where: { lifecycleStatus: "EFFECTIVE" },
-          orderBy: [{ bizDate: "desc" }, { id: "desc" }],
-          include: {
-            lines: {
-              where: { rdProcurementRequestLineId: { not: null } },
-              orderBy: { lineNo: "asc" },
             },
           },
         },
@@ -195,15 +181,5 @@ export class RdProcurementRequestRepository {
         },
       },
     });
-  }
-
-  async hasActiveAcceptanceOrders(id: number, db?: DbClient) {
-    const count = await this.db(db).stockInOrder.count({
-      where: {
-        rdProcurementRequestId: id,
-        lifecycleStatus: "EFFECTIVE",
-      },
-    });
-    return count > 0;
   }
 }

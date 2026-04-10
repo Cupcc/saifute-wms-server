@@ -2,10 +2,10 @@
   <div class="app-container">
     <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="客户编码" prop="customerCode">
-        <combo-input v-model="queryParams.customerCode" scope="sales" field="customerCode" placeholder="请选择或输入客户编码" width="240px" />
+        <combo-input v-model="queryParams.customerCode" scope="customer" field="customerCode" placeholder="请选择或输入客户编码" width="240px" />
       </el-form-item>
       <el-form-item label="客户名称" prop="customerName">
-        <combo-input v-model="queryParams.customerName" scope="sales" field="customerName" placeholder="请选择或输入客户名称" width="240px" />
+        <combo-input v-model="queryParams.customerName" scope="customer" field="customerName" placeholder="请选择或输入客户名称" width="240px" />
       </el-form-item>
       <el-form-item label="客户简称" prop="customerShortName">
         <el-input
@@ -128,10 +128,10 @@
     <el-dialog :title="title" v-model="open" width="500px" append-to-body draggable>
       <el-form ref="customerRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="客户编码" prop="customerCode">
-          <combo-input v-model="form.customerCode" scope="sales" field="customerCode" :disabled="Boolean(form.customerId)" placeholder="请选择或输入客户编码" />
+          <combo-input v-model="form.customerCode" scope="customer" field="customerCode" :disabled="Boolean(form.customerId)" placeholder="请选择或输入客户编码" />
         </el-form-item>
         <el-form-item label="客户名称" prop="customerName">
-          <combo-input v-model="form.customerName" scope="sales" field="customerName" placeholder="请选择或输入客户名称" />
+          <combo-input v-model="form.customerName" scope="customer" field="customerName" placeholder="请选择或输入客户名称" />
         </el-form-item>
         <el-form-item label="客户简称" prop="customerShortName">
           <el-input v-model="form.customerShortName" placeholder="请输入客户简称" />

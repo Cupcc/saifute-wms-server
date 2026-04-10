@@ -304,6 +304,10 @@ function createSupplierModel() {
     id: number;
     supplierCode: string;
     supplierName: string;
+    supplierShortName?: string | null;
+    contactPerson?: string | null;
+    contactPhone?: string | null;
+    address?: string | null;
     status: string;
     creationMode?: string;
     sourceDocumentType?: string | null;

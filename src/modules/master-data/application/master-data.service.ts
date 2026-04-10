@@ -510,6 +510,9 @@ export class MasterDataService implements OnModuleInit {
         {
           supplierCode: dto.supplierCode,
           supplierName: dto.supplierName,
+          contactPerson: this.normalizeOptionalText(dto.contactPerson),
+          contactPhone: this.normalizeOptionalText(dto.contactPhone),
+          address: this.normalizeOptionalText(dto.address),
         },
         createdBy,
       );
@@ -533,15 +536,23 @@ export class MasterDataService implements OnModuleInit {
       }
     }
 
+    const payload: Prisma.SupplierUncheckedUpdateInput = {
+      supplierCode: dto.supplierCode,
+      supplierName: dto.supplierName,
+    };
+
+    if (Object.hasOwn(dto, "contactPerson")) {
+      payload.contactPerson = this.normalizeOptionalText(dto.contactPerson);
+    }
+    if (Object.hasOwn(dto, "contactPhone")) {
+      payload.contactPhone = this.normalizeOptionalText(dto.contactPhone);
+    }
+    if (Object.hasOwn(dto, "address")) {
+      payload.address = this.normalizeOptionalText(dto.address);
+    }
+
     try {
-      return await this.repository.updateSupplier(
-        id,
-        {
-          supplierCode: dto.supplierCode,
-          supplierName: dto.supplierName,
-        },
-        updatedBy,
-      );
+      return await this.repository.updateSupplier(id, payload, updatedBy);
     } catch (error) {
       this.throwSupplierCodeConflict(error, dto.supplierCode);
     }
@@ -636,7 +647,10 @@ export class MasterDataService implements OnModuleInit {
 
   async createPersonnel(dto: CreatePersonnelDto, createdBy?: string) {
     return this.repository.createPersonnel(
-      { personnelName: dto.personnelName },
+      {
+        personnelName: dto.personnelName,
+        contactPhone: this.normalizeOptionalText(dto.contactPhone),
+      },
       createdBy,
     );
   }
@@ -651,11 +665,14 @@ export class MasterDataService implements OnModuleInit {
       throw new NotFoundException(`人员不存在: ${id}`);
     }
 
-    return this.repository.updatePersonnel(
-      id,
-      { personnelName: dto.personnelName },
-      updatedBy,
-    );
+    const payload: Prisma.PersonnelUncheckedUpdateInput = {
+      personnelName: dto.personnelName,
+    };
+    if (Object.hasOwn(dto, "contactPhone")) {
+      payload.contactPhone = this.normalizeOptionalText(dto.contactPhone);
+    }
+
+    return this.repository.updatePersonnel(id, payload, updatedBy);
   }
 
   async deactivatePersonnel(id: number, updatedBy?: string) {
@@ -895,6 +912,15 @@ export class MasterDataService implements OnModuleInit {
     }
 
     throw error;
+  }
+
+  private normalizeOptionalText(value?: string | null): string | null {
+    if (typeof value !== "string") {
+      return null;
+    }
+
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized : null;
   }
 
   private async assertCategoryIdIsActive(categoryId?: number | null) {

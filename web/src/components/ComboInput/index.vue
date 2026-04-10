@@ -1,24 +1,16 @@
 <template>
-  <el-select
-    :model-value="modelValue"
+  <el-autocomplete
+    :model-value="inputValue"
     :placeholder="placeholder"
-    filterable
-    allow-create
-    :loading="loading"
     :clearable="clearable"
     :disabled="disabled"
     :style="computedStyle"
-    :default-first-option="true"
-    @update:model-value="$emit('update:modelValue', $event)"
-    @visible-change="onDropdownOpen"
-  >
-    <el-option
-      v-for="item in mergedOptions"
-      :key="item"
-      :label="item"
-      :value="item"
-    />
-  </el-select>
+    :fetch-suggestions="querySuggestions"
+    :trigger-on-focus="true"
+    @focus="onFocus"
+    @update:model-value="handleInput"
+    @select="handleSelect"
+  />
 </template>
 
 <script setup>
@@ -39,19 +31,22 @@ const props = defineProps({
   width: { type: String, default: "100%" },
 });
 
-defineEmits(["update:modelValue"]);
+const emit = defineEmits(["update:modelValue"]);
 
 const remoteOptions = ref([]);
 const loaded = ref(false);
 const loading = ref(false);
 
 const computedStyle = computed(() => ({ width: props.width }));
+const inputValue = computed(() =>
+  props.modelValue == null ? "" : String(props.modelValue),
+);
 
 const mergedOptions = computed(() => {
   const set = new Set([...props.defaults, ...remoteOptions.value]);
   // 保证当前值也在列表中
-  if (props.modelValue && typeof props.modelValue === "string") {
-    set.add(props.modelValue);
+  if (inputValue.value) {
+    set.add(inputValue.value);
   }
   return [...set].sort();
 });
@@ -69,8 +64,25 @@ async function loadSuggestions(force = false) {
   }
 }
 
-function onDropdownOpen(visible) {
-  if (visible) loadSuggestions();
+async function querySuggestions(queryString, callback) {
+  await loadSuggestions();
+  const keyword = queryString.trim().toLowerCase();
+  const matches = mergedOptions.value
+    .filter((item) => !keyword || item.toLowerCase().includes(keyword))
+    .map((item) => ({ value: item }));
+  callback(matches);
+}
+
+function handleInput(value) {
+  emit("update:modelValue", value);
+}
+
+function handleSelect(item) {
+  emit("update:modelValue", item.value);
+}
+
+function onFocus() {
+  loadSuggestions();
 }
 
 onMounted(() => {

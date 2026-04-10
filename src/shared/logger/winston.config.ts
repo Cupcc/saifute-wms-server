@@ -8,6 +8,22 @@ import DailyRotateFile = require("winston-daily-rotate-file");
 
 import { AppConfigService } from "../config/app-config.service";
 
+const META_STRIP_CONTEXTS = new Set(["HTTP", "Bootstrap"]);
+
+export const stripLowValueDefaultMetaFields = <
+  T extends Record<string, unknown>,
+>(
+  info: T,
+): T => {
+  if (!META_STRIP_CONTEXTS.has(String(info.context ?? ""))) {
+    return info;
+  }
+
+  delete info.app;
+  delete info.environment;
+  return info;
+};
+
 const ensureDir = (dirPath: string): void => {
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
@@ -40,8 +56,12 @@ export const createWinstonModuleOptions = (
 ): WinstonModuleOptions => {
   const logDir = appConfigService.logDirPath;
   ensureDir(logDir);
+  const stripLowValueDefaultMeta = winston.format((info) =>
+    stripLowValueDefaultMetaFields(info),
+  )();
 
   const consoleFormat = winston.format.combine(
+    stripLowValueDefaultMeta,
     winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
     winston.format.ms(),
     nestWinstonModuleUtilities.format.nestLike(appConfigService.appName, {
@@ -53,6 +73,7 @@ export const createWinstonModuleOptions = (
   );
 
   const fileFormat = winston.format.combine(
+    stripLowValueDefaultMeta,
     winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
     winston.format.errors({ stack: true }),
     winston.format.json(),

@@ -64,7 +64,7 @@
 	  
 	  <el-form-item label="供应商" prop="supplierKeyword">
 	    <el-select v-model="supplierKeyword" filterable remote reserve-keyword allow-create default-first-option
-	               placeholder="输入供应商名称搜索或选择"
+	               placeholder="输入供应商编码或名称搜索或选择"
 	               :remote-method="searchSupplier" :loading="supplierLoading" clearable style="width: 240px"
 	               @change="handleSupplierChange" @clear="handleSupplierClear" @keyup.enter="handleQuery">
 		    <el-option
@@ -74,7 +74,6 @@
 			    :value="item.supplierId">
 			    <span style="float: left">{{ item.supplierCode }}</span>
 			    <span style="float: left; margin-left: 10px;">{{ item.supplierName }}</span>
-			    <span style="float: right; color: #8492a6; font-size: 13px; margin-left: 20px;">{{ item.supplierShortName }}</span>
 		    </el-option>
 	    </el-select>
     </el-form-item>

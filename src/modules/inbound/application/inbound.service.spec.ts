@@ -78,6 +78,11 @@ describe("InboundService", () => {
       },
     ],
   };
+  const mockOrderWithoutWorkshop = {
+    ...mockOrder,
+    workshopId: null,
+    workshopNameSnapshot: null,
+  };
 
   const mockMaterial = {
     id: 100,
@@ -259,6 +264,35 @@ describe("InboundService", () => {
       );
     });
 
+    it("should allow acceptance order without workshop", async () => {
+      (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(null);
+      (repository.createOrder as jest.Mock).mockResolvedValue(
+        mockOrderWithoutWorkshop,
+      );
+
+      const dto = {
+        documentNo: "SI-NO-WS",
+        orderType: StockInOrderType.ACCEPTANCE,
+        bizDate: "2025-03-14",
+        supplierId: 10,
+        handlerPersonnelId: 20,
+        lines: [{ materialId: 100, quantity: "100", unitPrice: "10" }],
+      };
+
+      const result = await service.createOrder(dto, "1");
+
+      expect(result).toEqual(mockOrderWithoutWorkshop);
+      expect(masterDataService.getWorkshopById).not.toHaveBeenCalled();
+      expect(repository.createOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          workshopId: null,
+          workshopNameSnapshot: null,
+        }),
+        expect.anything(),
+        expect.anything(),
+      );
+    });
+
     it("should pass unit cost snapshot from inbound line price to increaseStock", async () => {
       (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(null);
       (repository.createOrder as jest.Mock).mockResolvedValue(mockOrder);
@@ -301,7 +335,7 @@ describe("InboundService", () => {
       ).rejects.toThrow(/已有下游消耗分配/);
     });
 
-    it("should create linked acceptance without writing RD stock", async () => {
+    it("should create acceptance without creating new RD procurement linkage", async () => {
       (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(null);
       (repository.createOrder as jest.Mock).mockResolvedValue(mockOrder);
 
@@ -309,34 +343,25 @@ describe("InboundService", () => {
         documentNo: "SI-001",
         orderType: StockInOrderType.ACCEPTANCE,
         bizDate: "2025-03-14",
+        supplierId: 10,
         workshopId: 1,
-        rdProcurementRequestId: 9,
-        lines: [
-          {
-            materialId: 100,
-            rdProcurementRequestLineId: 500,
-            quantity: "100",
-            unitPrice: "10",
-          },
-        ],
+        lines: [{ materialId: 100, quantity: "100", unitPrice: "10" }],
       };
 
       await service.createOrder(dto, "1");
 
-      expect(rdProcurementRequestService.getRequestById).toHaveBeenCalledWith(
-        9,
-      );
+      expect(rdProcurementRequestService.getRequestById).not.toHaveBeenCalled();
       expect(repository.createOrder).toHaveBeenCalledWith(
         expect.objectContaining({
-          rdProcurementRequestId: 9,
-          rdProcurementRequestNoSnapshot: "RDPUR-001",
-          rdProcurementProjectCodeSnapshot: "RD-PJT-001",
-          rdProcurementProjectNameSnapshot: "研发治具项目",
+          rdProcurementRequestId: null,
+          rdProcurementRequestNoSnapshot: null,
+          rdProcurementProjectCodeSnapshot: null,
+          rdProcurementProjectNameSnapshot: null,
           workshopId: 1,
         }),
         expect.arrayContaining([
           expect.objectContaining({
-            rdProcurementRequestLineId: 500,
+            rdProcurementRequestLineId: null,
           }),
         ]),
         expect.anything(),
@@ -348,53 +373,6 @@ describe("InboundService", () => {
         expect.anything(),
       );
       expect(applyAcceptanceStatusesForOrder).toHaveBeenCalled();
-    });
-
-    it("should allow linked acceptance for non-main workshops while still posting to MAIN stock", async () => {
-      (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(null);
-      (repository.createOrder as jest.Mock).mockResolvedValue({
-        ...mockOrder,
-        workshopId: 6,
-        workshopNameSnapshot: "研发小仓",
-      });
-      (masterDataService.getWorkshopById as jest.Mock).mockResolvedValueOnce({
-        id: 6,
-        workshopCode: "RD",
-        workshopName: "研发小仓",
-      });
-
-      await service.createOrder(
-        {
-          documentNo: "SI-002",
-          orderType: StockInOrderType.ACCEPTANCE,
-          bizDate: "2025-03-14",
-          workshopId: 6,
-          rdProcurementRequestId: 9,
-          lines: [
-            {
-              materialId: 100,
-              rdProcurementRequestLineId: 500,
-              quantity: "10",
-            },
-          ],
-        },
-        "1",
-      );
-
-      expect(repository.createOrder).toHaveBeenCalledWith(
-        expect.objectContaining({
-          workshopId: 6,
-          workshopNameSnapshot: "研发小仓",
-        }),
-        expect.anything(),
-        expect.anything(),
-      );
-      expect(inventoryService.increaseStock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          stockScope: "MAIN",
-        }),
-        expect.anything(),
-      );
     });
 
     it("should allow plain acceptance for non-main workshops while still posting to MAIN stock", async () => {
@@ -480,32 +458,18 @@ describe("InboundService", () => {
       );
     });
 
-    it("should reject linked acceptance when cumulative quantity exceeds request", async () => {
-      (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(null);
-      (
-        repository.sumEffectiveAcceptedQtyByRdProcurementLineIds as jest.Mock
-      ).mockResolvedValue(new Map([[500, new Prisma.Decimal(95)]]));
-
+    it("should reject production receipt without workshop", async () => {
       await expect(
-        service.createOrder(
+        service.createIntoOrder(
           {
-            documentNo: "SI-003",
-            orderType: StockInOrderType.ACCEPTANCE,
+            documentNo: "INTO-NO-WS",
+            orderType: StockInOrderType.PRODUCTION_RECEIPT,
             bizDate: "2025-03-14",
-            workshopId: 1,
-            rdProcurementRequestId: 9,
-            lines: [
-              {
-                materialId: 100,
-                rdProcurementRequestLineId: 500,
-                quantity: "10",
-                unitPrice: "10",
-              },
-            ],
+            lines: [{ materialId: 100, quantity: "10", unitPrice: "10" }],
           },
           "1",
         ),
-      ).rejects.toThrow("累计验收数量不能大于对应 RD 采购需求数量");
+      ).rejects.toThrow("生产入库单必须选择部门");
     });
   });
 
@@ -544,6 +508,110 @@ describe("InboundService", () => {
       expect(
         approvalService.createOrRefreshApprovalDocument,
       ).toHaveBeenCalled();
+    });
+
+    it("should update acceptance order when workshop is empty", async () => {
+      (repository.findOrderById as jest.Mock)
+        .mockResolvedValueOnce(mockOrderWithoutWorkshop)
+        .mockResolvedValueOnce(mockOrderWithoutWorkshop)
+        .mockResolvedValueOnce({ ...mockOrderWithoutWorkshop, lines: [] });
+      (inventoryService.getLogsForDocument as jest.Mock).mockResolvedValue([
+        { id: 1, businessDocumentLineId: 1 },
+      ]);
+
+      const dto = {
+        bizDate: "2025-03-15",
+        lines: [{ materialId: 100, quantity: "150", unitPrice: "10" }],
+      };
+
+      (repository.updateOrder as jest.Mock).mockResolvedValue({
+        ...mockOrderWithoutWorkshop,
+        totalQty: new Prisma.Decimal(150),
+      });
+      (repository.deleteOrderLine as jest.Mock).mockResolvedValue(undefined);
+      (repository.createOrderLine as jest.Mock).mockResolvedValue({
+        ...mockOrder.lines[0],
+        id: 2,
+        lineNo: 1,
+        quantity: new Prisma.Decimal(150),
+        amount: new Prisma.Decimal(1500),
+      });
+
+      await service.updateOrder(1, dto, "1");
+
+      expect(masterDataService.getWorkshopById).not.toHaveBeenCalled();
+      expect(repository.updateOrder).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          workshopId: null,
+          workshopNameSnapshot: null,
+        }),
+        expect.anything(),
+      );
+    });
+
+    it("should keep legacy RD linkage when editing historical linked acceptance orders", async () => {
+      const legacyOrder = {
+        ...mockOrder,
+        rdProcurementRequestId: 9,
+        rdProcurementRequestNoSnapshot: "RDPUR-001",
+        rdProcurementProjectCodeSnapshot: "RD-PJT-001",
+        rdProcurementProjectNameSnapshot: "研发治具项目",
+        lines: [
+          {
+            ...mockOrder.lines[0],
+            rdProcurementRequestLineId: 500,
+          },
+        ],
+      };
+
+      (repository.findOrderById as jest.Mock)
+        .mockResolvedValueOnce(legacyOrder)
+        .mockResolvedValueOnce(legacyOrder)
+        .mockResolvedValueOnce(legacyOrder);
+      (inventoryService.getLogsForDocument as jest.Mock).mockResolvedValue([
+        { id: 1, businessDocumentLineId: 1 },
+      ]);
+      (repository.updateOrderLine as jest.Mock).mockResolvedValue({
+        ...legacyOrder.lines[0],
+      });
+      (repository.updateOrder as jest.Mock).mockResolvedValue(legacyOrder);
+
+      await service.updateOrder(
+        1,
+        {
+          bizDate: "2025-03-15",
+          supplierId: 10,
+          lines: [
+            {
+              id: 1,
+              materialId: 100,
+              quantity: "100",
+              unitPrice: "10",
+            },
+          ],
+        },
+        "1",
+      );
+
+      expect(rdProcurementRequestService.getRequestById).toHaveBeenCalledWith(
+        9,
+      );
+      expect(repository.updateOrderLine).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          rdProcurementRequestLineId: 500,
+        }),
+        expect.anything(),
+      );
+      expect(repository.updateOrder).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          rdProcurementRequestId: 9,
+          rdProcurementRequestNoSnapshot: "RDPUR-001",
+        }),
+        expect.anything(),
+      );
     });
   });
 

@@ -465,12 +465,8 @@ function transformSuppliers(rows: readonly LegacySupplierRow[]): {
               row.supplierId,
               "supplier",
               targetCode,
-              "Archive source-only supplier fields.",
+              "Archive unmapped supplier legacy fields.",
               {
-                supplierShortName: normalizeOptionalText(row.supplierShortName),
-                contactPerson: normalizeOptionalText(row.contactPerson),
-                contactPhone: normalizeOptionalText(row.contactPhone),
-                address: normalizeOptionalText(row.address),
                 voidDescription: normalizeOptionalText(row.voidDescription),
               },
             );
@@ -485,6 +481,10 @@ function transformSuppliers(rows: readonly LegacySupplierRow[]): {
           supplierCode: targetCode,
           supplierName:
             supplierName ?? `MISSING-SUPPLIER-NAME-${row.supplierId}`,
+          supplierShortName: normalizeOptionalText(row.supplierShortName),
+          contactPerson: normalizeOptionalText(row.contactPerson),
+          contactPhone: normalizeOptionalText(row.contactPhone),
+          address: normalizeOptionalText(row.address),
           status: toStatus(row.delFlag),
           creationMode: "MANUAL" as const,
           sourceDocumentType: null,
@@ -572,7 +572,6 @@ function transformPersonnel(rows: readonly LegacyPersonnelRow[]): {
               {
                 type: row.type,
                 namePinyin: normalizeOptionalText(row.namePinyin),
-                contactPhone: normalizeOptionalText(row.contactPhone),
                 voidDescription: normalizeOptionalText(row.voidDescription),
               },
             );
@@ -586,6 +585,7 @@ function transformPersonnel(rows: readonly LegacyPersonnelRow[]): {
         target: {
           personnelName:
             personnelName ?? `MISSING-PERSONNEL-NAME-${row.personnelId}`,
+          contactPhone: normalizeOptionalText(row.contactPhone),
           status: toStatus(row.delFlag),
           createdBy: normalizeOptionalText(row.createBy),
           createdAt: row.createTime,

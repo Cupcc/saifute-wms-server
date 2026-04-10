@@ -705,6 +705,9 @@ describe("MasterDataService", () => {
       id: 1,
       supplierCode: "SUP-001",
       supplierName: "赛福特供应商",
+      contactPerson: "张三",
+      contactPhone: "13800000000",
+      address: "苏州工业园区",
       status: "ACTIVE",
     });
     const service = new MasterDataService(
@@ -715,6 +718,9 @@ describe("MasterDataService", () => {
       {
         supplierCode: "SUP-001",
         supplierName: "赛福特供应商",
+        contactPerson: "张三",
+        contactPhone: "13800000000",
+        address: "苏州工业园区",
       },
       "1",
     );
@@ -724,6 +730,9 @@ describe("MasterDataService", () => {
       {
         supplierCode: "SUP-001",
         supplierName: "赛福特供应商",
+        contactPerson: "张三",
+        contactPhone: "13800000000",
+        address: "苏州工业园区",
       },
       "1",
     );
@@ -731,6 +740,7 @@ describe("MasterDataService", () => {
       expect.objectContaining({
         supplierCode: "SUP-001",
         supplierName: "赛福特供应商",
+        contactPerson: "张三",
       }),
     );
   });
@@ -755,12 +765,15 @@ describe("MasterDataService", () => {
     expect(repository.createSupplier).not.toHaveBeenCalled();
   });
 
-  it("updates supplier code and name after checking for conflicts", async () => {
+  it("updates supplier code and contacts after checking for conflicts", async () => {
     const repository = createRepositoryMock();
     repository.findSupplierById.mockResolvedValue({
       id: 1,
       supplierCode: "SUP-001",
       supplierName: "旧供应商",
+      contactPerson: "旧联系人",
+      contactPhone: "13900000000",
+      address: "旧地址",
       status: "ACTIVE",
     });
     repository.findSupplierByCode.mockResolvedValue(null);
@@ -768,6 +781,9 @@ describe("MasterDataService", () => {
       id: 1,
       supplierCode: "SUP-002",
       supplierName: "新供应商",
+      contactPerson: "新联系人",
+      contactPhone: "13800000000",
+      address: "新地址",
       status: "ACTIVE",
     });
     const service = new MasterDataService(
@@ -779,6 +795,9 @@ describe("MasterDataService", () => {
       {
         supplierCode: "SUP-002",
         supplierName: "新供应商",
+        contactPerson: "新联系人",
+        contactPhone: "13800000000",
+        address: "新地址",
       },
       "2",
     );
@@ -790,6 +809,9 @@ describe("MasterDataService", () => {
       {
         supplierCode: "SUP-002",
         supplierName: "新供应商",
+        contactPerson: "新联系人",
+        contactPhone: "13800000000",
+        address: "新地址",
       },
       "2",
     );
@@ -1002,6 +1024,7 @@ describe("MasterDataService", () => {
       repository.createPersonnel.mockResolvedValue({
         id: 1,
         personnelName: "张三",
+        contactPhone: "13800000000",
         status: "ACTIVE",
       });
       const service = new MasterDataService(
@@ -1009,16 +1032,56 @@ describe("MasterDataService", () => {
       );
 
       const result = await service.createPersonnel(
-        { personnelName: "张三" },
+        { personnelName: "张三", contactPhone: "13800000000" },
         "1",
       );
 
       expect(repository.createPersonnel).toHaveBeenCalledWith(
-        { personnelName: "张三" },
+        { personnelName: "张三", contactPhone: "13800000000" },
         "1",
       );
       expect(result).toEqual(
-        expect.objectContaining({ personnelName: "张三" }),
+        expect.objectContaining({
+          personnelName: "张三",
+          contactPhone: "13800000000",
+        }),
+      );
+    });
+
+    it("updates personnel and allows clearing contactPhone", async () => {
+      const repository = createRepositoryMock();
+      repository.findPersonnelById.mockResolvedValue({
+        id: 1,
+        personnelName: "张三",
+        contactPhone: "13800000000",
+        status: "ACTIVE",
+      });
+      repository.updatePersonnel.mockResolvedValue({
+        id: 1,
+        personnelName: "张三",
+        contactPhone: null,
+        status: "ACTIVE",
+      });
+      const service = new MasterDataService(
+        repository as unknown as MasterDataRepository,
+      );
+
+      const result = await service.updatePersonnel(
+        1,
+        { contactPhone: null },
+        "1",
+      );
+
+      expect(repository.updatePersonnel).toHaveBeenCalledWith(
+        1,
+        { personnelName: undefined, contactPhone: null },
+        "1",
+      );
+      expect(result).toEqual(
+        expect.objectContaining({
+          personnelName: "张三",
+          contactPhone: null,
+        }),
       );
     });
 

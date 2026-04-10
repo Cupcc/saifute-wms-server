@@ -19,6 +19,7 @@ import type { CreateRdProcurementRequestDto } from "../dto/create-rd-procurement
 import type { QueryRdProcurementRequestDto } from "../dto/query-rd-procurement-request.dto";
 import { RdProcurementRequestRepository } from "../infrastructure/rd-procurement-request.repository";
 import {
+  applyManualAcceptanceStatus,
   applyManualCancelStatus,
   applyManualReturnStatus,
   applyProcurementStartedStatus,
@@ -180,11 +181,7 @@ export class RdProcurementRequestService {
     }
 
     return this.prisma.runInTransaction(async (tx) => {
-      const hasActiveAcceptanceOrders =
-        await this.repository.hasActiveAcceptanceOrders(id, tx);
-      if (hasActiveAcceptanceOrders) {
-        throw new BadRequestException("该采购需求已关联有效验收单，不能作废");
-      }
+      await this.assertCanVoidRequest(request.lines, tx);
 
       for (const line of request.lines) {
         await applyRequestVoidStatus(
@@ -291,6 +288,20 @@ export class RdProcurementRequestService {
           },
           tx,
         );
+      case "ACCEPTANCE_CONFIRMED":
+        return applyManualAcceptanceStatus(
+          {
+            requestId,
+            requestDocumentNo,
+            requestLineId,
+            quantity: dto.quantity,
+            note: dto.note,
+            reason: dto.reason,
+            referenceNo: dto.referenceNo,
+            operatorId,
+          },
+          tx,
+        );
       case "MANUAL_CANCELLED":
         return applyManualCancelStatus(
           {
@@ -325,6 +336,25 @@ export class RdProcurementRequestService {
         );
       default:
         return this.assertNeverAction(dto.actionType);
+    }
+  }
+
+  private async assertCanVoidRequest(
+    lines: Array<{ id: number }>,
+    tx: Prisma.TransactionClient,
+  ) {
+    for (const line of lines) {
+      const projection = await getStatusLedgerProjection(line.id, tx);
+      const hasClosedFacts =
+        projection.acceptedQty.gt(0) ||
+        projection.handedOffQty.gt(0) ||
+        projection.scrappedQty.gt(0) ||
+        projection.returnedQty.gt(0);
+      if (hasClosedFacts) {
+        throw new BadRequestException(
+          "该采购需求已存在验收/交接/报废/退回事实，不能作废",
+        );
+      }
     }
   }
 

@@ -32,6 +32,7 @@
     <adaptive-table border stripe v-loading="loading" :data="personnelList">
       <el-table-column type="index" width="50" align="center" />
       <el-table-column sortable show-overflow-tooltip label="姓名" align="center" prop="name" v-if="columns[0].visible" />
+      <el-table-column sortable show-overflow-tooltip label="手机号" align="center" prop="contactPhone" v-if="columns[1].visible" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['base:personnel:edit']">修改</el-button>
@@ -53,6 +54,9 @@
       <el-form ref="personnelRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="姓名" prop="name">
           <el-input v-model="form.name" placeholder="请输入姓名" />
+        </el-form-item>
+        <el-form-item label="手机号" prop="contactPhone">
+          <el-input v-model="form.contactPhone" placeholder="请输入手机号" maxlength="32" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -103,6 +107,7 @@ const { queryParams, form, rules } = toRefs(data);
 
 const columns = ref([
   { key: 0, label: `姓名`, visible: true },
+  { key: 1, label: `手机号`, visible: true },
 ]);
 
 /** 查询人员信息列表 */
@@ -126,6 +131,7 @@ function reset() {
   form.value = {
     personnelId: null,
     name: null,
+    contactPhone: "",
   };
   proxy.resetForm("personnelRef");
 }

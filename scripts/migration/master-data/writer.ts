@@ -146,6 +146,10 @@ async function upsertSupplier(
       INSERT INTO supplier (
         supplierCode,
         supplierName,
+        supplierShortName,
+        contactPerson,
+        contactPhone,
+        address,
         status,
         creationMode,
         sourceDocumentType,
@@ -155,10 +159,14 @@ async function upsertSupplier(
         updatedBy,
         updatedAt
       ) VALUES (
-        ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, COALESCE(?, CURRENT_TIMESTAMP)
+        ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, COALESCE(?, CURRENT_TIMESTAMP)
       )
       ON DUPLICATE KEY UPDATE
         supplierName = VALUES(supplierName),
+        supplierShortName = VALUES(supplierShortName),
+        contactPerson = VALUES(contactPerson),
+        contactPhone = VALUES(contactPhone),
+        address = VALUES(address),
         status = VALUES(status),
         creationMode = VALUES(creationMode),
         sourceDocumentType = VALUES(sourceDocumentType),
@@ -172,6 +180,10 @@ async function upsertSupplier(
     [
       record.target.supplierCode,
       record.target.supplierName,
+      record.target.supplierShortName,
+      record.target.contactPerson,
+      record.target.contactPhone,
+      record.target.address,
       record.target.status,
       record.target.creationMode,
       record.target.sourceDocumentType,
@@ -193,16 +205,18 @@ async function upsertPersonnel(
     `
       INSERT INTO personnel (
         personnelName,
+        contact_phone,
         status,
         createdBy,
         createdAt,
         updatedBy,
         updatedAt
       ) VALUES (
-        ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, COALESCE(?, CURRENT_TIMESTAMP)
+        ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, COALESCE(?, CURRENT_TIMESTAMP)
       )
       ON DUPLICATE KEY UPDATE
         personnelName = VALUES(personnelName),
+        contact_phone = VALUES(contact_phone),
         status = VALUES(status),
         createdBy = VALUES(createdBy),
         createdAt = COALESCE(VALUES(createdAt), createdAt),
@@ -212,6 +226,7 @@ async function upsertPersonnel(
     `,
     [
       record.target.personnelName,
+      record.target.contactPhone,
       record.target.status,
       record.target.createdBy,
       record.target.createdAt,

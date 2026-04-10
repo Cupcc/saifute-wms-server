@@ -72,12 +72,16 @@ describe("Master-data supplier CRUD (e2e)", () => {
       .send({
         supplierCode: "SUP-001",
         supplierName: "赛福特供应商",
+        contactPerson: "张三",
+        contactPhone: "13800000000",
+        address: "苏州工业园区",
       })
       .expect(201);
 
     const supplierId = createResponse.body.data.id as number;
     expect(createResponse.body.data.supplierCode).toBe("SUP-001");
     expect(createResponse.body.data.supplierName).toBe("赛福特供应商");
+    expect(createResponse.body.data.contactPhone).toBe("13800000000");
 
     await request(server)
       .post("/api/master-data/suppliers")
@@ -94,11 +98,15 @@ describe("Master-data supplier CRUD (e2e)", () => {
       .send({
         supplierCode: "SUP-002",
         supplierName: "更新后供应商",
+        contactPerson: "李四",
+        contactPhone: "13900000000",
+        address: "上海市闵行区",
       })
       .expect(200);
 
     expect(updateResponse.body.data.supplierCode).toBe("SUP-002");
     expect(updateResponse.body.data.supplierName).toBe("更新后供应商");
+    expect(updateResponse.body.data.contactPerson).toBe("李四");
 
     const listResponse = await request(server)
       .get("/api/master-data/suppliers")
@@ -112,6 +120,7 @@ describe("Master-data supplier CRUD (e2e)", () => {
 
     expect(listResponse.body.data.total).toBe(1);
     expect(listResponse.body.data.items[0].supplierCode).toBe("SUP-002");
+    expect(listResponse.body.data.items[0].contactPhone).toBe("13900000000");
 
     await request(server)
       .patch(`/api/master-data/suppliers/${supplierId}/deactivate`)
@@ -152,6 +161,7 @@ describe("Master-data supplier CRUD (e2e)", () => {
 
     expect(detailResponse.body.data.supplierCode).toBe("SUP-002");
     expect(detailResponse.body.data.status).toBe("DISABLED");
+    expect(detailResponse.body.data.address).toBe("上海市闵行区");
   });
 
   it("forbids supplier creation for rd-operator accounts that do not hold the create permission", async () => {

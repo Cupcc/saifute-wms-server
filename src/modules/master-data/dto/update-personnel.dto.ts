@@ -5,4 +5,9 @@ export class UpdatePersonnelDto {
   @IsOptional()
   @MaxLength(128)
   personnelName?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  contactPhone?: string | null;
 }

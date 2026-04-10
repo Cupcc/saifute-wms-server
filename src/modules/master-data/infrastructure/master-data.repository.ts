@@ -983,6 +983,9 @@ export class MasterDataRepository {
       where.OR = [
         { supplierCode: { contains: params.keyword } },
         { supplierName: { contains: params.keyword } },
+        { contactPerson: { contains: params.keyword } },
+        { contactPhone: { contains: params.keyword } },
+        { address: { contains: params.keyword } },
       ];
     }
 
@@ -1002,7 +1005,11 @@ export class MasterDataRepository {
   async createSupplier(
     data: Pick<
       Prisma.SupplierUncheckedCreateInput,
-      "supplierCode" | "supplierName"
+      | "supplierCode"
+      | "supplierName"
+      | "contactPerson"
+      | "contactPhone"
+      | "address"
     >,
     createdBy?: string,
   ) {
@@ -1088,7 +1095,10 @@ export class MasterDataRepository {
   }
 
   async createPersonnel(
-    data: Pick<Prisma.PersonnelUncheckedCreateInput, "personnelName">,
+    data: Pick<
+      Prisma.PersonnelUncheckedCreateInput,
+      "personnelName" | "contactPhone"
+    >,
     createdBy?: string,
   ) {
     return this.prisma.personnel.create({

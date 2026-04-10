@@ -3,9 +3,9 @@
 ## Metadata
 
 - ID: `domain-sales-business-module`
-- Status: `draft`
+- Status: `confirmed`
 - Scope: `domain-level`
-- 状态说明: 骨架与长期约束已补全；`F2/F3` 已按 `task-20260405-2136-price-layer-outbound-and-inbound-price-correction` 交付，`F1` 基础家族模型与 `F4` 退货上下游联动仍待后续 task 收口。
+- 状态说明: 本文档已补齐销售业务家族的长期约束、业务口径、能力清单与能力合同，可作为正式 domain 真源；`F2/F3` 已按 `docs/tasks/archive/retained-completed/task-20260405-2136-price-layer-outbound-and-inbound-price-correction.md` 完成交付并 accepted，`F1` 基础家族模型与 `F4` 退货上下游联动仍待独立 task 收口。
 
 ## 主题定义
 
@@ -42,14 +42,30 @@
 
 ## 长期业务口径
 
+### 单据语义与库存口径
+
+- `sales` 家族同时承接对客户发货的 `OUTBOUND` 和回流主仓的 `SALES_RETURN`；即使前端入口、权限点或页面读模型分开呈现，后端长期真源仍是同一家族模型。
+- 销售出库、销售退货、改单、作废都只能通过 `inventory-core` 产生库存副作用；`sales` 负责组织单据语义、上下游关系、编号区间和审核协作，不旁路改库存底表。
+- 第一阶段默认真实库存范围仍落在主仓 `MAIN`；销售业务不因为客户、项目或车间维度统计而引入新的物理库存池。
 - `sales_stock_order_line.unitPrice` 保持业务金额口径，不承载库存价格层语义；库存价格层选择单独落在 `selectedUnitCost`。
-- 同一单据内 `同一物料 + 同一 selectedUnitCost` 只能有一条明细行。
-- 若某条出库或退货行属于销售项目，则该行需显式保存 `salesProjectId` 或等价销售项目快照，用于后续项目维度统计、查询和月报。
+- 同一单据内 `同一物料 + 同一 selectedUnitCost` 只能有一条明细行，避免同价层重复录入后在来源分配、统计与改单补偿上出现歧义。
+- 出库行成本口径固定为：用户选定 `selectedUnitCost` → 系统在该价格层内自动 FIFO → `costAmount` 由实际来源分配汇总 → `costUnitPrice` 作为历史成本快照保存；后续入库改单价或调价不能静默回写既有出库成本事实。
+- 销售退货 V1 的库存回补语义以“形成新的可用入库来源”为主，不要求精确回补到原出库消耗的 `sourceLogId`；若未来需要精确回补，应作为独立能力切片扩展，而不是默认改写当前合同。
+
+### 客户、项目与追溯口径
+
+- 若某条出库或退货行属于销售项目，则该行需显式保存 `salesProjectId` 或等价销售项目快照，用于后续项目维度统计、查询和月报；不能只在报表层事后猜测归属。
 - 销售项目的真实发货统计以销售出库 / 退货单行为准；项目页面上的“一键出库”若存在，后台也必须生成本家族单据，而不是旁路扣减库存。
-- 价格层可用库存口径：按 `物料 + 单价` 聚合现有可用来源流水得到，不需要新建独立的"价格库存余额主表"。
-- 出库行成本口径：用户选定 `selectedUnitCost` → 系统在该价格层内自动 FIFO → `costAmount` 由实际来源分配汇总 → `costUnitPrice` 作为历史成本快照保存。
-- 出库追溯：用户视角追到价格层，系统视角追到入库单行或 `inventory_log.sourceLogId`；内部追溯至少要到 `inventory_log.id` 级别，不能只记入库单据号。
-- 如果出库来源是调价后的 `PRICE_CORRECTION_IN` 流水，追溯查询应能展示调价关系链（新来源 → 调价单 → 原入库单行）。
+- 销售业务默认围绕客户、经办人、物料、业务日期、销售项目等维度查询和追溯，不把复杂履约状态、波次或发运编排作为第一阶段成立前提。
+- 出库追溯用户视角至少追到价格层，系统视角必须能继续追到入库单行或 `inventory_log.sourceLogId`；内部追溯至少要到 `inventory_log.id` 级别，不能只记入库单据号。
+- 如果出库来源是调价后的 `PRICE_CORRECTION_IN` 流水，追溯查询应能展示调价关系链（新来源 → 调价单 → 原入库单行），以保证销售、库存和入库纠偏之间的因果链可解释。
+
+### 查询、审核与编号区间口径
+
+- 销售出库默认需要同时保留单据查询、明细追溯、客户维度历史查询和项目维度统计回用能力；后续导出或月报应优先复用本家族真实单据事实，而不是新建平行台账。
+- 出厂编号区间仍只对销售出库类动作生效；编号占用、释放与逆操作必须与库存副作用原子一致，不能因改单或作废只释放编号而不回滚库存，反之亦然。
+- 销售业务默认继续走轻量审核协作：录单和库存过账即时生效，审核状态用于追溯、说明和责任留痕；改单后默认重置审核状态，但不把审核升级为阻断实时落账的审批流。
+- 历史字段名 `auditStatusSnapshot` 以及页面读模型中的 `auditStatus` / `auditor` / `auditTime` 继续冻结保留；它们在业务语义上统一映射到 `approval`，不应与系统审计日志混淆。
 
 ## 能力清单
 
@@ -62,7 +78,7 @@
 | `F4` | 销售退货与出库上下游联动     | 销售退货创建时校验来源出库单关系，退货回补库存，作废出库前拦截未作废退货下游                       | Phase 3 | `未开始` | `-`  |
 
 
-## 能力合同
+## 能力合同（推荐）
 
 ### `F1` 销售出库单家族统一模型
 
@@ -86,6 +102,8 @@
 - Evidence expectation:
   - 功能验证与 QA 测试。
 - Default derived slice acceptance mode: `light`
+- AI derivation note:
+  - 优先先把 `OUTBOUND` / `SALES_RETURN` 的统一主从表、库存写路径、编号区间与改单 / 作废补偿闭环收口，再在同一模型上继续扩展价格层、退货上下游和项目维度语义；不要为了短期交付重新拆成两套出库 / 退货后端模型。
 
 ### `F2` 价格层出库选择与同价内 FIFO
 
@@ -145,9 +163,12 @@
   - `[TC-1]` 退货单可关联到原出库单。
   - `[TC-2]` 退货回补库存后，库存余额正确增加。
   - `[TC-3]` 存在未作废退货时，原出库单不可作废。
+  - `[TC-4]` 文档明确退货上下游关系优先通过 `document_relation` / `document_line_relation` 表达，而不是重新维护一套平行关系表。
 - Evidence expectation:
   - 上下游关系验证 + QA 测试。
 - Default derived slice acceptance mode: `light`
+- AI derivation note:
+  - 优先复用统一单据关系表、统一库存回补路径和现有轻审核协作，不要为销售退货单独发明旁路库存逻辑或新的上下游关系存储模型。
 
 ## 阶段路线图
 
@@ -157,6 +178,14 @@
 | Phase 1 | 收口销售业务统一家族模型、基础 CRUD 与库存联动       | `未开始` |
 | Phase 2 | 落地价格层出库选择、同价内 FIFO 与出库成本追溯      | `已完成` |
 | Phase 3 | 完善销售退货与出库上下游联动，扩展客户维度统计与报表      | `未开始` |
+
+## 已确认补充口径（2026-04-05）
+
+- `F2/F3` 的 accepted 交付只覆盖价格层出库选择、同价内 FIFO、来源追溯与调价链展示，不外推为 `F1` 统一家族基础闭环或 `F4` 退货上下游联动已经完成。
+- 销售出库口径已冻结为“`unitPrice` 保持业务金额，`selectedUnitCost` 记录价格层选择，`costUnitPrice/costAmount` 保留历史成本快照”；后续 task 不应再把这三类字段重新混用。
+- 价格层可用库存查询继续按 `物料 + unitCost` 聚合现有可用来源流水，不新增独立“价格库存余额主表”。
+- 若出库来源涉及入库调价，销售追溯链需要保持“当前来源流水 → 调价单 → 原入库行”的可解释关系，但不回写历史出库成本事实。
+- 销售退货第一版仍接受“回补为普通入库来源”的边界；若要改成精确回补原消耗来源，必须作为独立能力切片重新确认。
 
 
 ## 待确认
@@ -168,6 +197,7 @@
 - 项目级长期背景：`docs/requirements/PROJECT_REQUIREMENTS.md`
 - 架构设计：`docs/architecture/modules/sales.md`
 - 架构设计：`docs/architecture/20-wms-database-tables-and-schema.md`
+- 已验收任务基线：`docs/tasks/archive/retained-completed/task-20260405-2136-price-layer-outbound-and-inbound-price-correction.md`
 - 上游依赖：`docs/requirements/domain/inbound-business-module.md`（F4/F5 来源层与 FIFO、F8 调价单）
 - 关联执行任务：`docs/tasks/*.md`
 - 后续继续推进时，直接从本 domain 能力合同创建 `docs/tasks/task-*.md`（`Related requirement` 指向本 domain 对应 `Fx`）。

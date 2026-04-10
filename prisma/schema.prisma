@@ -259,6 +259,10 @@ model Supplier {
   id                    Int                    @id @default(autoincrement())
   supplierCode          String                 @unique @db.VarChar(64)
   supplierName          String                 @db.VarChar(128)
+  supplierShortName     String?                @db.VarChar(128)
+  contactPerson         String?                @db.VarChar(128)
+  contactPhone          String?                @db.VarChar(32)
+  address               String?                @db.VarChar(255)
   status                MasterDataStatus       @default(ACTIVE)
   creationMode          DataCreationMode       @default(MANUAL)
   sourceDocumentType    String?                @db.VarChar(64)
@@ -277,6 +281,7 @@ model Supplier {
 model Personnel {
   id                     Int                     @id @default(autoincrement())
   personnelName          String                  @db.VarChar(128)
+  contactPhone           String?                 @map("contact_phone") @db.VarChar(32)
   status                 MasterDataStatus        @default(ACTIVE)
   createdBy              String?                 @db.VarChar(64)
   createdAt              DateTime                @default(now())
@@ -547,7 +552,7 @@ model StockInOrder {
   supplierId                       Int?
   handlerPersonnelId               Int?
   stockScopeId                     Int?
-  workshopId                       Int
+  workshopId                       Int?
   rdProcurementRequestId           Int?
   lifecycleStatus                  DocumentLifecycleStatus @default(EFFECTIVE)
   auditStatusSnapshot              AuditStatusSnapshot     @default(PENDING)
@@ -556,7 +561,7 @@ model StockInOrder {
   supplierCodeSnapshot             String?                 @db.VarChar(64)
   supplierNameSnapshot             String?                 @db.VarChar(128)
   handlerNameSnapshot              String?                 @db.VarChar(128)
-  workshopNameSnapshot             String                  @db.VarChar(128)
+  workshopNameSnapshot             String?                 @db.VarChar(128)
   rdProcurementRequestNoSnapshot   String?                 @db.VarChar(64)
   rdProcurementProjectCodeSnapshot String?                 @db.VarChar(64)
   rdProcurementProjectNameSnapshot String?                 @db.VarChar(128)
@@ -573,7 +578,7 @@ model StockInOrder {
   supplier                         Supplier?               @relation(fields: [supplierId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   handlerPersonnel                 Personnel?              @relation("StockInOrderHandler", fields: [handlerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   stockScope                       StockScope?             @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  workshop                         Workshop                @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  workshop                         Workshop?               @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   rdProcurementRequest             RdProcurementRequest?   @relation(fields: [rdProcurementRequestId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   lines                            StockInOrderLine[]
   priceCorrectionLines             StockInPriceCorrectionOrderLine[] @relation("PriceCorrectionSourceStockInOrder")

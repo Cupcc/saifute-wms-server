@@ -1,0 +1,201 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" font-family="'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif">
+  <defs>
+    <!-- 渐变：业务单据区域 -->
+    <linearGradient id="docBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#E8F0FE"/>
+      <stop offset="100%" stop-color="#D2E3FC"/>
+    </linearGradient>
+    <!-- 渐变：inventory-core -->
+    <linearGradient id="coreBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1A73E8"/>
+      <stop offset="100%" stop-color="#1557B0"/>
+    </linearGradient>
+    <!-- 渐变：真实库存范围 -->
+    <linearGradient id="whBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#34A853"/>
+      <stop offset="100%" stop-color="#1E8E3E"/>
+    </linearGradient>
+    <!-- 箭头标记 -->
+    <marker id="arrowBlue" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#5F6368"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#1A73E8"/>
+    </marker>
+    <!-- 阴影 -->
+    <filter id="shadow" x="-4%" y="-4%" width="108%" height="112%">
+      <feDropShadow dx="1" dy="2" stdDeviation="3" flood-color="#00000020"/>
+    </filter>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="1200" height="700" rx="8" fill="#F8F9FA"/>
+
+  <!-- 标题 -->
+  <text x="600" y="42" text-anchor="middle" font-size="22" font-weight="700" fill="#202124">库存真实范围 vs 归属维度分离</text>
+  <text x="600" y="66" text-anchor="middle" font-size="13" fill="#5F6368">Inventory Scope vs Attribution Dimension — Architecture Rule Diagram</text>
+
+  <!-- ========== 左侧：业务单据家族 ========== -->
+  <rect x="30" y="100" width="280" height="380" rx="12" fill="url(#docBg)" stroke="#AECBFA" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="170" y="132" text-anchor="middle" font-size="15" font-weight="600" fill="#1A73E8">业务单据模块</text>
+  <text x="170" y="150" text-anchor="middle" font-size="11" fill="#5F6368">Business Document Modules</text>
+
+  <!-- 单据卡片 -->
+  <!-- inbound -->
+  <rect x="55" y="170" width="230" height="44" rx="8" fill="#FFFFFF" stroke="#AECBFA" stroke-width="1"/>
+  <circle cx="80" cy="192" r="12" fill="#4285F4"/>
+  <text x="80" y="196" text-anchor="middle" font-size="11" fill="#FFF" font-weight="700">IN</text>
+  <text x="100" y="188" font-size="13" font-weight="600" fill="#202124">inbound</text>
+  <text x="100" y="203" font-size="10" fill="#5F6368">采购入库 / 到货验收</text>
+
+  <!-- customer -->
+  <rect x="55" y="224" width="230" height="44" rx="8" fill="#FFFFFF" stroke="#AECBFA" stroke-width="1"/>
+  <circle cx="80" cy="246" r="12" fill="#4285F4"/>
+  <text x="80" y="250" text-anchor="middle" font-size="11" fill="#FFF" font-weight="700">CU</text>
+  <text x="100" y="242" font-size="13" font-weight="600" fill="#202124">customer</text>
+  <text x="100" y="257" font-size="10" fill="#5F6368">客户出库 / 销售发货</text>
+
+  <!-- workshop-material -->
+  <rect x="55" y="278" width="230" height="44" rx="8" fill="#FFFFFF" stroke="#AECBFA" stroke-width="1"/>
+  <circle cx="80" cy="300" r="12" fill="#4285F4"/>
+  <text x="80" y="304" text-anchor="middle" font-size="11" fill="#FFF" font-weight="700">WS</text>
+  <text x="100" y="296" font-size="13" font-weight="600" fill="#202124">workshop-material</text>
+  <text x="100" y="311" font-size="10" fill="#5F6368">车间领料 / 退料</text>
+
+  <!-- rd-project -->
+  <rect x="55" y="332" width="230" height="44" rx="8" fill="#FFFFFF" stroke="#AECBFA" stroke-width="1"/>
+  <circle cx="80" cy="354" r="12" fill="#4285F4"/>
+  <text x="80" y="358" text-anchor="middle" font-size="11" fill="#FFF" font-weight="700">RD</text>
+  <text x="100" y="350" font-size="13" font-weight="600" fill="#202124">rd-project</text>
+  <text x="100" y="365" font-size="10" fill="#5F6368">研发项目领用 / 退还</text>
+
+  <!-- rd-subwarehouse -->
+  <rect x="55" y="386" width="230" height="44" rx="8" fill="#FFFFFF" stroke="#AECBFA" stroke-width="1"/>
+  <circle cx="80" cy="408" r="12" fill="#4285F4"/>
+  <text x="80" y="412" text-anchor="middle" font-size="11" fill="#FFF" font-weight="700">RS</text>
+  <text x="100" y="404" font-size="13" font-weight="600" fill="#202124">rd-subwarehouse</text>
+  <text x="100" y="419" font-size="10" fill="#5F6368">RD 小仓管理 / handoff</text>
+
+  <!-- sales-project（补充） -->
+  <rect x="55" y="440" width="230" height="28" rx="6" fill="#F1F3F4" stroke="#DADCE0" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="170" y="459" text-anchor="middle" font-size="11" fill="#5F6368">sales-project 等其他单据…</text>
+
+  <!-- ========== 中央：inventory-core ========== -->
+  <rect x="460" y="180" width="240" height="220" rx="16" fill="url(#coreBg)" stroke="#1557B0" stroke-width="2" filter="url(#shadow)"/>
+  <!-- 图标：盾牌/核心 -->
+  <circle cx="580" cy="240" r="30" fill="#FFFFFF30" stroke="#FFFFFF60" stroke-width="1.5"/>
+  <text x="580" y="237" text-anchor="middle" font-size="24" fill="#FFF">⚙</text>
+  <text x="580" y="260" text-anchor="middle" font-size="8" fill="#FFFFFFAA">CORE</text>
+
+  <text x="580" y="295" text-anchor="middle" font-size="18" font-weight="700" fill="#FFFFFF">inventory-core</text>
+  <text x="580" y="316" text-anchor="middle" font-size="11" fill="#FFFFFFCC">库存唯一写入口</text>
+  <text x="580" y="334" text-anchor="middle" font-size="11" fill="#FFFFFFCC">Sole Write Gateway</text>
+
+  <!-- 写入内容说明 -->
+  <rect x="490" y="350" width="180" height="36" rx="6" fill="#FFFFFF20" stroke="#FFFFFF40" stroke-width="1"/>
+  <text x="580" y="365" text-anchor="middle" font-size="10" fill="#FFFFFFDD">inventory_balance</text>
+  <text x="580" y="378" text-anchor="middle" font-size="10" fill="#FFFFFFDD">inventory_log · source_usage</text>
+
+  <!-- ========== 右侧：真实库存范围 ========== -->
+  <rect x="850" y="120" width="310" height="360" rx="12" fill="#E6F4EA" stroke="#A8DAB5" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="1005" y="152" text-anchor="middle" font-size="15" font-weight="600" fill="#1E8E3E">真实库存范围</text>
+  <text x="1005" y="170" text-anchor="middle" font-size="11" fill="#5F6368">Real Inventory Scopes</text>
+
+  <!-- MAIN 主仓 -->
+  <rect x="880" y="195" width="250" height="110" rx="12" fill="url(#whBg)" stroke="#137333" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1005" y="232" text-anchor="middle" font-size="28" font-weight="800" fill="#FFFFFF">MAIN</text>
+  <text x="1005" y="258" text-anchor="middle" font-size="14" fill="#FFFFFFDD">主仓</text>
+  <text x="1005" y="278" text-anchor="middle" font-size="10" fill="#FFFFFFAA">所有到货、外部采购统一入此仓</text>
+  <text x="1005" y="292" text-anchor="middle" font-size="10" fill="#FFFFFFAA">车间领料、客户发货从此仓扣减</text>
+
+  <!-- RD_SUB 研发小仓 -->
+  <rect x="880" y="325" width="250" height="110" rx="12" fill="url(#whBg)" stroke="#137333" stroke-width="2" filter="url(#shadow)"/>
+  <text x="1005" y="362" text-anchor="middle" font-size="24" font-weight="800" fill="#FFFFFF">RD_SUB</text>
+  <text x="1005" y="388" text-anchor="middle" font-size="14" fill="#FFFFFFDD">研发小仓</text>
+  <text x="1005" y="408" text-anchor="middle" font-size="10" fill="#FFFFFFAA">仅通过 RD handoff 从 MAIN 转入</text>
+  <text x="1005" y="422" text-anchor="middle" font-size="10" fill="#FFFFFFAA">研发项目领用固定在此仓</text>
+
+  <!-- 仅两个真实落点标注 -->
+  <rect x="910" y="450" width="190" height="20" rx="4" fill="#137333"/>
+  <text x="1005" y="464" text-anchor="middle" font-size="10" font-weight="600" fill="#FFFFFF">✓ 仅此两个真实库存落点</text>
+
+  <!-- ========== 连接箭头：单据 → inventory-core ========== -->
+  <!-- inbound → core -->
+  <line x1="285" y1="192" x2="455" y2="260" stroke="#5F6368" stroke-width="1.8" marker-end="url(#arrowBlue)" stroke-dasharray="6 3"/>
+  <!-- customer → core -->
+  <line x1="285" y1="246" x2="455" y2="275" stroke="#5F6368" stroke-width="1.8" marker-end="url(#arrowBlue)" stroke-dasharray="6 3"/>
+  <!-- workshop → core -->
+  <line x1="285" y1="300" x2="455" y2="290" stroke="#5F6368" stroke-width="1.8" marker-end="url(#arrowBlue)" stroke-dasharray="6 3"/>
+  <!-- rd-project → core -->
+  <line x1="285" y1="354" x2="455" y2="305" stroke="#5F6368" stroke-width="1.8" marker-end="url(#arrowBlue)" stroke-dasharray="6 3"/>
+  <!-- rd-subwarehouse → core -->
+  <line x1="285" y1="408" x2="455" y2="320" stroke="#5F6368" stroke-width="1.8" marker-end="url(#arrowBlue)" stroke-dasharray="6 3"/>
+
+  <!-- 箭头标签 -->
+  <text x="370" y="228" text-anchor="middle" font-size="9" fill="#5F6368" transform="rotate(-10,370,228)">调用写入</text>
+
+  <!-- ========== 连接箭头：inventory-core → 真实库存 ========== -->
+  <!-- core → MAIN -->
+  <line x1="700" y1="260" x2="875" y2="250" stroke="#1A73E8" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+  <text x="788" y="244" text-anchor="middle" font-size="10" font-weight="600" fill="#1A73E8">落账</text>
+
+  <!-- core → RD_SUB -->
+  <line x1="700" y1="310" x2="875" y2="380" stroke="#1A73E8" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+  <text x="788" y="356" text-anchor="middle" font-size="10" font-weight="600" fill="#1A73E8">落账</text>
+
+  <!-- ========== 底部：归属维度区域（虚线边框、淡色） ========== -->
+  <rect x="30" y="530" width="1130" height="140" rx="12" fill="#FEF7E0" stroke="#F9AB00" stroke-width="1.5" stroke-dasharray="8 4" filter="url(#shadow)"/>
+
+  <!-- 区域标题 -->
+  <text x="60" y="560" font-size="14" font-weight="600" fill="#E37400">⚠ 归属 / 组织 / 核算维度（非库存池）</text>
+  <text x="60" y="578" font-size="11" fill="#80868B">Attribution / Organization / Accounting Dimensions — NOT inventory scopes, NOT part of inventory unique key</text>
+
+  <!-- 维度卡片 -->
+  <!-- department -->
+  <rect x="60" y="596" width="200" height="54" rx="8" fill="#FFFFFF" stroke="#F9AB00" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="160" y="618" text-anchor="middle" font-size="13" font-weight="600" fill="#E37400">department</text>
+  <text x="160" y="636" text-anchor="middle" font-size="10" fill="#80868B">部门归属 — 组织维度</text>
+
+  <!-- workshop -->
+  <rect x="290" y="596" width="200" height="54" rx="8" fill="#FFFFFF" stroke="#F9AB00" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="390" y="618" text-anchor="middle" font-size="13" font-weight="600" fill="#E37400">workshop</text>
+  <text x="390" y="636" text-anchor="middle" font-size="10" fill="#80868B">车间 — 领料归属维度</text>
+
+  <!-- rd-project -->
+  <rect x="520" y="596" width="200" height="54" rx="8" fill="#FFFFFF" stroke="#F9AB00" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="620" y="618" text-anchor="middle" font-size="13" font-weight="600" fill="#E37400">rd-project</text>
+  <text x="620" y="636" text-anchor="middle" font-size="10" fill="#80868B">研发项目 — 核算维度</text>
+
+  <!-- sales-project -->
+  <rect x="750" y="596" width="200" height="54" rx="8" fill="#FFFFFF" stroke="#F9AB00" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="850" y="618" text-anchor="middle" font-size="13" font-weight="600" fill="#E37400">sales-project</text>
+  <text x="850" y="636" text-anchor="middle" font-size="10" fill="#80868B">销售项目 — 核算维度</text>
+
+  <!-- project_target -->
+  <rect x="980" y="596" width="160" height="54" rx="8" fill="#FFFFFF" stroke="#F9AB00" stroke-width="1" stroke-dasharray="4 2"/>
+  <text x="1060" y="618" text-anchor="middle" font-size="13" font-weight="600" fill="#E37400">project_target</text>
+  <text x="1060" y="636" text-anchor="middle" font-size="10" fill="#80868B">项目目标 — 核算维度</text>
+
+  <!-- 底部强调标注 -->
+  <rect x="340" y="660" width="480" height="24" rx="4" fill="#E37400"/>
+  <text x="580" y="677" text-anchor="middle" font-size="11" font-weight="600" fill="#FFFFFF">✗ 这些维度不是库存池，不进入 inventory_balance 唯一键</text>
+
+  <!-- ========== 对比标注线 ========== -->
+  <!-- 从底部维度区到右侧库存范围的"禁止"关系 -->
+  <line x1="620" y1="596" x2="880" y2="480" stroke="#EA4335" stroke-width="1.2" stroke-dasharray="4 3" opacity="0.6"/>
+  <line x1="850" y1="596" x2="950" y2="480" stroke="#EA4335" stroke-width="1.2" stroke-dasharray="4 3" opacity="0.6"/>
+
+  <!-- 禁止标记 -->
+  <circle cx="750" cy="538" r="10" fill="#EA4335" opacity="0.8"/>
+  <text x="750" y="542" text-anchor="middle" font-size="12" font-weight="700" fill="#FFF">✗</text>
+  <text x="770" y="542" font-size="9" fill="#EA4335">≠ 库存范围</text>
+
+  <circle cx="900" cy="538" r="10" fill="#EA4335" opacity="0.8"/>
+  <text x="900" y="542" text-anchor="middle" font-size="12" font-weight="700" fill="#FFF">✗</text>
+  <text x="920" y="542" font-size="9" fill="#EA4335">≠ 库存范围</text>
+
+  <!-- ========== 图例 ========== -->
+  <rect x="30" y="90" width="280" height="2" fill="#AECBFA" opacity="0.5"/>
+  <rect x="460" y="165" width="240" height="8" rx="4" fill="#1A73E8" opacity="0.3"/>
+  <rect x="850" y="110" width="310" height="4" rx="2" fill="#34A853" opacity="0.3"/>
+</svg>

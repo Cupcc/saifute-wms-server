@@ -7,6 +7,15 @@ import {
   pickKeyword,
 } from "./compat";
 
+function normalizeOptionalText(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
 // 查询人员信息列表
 export function listPersonnel(query = {}) {
   const { limit, offset } = buildPageQuery(query);
@@ -40,6 +49,7 @@ export function addPersonnel(data) {
     method: "post",
     data: {
       personnelName: data.name || data.personnelName,
+      contactPhone: normalizeOptionalText(data.contactPhone),
     },
   });
 }
@@ -52,6 +62,7 @@ export function updatePersonnel(data) {
     method: "patch",
     data: {
       personnelName: data.name || data.personnelName,
+      contactPhone: normalizeOptionalText(data.contactPhone),
     },
   });
 }

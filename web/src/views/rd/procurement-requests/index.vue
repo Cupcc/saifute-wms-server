@@ -6,7 +6,7 @@
           <div>
             <div class="page-title">研发采购需求</div>
             <div class="page-subtitle">
-              先形成 RD 采购真源，主仓验收只做关联并仍然先入主仓
+              先形成 RD 采购真源，研发验收在研发协同内确认，主仓验收单仅记录主仓入库
             </div>
           </div>
           <el-tag type="success">{{ workshopLabel }}</el-tag>
@@ -84,11 +84,6 @@
               </el-tag>
               <span v-if="buildStatusTags(row.lines || []).length === 0">-</span>
             </div>
-          </template>
-        </el-table-column>
-        <el-table-column label="已关联合格验收" min-width="140">
-          <template #default="{ row }">
-            {{ row.acceptanceOrders?.length || 0 }}
           </template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="200" />
@@ -367,6 +362,15 @@
               </el-button>
               <el-button
                 link
+                type="success"
+                v-hasPermi="['rd:procurement-request:status-action']"
+                :disabled="getAcceptableQty(row) <= 0"
+                @click="openStatusAction(row, 'ACCEPTANCE_CONFIRMED')"
+              >
+                验收
+              </el-button>
+              <el-button
+                link
                 type="warning"
                 v-hasPermi="['rd:procurement-request:status-action']"
                 :disabled="getCancelableQty(row) <= 0"
@@ -407,26 +411,6 @@
             </template>
           </el-table-column>
         </el-table>
-
-        <div class="section-title detail-section">已关联主仓验收</div>
-        <el-table :data="detailRow.acceptanceOrders || []" stripe>
-          <el-table-column prop="documentNo" label="验收单号" min-width="160" />
-          <el-table-column label="验收日期" min-width="120">
-            <template #default="{ row }">
-              {{ formatDate(row.bizDate) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="supplierNameSnapshot" label="供应商" min-width="160" />
-          <el-table-column prop="workshopNameSnapshot" label="入库关联部门" min-width="120" />
-          <el-table-column prop="totalQty" label="总数量" min-width="100" />
-          <el-table-column prop="totalAmount" label="总金额" min-width="100" />
-          <el-table-column label="关联行数" min-width="100">
-            <template #default="{ row }">
-              {{ row.lines?.length || 0 }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="rdProcurementRequestNoSnapshot" label="关联来源" min-width="160" />
-        </el-table>
       </template>
     </el-dialog>
 
@@ -453,12 +437,16 @@
           />
         </el-form-item>
         <el-form-item
-          v-if="statusActionForm.actionType === 'MANUAL_RETURNED'"
+          v-if="requiresReference"
           label="Reference"
         >
           <el-input
             v-model="statusActionForm.referenceNo"
-            placeholder="请输入真实 reference"
+            :placeholder="
+              statusActionForm.actionType === 'ACCEPTANCE_CONFIRMED'
+                ? '可选填写主仓验收单号或追溯 reference'
+                : '请输入真实 reference'
+            "
           />
         </el-form-item>
         <el-form-item
@@ -560,6 +548,8 @@ const statusActionTitle = computed(() => {
   switch (statusActionForm.value.actionType) {
     case "PROCUREMENT_STARTED":
       return "推进到采购中";
+    case "ACCEPTANCE_CONFIRMED":
+      return "登记验收";
     case "MANUAL_CANCELLED":
       return "回写取消";
     case "MANUAL_RETURNED":
@@ -568,6 +558,11 @@ const statusActionTitle = computed(() => {
       return "状态动作";
   }
 });
+const requiresReference = computed(() =>
+  ["ACCEPTANCE_CONFIRMED", "MANUAL_RETURNED"].includes(
+    statusActionForm.value.actionType,
+  ),
+);
 
 function createEmptyForm() {
   return {
@@ -629,7 +624,7 @@ function mapStatusLabel(status) {
     PENDING_PROCUREMENT: "待采购",
     IN_PROCUREMENT: "采购中",
     CANCELLED: "取消",
-    ACCEPTED: "验收",
+    ACCEPTED: "已验收",
     HANDED_OFF: "领取",
     SCRAPPED: "报废",
     RETURNED: "退回",
@@ -655,7 +650,7 @@ function mapEventLabel(eventType) {
     REQUEST_CREATED: "需求创建",
     PROCUREMENT_STARTED: "推进采购中",
     MANUAL_CANCELLED: "手工取消",
-    ACCEPTANCE_CONFIRMED: "主仓验收",
+    ACCEPTANCE_CONFIRMED: "验收确认",
     HANDOFF_CONFIRMED: "主仓交接",
     SCRAP_CONFIRMED: "本仓报废",
     MANUAL_RETURNED: "手工退回",
@@ -723,6 +718,10 @@ function getCancelableQty(line) {
     Number(line?.statusLedger?.pendingQty || 0) +
     Number(line?.statusLedger?.inProcurementQty || 0)
   );
+}
+
+function getAcceptableQty(line) {
+  return getCancelableQty(line);
 }
 
 function calculateLineAmount(row) {
@@ -842,6 +841,8 @@ function openStatusAction(line, actionType) {
   const availableQty =
     actionType === "PROCUREMENT_STARTED"
       ? Number(line.statusLedger?.pendingQty || 0)
+      : actionType === "ACCEPTANCE_CONFIRMED"
+        ? getAcceptableQty(line)
       : actionType === "MANUAL_CANCELLED"
         ? getCancelableQty(line)
         : Number(line.statusLedger?.handedOffQty || 0);

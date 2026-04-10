@@ -104,22 +104,17 @@ export class InboundService {
 
   async createOrder(dto: CreateInboundOrderDto, createdBy?: string) {
     const bizDate = new Date(dto.bizDate);
-    const workshopId = this.requireWorkshopId(dto.workshopId);
-    const workshop = await this.masterDataService.getWorkshopById(workshopId);
-    const rdProcurementLink = await this.resolveRdProcurementLink(
-      dto.orderType,
-      dto.rdProcurementRequestId,
-      dto.supplierId,
-    );
-    await this.validateMasterData(dto, rdProcurementLink.supplierId);
+    const workshop = dto.workshopId
+      ? await this.masterDataService.getWorkshopById(dto.workshopId)
+      : null;
+    await this.validateMasterData(dto, dto.supplierId);
     const { supplierCodeSnapshot, supplierNameSnapshot } =
-      await this.resolveSupplierSnapshot(rdProcurementLink.supplierId);
+      await this.resolveSupplierSnapshot(dto.supplierId);
     const { handlerNameSnapshot } = await this.resolveHandlerSnapshot(
       dto.handlerPersonnelId,
     );
     const stockScopeRecord =
       await this.masterDataService.getStockScopeByCode("MAIN");
-    const seenRdProcurementLineIds = new Set<number>();
     const linesWithSnapshots: Array<{
       lineNo: number;
       materialId: number;
@@ -135,10 +130,7 @@ export class InboundService {
     }> = [];
     for (let index = 0; index < dto.lines.length; index++) {
       linesWithSnapshots.push(
-        await this.buildLineWriteData(dto.lines[index], index + 1, {
-          rdProcurementLineMap: rdProcurementLink.lineMap,
-          seenRdProcurementLineIds,
-        }),
+        await this.buildLineWriteData(dto.lines[index], index + 1),
       );
     }
 
@@ -156,28 +148,21 @@ export class InboundService {
     return createWithGeneratedDocumentNo((attempt) => {
       const documentNo = buildCompactDocumentNo(prefix, bizDate, attempt);
       return this.prisma.runInTransaction(async (tx) => {
-        await this.assertRdProcurementAcceptedQtyWithinLimit(
-          rdProcurementLink.lineMap,
-          linesWithSnapshots,
-          undefined,
-          tx,
-        );
-
         const order = await this.repository.createOrder(
           {
             documentNo,
             orderType: dto.orderType,
             bizDate,
-            supplierId: rdProcurementLink.supplierId,
+            supplierId: dto.supplierId,
             handlerPersonnelId: dto.handlerPersonnelId,
             stockScopeId: stockScopeRecord.id,
-            workshopId,
-            rdProcurementRequestId: rdProcurementLink.request?.id,
+            workshopId: workshop?.id ?? null,
+            rdProcurementRequestId: null,
             supplierCodeSnapshot,
             supplierNameSnapshot,
             handlerNameSnapshot,
-            workshopNameSnapshot: workshop.workshopName,
-            ...this.toRdProcurementOrderSnapshots(rdProcurementLink.request),
+            workshopNameSnapshot: workshop?.workshopName ?? null,
+            ...this.toRdProcurementOrderSnapshots(null),
             totalQty,
             totalAmount,
             remark: dto.remark,
@@ -272,21 +257,30 @@ export class InboundService {
     const bizDate = dto.bizDate ? new Date(dto.bizDate) : existing.bizDate;
     const nextRevision = existing.revisionNo + 1;
     const linkedRdProcurementRequestId =
-      dto.rdProcurementRequestId ??
-      existing.rdProcurementRequestId ??
-      undefined;
-    const workshop = await this.masterDataService.getWorkshopById(
-      dto.workshopId ?? existing.workshopId,
-    );
-    const rdProcurementLink = await this.resolveRdProcurementLink(
-      existing.orderType,
-      linkedRdProcurementRequestId,
-      dto.supplierId ?? existing.supplierId ?? undefined,
-    );
+      existing.rdProcurementRequestId ?? undefined;
+    const hasWorkshopOverride = Object.hasOwn(dto, "workshopId");
+    const finalWorkshopId = hasWorkshopOverride
+      ? (dto.workshopId ?? null)
+      : existing.workshopId;
+    const workshop = finalWorkshopId
+      ? await this.masterDataService.getWorkshopById(finalWorkshopId)
+      : null;
+    const rdProcurementLink = linkedRdProcurementRequestId
+      ? await this.resolveRdProcurementLink(
+          existing.orderType,
+          linkedRdProcurementRequestId,
+          dto.supplierId ?? existing.supplierId ?? undefined,
+        )
+      : {
+          request: null,
+          supplierId: dto.supplierId ?? existing.supplierId ?? undefined,
+          lineMap: null,
+        };
     await this.validateMasterDataForUpdate(
       dto,
       existing.orderType,
       rdProcurementLink.supplierId,
+      finalWorkshopId,
     );
     const finalSupplierId = rdProcurementLink.supplierId;
     const supplierSnapshot = finalSupplierId
@@ -340,7 +334,7 @@ export class InboundService {
           .map((log) => [log.businessDocumentLineId as number, log.id]),
       );
       const seenLineIds = new Set<number>();
-      const workshopId = dto.workshopId ?? currentOrder.workshopId;
+      const workshopId = finalWorkshopId;
       const seenRdProcurementLineIds = new Set<number>();
 
       for (const line of dto.lines) {
@@ -403,9 +397,7 @@ export class InboundService {
             {
               ...incomingLine,
               rdProcurementRequestLineId:
-                incomingLine.rdProcurementRequestLineId ??
-                currentLine.rdProcurementRequestLineId ??
-                undefined,
+                currentLine.rdProcurementRequestLineId ?? undefined,
             },
             index + 1,
             {
@@ -579,12 +571,26 @@ export class InboundService {
             dto.handlerPersonnelId ?? existing.handlerPersonnelId,
           stockScopeId: stockScopeRecord.id,
           workshopId,
-          rdProcurementRequestId: rdProcurementLink.request?.id ?? null,
+          rdProcurementRequestId:
+            rdProcurementLink.request?.id ?? existing.rdProcurementRequestId,
           supplierCodeSnapshot: supplierSnapshot.supplierCodeSnapshot,
           supplierNameSnapshot: supplierSnapshot.supplierNameSnapshot,
           handlerNameSnapshot: handlerSnapshot.handlerNameSnapshot,
-          workshopNameSnapshot: workshop.workshopName,
-          ...this.toRdProcurementOrderSnapshots(rdProcurementLink.request),
+          workshopNameSnapshot: workshop?.workshopName ?? null,
+          ...this.toRdProcurementOrderSnapshots(
+            rdProcurementLink.request
+              ? rdProcurementLink.request
+              : existing.rdProcurementRequestId
+                ? {
+                    id: existing.rdProcurementRequestId,
+                    documentNo: existing.rdProcurementRequestNoSnapshot ?? "",
+                    projectCode:
+                      existing.rdProcurementProjectCodeSnapshot ?? "",
+                    projectName:
+                      existing.rdProcurementProjectNameSnapshot ?? "",
+                  }
+                : null,
+          ),
           totalQty,
           totalAmount,
           remark: dto.remark ?? existing.remark,
@@ -711,9 +717,7 @@ export class InboundService {
     supplierId?: number,
   ) {
     this.ensureSupplierRequirement(dto.orderType, supplierId);
-    await this.masterDataService.getWorkshopById(
-      this.requireWorkshopId(dto.workshopId),
-    );
+    this.ensureWorkshopRequirement(dto.orderType, dto.workshopId);
     if (supplierId) {
       await this.masterDataService.getSupplierById(supplierId);
     }
@@ -729,11 +733,10 @@ export class InboundService {
     dto: UpdateInboundOrderDto,
     orderType: StockInOrderType,
     supplierId?: number,
+    workshopId?: number | null,
   ) {
     this.ensureSupplierRequirement(orderType, supplierId);
-    if (dto.workshopId) {
-      await this.masterDataService.getWorkshopById(dto.workshopId);
-    }
+    this.ensureWorkshopRequirement(orderType, workshopId);
     if (supplierId) {
       await this.masterDataService.getSupplierById(supplierId);
     }
@@ -770,6 +773,18 @@ export class InboundService {
   ) {
     if (orderType === StockInOrderType.ACCEPTANCE && !supplierId) {
       throw new BadRequestException("验收单必须选择供应商");
+    }
+  }
+
+  private ensureWorkshopRequirement(
+    orderType: StockInOrderType,
+    workshopId?: number | null,
+  ) {
+    if (
+      orderType === StockInOrderType.PRODUCTION_RECEIPT &&
+      (!workshopId || workshopId < 1)
+    ) {
+      throw new BadRequestException("生产入库单必须选择部门");
     }
   }
 
@@ -890,9 +905,7 @@ export class InboundService {
     }
 
     if (!rdProcurementRequestLineId) {
-      throw new BadRequestException(
-        "关联 RD 采购需求时，每条明细都必须绑定采购需求行",
-      );
+      return null;
     }
     if (seenRdProcurementLineIds?.has(rdProcurementRequestLineId)) {
       throw new BadRequestException(
@@ -980,13 +993,6 @@ export class InboundService {
         );
       }
     });
-  }
-
-  private requireWorkshopId(workshopId?: number) {
-    if (!workshopId || workshopId < 1) {
-      throw new BadRequestException("workshopId 必填");
-    }
-    return workshopId;
   }
 
   private toRdProcurementOrderSnapshots(

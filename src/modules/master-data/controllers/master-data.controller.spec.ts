@@ -153,6 +153,9 @@ describe("MasterDataController", () => {
       {
         supplierCode: "SUP-001",
         supplierName: "赛福特供应商",
+        contactPerson: "张三",
+        contactPhone: "13800000000",
+        address: "苏州工业园区",
       },
       adminUser,
     );
@@ -161,6 +164,9 @@ describe("MasterDataController", () => {
       {
         supplierCode: "SUP-001",
         supplierName: "赛福特供应商",
+        contactPerson: "张三",
+        contactPhone: "13800000000",
+        address: "苏州工业园区",
       },
       "1",
     );
@@ -170,7 +176,10 @@ describe("MasterDataController", () => {
     await controller.updateSupplier(
       9,
       {
+        supplierCode: "SUP-002",
         supplierName: "已更新供应商",
+        contactPerson: "李四",
+        contactPhone: "13900000000",
       },
       adminUser,
     );
@@ -178,7 +187,10 @@ describe("MasterDataController", () => {
     expect(masterDataService.updateSupplier).toHaveBeenCalledWith(
       9,
       {
+        supplierCode: "SUP-002",
         supplierName: "已更新供应商",
+        contactPerson: "李四",
+        contactPhone: "13900000000",
       },
       "1",
     );
@@ -244,10 +256,13 @@ describe("MasterDataController", () => {
   // ─── Personnel (F5) ─────────────────────────────────────────────────────────
 
   it("creates personnel with the current user id", async () => {
-    await controller.createPersonnel({ personnelName: "张三" }, adminUser);
+    await controller.createPersonnel(
+      { personnelName: "张三", contactPhone: "13800000000" },
+      adminUser,
+    );
 
     expect(masterDataService.createPersonnel).toHaveBeenCalledWith(
-      { personnelName: "张三" },
+      { personnelName: "张三", contactPhone: "13800000000" },
       "1",
     );
   });

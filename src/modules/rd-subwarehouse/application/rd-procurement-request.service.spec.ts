@@ -9,7 +9,9 @@ import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { RdProcurementRequestRepository } from "../infrastructure/rd-procurement-request.repository";
 import {
+  applyManualAcceptanceStatus,
   applyRequestVoidStatus,
+  getStatusLedgerProjection,
   initializeRequestStatusTruth,
 } from "./rd-material-status.helper";
 import { RdProcurementRequestService } from "./rd-procurement-request.service";
@@ -18,6 +20,7 @@ jest.mock("./rd-material-status.helper", () => ({
   initializeRequestStatusTruth: jest.fn().mockResolvedValue(undefined),
   applyRequestVoidStatus: jest.fn().mockResolvedValue(undefined),
   applyProcurementStartedStatus: jest.fn().mockResolvedValue(undefined),
+  applyManualAcceptanceStatus: jest.fn().mockResolvedValue(undefined),
   applyManualCancelStatus: jest.fn().mockResolvedValue(undefined),
   applyManualReturnStatus: jest.fn().mockResolvedValue(undefined),
   getStatusLedgerProjection: jest.fn().mockResolvedValue({
@@ -98,7 +101,6 @@ describe("RdProcurementRequestService", () => {
         updatedAt: new Date(),
       },
     ],
-    acceptanceOrders: [],
   };
 
   let service: RdProcurementRequestService;
@@ -128,7 +130,6 @@ describe("RdProcurementRequestService", () => {
             findRequestByDocumentNo: jest.fn(),
             createRequest: jest.fn(),
             updateRequest: jest.fn(),
-            hasActiveAcceptanceOrders: jest.fn(),
           },
         },
         {
@@ -240,23 +241,43 @@ describe("RdProcurementRequestService", () => {
     );
   });
 
-  it("blocks void when active acceptance orders exist", async () => {
+  it("blocks void when accepted facts already exist", async () => {
     repository.findRequestById.mockResolvedValue(mockRequest);
-    repository.hasActiveAcceptanceOrders.mockResolvedValue(true);
+    (getStatusLedgerProjection as jest.Mock).mockResolvedValueOnce({
+      requestLineId: 11,
+      pendingQty: new Prisma.Decimal(0),
+      inProcurementQty: new Prisma.Decimal(0),
+      canceledQty: new Prisma.Decimal(0),
+      acceptedQty: new Prisma.Decimal(1),
+      handedOffQty: new Prisma.Decimal(0),
+      scrappedQty: new Prisma.Decimal(0),
+      returnedQty: new Prisma.Decimal(0),
+      lastEventAt: null,
+    });
 
     await expect(service.voidRequest(1, "blocked", "5")).rejects.toThrow(
-      "该采购需求已关联有效验收单，不能作废",
+      "该采购需求已存在验收/交接/报废/退回事实，不能作废",
     );
   });
 
-  it("voids request when no active acceptance order exists", async () => {
+  it("voids request when only open quantities remain", async () => {
     repository.findRequestById
       .mockResolvedValueOnce(mockRequest)
       .mockResolvedValueOnce({
         ...mockRequest,
         lifecycleStatus: DocumentLifecycleStatus.VOIDED,
       });
-    repository.hasActiveAcceptanceOrders.mockResolvedValue(false);
+    (getStatusLedgerProjection as jest.Mock).mockResolvedValueOnce({
+      requestLineId: 11,
+      pendingQty: new Prisma.Decimal(5),
+      inProcurementQty: new Prisma.Decimal(0),
+      canceledQty: new Prisma.Decimal(0),
+      acceptedQty: new Prisma.Decimal(0),
+      handedOffQty: new Prisma.Decimal(0),
+      scrappedQty: new Prisma.Decimal(0),
+      returnedQty: new Prisma.Decimal(0),
+      lastEventAt: null,
+    });
 
     const result = await service.voidRequest(1, "cancel", "5");
 
@@ -270,6 +291,36 @@ describe("RdProcurementRequestService", () => {
     );
     expect(applyRequestVoidStatus).toHaveBeenCalled();
     expect(result?.lifecycleStatus).toBe(DocumentLifecycleStatus.VOIDED);
+  });
+
+  it("applies acceptance confirmation inside RD collaboration", async () => {
+    repository.findRequestById
+      .mockResolvedValueOnce(mockRequest)
+      .mockResolvedValueOnce(mockRequest);
+
+    await service.applyStatusAction(
+      1,
+      {
+        actionType: "ACCEPTANCE_CONFIRMED",
+        lineId: 11,
+        quantity: "2",
+        referenceNo: "YS-20260410-001",
+        reason: "研发协同确认到货",
+      },
+      "5",
+    );
+
+    expect(applyManualAcceptanceStatus).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestId: 1,
+        requestLineId: 11,
+        quantity: "2",
+        referenceNo: "YS-20260410-001",
+        reason: "研发协同确认到货",
+        operatorId: "5",
+      }),
+      expect.anything(),
+    );
   });
 
   it("throws when request does not exist", async () => {
