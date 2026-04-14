@@ -9,11 +9,13 @@ import {
   buildCompactDocumentNo,
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import type { RdProjectRepository } from "../infrastructure/rd-project.repository";
 
 export const FIXED_RD_PROJECT_STOCK_SCOPE = "RD_SUB" as const;
-export const RD_PROJECT_DOCUMENT_TYPE = "RdProject";
-export const RD_PROJECT_ACTION_DOCUMENT_TYPE = "RdProjectMaterialAction";
+export const RD_PROJECT_DOCUMENT_TYPE = BusinessDocumentType.RdProject;
+export const RD_PROJECT_ACTION_DOCUMENT_TYPE =
+  BusinessDocumentType.RdProjectMaterialAction;
 export const RD_PROJECT_BUSINESS_MODULE = "rd-project";
 export const RD_PROJECT_LABEL = "研发项目";
 export const RD_PROJECT_ACTION_LABEL = "研发项目物料动作";

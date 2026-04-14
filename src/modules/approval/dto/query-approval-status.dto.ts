@@ -1,10 +1,9 @@
 import { Type } from "class-transformer";
-import { IsInt, IsNotEmpty, IsString, MaxLength, Min } from "class-validator";
+import { IsEnum, IsInt, Min } from "class-validator";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 
 export class QueryApprovalStatusDto {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(64)
+  @IsEnum(BusinessDocumentType)
   documentType!: string;
 
   @Type(() => Number)

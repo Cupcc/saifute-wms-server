@@ -2,6 +2,7 @@ import {
   DEFAULT_WORKSHOP_NAME,
   normalizeOptionalText,
 } from "../shared/deterministic";
+import { BusinessDocumentType } from "../shared/business-document-type";
 import type {
   ArchivedFieldPayloadRecord,
   AuditStatusSnapshotValue,
@@ -26,6 +27,7 @@ import type {
 import { SALES_RETURN_MIGRATION_BATCH } from "./types";
 
 const DOCUMENT_NO_MAX_LENGTH = 64;
+const SALES_STOCK_DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
 
 interface ParsedDecimal {
   sign: 1 | -1;
@@ -1215,7 +1217,9 @@ export function buildSalesReturnMigrationPlan(
           startNumber: null,
           endNumber: null,
           sourceDocumentType:
-            prepared.resolvedOutboundLine !== null ? "SalesStockOrder" : null,
+            prepared.resolvedOutboundLine !== null
+              ? SALES_STOCK_DOCUMENT_TYPE
+              : null,
           sourceDocumentId:
             prepared.resolvedOutboundLine?.targetOrderId ?? null,
           sourceDocumentLineId:

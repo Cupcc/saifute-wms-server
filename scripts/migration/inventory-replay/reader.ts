@@ -1,4 +1,5 @@
 import type { MigrationConnectionLike } from "../db";
+import { BusinessDocumentType } from "../shared/business-document-type";
 import type { InventoryEvent } from "./types";
 
 interface DocumentLineRow {
@@ -16,6 +17,11 @@ interface DocumentLineRow {
 
 const DIRECTION_PRIORITY_IN = 0;
 const DIRECTION_PRIORITY_OUT = 1;
+const STOCK_IN_DOCUMENT_TYPE = BusinessDocumentType.StockInOrder;
+const SALES_STOCK_DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
+const WORKSHOP_MATERIAL_DOCUMENT_TYPE =
+  BusinessDocumentType.WorkshopMaterialOrder;
+const RD_PROJECT_DOCUMENT_TYPE = BusinessDocumentType.RdProject;
 
 function toDateString(value: string | null): string {
   if (!value) return "1970-01-01";
@@ -50,14 +56,14 @@ async function readStockInEvents(
         ? ("PRODUCTION_RECEIPT_IN" as const)
         : ("ACCEPTANCE_IN" as const),
     businessModule: "inbound",
-    businessDocumentType: "StockInOrder",
+    businessDocumentType: STOCK_IN_DOCUMENT_TYPE,
     businessDocumentId: row.orderId,
     businessDocumentNumber: row.documentNo,
     businessDocumentLineId: row.lineId,
     materialId: row.materialId,
     workshopId: row.workshopId,
     changeQty: String(row.quantity),
-    idempotencyKey: `StockInOrder:${row.orderId}:line:${row.lineId}`,
+    idempotencyKey: `${STOCK_IN_DOCUMENT_TYPE}:${row.orderId}:line:${row.lineId}`,
     operatorId: row.createdBy,
     occurredAt: toDateTimeString(row.createdAt),
     sortPriority: DIRECTION_PRIORITY_IN,
@@ -87,14 +93,14 @@ async function readCustomerEvents(
         ? ("SALES_RETURN_IN" as const)
         : ("OUTBOUND_OUT" as const),
       businessModule: "sales",
-      businessDocumentType: "SalesStockOrder",
+      businessDocumentType: SALES_STOCK_DOCUMENT_TYPE,
       businessDocumentId: row.orderId,
       businessDocumentNumber: row.documentNo,
       businessDocumentLineId: row.lineId,
       materialId: row.materialId,
       workshopId: row.workshopId,
       changeQty: String(row.quantity),
-      idempotencyKey: `SalesStockOrder:${row.orderId}:line:${row.lineId}`,
+      idempotencyKey: `${SALES_STOCK_DOCUMENT_TYPE}:${row.orderId}:line:${row.lineId}`,
       operatorId: row.createdBy,
       occurredAt: toDateTimeString(row.createdAt),
       sortPriority: isSalesReturn
@@ -132,14 +138,14 @@ async function readWorkshopEvents(
       direction: isReturn ? ("IN" as const) : ("OUT" as const),
       operationType,
       businessModule: "workshop-material",
-      businessDocumentType: "WorkshopMaterialOrder",
+      businessDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
       businessDocumentId: row.orderId,
       businessDocumentNumber: row.documentNo,
       businessDocumentLineId: row.lineId,
       materialId: row.materialId,
       workshopId: row.workshopId,
       changeQty: String(row.quantity),
-      idempotencyKey: `WorkshopMaterialOrder:${row.orderId}:line:${row.lineId}`,
+      idempotencyKey: `${WORKSHOP_MATERIAL_DOCUMENT_TYPE}:${row.orderId}:line:${row.lineId}`,
       operatorId: row.createdBy,
       occurredAt: toDateTimeString(row.createdAt),
       sortPriority: isReturn ? DIRECTION_PRIORITY_IN : DIRECTION_PRIORITY_OUT,
@@ -178,14 +184,14 @@ async function readProjectEvents(
     direction: "OUT" as const,
     operationType: "RD_PROJECT_OUT" as const,
     businessModule: "rd-project",
-    businessDocumentType: "RdProject",
+    businessDocumentType: RD_PROJECT_DOCUMENT_TYPE,
     businessDocumentId: row.projectId,
     businessDocumentNumber: row.projectCode,
     businessDocumentLineId: row.lineId,
     materialId: row.materialId,
     workshopId: row.workshopId,
     changeQty: String(row.quantity),
-    idempotencyKey: `RdProject:${row.projectId}:line:${row.lineId}`,
+    idempotencyKey: `${RD_PROJECT_DOCUMENT_TYPE}:${row.projectId}:line:${row.lineId}`,
     operatorId: row.createdBy,
     occurredAt: toDateTimeString(row.createdAt),
     sortPriority: DIRECTION_PRIORITY_OUT,

@@ -22,22 +22,28 @@
       </el-form>
 
       <el-row :gutter="16" class="summary-row">
-        <el-col :xs="24" :sm="12" :lg="8">
+        <el-col :xs="24" :sm="12" :lg="6">
           <div class="stat-box">
-            <div class="stat-label">记录数</div>
-            <div class="stat-value">{{ total }}</div>
+            <div class="stat-label">在库物料数</div>
+            <div class="stat-value">{{ summary.activeMaterialCount }}</div>
           </div>
         </el-col>
-        <el-col :xs="24" :sm="12" :lg="8">
+        <el-col :xs="24" :sm="12" :lg="6">
           <div class="stat-box">
-            <div class="stat-label">库存总量</div>
-            <div class="stat-value">{{ summary.totalQuantityOnHand }}</div>
+            <div class="stat-label">库存记录数</div>
+            <div class="stat-value">{{ summary.inventoryRecordCount }}</div>
           </div>
         </el-col>
-        <el-col :xs="24" :sm="12" :lg="8">
+        <el-col :xs="24" :sm="12" :lg="6">
           <div class="stat-box">
             <div class="stat-label">低库存项</div>
             <div class="stat-value">{{ summary.lowStockCount }}</div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12" :lg="6">
+          <div class="stat-box">
+            <div class="stat-label">库存货值</div>
+            <div class="stat-value">{{ summary.totalInventoryValue }}</div>
           </div>
         </el-col>
       </el-row>
@@ -49,6 +55,7 @@
         <el-table-column prop="stockScopeName" label="库存范围" min-width="140" />
         <el-table-column prop="quantityOnHand" label="库存数量" min-width="120" />
         <el-table-column prop="unitCode" label="单位" min-width="90" />
+        <el-table-column prop="inventoryValue" label="库存货值" min-width="120" />
         <el-table-column label="状态" min-width="110">
           <template #default="{ row }">
             <el-tag :type="row.isBelowMin ? 'danger' : 'success'">
@@ -92,8 +99,10 @@ const filters = ref({
   keyword: "",
 });
 const summary = ref({
-  totalQuantityOnHand: "0.000000",
+  activeMaterialCount: 0,
+  inventoryRecordCount: 0,
   lowStockCount: 0,
+  totalInventoryValue: "0.00",
 });
 
 function formatDateTime(value) {

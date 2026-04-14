@@ -9,6 +9,7 @@ import {
   resolveReportPath,
 } from "../config";
 import { closePools, createMariaDbPool, withPoolConnection } from "../db";
+import { BusinessDocumentType } from "../shared/business-document-type";
 import { stableJsonStringify } from "../shared/deterministic";
 import { writeStableReport } from "../shared/report-writer";
 import {
@@ -18,6 +19,8 @@ import {
 import { buildOutboundReservationMigrationPlan } from "./transformer";
 import type { OutboundReservationMigrationPlan } from "./types";
 import { MAP_TABLES, TARGET_TABLES } from "./writer";
+
+const SALES_STOCK_DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
 
 interface ArchivedIntervalExpectation {
   legacyTable: string;
@@ -382,30 +385,30 @@ async function getForbiddenTableCounts(connection: {
       FROM document_relation
       WHERE upstreamFamily = 'SALES_STOCK'
          OR downstreamFamily = 'SALES_STOCK'
-         OR upstreamDocumentType = 'SalesStockOrder'
-         OR downstreamDocumentType = 'SalesStockOrder'
+         OR upstreamDocumentType = '${SALES_STOCK_DOCUMENT_TYPE}'
+         OR downstreamDocumentType = '${SALES_STOCK_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'document_line_relation' AS tableName, COUNT(*) AS total
       FROM document_line_relation
       WHERE upstreamFamily = 'SALES_STOCK'
          OR downstreamFamily = 'SALES_STOCK'
-         OR upstreamDocumentType = 'SalesStockOrder'
-         OR downstreamDocumentType = 'SalesStockOrder'
+         OR upstreamDocumentType = '${SALES_STOCK_DOCUMENT_TYPE}'
+         OR downstreamDocumentType = '${SALES_STOCK_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'approval_document' AS tableName, COUNT(*) AS total
       FROM approval_document
-      WHERE documentFamily = 'SALES_STOCK' OR documentType = 'SalesStockOrder'
+      WHERE documentFamily = 'SALES_STOCK' OR documentType = '${SALES_STOCK_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'inventory_balance' AS tableName, COUNT(*) AS total
       FROM inventory_balance
       UNION ALL
       SELECT 'inventory_log' AS tableName, COUNT(*) AS total
       FROM inventory_log
-      WHERE businessDocumentType = 'SalesStockOrder'
+      WHERE businessDocumentType = '${SALES_STOCK_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'inventory_source_usage' AS tableName, COUNT(*) AS total
       FROM inventory_source_usage
-      WHERE consumerDocumentType = 'SalesStockOrder'
+      WHERE consumerDocumentType = '${SALES_STOCK_DOCUMENT_TYPE}'
     `,
   );
 

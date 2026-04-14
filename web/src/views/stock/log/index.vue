@@ -1,464 +1,498 @@
 <template>
   <div class="app-container">
-    <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="物料" prop="materialId">
-        <el-select
-          v-model="queryParams.materialId"
-          filterable
-          remote
-          reserve-keyword
-          placeholder="请输入物料名称或规格型号搜索"
-          :remote-method="searchMaterial"
-          :loading="materialLoading"
-          clearable
-          style="width: 240px"
-          @change="handleQuery">
-          <el-option
-            v-for="item in materialOptions"
-            :key="item.materialId"
-            :label="item.materialName + ' ' + item.specification"
-            :value="item.materialId">
-	          <span style="float: left; color: #ff7171;">{{ item.materialCode }}</span>
-	          <span style="float: left; color: #6985ff; margin-left: 10px;">{{ item.materialName }}</span>
-	          <span style="float: right; color: #37a62c; font-size: 13px; margin-left: 20px;">{{ item.specification }}</span>
-          </el-option>
-        </el-select>
-      </el-form-item>
-	    <el-form-item label="单据日期" style="width: 308px">
-		    <el-date-picker
-			    v-model="rangeRelatedOrderDate"
-			    value-format="YYYY-MM-DD"
-			    type="daterange"
-			    range-separator="-"
-			    start-placeholder="开始日期"
-			    end-placeholder="结束日期"
-		    ></el-date-picker>
-	    </el-form-item>
-      <el-form-item label="单据类型" prop="relatedOrderType">
-        <el-select
-          v-model="queryParams.relatedOrderType"
-          placeholder="请选择单据类型"
-          clearable
-          style="width: 240px"
-          @change="handleRelatedOrderTypeChange">
-          <el-option
-            v-for="dict in related_order_type"
-            :key="dict.value"
-            :label="dict.label"
-            :value="dict.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="单据编号" prop="relatedOrderNo">
-        <el-input
-          v-model="queryParams.relatedOrderNo"
-          placeholder="请输入单据编号(支持模糊查询)"
-          clearable
-          style="width: 240px"
-          @keyup.enter="handleQuery"
-        />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
-        <el-button icon="Refresh" @click="resetQuery">重置</el-button>
-      </el-form-item>
-    </el-form>
-    
-    <el-row :gutter="10" class="mb8">
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
-    </el-row>
-    
-    <adaptive-table border stripe v-loading="loading" :data="logList">
-      <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="物料编码" align="center" prop="materialCode" v-if="columns[0].visible">
-        <template #default="scope">
-          <el-button link type="primary" @click="handleViewMaterial(scope.row.materialId)">
-            {{ scope.row.materialCode }}
-          </el-button>
-        </template>
-      </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="物料名称" align="center" prop="materialName" v-if="columns[1].visible">
-        <template #default="scope">
-          <el-button link type="primary" @click="handleViewMaterial(scope.row.materialId)">
-            {{ scope.row.materialName }}
-          </el-button>
-        </template>
-      </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="物料规格" align="center" prop="materialSpecification" v-if="columns[2].visible">
-	      <template #default="scope">
-		      <el-button link type="primary" @click="handleViewMaterial(scope.row.materialId)">
-			      {{ scope.row.materialSpecification }}
-		      </el-button>
-	      </template>
-      </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="变动前库存数量" align="center" prop="beforeQty" v-if="columns[3].visible" />
-      <el-table-column sortable show-overflow-tooltip label="变动数量" align="center" prop="changeQty" v-if="columns[4].visible">
-        <template #default="scope">
-          <span :style="{ color: scope.row.changeQty > 0 ? '#67C23A' : scope.row.changeQty < 0 ? '#F56C6C' : '#606266' }">
-            {{ scope.row.changeQty }}
-          </span>
-        </template>
-      </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="变动后库存数量" align="center" prop="afterQty" v-if="columns[5].visible" />
-      <el-table-column sortable show-overflow-tooltip label="单据类型" align="center" prop="relatedOrderType" v-if="columns[6].visible" >
-	      <template #default="scope">
-		      <dict-tag :options="related_order_type" :value="scope.row.relatedOrderType"/>
-	      </template>
-      </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="单据编号" align="center" prop="relatedOrderNo" width="180" v-if="columns[7].visible" />
-	    <el-table-column sortable show-overflow-tooltip label="单据日期" align="center" prop="relatedOrderDate" width="180" v-if="columns[8].visible">
-		    <template #default="scope">
-			    <span>{{ parseTime(scope.row.relatedOrderDate, '{y}-{m}-{d}') }}</span>
-		    </template>
-	    </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="操作人" align="center" prop="operatorBy" v-if="columns[9].visible" />
-      <el-table-column sortable show-overflow-tooltip label="操作时间" align="center" prop="operateTime" width="180" v-if="columns[10].visible">
-        <template #default="scope">
-          <span>{{ parseTime(scope.row.operateTime, '{y}-{m}-{d} {h}:{i}:{s}') }}</span>
-        </template>
-      </el-table-column>
-	    
-	    <el-table-column sortable show-overflow-tooltip label="备注" align="center" prop="remark" width="180" v-if="columns[11].visible" />
-    </adaptive-table>
-    
-    <pagination
-      v-show="total>0"
-      :total="total"
-      v-model:page="queryParams.pageNum"
-      v-model:limit="queryParams.pageSize"
-      @pagination="getList"
-    />
+    <el-card shadow="never">
+      <template #header>
+        <div class="page-header">
+          <div>
+            <div class="page-title">库存日志</div>
+            <div class="page-subtitle">只展示真实库存流水，不再兼容旧库存日志字段</div>
+          </div>
+        </div>
+      </template>
 
-    <!-- 添加或修改库存变动日志对话框 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body draggable v-loading="dialogLoading">
-      <el-form ref="logRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="物料" prop="materialId">
-          <el-input v-model="form.materialId" placeholder="请输入物料" />
-        </el-form-item>
-        <el-form-item label="仓库" prop="warehouseId">
-          <el-input v-model="form.warehouseId" placeholder="请输入仓库" />
-        </el-form-item>
-        <el-form-item label="库位" prop="locationId">
-          <el-input v-model="form.locationId" placeholder="请输入库位" />
-        </el-form-item>
-        <el-form-item label="变动数量" prop="changeQty">
-          <el-input v-model="form.changeQty" placeholder="请输入变动数量" />
-        </el-form-item>
-        <el-form-item label="单据编号" prop="relatedOrderId">
-          <el-select v-model="form.relatedOrderId" placeholder="请选择单据编号">
+      <el-form :inline="true" class="query-form">
+        <el-form-item label="物料">
+          <el-select
+            v-model="filters.materialId"
+            filterable
+            remote
+            reserve-keyword
+            clearable
+            placeholder="请输入物料编码或名称"
+            :remote-method="searchMaterials"
+            :loading="materialLoading"
+            style="width: 280px"
+          >
             <el-option
-              v-for="dict in related_order_type"
-              :key="dict.value"
-              :label="dict.label"
-              :value="parseInt(dict.value)"
-            ></el-option>
+              v-for="item in materialOptions"
+              :key="item.materialId"
+              :label="formatMaterialOption(item)"
+              :value="item.materialId"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item label="变动前库存数量" prop="beforeQty">
-          <el-input v-model="form.beforeQty" placeholder="请输入变动前库存数量" />
+        <el-form-item label="库存范围">
+          <el-select
+            v-model="filters.stockScope"
+            clearable
+            filterable
+            placeholder="请选择库存范围"
+            style="width: 180px"
+          >
+            <el-option
+              v-for="item in stockScopeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
         </el-form-item>
-        <el-form-item label="变动后库存数量" prop="afterQty">
-          <el-input v-model="form.afterQty" placeholder="请输入变动后库存数量" />
+        <el-form-item label="车间">
+          <el-select
+            v-model="filters.workshopId"
+            filterable
+            remote
+            reserve-keyword
+            clearable
+            placeholder="请输入车间名称"
+            :remote-method="searchWorkshops"
+            :loading="workshopLoading"
+            style="width: 220px"
+          >
+            <el-option
+              v-for="item in workshopOptions"
+              :key="item.workshopId"
+              :label="item.workshopName"
+              :value="item.workshopId"
+            />
+          </el-select>
         </el-form-item>
-        <el-form-item label="单据日期" prop="relatedOrderDate">
-          <el-input v-model="form.relatedOrderDate" placeholder="请输入单据日期" />
+        <el-form-item label="单据类型">
+          <el-select
+            v-model="filters.businessDocumentType"
+            clearable
+            filterable
+            placeholder="请选择单据类型"
+            style="width: 220px"
+          >
+            <el-option
+              v-for="item in documentTypeOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
         </el-form-item>
-        <el-form-item label="操作人" prop="operatorBy">
-          <el-input v-model="form.operatorBy" placeholder="请输入操作人" />
+        <el-form-item label="单据编号">
+          <el-input
+            v-model="filters.businessDocumentNumber"
+            clearable
+            placeholder="支持模糊查询"
+            style="width: 220px"
+            @keyup.enter="handleSearch"
+          />
         </el-form-item>
-        <el-form-item label="操作时间" prop="operateTime">
-          <el-date-picker clearable
-            v-model="form.operateTime"
-            type="date"
+        <el-form-item label="业务日期">
+          <el-date-picker
+            v-model="bizDateRange"
+            type="daterange"
             value-format="YYYY-MM-DD"
-            placeholder="请选择操作时间">
-          </el-date-picker>
+            range-separator="-"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            style="width: 260px"
+          />
         </el-form-item>
-        <el-form-item label="变动说明" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
+        <el-form-item>
+          <el-button type="primary" @click="handleSearch">查询</el-button>
+          <el-button @click="handleReset">重置</el-button>
         </el-form-item>
       </el-form>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
-        </div>
-      </template>
-    </el-dialog>
 
-    <!-- 物料详情查看对话框 -->
-    <el-dialog title="物料详情" v-model="materialViewOpen" width="700px" append-to-body>
-      <el-descriptions :column="2" border>
-        <el-descriptions-item label="物料编码">{{ materialViewForm.materialCode }}</el-descriptions-item>
-        <el-descriptions-item label="物料名称">{{ materialViewForm.materialName }}</el-descriptions-item>
-        <el-descriptions-item label="规格型号">{{ materialViewForm.specification }}</el-descriptions-item>
-        <el-descriptions-item label="分类">{{ getCategoryLabel(materialViewForm.category) }}</el-descriptions-item>
-        <el-descriptions-item label="单位">{{ materialViewForm.unit }}</el-descriptions-item>
-        <el-descriptions-item label="安全库存">{{ materialViewForm.stockMin }}</el-descriptions-item>
-      </el-descriptions>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button @click="materialViewOpen = false">关 闭</el-button>
-        </div>
-      </template>
-    </el-dialog>
+        <el-table :data="rows" stripe v-loading="loading">
+        <el-table-column prop="occurredAt" label="发生时间" min-width="180">
+          <template #default="{ row }">
+            {{ formatDateTime(row.occurredAt) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="bizDate" label="业务日期" min-width="120">
+          <template #default="{ row }">
+            {{ formatDate(row.bizDate) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="物料" min-width="240">
+          <template #default="{ row }">
+            <div>{{ row.material?.materialCode }} {{ row.material?.materialName }}</div>
+            <div class="subtext">{{ row.material?.specModel || "-" }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="库存范围" min-width="120">
+          <template #default="{ row }">
+            {{ getStockScopeLabel(row.stockScope) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="车间" min-width="140">
+          <template #default="{ row }">
+            {{ row.workshop?.workshopName || "-" }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="direction" label="方向" min-width="100">
+          <template #default="{ row }">
+            <el-tag :type="row.direction === 'IN' ? 'success' : 'danger'">
+              {{ row.direction === "IN" ? "入库" : "出库" }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="beforeQty" label="变动前" min-width="120" />
+        <el-table-column prop="changeQty" label="变动数量" min-width="120">
+          <template #default="{ row }">
+            <span :class="row.direction === 'IN' ? 'qty-in' : 'qty-out'">
+              {{ formatChangeQty(row) }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="afterQty" label="变动后" min-width="120" />
+        <el-table-column label="操作类型" min-width="180">
+          <template #default="{ row }">
+            <div>{{ getOperationTypeLabel(row.operationType) }}</div>
+            <div class="subtext">{{ row.operationType || "-" }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="单据类型"
+          min-width="180"
+        >
+          <template #default="{ row }">
+            <div>{{ getDocumentTypeLabel(row) }}</div>
+            <div class="subtext">{{ row.businessDocumentType || "-" }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="单据编号" min-width="200">
+          <template #default="{ row }">
+            <div>{{ row.businessDocumentNumber || "-" }}</div>
+          </template>
+        </el-table-column>
+        <el-table-column label="业务模块" min-width="140">
+          <template #default="{ row }">
+            {{ getBusinessModuleLabel(row.businessModule) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="operatorId" label="操作人" min-width="140" />
+        <el-table-column prop="note" label="备注" min-width="220" show-overflow-tooltip />
+      </el-table>
+
+      <div class="pagination-wrap">
+        <el-pagination
+          background
+          layout="total, sizes, prev, pager, next"
+          :current-page="pageNum"
+          :page-size="pageSize"
+          :page-sizes="[10, 20, 50, 100]"
+          :total="total"
+          @current-change="handlePageChange"
+          @size-change="handleSizeChange"
+        />
+      </div>
+    </el-card>
   </div>
 </template>
 
-<script setup name="Log">
-import { getMaterial, listMaterialByCodeOrName } from "@/api/base/material";
-import { addLog, delLog, getLog, listLogVo, updateLog } from "@/api/stock/log";
-import { useDict } from "@/utils/dict";
+<script setup name="StockLogPage">
+import { onMounted, ref } from "vue";
+import { listMaterialByCodeOrName } from "@/api/base/material";
+import { listWorkshop } from "@/api/base/workshop";
+import { listLog } from "@/api/stock/log";
 
-const { proxy } = getCurrentInstance();
-const { related_order_type } = proxy.useDict("related_order_type");
+const stockScopeOptions = [
+  { value: "MAIN", label: "主仓" },
+  { value: "RD_SUB", label: "研发小仓" },
+];
+const documentTypeOptions = [
+  { value: "StockInOrder", label: "入库单据（验收 / 生产）" },
+  { value: "SalesStockOrder", label: "销售单据（出库 / 退货）" },
+  { value: "WorkshopMaterialOrder", label: "车间物料单据（领料 / 退料 / 报废）" },
+  { value: "RdProjectMaterialAction", label: "项目物料单据（领用 / 退回 / 报废）" },
+  { value: "RdHandoffOrder", label: "RD 交接单" },
+  { value: "RdStocktakeOrder", label: "RD 盘点调整单" },
+  { value: "StockInPriceCorrectionOrder", label: "入库调价单" },
+];
+const businessModuleLabels = {
+  inbound: "入库",
+  sales: "销售",
+  "workshop-material": "车间物料",
+  "rd-project": "研发项目",
+  "rd-subwarehouse": "研发小仓",
+};
+const operationTypeOptions = [
+  { value: "ACCEPTANCE_IN", label: "验收入库" },
+  { value: "PRODUCTION_RECEIPT_IN", label: "生产入库" },
+  { value: "PRICE_CORRECTION_IN", label: "调价入库" },
+  { value: "OUTBOUND_OUT", label: "销售出库" },
+  { value: "PRICE_CORRECTION_OUT", label: "调价出库" },
+  { value: "SALES_RETURN_IN", label: "销售退货入库" },
+  { value: "PICK_OUT", label: "领料出库" },
+  { value: "RETURN_IN", label: "退料入库" },
+  { value: "SCRAP_OUT", label: "报废出库" },
+  { value: "RD_PROJECT_OUT", label: "项目领用出库" },
+  { value: "RD_HANDOFF_OUT", label: "RD 交接出库" },
+  { value: "RD_HANDOFF_IN", label: "RD 交接入库" },
+  { value: "RD_STOCKTAKE_IN", label: "RD 盘点入库" },
+  { value: "RD_STOCKTAKE_OUT", label: "RD 盘点出库" },
+  { value: "REVERSAL_IN", label: "逆操作入库" },
+  { value: "REVERSAL_OUT", label: "逆操作出库" },
+];
 
-const logList = ref([]);
-const open = ref(false);
-const loading = ref(true);
-const showSearch = ref(true);
-const ids = ref([]);
-const single = ref(true);
-const multiple = ref(true);
+const loading = ref(false);
+const materialLoading = ref(false);
+const workshopLoading = ref(false);
+const rows = ref([]);
 const total = ref(0);
-const title = ref("");
-const dialogLoading = ref(false);
-const materialViewOpen = ref(false);
-const materialViewForm = ref({});
-const rangeRelatedOrderDate = ref([]);
-
-const data = reactive({
-  form: {},
-  queryParams: {
-    pageNum: 1,
-    pageSize: 30,
-    materialId: null,
-    warehouseId: null,
-    locationId: null,
-    relatedOrderType: null,
-    relatedOrderId: null,
-    relatedOrderNo: null,
-  },
-  rules: {},
+const pageNum = ref(1);
+const pageSize = ref(20);
+const materialOptions = ref([]);
+const workshopOptions = ref([]);
+const bizDateRange = ref([]);
+const filters = ref({
+  materialId: null,
+  stockScope: "",
+  workshopId: null,
+  businessDocumentType: "",
+  businessDocumentNumber: "",
 });
 
-const { queryParams, form, rules } = toRefs(data);
+function formatMaterialOption(item) {
+  return [
+    item.materialCode,
+    item.materialName,
+    item.specification || item.specModel || "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
 
-// 添加columns数组定义
-const columns = ref([
-  { key: 0, label: `物料编码`, visible: false },
-  { key: 1, label: `物料名称`, visible: true },
-  { key: 2, label: `物料规格`, visible: true },
-  { key: 3, label: `变动前库存数量`, visible: true },
-  { key: 4, label: `变动数量`, visible: true },
-  { key: 5, label: `变动后库存数量`, visible: true },
-  { key: 6, label: `单据类型`, visible: true },
-  { key: 7, label: `单据编号`, visible: true },
-  { key: 8, label: `单据编号`, visible: true },
-  { key: 9, label: `操作人`, visible: true },
-  { key: 10, label: `操作时间`, visible: false },
-  { key: 11, label: `备注`, visible: false },
-]);
-
-/** 查询库存变动日志列表 */
-function getList() {
-  loading.value = true;
-  queryParams.value.params = {};
-  if (
-    Array.isArray(rangeRelatedOrderDate.value) &&
-    rangeRelatedOrderDate.value.length === 2
-  ) {
-    queryParams.value.params["startRelatedOrderDate"] =
-      rangeRelatedOrderDate.value[0];
-    queryParams.value.params["endRelatedOrderDate"] =
-      rangeRelatedOrderDate.value[1];
+function formatDateTime(value) {
+  if (!value) {
+    return "-";
   }
-  listLogVo(queryParams.value).then((response) => {
-    logList.value = response.rows;
-    total.value = response.total;
-    loading.value = false;
-  });
+  return new Date(value).toLocaleString("zh-CN", { hour12: false });
 }
 
-// 取消按钮
-function cancel() {
-  open.value = false;
-  reset();
+function formatDate(value) {
+  if (!value) {
+    return "-";
+  }
+  return String(value).slice(0, 10);
 }
 
-// 表单重置
-function reset() {
-  form.value = {
-    logId: null,
-    materialId: null,
-    warehouseId: null,
-    locationId: null,
-    changeQty: null,
-    relatedOrderType: null,
-    relatedOrderId: null,
-    beforeQty: null,
-    afterQty: null,
-    relatedOrderDate: null,
-    operatorBy: null,
-    operateTime: null,
-    remark: null,
-  };
-  proxy.resetForm("logRef");
+function getStockScopeLabel(value) {
+  return (
+    stockScopeOptions.find((item) => item.value === value)?.label || value || "-"
+  );
 }
 
-/** 搜索按钮操作 */
-function handleQuery() {
-  queryParams.value.pageNum = 1;
-  getList();
+function getOperationTypeLabel(value) {
+  return (
+    operationTypeOptions.find((item) => item.value === value)?.label ||
+    value ||
+    "-"
+  );
 }
 
-/** 重置按钮操作 */
-function resetQuery() {
-  rangeRelatedOrderDate.value = [];
-  proxy.resetForm("queryRef");
-  handleQuery();
+function getBusinessModuleLabel(value) {
+  return businessModuleLabels[value] || value || "-";
 }
 
-// 多选框选中数据
-function handleSelectionChange(selection) {
-  ids.value = selection.map((item) => item.logId);
-  single.value = selection.length !== 1;
-  multiple.value = !selection.length;
-}
-
-/** 新增按钮操作 */
-function handleAdd() {
-  reset();
-  open.value = true;
-  title.value = "添加库存变动日志";
-}
-
-/** 修改按钮操作 */
-function handleUpdate(row) {
-  reset();
-  const _logId = row.logId || ids.value;
-  open.value = true;
-  title.value = "修改库存变动日志";
-  dialogLoading.value = true;
-  getLog(_logId)
-    .then((response) => {
-      form.value = response.data;
-    })
-    .finally(() => {
-      dialogLoading.value = false;
-    });
-}
-
-/** 提交按钮 */
-function submitForm() {
-  proxy.$refs["logRef"].validate((valid) => {
-    if (valid) {
-      if (form.value.logId != null) {
-        updateLog(form.value).then((response) => {
-          proxy.$modal.msgSuccess("修改成功");
-          open.value = false;
-          getList();
-        });
-      } else {
-        addLog(form.value).then((response) => {
-          proxy.$modal.msgSuccess("新增成功");
-          open.value = false;
-          getList();
-        });
+function getDocumentTypeLabel(row) {
+  switch (row.businessDocumentType) {
+    case "StockInOrder":
+      return row.operationType === "PRODUCTION_RECEIPT_IN"
+        ? "生产入库单"
+        : "验收单";
+    case "SalesStockOrder":
+      return row.operationType === "SALES_RETURN_IN"
+        ? "销售退货单"
+        : "销售出库单";
+    case "WorkshopMaterialOrder":
+      if (row.operationType === "RETURN_IN") {
+        return "退料单";
       }
-    }
-  });
-}
-
-/** 作废按钮操作 */
-function handleDelete(row) {
-  const _logIds = row.logId || ids.value;
-  proxy.$modal
-    .confirm("是否确认作废库存变动日志？")
-    .then(() => delLog(_logIds))
-    .then(() => {
-      getList();
-      proxy.$modal.msgSuccess("作废成功");
-    })
-    .catch(() => {});
-}
-
-/** 查看物料详情 */
-function handleViewMaterial(materialId) {
-  getMaterial(materialId).then((response) => {
-    materialViewForm.value = response.data;
-    materialViewOpen.value = true;
-  });
-}
-
-/** 导出按钮操作 */
-function handleExport() {
-  proxy.download(
-    "stock/log/export",
-    {
-      ...queryParams.value,
-    },
-    `log_${new Date().getTime()}.xlsx`,
-  );
-}
-
-/** 根据分类值获取分类标签 */
-function getCategoryLabel(value) {
-  if (!value) return "";
-  const category = saifute_material_category.value.find(
-    (item) => item.value === value.toString(),
-  );
-  return category ? category.label : value;
-}
-
-/** 获取物料分类字典数据 */
-const { saifute_material_category, sys_yes_no } = useDict(
-  "saifute_material_category",
-  "sys_yes_no",
-);
-
-/** 搜索物料 */
-function searchMaterial(query) {
-  materialLoading.value = true;
-  listMaterialByCodeOrName({
-    materialCode: query,
-  })
-    .then((response) => {
-      materialOptions.value = response.rows;
-      materialLoading.value = false;
-    })
-    .catch(() => {
-      materialLoading.value = false;
-    });
-}
-
-/** 搜索库位 */
-function searchLocation(query) {
-  if (query !== "") {
-    locationLoading.value = true;
-    listLocation({ locationCode: query, pageSize: 20 })
-      .then((response) => {
-        locationOptions.value = response.rows;
-        locationLoading.value = false;
-      })
-      .catch(() => {
-        locationLoading.value = false;
-      });
-  } else {
-    locationOptions.value = [];
+      if (row.operationType === "SCRAP_OUT") {
+        return "报废单";
+      }
+      return "领料单";
+    case "RdProjectMaterialAction":
+      if (row.operationType === "RETURN_IN") {
+        return "项目退回单";
+      }
+      if (row.operationType === "SCRAP_OUT") {
+        return "项目报废单";
+      }
+      return "项目领用单";
+    case "RdHandoffOrder":
+      return "RD 交接单";
+    case "RdStocktakeOrder":
+      return "RD 盘点调整单";
+    case "StockInPriceCorrectionOrder":
+      return "入库调价单";
+    default:
+      return row.businessDocumentType || "-";
   }
 }
 
-/** 处理单据类型变化 */
-function handleRelatedOrderTypeChange() {
-  // 清空单据编号输入框
-  queryParams.value.relatedOrderNo = null;
+function formatChangeQty(row) {
+  const quantity = String(row.changeQty ?? "0");
+  return row.direction === "OUT" && !quantity.startsWith("-")
+    ? `-${quantity}`
+    : quantity;
 }
 
-const materialLoading = ref(false);
-const locationLoading = ref(false);
-const materialOptions = ref([]);
-const locationOptions = ref([]);
+function mergeWorkshopOptions(items) {
+  const next = new Map(
+    workshopOptions.value.map((item) => [item.workshopId, item]),
+  );
+  for (const item of items) {
+    if (!item?.workshopId || !item?.workshopName) {
+      continue;
+    }
+    next.set(item.workshopId, item);
+  }
+  workshopOptions.value = Array.from(next.values()).sort((left, right) =>
+    String(left.workshopName).localeCompare(String(right.workshopName), "zh-CN"),
+  );
+}
 
-getList();
+async function searchMaterials(keyword) {
+  materialLoading.value = true;
+  try {
+    const response = await listMaterialByCodeOrName({
+      materialCode: keyword || undefined,
+      workshopId: filters.value.workshopId || undefined,
+      pageSize: 20,
+      pageNum: 1,
+    });
+    materialOptions.value = response.rows || [];
+  } finally {
+    materialLoading.value = false;
+  }
+}
+
+async function searchWorkshops(keyword) {
+  workshopLoading.value = true;
+  try {
+    const response = await listWorkshop({
+      workshopName: keyword || undefined,
+      pageNum: 1,
+      pageSize: 100,
+    });
+    mergeWorkshopOptions(response.rows || []);
+  } catch {
+    // Ignore workshop option preload failures; the log query itself remains usable.
+  } finally {
+    workshopLoading.value = false;
+  }
+}
+
+async function loadRows() {
+  loading.value = true;
+  try {
+    const response = await listLog({
+      materialId: filters.value.materialId || undefined,
+      stockScope: filters.value.stockScope || undefined,
+      workshopId: filters.value.workshopId || undefined,
+      businessDocumentType: filters.value.businessDocumentType || undefined,
+      businessDocumentNumber:
+        filters.value.businessDocumentNumber.trim() || undefined,
+      bizDateFrom: bizDateRange.value[0] || undefined,
+      bizDateTo: bizDateRange.value[1] || undefined,
+      limit: pageSize.value,
+      offset: (pageNum.value - 1) * pageSize.value,
+    });
+    rows.value = response.data?.items || [];
+    total.value = Number(response.data?.total || 0);
+    mergeWorkshopOptions(
+      rows.value.map((row) => ({
+        workshopId: row.workshop?.id,
+        workshopName: row.workshop?.workshopName,
+      })),
+    );
+  } finally {
+    loading.value = false;
+  }
+}
+
+function handleSearch() {
+  pageNum.value = 1;
+  loadRows();
+}
+
+function handleReset() {
+  filters.value = {
+    materialId: null,
+    stockScope: "",
+    workshopId: null,
+    businessDocumentType: "",
+    businessDocumentNumber: "",
+  };
+  bizDateRange.value = [];
+  pageNum.value = 1;
+  loadRows();
+}
+
+function handlePageChange(value) {
+  pageNum.value = value;
+  loadRows();
+}
+
+function handleSizeChange(value) {
+  pageSize.value = value;
+  pageNum.value = 1;
+  loadRows();
+}
+
+onMounted(() => {
+  searchWorkshops("");
+  loadRows();
+});
 </script>
+
+<style scoped lang="scss">
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.page-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.page-subtitle {
+  margin-top: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.query-form {
+  margin-bottom: 16px;
+}
+
+.subtext {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+}
+
+.qty-in {
+  color: var(--el-color-success);
+}
+
+.qty-out {
+  color: var(--el-color-danger);
+}
+
+.pagination-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+}
+</style>

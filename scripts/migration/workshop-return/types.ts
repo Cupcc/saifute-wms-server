@@ -1,3 +1,5 @@
+import type { BusinessDocumentTypeValue } from "../shared/business-document-type";
+
 export const WORKSHOP_RETURN_MIGRATION_BATCH = "batch3e-workshop-return-formal";
 export const WORKSHOP_PICK_BASE_MIGRATION_BATCH = "batch3b-workshop-pick-base";
 export const BATCH1_MASTER_DATA_BATCH = "batch1-master-data";
@@ -12,7 +14,7 @@ export type AuditStatusSnapshotValue =
   | "APPROVED"
   | "REJECTED";
 export type InventoryEffectStatusValue = "POSTED" | "REVERSED";
-export type SourceDocumentTypeValue = "WorkshopMaterialOrder";
+export type SourceDocumentTypeValue = BusinessDocumentTypeValue;
 
 export type PendingRelationReasonCode =
   | "missing-mapped-material"

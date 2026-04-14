@@ -29,7 +29,10 @@ export class ApprovalRepository {
     return { items, total };
   }
 
-  async findApprovalByDocument(documentType: string, documentId: number) {
+  async findApprovalByDocument(
+    documentType: string,
+    documentId: number,
+  ) {
     return this.prisma.approvalDocument.findUnique({
       where: {
         documentType_documentId: { documentType, documentId },

@@ -157,6 +157,60 @@ describe("Batch A acceptance (e2e)", () => {
       .expect(401);
   });
 
+  it("should refresh expired access tokens and rotate refresh tokens", async () => {
+    appContext = await bootstrapApp({
+      JWT_EXPIRES_IN_SECONDS: "1",
+      JWT_REFRESH_EXPIRES_IN_SECONDS: "600",
+      SESSION_TTL_SECONDS: "120",
+      SESSION_MAX_TTL_SECONDS: "600",
+    });
+    const server = appContext.app.getHttpServer();
+
+    const loginResponse = await login(server, {
+      username: "admin",
+      password: "admin123",
+    });
+
+    const expiredAccessToken = loginResponse.body.data.accessToken as string;
+    const refreshToken = loginResponse.body.data.refreshToken as string;
+    const sessionId = loginResponse.body.data.sessionId as string;
+    expect(refreshToken).toBeTruthy();
+
+    await new Promise((resolve) => setTimeout(resolve, 2100));
+
+    await request(server)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${expiredAccessToken}`)
+      .expect(401);
+
+    const refreshResponse = await request(server)
+      .post("/api/auth/refresh")
+      .send({
+        refreshToken,
+      })
+      .expect(201);
+
+    const nextAccessToken = refreshResponse.body.data.accessToken as string;
+    const nextRefreshToken = refreshResponse.body.data.refreshToken as string;
+    expect(refreshResponse.body.data.sessionId).toBe(sessionId);
+    expect(nextAccessToken).toBeTruthy();
+    expect(nextRefreshToken).toBeTruthy();
+    expect(nextRefreshToken).not.toBe(refreshToken);
+
+    await request(server)
+      .post("/api/auth/refresh")
+      .send({
+        refreshToken,
+      })
+      .expect(401);
+
+    const meResponse = await request(server)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${nextAccessToken}`)
+      .expect(200);
+    expect(meResponse.body.data.username).toBe("admin");
+  });
+
   it("should forbid operator access to session admin endpoints and keep only authorized routes", async () => {
     appContext = await bootstrapApp();
     const server = appContext.app.getHttpServer();

@@ -42,7 +42,7 @@
 
 <script setup>
 import Sortable from "sortablejs";
-import { getToken } from "@/utils/auth";
+import useUserStore from "@/store/modules/user";
 
 const props = defineProps({
   modelValue: [String, Object, Array],
@@ -91,9 +91,12 @@ const { proxy } = getCurrentInstance();
 const emit = defineEmits();
 const number = ref(0);
 const uploadList = ref([]);
+const userStore = useUserStore();
 const baseUrl = import.meta.env.VITE_APP_BASE_API;
 const uploadFileUrl = ref(import.meta.env.VITE_APP_BASE_API + props.action); // 上传文件服务器地址
-const headers = ref({ Authorization: "Bearer " + getToken() });
+const headers = computed(() =>
+  userStore.token ? { Authorization: `Bearer ${userStore.token}` } : {},
+);
 const fileList = ref([]);
 const showTip = computed(
   () => props.isShowTip && (props.fileType || props.fileSize),

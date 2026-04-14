@@ -5,15 +5,18 @@ import {
   RdMaterialStatusEventType,
   type RdMaterialStatusLedger,
 } from "../../../../generated/prisma/client";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 
 type DbClient = Prisma.TransactionClient | PrismaService;
 type DecimalLike = Prisma.Decimal | number | string;
 
-export const RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE = "RdProcurementRequest";
-export const STOCK_IN_ORDER_DOCUMENT_TYPE = "StockInOrder";
-export const RD_HANDOFF_ORDER_DOCUMENT_TYPE = "RdHandoffOrder";
-export const WORKSHOP_MATERIAL_ORDER_DOCUMENT_TYPE = "WorkshopMaterialOrder";
+export const RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE =
+  BusinessDocumentType.RdProcurementRequest;
+export const STOCK_IN_ORDER_DOCUMENT_TYPE = BusinessDocumentType.StockInOrder;
+export const RD_HANDOFF_ORDER_DOCUMENT_TYPE = BusinessDocumentType.RdHandoffOrder;
+export const WORKSHOP_MATERIAL_ORDER_DOCUMENT_TYPE =
+  BusinessDocumentType.WorkshopMaterialOrder;
 
 type LedgerStatusField =
   | "pendingQty"

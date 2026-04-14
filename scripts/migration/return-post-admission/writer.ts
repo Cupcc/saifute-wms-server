@@ -1,4 +1,5 @@
 import type { MigrationConnectionLike, QueryResultWithInsertId } from "../db";
+import { BusinessDocumentType } from "../shared/business-document-type";
 import type {
   AuditDocumentInsert,
   DocumentLineRelationInsert,
@@ -11,13 +12,17 @@ import type {
   StaleClearRecord,
 } from "./types";
 
+const SALES_STOCK_DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
+const WORKSHOP_MATERIAL_DOCUMENT_TYPE =
+  BusinessDocumentType.WorkshopMaterialOrder;
+
 async function applySourceBackfill(
   connection: MigrationConnectionLike,
   record: SourceBackfillRecord,
-  documentType: "SalesStockOrder" | "WorkshopMaterialOrder",
+  documentType: string,
 ): Promise<void> {
   const targetTable =
-    documentType === "SalesStockOrder"
+    documentType === SALES_STOCK_DOCUMENT_TYPE
       ? "sales_stock_order_line"
       : "workshop_material_order_line";
 
@@ -407,9 +412,9 @@ export async function executePostAdmissionPlan(
 
     for (const record of plan.backfill.backfillRecords) {
       const docType =
-        record.sourceDocumentType === "SalesStockOrder"
-          ? "SalesStockOrder"
-          : "WorkshopMaterialOrder";
+        record.sourceDocumentType === SALES_STOCK_DOCUMENT_TYPE
+          ? SALES_STOCK_DOCUMENT_TYPE
+          : WORKSHOP_MATERIAL_DOCUMENT_TYPE;
       await applySourceBackfill(connection, record, docType);
       sourceBackfillsApplied += 1;
     }

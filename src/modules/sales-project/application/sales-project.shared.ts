@@ -1,9 +1,10 @@
 import { BadRequestException } from "@nestjs/common";
 import { Prisma, ProjectTargetType } from "../../../../generated/prisma/client";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import type { SalesProjectRepository } from "../infrastructure/sales-project.repository";
 
 export const SALES_PROJECT_STOCK_SCOPE = "MAIN" as const;
-export const SALES_PROJECT_DOCUMENT_TYPE = "SalesProject";
+export const SALES_PROJECT_DOCUMENT_TYPE = BusinessDocumentType.SalesProject;
 export const SALES_PROJECT_LABEL = "销售项目";
 export const ZERO = new Prisma.Decimal(0);
 

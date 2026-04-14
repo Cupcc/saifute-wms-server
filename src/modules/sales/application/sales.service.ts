@@ -17,6 +17,7 @@ import {
   buildCompactDocumentNo,
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { ApprovalService } from "../../approval/application/approval.service";
 import {
@@ -35,7 +36,7 @@ import type { QuerySalesReturnDto } from "../dto/query-sales-return.dto";
 import type { UpdateOutboundOrderDto } from "../dto/update-outbound-order.dto";
 import { SalesRepository } from "../infrastructure/sales.repository";
 
-const DOCUMENT_TYPE = "SalesStockOrder";
+const DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
 const BUSINESS_MODULE = "sales";
 const OUTBOUND_SOURCE_OPERATION_TYPES = FIFO_SOURCE_OPERATION_TYPES.filter(
   (type) => type !== InventoryOperationType.RD_HANDOFF_IN,
@@ -1486,7 +1487,8 @@ export class SalesService {
           usages
             .filter(
               (usage) =>
-                usage.sourceLog.businessDocumentType === "StockInOrder" &&
+                usage.sourceLog.businessDocumentType ===
+                  BusinessDocumentType.StockInOrder &&
                 usage.sourceLog.businessDocumentLineId != null,
             )
             .map((usage) => usage.sourceLog.businessDocumentLineId as number),
@@ -1518,7 +1520,8 @@ export class SalesService {
         ...line,
         sourceUsages: (sourceUsagesByLine.get(line.id) ?? []).map((usage) => {
           const directStockInLine =
-            usage.sourceLog.businessDocumentType === "StockInOrder" &&
+            usage.sourceLog.businessDocumentType ===
+              BusinessDocumentType.StockInOrder &&
             usage.sourceLog.businessDocumentLineId != null
               ? directStockInLineById.get(
                   usage.sourceLog.businessDocumentLineId,

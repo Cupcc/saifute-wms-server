@@ -5,6 +5,7 @@ import { Public } from "../../../shared/decorators/public.decorator";
 import type { SessionUserSnapshot } from "../../session/domain/user-session";
 import { AuthService } from "../application/auth.service";
 import { LoginDto } from "../dto/login.dto";
+import { RefreshTokenDto } from "../dto/refresh-token.dto";
 
 @Controller("auth")
 export class AuthController {
@@ -20,6 +21,12 @@ export class AuthController {
   @Post("login")
   async login(@Body() loginDto: LoginDto, @Req() request: Request) {
     return this.authService.login(loginDto, request);
+  }
+
+  @Public()
+  @Post("refresh")
+  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.refresh(refreshTokenDto.refreshToken);
   }
 
   @Public()

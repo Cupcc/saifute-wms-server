@@ -42,17 +42,17 @@
       <el-col :xs="24" :lg="12">
         <el-card shadow="never">
           <template #header>
-            <div class="card-title">累计数量</div>
+            <div class="card-title">累计金额</div>
           </template>
           <el-descriptions :column="1" border>
-            <el-descriptions-item label="累计入库数量">
-              {{ dashboard.cumulativeDocuments.inbound.totalQty }}
+            <el-descriptions-item label="累计入库金额">
+              {{ dashboard.cumulativeDocuments.inbound.totalAmount }}
             </el-descriptions-item>
-            <el-descriptions-item label="累计出库数量">
-              {{ dashboard.cumulativeDocuments.outbound.totalQty }}
+            <el-descriptions-item label="累计出库金额">
+              {{ dashboard.cumulativeDocuments.outbound.totalAmount }}
             </el-descriptions-item>
-            <el-descriptions-item label="累计领退料数量">
-              {{ dashboard.cumulativeDocuments.workshopMaterial.totalQty }}
+            <el-descriptions-item label="累计领退料金额">
+              {{ dashboard.cumulativeDocuments.workshopMaterial.totalAmount }}
             </el-descriptions-item>
           </el-descriptions>
         </el-card>
@@ -73,7 +73,6 @@
               </template>
             </el-table-column>
             <el-table-column prop="documentCount" label="单据数" min-width="90" />
-            <el-table-column prop="totalQty" label="总数量" min-width="120" />
             <el-table-column prop="totalAmount" label="总金额" min-width="120" />
           </el-table>
         </el-card>
@@ -87,8 +86,17 @@
           <el-table :data="categoryRows" stripe height="360" v-loading="loading">
             <el-table-column prop="categoryName" label="分类" min-width="140" />
             <el-table-column prop="materialCount" label="物料数" min-width="90" />
-            <el-table-column prop="balanceCount" label="库存记录" min-width="110" />
-            <el-table-column prop="totalQuantityOnHand" label="库存总量" min-width="120" />
+            <el-table-column
+              prop="inventoryRecordCount"
+              label="库存记录数"
+              min-width="110"
+            />
+            <el-table-column prop="lowStockCount" label="低库存项" min-width="100" />
+            <el-table-column
+              prop="totalInventoryValue"
+              label="库存货值"
+              min-width="120"
+            />
           </el-table>
         </el-card>
       </el-col>
@@ -111,9 +119,9 @@ const loading = ref(false);
 const dashboard = ref({
   inventory: {
     activeMaterialCount: 0,
-    activeWorkshopCount: 0,
-    totalQuantityOnHand: "0.000000",
+    inventoryRecordCount: 0,
     lowStockCount: 0,
+    totalInventoryValue: "0.00",
   },
   todayDocuments: {
     inboundCount: 0,
@@ -121,9 +129,9 @@ const dashboard = ref({
     workshopMaterialCount: 0,
   },
   cumulativeDocuments: {
-    inbound: { totalQty: "0.000000" },
-    outbound: { totalQty: "0.000000" },
-    workshopMaterial: { totalQty: "0.000000" },
+    inbound: { totalAmount: "0.00" },
+    outbound: { totalAmount: "0.00" },
+    workshopMaterial: { totalAmount: "0.00" },
   },
 });
 
@@ -136,16 +144,16 @@ const metricCards = computed(() => [
     value: dashboard.value.inventory.activeMaterialCount,
   },
   {
-    label: "活跃车间数",
-    value: dashboard.value.inventory.activeWorkshopCount,
-  },
-  {
-    label: "库存总量",
-    value: dashboard.value.inventory.totalQuantityOnHand,
+    label: "库存记录数",
+    value: dashboard.value.inventory.inventoryRecordCount,
   },
   {
     label: "低库存项",
     value: dashboard.value.inventory.lowStockCount,
+  },
+  {
+    label: "库存货值",
+    value: dashboard.value.inventory.totalInventoryValue,
   },
 ]);
 

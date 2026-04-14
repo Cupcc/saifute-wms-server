@@ -22,16 +22,28 @@
       </el-form>
 
       <el-row :gutter="16" class="summary-row">
-        <el-col :xs="24" :sm="12" :lg="12">
+        <el-col :xs="24" :sm="12" :lg="6">
           <div class="stat-box">
-            <div class="stat-label">分类数量</div>
-            <div class="stat-value">{{ total }}</div>
+            <div class="stat-label">在库物料数</div>
+            <div class="stat-value">{{ summary.activeMaterialCount }}</div>
           </div>
         </el-col>
-        <el-col :xs="24" :sm="12" :lg="12">
+        <el-col :xs="24" :sm="12" :lg="6">
           <div class="stat-box">
-            <div class="stat-label">库存总量</div>
-            <div class="stat-value">{{ summary.totalQuantityOnHand }}</div>
+            <div class="stat-label">库存记录数</div>
+            <div class="stat-value">{{ summary.inventoryRecordCount }}</div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12" :lg="6">
+          <div class="stat-box">
+            <div class="stat-label">低库存项</div>
+            <div class="stat-value">{{ summary.lowStockCount }}</div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12" :lg="6">
+          <div class="stat-box">
+            <div class="stat-label">库存货值</div>
+            <div class="stat-value">{{ summary.totalInventoryValue }}</div>
           </div>
         </el-col>
       </el-row>
@@ -40,8 +52,17 @@
         <el-table-column prop="categoryCode" label="分类编码" min-width="140" />
         <el-table-column prop="categoryName" label="分类名称" min-width="180" />
         <el-table-column prop="materialCount" label="物料数" min-width="100" />
-        <el-table-column prop="balanceCount" label="库存记录数" min-width="120" />
-        <el-table-column prop="totalQuantityOnHand" label="库存总量" min-width="140" />
+        <el-table-column
+          prop="inventoryRecordCount"
+          label="库存记录数"
+          min-width="120"
+        />
+        <el-table-column prop="lowStockCount" label="低库存项" min-width="100" />
+        <el-table-column
+          prop="totalInventoryValue"
+          label="库存货值"
+          min-width="140"
+        />
       </el-table>
 
       <div class="pagination-wrap">
@@ -73,7 +94,10 @@ const filters = ref({
   keyword: "",
 });
 const summary = ref({
-  totalQuantityOnHand: "0.000000",
+  activeMaterialCount: 0,
+  inventoryRecordCount: 0,
+  lowStockCount: 0,
+  totalInventoryValue: "0.00",
 });
 
 async function loadRows() {

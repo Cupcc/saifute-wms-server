@@ -58,6 +58,7 @@ export class InventoryRepository {
   async findLogs(params: {
     materialId?: number;
     stockScopeIds?: number[];
+    workshopId?: number;
     businessDocumentId?: number;
     businessDocumentType?: string;
     businessDocumentNumber?: string;
@@ -74,6 +75,7 @@ export class InventoryRepository {
     } else if (params.stockScopeIds?.length) {
       where.stockScopeId = { in: params.stockScopeIds };
     }
+    if (params.workshopId) where.workshopId = params.workshopId;
     if (params.businessDocumentId)
       where.businessDocumentId = params.businessDocumentId;
     if (params.businessDocumentType)

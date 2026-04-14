@@ -17,6 +17,7 @@ import {
   buildCompactDocumentNo,
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { ApprovalService } from "../../approval/application/approval.service";
 import {
@@ -36,7 +37,7 @@ import type { QueryWorkshopMaterialOrderDto } from "../dto/query-workshop-materi
 import type { UpdateWorkshopMaterialOrderDto } from "../dto/update-workshop-material-order.dto";
 import { WorkshopMaterialRepository } from "../infrastructure/workshop-material.repository";
 
-const DOCUMENT_TYPE = "WorkshopMaterialOrder";
+const DOCUMENT_TYPE = BusinessDocumentType.WorkshopMaterialOrder;
 const BUSINESS_MODULE = "workshop-material";
 
 function toOperationType(

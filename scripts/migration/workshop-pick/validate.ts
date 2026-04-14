@@ -7,6 +7,7 @@ import {
   resolveReportPath,
 } from "../config";
 import { closePools, createMariaDbPool, withPoolConnection } from "../db";
+import { BusinessDocumentType } from "../shared/business-document-type";
 import { stableJsonStringify } from "../shared/deterministic";
 import { writeStableReport } from "../shared/report-writer";
 import {
@@ -19,6 +20,9 @@ import type {
   WorkshopPickMigrationPlan,
 } from "./types";
 import { MAP_TABLES, TARGET_TABLES } from "./writer";
+
+const WORKSHOP_MATERIAL_DOCUMENT_TYPE =
+  BusinessDocumentType.WorkshopMaterialOrder;
 
 interface ArchivedPayloadExpectation {
   legacyTable: string;
@@ -344,36 +348,36 @@ async function getForbiddenTableCounts(connection: {
     `
       SELECT 'approval_document' AS tableName, COUNT(*) AS total
       FROM approval_document
-      WHERE documentFamily = 'WORKSHOP_MATERIAL' OR documentType = 'WorkshopMaterialOrder'
+      WHERE documentFamily = 'WORKSHOP_MATERIAL' OR documentType = '${WORKSHOP_MATERIAL_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'document_relation' AS tableName, COUNT(*) AS total
       FROM document_relation
       WHERE upstreamFamily = 'WORKSHOP_MATERIAL'
          OR downstreamFamily = 'WORKSHOP_MATERIAL'
-         OR upstreamDocumentType = 'WorkshopMaterialOrder'
-         OR downstreamDocumentType = 'WorkshopMaterialOrder'
+         OR upstreamDocumentType = '${WORKSHOP_MATERIAL_DOCUMENT_TYPE}'
+         OR downstreamDocumentType = '${WORKSHOP_MATERIAL_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'document_line_relation' AS tableName, COUNT(*) AS total
       FROM document_line_relation
       WHERE upstreamFamily = 'WORKSHOP_MATERIAL'
          OR downstreamFamily = 'WORKSHOP_MATERIAL'
-         OR upstreamDocumentType = 'WorkshopMaterialOrder'
-         OR downstreamDocumentType = 'WorkshopMaterialOrder'
+         OR upstreamDocumentType = '${WORKSHOP_MATERIAL_DOCUMENT_TYPE}'
+         OR downstreamDocumentType = '${WORKSHOP_MATERIAL_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'factory_number_reservation' AS tableName, COUNT(*) AS total
       FROM factory_number_reservation
-      WHERE businessDocumentType = 'WorkshopMaterialOrder'
+      WHERE businessDocumentType = '${WORKSHOP_MATERIAL_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'inventory_balance' AS tableName, COUNT(*) AS total
       FROM inventory_balance
       UNION ALL
       SELECT 'inventory_log' AS tableName, COUNT(*) AS total
       FROM inventory_log
-      WHERE businessDocumentType = 'WorkshopMaterialOrder'
+      WHERE businessDocumentType = '${WORKSHOP_MATERIAL_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'inventory_source_usage' AS tableName, COUNT(*) AS total
       FROM inventory_source_usage
-      WHERE consumerDocumentType = 'WorkshopMaterialOrder'
+      WHERE consumerDocumentType = '${WORKSHOP_MATERIAL_DOCUMENT_TYPE}'
     `,
   );
 

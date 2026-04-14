@@ -26,6 +26,19 @@ export class SystemManagementBootstrapService
 
     if (hasAnyNormalizedData) {
       await this.rbacRepository.loadFromNormalizedTables();
+      const repairedSeedDrift = this.rbacRepository.ensureSeedPermissionMenus(
+        ["rd-operator"],
+        ["reporting:monthly-reporting:view", "reporting:export"],
+      );
+      const syncedSeedRoles = this.rbacRepository.syncSeedRoleMenus([
+        "rd-operator",
+      ]);
+      if (repairedSeedDrift || syncedSeedRoles) {
+        await this.rbacRepository.flushPersistence();
+        this.logger.log(
+          "Repaired seed permission drift for monthly reporting baseline",
+        );
+      }
       if (normalizedBaseCounts.users === 0) {
         this.logger.warn(
           "Normalized system-management tables are partially populated without users; loading existing rows without reseeding",

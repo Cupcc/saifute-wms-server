@@ -153,7 +153,7 @@
           <el-card class="chart-card">
             <template #header>
               <div class="chart-header">
-                <span class="chart-title">库存分类分布</span>
+                <span class="chart-title">库存货值分布</span>
               </div>
             </template>
             <div ref="distributionChartRef" class="chart-container"></div>
@@ -304,7 +304,7 @@ function initCharts() {
       },
       series: [
         {
-          name: "库存分类",
+          name: "库存货值",
           type: "pie",
           radius: ["40%", "70%"],
           center: ["65%", "50%"],
@@ -366,7 +366,7 @@ function updateDistributionChart(categoryData) {
 
   // 准备图表数据
   const chartData = categoryData.map((item) => ({
-    value: item.totalQuantity,
+    value: item.totalValue,
     name: item.categoryName,
   }));
 
@@ -401,7 +401,7 @@ function updateDistributionChart(categoryData) {
     },
     series: [
       {
-        name: "库存分类",
+        name: "库存货值",
         type: "pie",
         radius: ["40%", "70%"],
         center: ["65%", "50%"],

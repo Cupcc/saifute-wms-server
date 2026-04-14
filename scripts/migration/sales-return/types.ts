@@ -1,3 +1,5 @@
+import type { BusinessDocumentTypeValue } from "../shared/business-document-type";
+
 export const SALES_RETURN_MIGRATION_BATCH =
   "batch3c-outbound-sales-return-recoverable";
 export const OUTBOUND_BASE_MIGRATION_BATCH = "batch2c-outbound-base";
@@ -11,7 +13,7 @@ export type AuditStatusSnapshotValue =
   | "APPROVED"
   | "REJECTED";
 export type InventoryEffectStatusValue = "POSTED" | "REVERSED";
-export type SourceDocumentTypeValue = "SalesStockOrder";
+export type SourceDocumentTypeValue = BusinessDocumentTypeValue;
 
 export type PendingRelationReasonCode =
   | "missing-mapped-material"

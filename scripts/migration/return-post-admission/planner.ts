@@ -1,3 +1,7 @@
+import {
+  BusinessDocumentType,
+  type BusinessDocumentTypeValue,
+} from "../shared/business-document-type";
 import type {
   AdmittedLineRow,
   AdmittedOrderRow,
@@ -24,13 +28,18 @@ import type {
 } from "./types";
 import { POST_ADMISSION_MIGRATION_BATCH } from "./types";
 
+const STOCK_IN_DOCUMENT_TYPE = BusinessDocumentType.StockInOrder;
+const SALES_STOCK_DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
+const WORKSHOP_MATERIAL_DOCUMENT_TYPE =
+  BusinessDocumentType.WorkshopMaterialOrder;
+
 function buildBalanceKey(materialId: number, workshopId: number): string {
   return `${materialId}::${workshopId}`;
 }
 
 function buildIdempotencyKey(
   prefix: string,
-  documentType: string,
+  documentType: BusinessDocumentTypeValue,
   documentId: number,
   lineId: number,
 ): string {
@@ -371,7 +380,7 @@ function buildSourceBackfillPlan(
     if (returnLine.sourceDocumentId === null || srStalePrelinkDiffers) {
       backfillRecords.push({
         lineId: classification.lineId,
-        sourceDocumentType: "SalesStockOrder",
+        sourceDocumentType: SALES_STOCK_DOCUMENT_TYPE,
         sourceDocumentId: classification.provenUpstreamOrderId,
         sourceDocumentLineId: classification.provenUpstreamLineId,
       });
@@ -384,10 +393,10 @@ function buildSourceBackfillPlan(
       documentRelations.push({
         relationType: "SALES_RETURN_FROM_OUTBOUND",
         upstreamFamily: "SALES_STOCK",
-        upstreamDocumentType: "SalesStockOrder",
+        upstreamDocumentType: SALES_STOCK_DOCUMENT_TYPE,
         upstreamDocumentId: upstreamLine.orderId,
         downstreamFamily: "SALES_STOCK",
-        downstreamDocumentType: "SalesStockOrder",
+        downstreamDocumentType: SALES_STOCK_DOCUMENT_TYPE,
         downstreamDocumentId: returnLine.orderId,
         isActive: returnLine.lifecycleStatus === "EFFECTIVE",
       });
@@ -396,11 +405,11 @@ function buildSourceBackfillPlan(
     documentLineRelations.push({
       relationType: "SALES_RETURN_FROM_OUTBOUND",
       upstreamFamily: "SALES_STOCK",
-      upstreamDocumentType: "SalesStockOrder",
+      upstreamDocumentType: SALES_STOCK_DOCUMENT_TYPE,
       upstreamDocumentId: upstreamLine.orderId,
       upstreamLineId: upstreamLine.id,
       downstreamFamily: "SALES_STOCK",
-      downstreamDocumentType: "SalesStockOrder",
+      downstreamDocumentType: SALES_STOCK_DOCUMENT_TYPE,
       downstreamDocumentId: returnLine.orderId,
       downstreamLineId: returnLine.id,
       linkedQty: returnLine.quantity,
@@ -437,7 +446,7 @@ function buildSourceBackfillPlan(
     if (returnLine.sourceDocumentId === null || wrStalePrelinkDiffers) {
       backfillRecords.push({
         lineId: classification.lineId,
-        sourceDocumentType: "WorkshopMaterialOrder",
+        sourceDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
         sourceDocumentId: classification.provenUpstreamOrderId,
         sourceDocumentLineId: classification.provenUpstreamLineId,
       });
@@ -450,10 +459,10 @@ function buildSourceBackfillPlan(
       documentRelations.push({
         relationType: "WORKSHOP_RETURN_FROM_PICK",
         upstreamFamily: "WORKSHOP_MATERIAL",
-        upstreamDocumentType: "WorkshopMaterialOrder",
+        upstreamDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
         upstreamDocumentId: upstreamLine.orderId,
         downstreamFamily: "WORKSHOP_MATERIAL",
-        downstreamDocumentType: "WorkshopMaterialOrder",
+        downstreamDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
         downstreamDocumentId: returnLine.orderId,
         isActive: returnLine.lifecycleStatus === "EFFECTIVE",
       });
@@ -462,11 +471,11 @@ function buildSourceBackfillPlan(
     documentLineRelations.push({
       relationType: "WORKSHOP_RETURN_FROM_PICK",
       upstreamFamily: "WORKSHOP_MATERIAL",
-      upstreamDocumentType: "WorkshopMaterialOrder",
+      upstreamDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
       upstreamDocumentId: upstreamLine.orderId,
       upstreamLineId: upstreamLine.id,
       downstreamFamily: "WORKSHOP_MATERIAL",
-      downstreamDocumentType: "WorkshopMaterialOrder",
+      downstreamDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
       downstreamDocumentId: returnLine.orderId,
       downstreamLineId: returnLine.id,
       linkedQty: returnLine.quantity,
@@ -512,7 +521,7 @@ interface ReplayLineInput {
   materialId: number;
   workshopId: number;
   quantity: string;
-  documentType: string;
+  documentType: BusinessDocumentTypeValue;
   documentId: number;
   documentNumber: string;
   businessModule: string;
@@ -547,7 +556,7 @@ function buildInventoryReplayPlan(
       materialId: line.materialId,
       workshopId: line.workshopId,
       quantity: line.quantity,
-      documentType: "StockInOrder",
+      documentType: STOCK_IN_DOCUMENT_TYPE,
       documentId: line.orderId,
       documentNumber: line.documentNo,
       businessModule: "inbound",
@@ -567,7 +576,7 @@ function buildInventoryReplayPlan(
       materialId: line.materialId,
       workshopId: line.workshopId,
       quantity: line.quantity,
-      documentType: "SalesStockOrder",
+      documentType: SALES_STOCK_DOCUMENT_TYPE,
       documentId: line.orderId,
       documentNumber: line.documentNo,
       businessModule: "sales",
@@ -584,7 +593,7 @@ function buildInventoryReplayPlan(
       materialId: line.materialId,
       workshopId: line.workshopId,
       quantity: line.quantity,
-      documentType: "SalesStockOrder",
+      documentType: SALES_STOCK_DOCUMENT_TYPE,
       documentId: line.orderId,
       documentNumber: line.documentNo,
       businessModule: "sales",
@@ -601,7 +610,7 @@ function buildInventoryReplayPlan(
       materialId: line.materialId,
       workshopId: line.workshopId,
       quantity: line.quantity,
-      documentType: "WorkshopMaterialOrder",
+      documentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
       documentId: line.orderId,
       documentNumber: line.documentNo,
       businessModule: "workshop-material",
@@ -618,7 +627,7 @@ function buildInventoryReplayPlan(
       materialId: line.materialId,
       workshopId: line.workshopId,
       quantity: line.quantity,
-      documentType: "WorkshopMaterialOrder",
+      documentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
       documentId: line.orderId,
       documentNumber: line.documentNo,
       businessModule: "workshop-material",
@@ -790,7 +799,7 @@ function buildInventoryReplayPlan(
 
     const sourceIdempotencyKey = buildIdempotencyKey(
       "replay",
-      "SalesStockOrder",
+      SALES_STOCK_DOCUMENT_TYPE,
       upstreamLine.orderId,
       upstreamLine.id,
     );
@@ -808,7 +817,7 @@ function buildInventoryReplayPlan(
     sourceUsageInserts.push({
       materialId: line.materialId,
       sourceLogIdempotencyKey: sourceIdempotencyKey,
-      consumerDocumentType: "SalesStockOrder",
+      consumerDocumentType: SALES_STOCK_DOCUMENT_TYPE,
       consumerDocumentId: line.orderId,
       consumerLineId: line.id,
       allocatedQty: line.quantity,
@@ -858,7 +867,7 @@ function buildInventoryReplayPlan(
 
     const sourceIdempotencyKey = buildIdempotencyKey(
       "replay",
-      "WorkshopMaterialOrder",
+      WORKSHOP_MATERIAL_DOCUMENT_TYPE,
       upstreamLine.orderId,
       upstreamLine.id,
     );
@@ -876,7 +885,7 @@ function buildInventoryReplayPlan(
     sourceUsageInserts.push({
       materialId: line.materialId,
       sourceLogIdempotencyKey: sourceIdempotencyKey,
-      consumerDocumentType: "WorkshopMaterialOrder",
+      consumerDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
       consumerDocumentId: line.orderId,
       consumerLineId: line.id,
       allocatedQty: line.quantity,
@@ -903,7 +912,7 @@ function buildAuditProjectionPlan(
   function addAuditRows(
     orders: AdmittedOrderRow[],
     documentFamily: DocumentFamilyValue,
-    documentType: string,
+    documentType: BusinessDocumentTypeValue,
   ): void {
     for (const order of orders) {
       if (order.auditStatusSnapshot === "NOT_REQUIRED") {
@@ -924,14 +933,18 @@ function buildAuditProjectionPlan(
     }
   }
 
-  addAuditRows(stockInOrders, "STOCK_IN", "StockInOrder");
-  addAuditRows(outboundOrders, "SALES_STOCK", "SalesStockOrder");
-  addAuditRows(salesReturnOrders, "SALES_STOCK", "SalesStockOrder");
-  addAuditRows(pickOrders, "WORKSHOP_MATERIAL", "WorkshopMaterialOrder");
+  addAuditRows(stockInOrders, "STOCK_IN", STOCK_IN_DOCUMENT_TYPE);
+  addAuditRows(outboundOrders, "SALES_STOCK", SALES_STOCK_DOCUMENT_TYPE);
+  addAuditRows(salesReturnOrders, "SALES_STOCK", SALES_STOCK_DOCUMENT_TYPE);
+  addAuditRows(
+    pickOrders,
+    "WORKSHOP_MATERIAL",
+    WORKSHOP_MATERIAL_DOCUMENT_TYPE,
+  );
   addAuditRows(
     workshopReturnOrders,
     "WORKSHOP_MATERIAL",
-    "WorkshopMaterialOrder",
+    WORKSHOP_MATERIAL_DOCUMENT_TYPE,
   );
 
   auditDocumentInserts.sort((a, b) => {

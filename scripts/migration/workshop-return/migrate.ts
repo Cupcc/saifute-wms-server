@@ -7,6 +7,7 @@ import {
   resolveReportPath,
 } from "../config";
 import { closePools, createMariaDbPool, withPoolConnection } from "../db";
+import { BusinessDocumentType } from "../shared/business-document-type";
 import { writeStableReport } from "../shared/report-writer";
 import {
   buildDocumentNoCollisionBlockers,
@@ -23,6 +24,9 @@ import {
   buildWorkshopReturnMigrationPlan,
   hasExecutionBlockers,
 } from "./transformer";
+
+const WORKSHOP_MATERIAL_DOCUMENT_TYPE =
+  BusinessDocumentType.WorkshopMaterialOrder;
 import { executeWorkshopReturnPlan, MAP_TABLES, TARGET_TABLES } from "./writer";
 
 interface StoredMapRow {
@@ -352,29 +356,29 @@ async function getDownstreamConsumerCounts(connection: {
     `
       SELECT 'approval_document' AS consumer, COUNT(*) AS total
       FROM approval_document
-      WHERE documentFamily = 'WORKSHOP_MATERIAL' OR documentType = 'WorkshopMaterialOrder'
+      WHERE documentFamily = 'WORKSHOP_MATERIAL' OR documentType = '${WORKSHOP_MATERIAL_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'document_relation' AS consumer, COUNT(*) AS total
       FROM document_relation
       WHERE upstreamFamily = 'WORKSHOP_MATERIAL'
          OR downstreamFamily = 'WORKSHOP_MATERIAL'
-         OR upstreamDocumentType = 'WorkshopMaterialOrder'
-         OR downstreamDocumentType = 'WorkshopMaterialOrder'
+         OR upstreamDocumentType = '${WORKSHOP_MATERIAL_DOCUMENT_TYPE}'
+         OR downstreamDocumentType = '${WORKSHOP_MATERIAL_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'document_line_relation' AS consumer, COUNT(*) AS total
       FROM document_line_relation
       WHERE upstreamFamily = 'WORKSHOP_MATERIAL'
          OR downstreamFamily = 'WORKSHOP_MATERIAL'
-         OR upstreamDocumentType = 'WorkshopMaterialOrder'
-         OR downstreamDocumentType = 'WorkshopMaterialOrder'
+         OR upstreamDocumentType = '${WORKSHOP_MATERIAL_DOCUMENT_TYPE}'
+         OR downstreamDocumentType = '${WORKSHOP_MATERIAL_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'inventory_log' AS consumer, COUNT(*) AS total
       FROM inventory_log
-      WHERE businessDocumentType = 'WorkshopMaterialOrder'
+      WHERE businessDocumentType = '${WORKSHOP_MATERIAL_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'inventory_source_usage' AS consumer, COUNT(*) AS total
       FROM inventory_source_usage
-      WHERE consumerDocumentType = 'WorkshopMaterialOrder'
+      WHERE consumerDocumentType = '${WORKSHOP_MATERIAL_DOCUMENT_TYPE}'
     `,
   );
 

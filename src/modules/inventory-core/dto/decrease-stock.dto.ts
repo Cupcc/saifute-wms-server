@@ -1,4 +1,5 @@
 import {
+  IsEnum,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -7,6 +8,7 @@ import {
   MaxLength,
   Min,
 } from "class-validator";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 
 export class DecreaseStockDto {
   @IsInt()
@@ -31,9 +33,7 @@ export class DecreaseStockDto {
   @MaxLength(64)
   businessModule!: string;
 
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(64)
+  @IsEnum(BusinessDocumentType)
   businessDocumentType!: string;
 
   @IsInt()

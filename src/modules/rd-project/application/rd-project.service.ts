@@ -31,10 +31,12 @@ import type { CreateRdProjectMaterialActionDto } from "../dto/create-rd-project-
 import type { QueryRdProjectDto } from "../dto/query-rd-project.dto";
 import type { QueryRdProjectMaterialActionDto } from "../dto/query-rd-project-material-action.dto";
 import type { UpdateRdProjectDto } from "../dto/update-rd-project.dto";
+import {
+  RD_PROJECT_ACTION_DOCUMENT_TYPE,
+  RD_PROJECT_DOCUMENT_TYPE,
+} from "./rd-project.shared";
 import { RdProjectRepository } from "../infrastructure/rd-project.repository";
 
-const RD_PROJECT_DOCUMENT_TYPE = "RdProject";
-const RD_PROJECT_ACTION_DOCUMENT_TYPE = "RdProjectMaterialAction";
 const BUSINESS_MODULE = "rd-project";
 const RD_PROJECT_STOCK_SCOPE: StockScopeCode = "RD_SUB";
 const RD_PROJECT_LABEL = "研发项目";

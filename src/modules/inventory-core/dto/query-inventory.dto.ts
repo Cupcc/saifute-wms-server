@@ -1,6 +1,7 @@
 import { Type } from "class-transformer";
 import {
   IsDateString,
+  IsEnum,
   IsIn,
   IsInt,
   IsOptional,
@@ -8,6 +9,7 @@ import {
   MaxLength,
   Min,
 } from "class-validator";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 
 export class QueryInventoryBalancesDto {
   @IsOptional()
@@ -43,6 +45,10 @@ export class QueryInventoryLogsDto {
   materialId?: number;
 
   @IsOptional()
+  @IsIn(["MAIN", "RD_SUB"])
+  stockScope?: "MAIN" | "RD_SUB";
+
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
@@ -55,6 +61,7 @@ export class QueryInventoryLogsDto {
   businessDocumentId?: number;
 
   @IsOptional()
+  @IsEnum(BusinessDocumentType)
   businessDocumentType?: string;
 
   @IsOptional()
@@ -113,6 +120,7 @@ export class QueryInventorySourceUsagesDto {
   materialId?: number;
 
   @IsOptional()
+  @IsEnum(BusinessDocumentType)
   consumerDocumentType?: string;
 
   @IsOptional()
@@ -142,8 +150,7 @@ export class QueryFactoryNumberReservationsDto {
   workshopId?: number;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(64)
+  @IsEnum(BusinessDocumentType)
   businessDocumentType?: string;
 
   @IsOptional()

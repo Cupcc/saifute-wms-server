@@ -1,7 +1,9 @@
 import {
+  Body,
   Controller,
   ForbiddenException,
   Get,
+  Post,
   Query,
   StreamableFile,
   UnauthorizedException,
@@ -12,11 +14,15 @@ import { Permissions } from "../../../shared/decorators/permissions.decorator";
 import { AuditLog } from "../../audit-log/decorators/audit-log.decorator";
 import { WorkshopScopeService } from "../../rbac/application/workshop-scope.service";
 import type { SessionUserSnapshot } from "../../session/domain/user-session";
+import { MonthlyReportingService } from "../application/monthly-reporting.service";
 import { ReportingService } from "../application/reporting.service";
 import {
+  ExportMonthlyReportingDto,
   ExportReportDto,
   QueryInventorySummaryDto,
   QueryMaterialCategorySummaryDto,
+  QueryMonthlyReportingDetailDto,
+  QueryMonthlyReportingDto,
   QueryTrendSeriesDto,
 } from "../dto/query-reporting.dto";
 
@@ -26,6 +32,7 @@ const WAREHOUSE_MANAGER_ROLE = "warehouse-manager";
 export class ReportingController {
   constructor(
     private readonly reportingService: ReportingService,
+    private readonly monthlyReportingService: MonthlyReportingService,
     private readonly workshopScopeService: WorkshopScopeService,
   ) {}
 
@@ -92,6 +99,84 @@ export class ReportingController {
       query,
       inventoryScope?.stockScope,
     );
+  }
+
+  @Permissions("reporting:monthly-reporting:view")
+  @Get("monthly-reporting")
+  async getMonthlyReportingSummary(
+    @Query() query: QueryMonthlyReportingDto,
+    @CurrentUser() user?: SessionUserSnapshot,
+  ) {
+    const inventoryScope =
+      await this.workshopScopeService.resolveInventoryQueryScope(
+        user,
+        query.workshopId,
+        query.stockScope,
+      );
+    const workshopId =
+      await this.workshopScopeService.resolveInventoryQueryWorkshopId(
+        user,
+        query.workshopId,
+      );
+    return this.monthlyReportingService.getMonthlyReportSummary({
+      ...query,
+      stockScope: inventoryScope?.stockScope,
+      workshopId,
+    });
+  }
+
+  @Permissions("reporting:monthly-reporting:view")
+  @Get("monthly-reporting/details")
+  async getMonthlyReportingDetails(
+    @Query() query: QueryMonthlyReportingDetailDto,
+    @CurrentUser() user?: SessionUserSnapshot,
+  ) {
+    const inventoryScope =
+      await this.workshopScopeService.resolveInventoryQueryScope(
+        user,
+        query.workshopId,
+        query.stockScope,
+      );
+    const workshopId =
+      await this.workshopScopeService.resolveInventoryQueryWorkshopId(
+        user,
+        query.workshopId,
+      );
+    return this.monthlyReportingService.getMonthlyReportDocuments({
+      ...query,
+      stockScope: inventoryScope?.stockScope,
+      workshopId,
+    });
+  }
+
+  @Permissions("reporting:export")
+  @AuditLog({ title: "导出月度对账报表", action: "EXPORT_MONTHLY_REPORTING" })
+  @SkipResponseEnvelope()
+  @Post("monthly-reporting/export")
+  async exportMonthlyReporting(
+    @Body() query: ExportMonthlyReportingDto,
+    @CurrentUser() user?: SessionUserSnapshot,
+  ) {
+    const inventoryScope =
+      await this.workshopScopeService.resolveInventoryQueryScope(
+        user,
+        query.workshopId,
+        query.stockScope,
+      );
+    const workshopId =
+      await this.workshopScopeService.resolveInventoryQueryWorkshopId(
+        user,
+        query.workshopId,
+      );
+    const exportResult = await this.monthlyReportingService.exportMonthlyReport({
+      ...query,
+      stockScope: inventoryScope?.stockScope,
+      workshopId,
+    });
+    return new StreamableFile(Buffer.from(exportResult.content, "utf8"), {
+      disposition: `attachment; filename="${exportResult.fileName}"`,
+      type: exportResult.contentType,
+    });
   }
 
   @Permissions("reporting:export")

@@ -93,6 +93,7 @@ async function createHarness(options?: {
   const sessionService = {
     createSession: jest.fn().mockResolvedValue({
       accessToken: "access-token",
+      refreshToken: "refresh-token",
       session: {
         sessionId: "session-1",
         expiresAt: "2026-03-15T12:00:00.000Z",

@@ -8,13 +8,14 @@ import {
 import { saveAs } from "file-saver";
 import cache from "@/plugins/cache";
 import useUserStore from "@/store/modules/user";
-import { getToken } from "@/utils/auth";
+import { getRefreshToken, getToken } from "@/utils/auth";
 import errorCode from "@/utils/errorCode";
 import { blobValidate, tansParams } from "@/utils/ruoyi";
 
 let downloadLoadingInstance;
 // 是否显示重新登录
 export const isRelogin = { show: false };
+let tokenRefreshPromise = null;
 
 axios.defaults.headers["Content-Type"] = "application/json;charset=utf-8";
 // 创建axios实例
@@ -22,6 +23,10 @@ const service = axios.create({
   // axios中请求配置有baseURL选项，表示请求URL公共部分
   baseURL: import.meta.env.VITE_APP_BASE_API,
   // 超时
+  timeout: 10000,
+});
+const refreshService = axios.create({
+  baseURL: import.meta.env.VITE_APP_BASE_API,
   timeout: 10000,
 });
 
@@ -32,13 +37,113 @@ const RESPONSE_COOLDOWN_MS = 3000;
 // 记录每个接口上次响应完成的时间
 const responseCompletedTimeMap = new Map();
 
+function isRefreshRequest(config) {
+  return typeof config?.url === "string" && config.url.includes("/api/auth/refresh");
+}
+
+function shouldSkipTokenRefresh(config) {
+  return (
+    config?.headers?.isToken === false ||
+    config?.headers?.skipTokenRefresh === true ||
+    isRefreshRequest(config)
+  );
+}
+
+function buildAuthorizationHeader(token) {
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function promptRelogin(message) {
+  if (!isRelogin.show) {
+    isRelogin.show = true;
+    ElMessageBox.confirm(
+      message || "登录状态已过期，您可以继续留在该页面，或者重新登录",
+      "系统提示",
+      {
+        confirmButtonText: "重新登录",
+        cancelButtonText: "取消",
+        type: "warning",
+      },
+    )
+      .then(() => {
+        isRelogin.show = false;
+        location.href = "/index";
+      })
+      .catch(() => {
+        isRelogin.show = false;
+      });
+  }
+
+  return Promise.reject(new Error(message || "无效的会话，或者会话已过期，请重新登录。"));
+}
+
+async function refreshAccessToken() {
+  if (tokenRefreshPromise) {
+    return tokenRefreshPromise;
+  }
+
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    throw new Error("刷新令牌不存在或已失效");
+  }
+
+  tokenRefreshPromise = refreshService
+    .post("/api/auth/refresh", {
+      refreshToken,
+    })
+    .then((response) => {
+      const code = response.data?.code || 200;
+      const message =
+        response.data?.msg ||
+        response.data?.message ||
+        "登录状态刷新失败，请重新登录";
+      if (code !== 200) {
+        throw new Error(message);
+      }
+
+      const payload = response.data?.data || response.data;
+      useUserStore().setTokens(payload);
+      return payload.accessToken;
+    })
+    .finally(() => {
+      tokenRefreshPromise = null;
+    });
+
+  return tokenRefreshPromise;
+}
+
+async function retryRequestWithFreshToken(config) {
+  try {
+    const accessToken = await refreshAccessToken();
+    return service({
+      ...config,
+      __isRetryRequest__: true,
+      __skipRepeatSubmitCheck__: true,
+      headers: {
+        ...config.headers,
+        ...buildAuthorizationHeader(accessToken),
+      },
+    });
+  } catch (error) {
+    const message =
+      error?.response?.data?.message ||
+      error?.response?.data?.msg ||
+      error?.message ||
+      "登录状态已过期，请重新登录";
+    useUserStore().clearAuthState();
+    return promptRelogin(message);
+  }
+}
+
 // request拦截器
 service.interceptors.request.use(
   (config) => {
+    config.headers = config.headers || {};
     // 是否需要设置 token
-    const isToken = config.headers?.isToken === false;
+    const isToken = config.headers.isToken === false;
     // 是否需要防止数据重复提交
-    const isRepeatSubmit = config.headers?.repeatSubmit === false;
+    const isRepeatSubmit = config.headers.repeatSubmit === false;
+    const skipRepeatSubmitCheck = config.__skipRepeatSubmitCheck__ === true;
     if (getToken() && !isToken) {
       config.headers["Authorization"] = "Bearer " + getToken(); // 让每个请求携带自定义token 请根据实际情况自行修改
     }
@@ -51,6 +156,7 @@ service.interceptors.request.use(
     }
     if (
       !isRepeatSubmit &&
+      !skipRepeatSubmitCheck &&
       (config.method === "post" || config.method === "put")
     ) {
       const lockKey = `${config.method}:${config.url}`;
@@ -150,30 +256,18 @@ service.interceptors.response.use(
       return res.data;
     }
     if (code === 401) {
-      if (!isRelogin.show) {
-        isRelogin.show = true;
-        ElMessageBox.confirm(
-          "登录状态已过期，您可以继续留在该页面，或者重新登录",
-          "系统提示",
-          {
-            confirmButtonText: "重新登录",
-            cancelButtonText: "取消",
-            type: "warning",
-          },
-        )
-          .then(() => {
-            isRelogin.show = false;
-            useUserStore()
-              .logOut()
-              .then(() => {
-                location.href = "/index";
-              });
-          })
-          .catch(() => {
-            isRelogin.show = false;
-          });
+      if (
+        !shouldSkipTokenRefresh(res.config) &&
+        !res.config?.__isRetryRequest__
+      ) {
+        return retryRequestWithFreshToken(res.config);
       }
-      return Promise.reject("无效的会话，或者会话已过期，请重新登录。");
+      if (!shouldSkipTokenRefresh(res.config)) {
+        useUserStore().clearAuthState();
+        return promptRelogin(msg);
+      }
+
+      return Promise.reject(new Error(msg));
     } else if (code === 500) {
       ElMessage({ message: msg, type: "error" });
       return Promise.reject(new Error(msg));
@@ -193,6 +287,20 @@ service.interceptors.response.use(
     if (lockKey) {
       pendingLockMap.delete(lockKey);
       responseCompletedTimeMap.set(lockKey, Date.now());
+    }
+
+    if (error.response?.status === 401) {
+      if (
+        !shouldSkipTokenRefresh(error.config) &&
+        !error.config?.__isRetryRequest__
+      ) {
+        return retryRequestWithFreshToken(error.config);
+      }
+
+      if (!shouldSkipTokenRefresh(error.config)) {
+        useUserStore().clearAuthState();
+        return promptRelogin("无效的会话，或者会话已过期，请重新登录。");
+      }
     }
 
     console.log("err" + error);

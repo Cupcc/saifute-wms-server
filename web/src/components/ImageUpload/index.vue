@@ -49,7 +49,7 @@
 
 <script setup>
 import Sortable from "sortablejs";
-import { getToken } from "@/utils/auth";
+import useUserStore from "@/store/modules/user";
 import { isExternal } from "@/utils/validate";
 
 const props = defineProps({
@@ -101,9 +101,12 @@ const number = ref(0);
 const uploadList = ref([]);
 const dialogImageUrl = ref("");
 const dialogVisible = ref(false);
+const userStore = useUserStore();
 const baseUrl = import.meta.env.VITE_APP_BASE_API;
 const uploadImgUrl = ref(import.meta.env.VITE_APP_BASE_API + props.action); // 上传的图片服务器地址
-const headers = ref({ Authorization: "Bearer " + getToken() });
+const headers = computed(() =>
+  userStore.token ? { Authorization: `Bearer ${userStore.token}` } : {},
+);
 const fileList = ref([]);
 const showTip = computed(
   () => props.isShowTip && (props.fileType || props.fileSize),

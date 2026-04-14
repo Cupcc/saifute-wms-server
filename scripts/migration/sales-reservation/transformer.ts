@@ -1,4 +1,5 @@
 import { normalizeOptionalText } from "../shared/deterministic";
+import { BusinessDocumentType } from "../shared/business-document-type";
 import type {
   ArchivedIntervalPlanRecord,
   FactoryNumberReservationTargetInsert,
@@ -17,6 +18,7 @@ import type {
 import { OUTBOUND_RESERVATION_MIGRATION_BATCH } from "./types";
 
 const SUPPORTED_ORDER_TYPES = new Set([2, 4, 7]);
+const SALES_STOCK_DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
 
 interface NormalizedIntervalRange {
   startNumber: string;
@@ -519,7 +521,7 @@ export function buildOutboundReservationMigrationPlan(
     const target: FactoryNumberReservationTargetInsert = {
       materialId: Number(line.materialId),
       workshopId: Number(order.workshopId),
-      businessDocumentType: "SalesStockOrder",
+      businessDocumentType: SALES_STOCK_DOCUMENT_TYPE,
       businessDocumentId: order.targetId,
       businessDocumentLineId: line.targetId,
       startNumber: normalizedRange.startNumber,

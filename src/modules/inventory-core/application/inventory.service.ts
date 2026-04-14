@@ -1096,6 +1096,7 @@ export class InventoryService {
     const result = await this.repository.findLogs({
       materialId: params.materialId,
       stockScopeIds,
+      workshopId: params.workshopId,
       businessDocumentId: params.businessDocumentId,
       businessDocumentType: params.businessDocumentType,
       businessDocumentNumber: params.businessDocumentNumber,

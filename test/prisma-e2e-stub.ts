@@ -10,6 +10,7 @@ function createModelStub() {
     findMany: () => Promise.resolve([]),
     findUnique: () => Promise.resolve(null),
     findFirst: () => Promise.resolve(null),
+    groupBy: () => Promise.resolve([]),
     create: () => Promise.resolve({}),
     update: () => Promise.resolve({}),
     upsert: () => Promise.resolve({}),
@@ -344,6 +345,12 @@ export class PrismaE2eStub {
   rdProjectMaterialLine = createModelStub();
   rdProjectMaterialAction = createModelStub();
   rdProjectMaterialActionLine = createModelStub();
+  rdHandoffOrder = createModelStub();
+  rdHandoffOrderLine = createModelStub();
+  rdStocktakeOrder = createModelStub();
+  rdStocktakeOrderLine = createModelStub();
+  stockInPriceCorrectionOrder = createModelStub();
+  stockInPriceCorrectionOrderLine = createModelStub();
   documentRelation = createModelStub();
   documentLineRelation = createModelStub();
   loginLog = createMemoryModel<{

@@ -10,6 +10,7 @@
     "dev:node": "sh ./scripts/dev/prepare-and-run.sh nest start --watch --path tsconfig.app.json --env-file .env.dev",
     "dev:web": "bun --cwd web dev",
     "docs:search": "bun ./scripts/knowledge/search-doc-catalog.mjs",
+    "dev:reset-test-data": "bun --env-file .env.dev scripts/dev/reset-and-seed-test-data.ts",
     "format": "biome check . --write",
     "lint": "biome check .",
     "lint:src-lines": "bun ./scripts/scan-src-ts-file-lines.mjs --max-lines 500 --no-error",

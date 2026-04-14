@@ -38,15 +38,6 @@
             @keyup.enter="handleSearch"
           />
         </el-form-item>
-        <el-form-item label="单据 ID">
-          <el-input-number
-            v-model="filters.businessDocumentId"
-            :min="1"
-            controls-position="right"
-            placeholder="单据 ID"
-            style="width: 180px"
-          />
-        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
@@ -112,7 +103,6 @@ const materialOptions = ref([]);
 const filters = ref({
   materialId: null,
   businessDocumentType: "",
-  businessDocumentId: null,
 });
 
 const workshopLabel = computed(
@@ -146,7 +136,6 @@ async function loadRows() {
     const response = await listRdInventoryLogs({
       materialId: filters.value.materialId || undefined,
       businessDocumentType: filters.value.businessDocumentType || undefined,
-      businessDocumentId: filters.value.businessDocumentId || undefined,
       limit: pageSize.value,
       offset: (pageNum.value - 1) * pageSize.value,
     });
@@ -166,7 +155,6 @@ function handleReset() {
   filters.value = {
     materialId: null,
     businessDocumentType: "",
-    businessDocumentId: null,
   };
   pageNum.value = 1;
   loadRows();

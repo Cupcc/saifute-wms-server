@@ -1,5 +1,9 @@
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { SystemManagementBootstrapService } from "../bootstrap/system-management-bootstrap.service";
+import type {
+  ManagedMenuRecord,
+  ManagedRoleRecord,
+} from "../domain/rbac.types";
 import { InMemoryRbacRepository } from "./in-memory-rbac.repository";
 
 describe("InMemoryRbacRepository", () => {
@@ -104,6 +108,71 @@ describe("InMemoryRbacRepository", () => {
     expect(user?.permissions).not.toEqual(
       expect.arrayContaining(["inbound:order:list", "sales:order:list"]),
     );
+  });
+
+  it("repairs seeded monthly reporting permission menus for rd users", async () => {
+    repository.deleteMenus([2914]);
+
+    const before = await repository.findUserById(5);
+    expect(before?.permissions).not.toContain("reporting:monthly-reporting:view");
+
+    const changed = repository.ensureSeedPermissionMenus(
+      ["rd-operator"],
+      ["reporting:monthly-reporting:view"],
+    );
+
+    const after = await repository.findUserById(5);
+    expect(changed).toBe(true);
+    expect(repository.listMenus({}).some((menu) => menu.menuId === 2914)).toBe(
+      true,
+    );
+    expect(after?.permissions).toContain("reporting:monthly-reporting:view");
+  });
+
+  it("realigns conflicting reporting menu ids and seed role menus for rd users", async () => {
+    const mutableRepository = repository as unknown as {
+      menus: ManagedMenuRecord[];
+      roles: ManagedRoleRecord[];
+    };
+    const exportMenu = mutableRepository.menus.find((menu) => menu.menuId === 2915);
+    const staleMonthlyMenu = mutableRepository.menus.find(
+      (menu) => menu.menuId === 2914,
+    );
+    const rdRole = mutableRepository.roles.find((role) => role.roleKey === "rd-operator");
+
+    expect(exportMenu).toBeDefined();
+    expect(staleMonthlyMenu).toBeDefined();
+    expect(rdRole).toBeDefined();
+
+    Object.assign(staleMonthlyMenu!, {
+      ...exportMenu!,
+      menuId: 2914,
+    });
+    mutableRepository.menus = mutableRepository.menus.filter(
+      (menu) => menu.menuId !== 2915,
+    );
+    rdRole!.menuIds = rdRole!.menuIds.filter((menuId) => menuId !== 2914);
+
+    const before = await repository.findUserById(5);
+    expect(before?.permissions).not.toContain("reporting:monthly-reporting:view");
+
+    const repairedMenus = repository.ensureSeedPermissionMenus(
+      ["rd-operator"],
+      ["reporting:monthly-reporting:view", "reporting:export"],
+    );
+    const syncedRoles = repository.syncSeedRoleMenus(["rd-operator"]);
+
+    const after = await repository.findUserById(5);
+    expect(repairedMenus).toBe(true);
+    expect(syncedRoles).toBe(true);
+    expect(repository.listMenus({}).some((menu) => menu.menuId === 2914)).toBe(
+      true,
+    );
+    expect(repository.listMenus({}).some((menu) => menu.menuId === 2915)).toBe(
+      true,
+    );
+    expect(after?.permissions).toContain("reporting:monthly-reporting:view");
+    expect(after?.permissions).not.toContain("reporting:export");
   });
 
   it("seeds supplier CRUD function permissions under the supplier menu", () => {

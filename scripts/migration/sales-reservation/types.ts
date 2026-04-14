@@ -1,8 +1,10 @@
+import type { BusinessDocumentTypeValue } from "../shared/business-document-type";
+
 export const OUTBOUND_RESERVATION_MIGRATION_BATCH =
   "batch3a-outbound-order-type4-reservation";
 export const OUTBOUND_BASE_MIGRATION_BATCH = "batch2c-outbound-base";
 
-export type ReservationBusinessDocumentTypeValue = "SalesStockOrder";
+export type ReservationBusinessDocumentTypeValue = BusinessDocumentTypeValue;
 export type ReservationStatusValue = "RESERVED" | "RELEASED";
 
 export interface LegacyIntervalRow {

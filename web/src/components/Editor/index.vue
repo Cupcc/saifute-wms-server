@@ -30,15 +30,16 @@
 import { QuillEditor } from "@vueup/vue-quill";
 import axios from "axios";
 import "@vueup/vue-quill/dist/vue-quill.snow.css";
-import { getToken } from "@/utils/auth";
+import useUserStore from "@/store/modules/user";
 
 const { proxy } = getCurrentInstance();
+const userStore = useUserStore();
 
 const quillEditorRef = ref();
 const uploadUrl = ref(import.meta.env.VITE_APP_BASE_API + "/common/upload"); // 上传的图片服务器地址
-const headers = ref({
-  Authorization: "Bearer " + getToken(),
-});
+const headers = computed(() =>
+  userStore.token ? { Authorization: `Bearer ${userStore.token}` } : {},
+);
 
 const props = defineProps({
   /* 编辑器的内容 */

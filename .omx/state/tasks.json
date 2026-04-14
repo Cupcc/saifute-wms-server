@@ -1,0 +1,35 @@
+[
+  {
+    "id": "task_c251fd0c-74f",
+    "title": "monthly-reporting phase1 delivery",
+    "kind": "delivery",
+    "phase": "execution",
+    "status": "active",
+    "priority": "high",
+    "verify": [],
+    "notes": [
+      "Created active task doc docs/tasks/task-20260411-0301-monthly-reporting-phase1-delivery.md and updated docs/tasks/TASK_CENTER.md. Execution now moves to backend/frontend implementation inside reporting."
+    ],
+    "metadata": {
+      "taskDoc": "docs/tasks/task-20260411-0301-monthly-reporting-phase1-delivery.md",
+      "requirement": "docs/requirements/domain/monthly-reporting.md (F1,F2,F3,F4,F5)"
+    },
+    "dependencies": [],
+    "blockers": [],
+    "reviewStatus": "none",
+    "history": [
+      {
+        "status": "pending",
+        "at": "2026-04-10T19:00:53.367Z",
+        "note": "task created"
+      },
+      {
+        "status": "active",
+        "at": "2026-04-10T19:03:31.869Z",
+        "by": "parent-orchestrator"
+      }
+    ],
+    "createdAt": "2026-04-10T19:00:53.367Z",
+    "updatedAt": "2026-04-10T19:03:31.870Z"
+  }
+]

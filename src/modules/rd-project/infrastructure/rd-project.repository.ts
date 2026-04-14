@@ -5,12 +5,14 @@ import {
   ProjectTargetType,
   RdProjectMaterialActionType,
 } from "../../../../generated/prisma/client";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import type { StockScopeCode } from "../../session/domain/user-session";
 
 type DbClient = Prisma.TransactionClient | PrismaService;
 
-const RD_PROJECT_ACTION_DOCUMENT_TYPE = "RdProjectMaterialAction";
+const RD_PROJECT_ACTION_DOCUMENT_TYPE =
+  BusinessDocumentType.RdProjectMaterialAction;
 
 @Injectable()
 export class RdProjectRepository {

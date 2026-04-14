@@ -2,6 +2,7 @@ import {
   DEFAULT_WORKSHOP_NAME,
   normalizeOptionalText,
 } from "../shared/deterministic";
+import { BusinessDocumentType } from "../shared/business-document-type";
 import type {
   ArchivedFieldPayloadRecord,
   AuditStatusSnapshotValue,
@@ -29,6 +30,8 @@ import type {
 import { WORKSHOP_RETURN_MIGRATION_BATCH } from "./types";
 
 const DOCUMENT_NO_MAX_LENGTH = 64;
+const WORKSHOP_MATERIAL_DOCUMENT_TYPE =
+  BusinessDocumentType.WorkshopMaterialOrder;
 
 /**
  * An admitted detail has a valid material and quantity.
@@ -1144,7 +1147,9 @@ export function buildWorkshopReturnMigrationPlan(
           // sourceDocument* fields are null when the upstream pick relation is unresolved.
           // Relation enrichment is a later step, not an admission gate.
           sourceDocumentType:
-            admitted.resolvedPickLine !== null ? "WorkshopMaterialOrder" : null,
+            admitted.resolvedPickLine !== null
+              ? WORKSHOP_MATERIAL_DOCUMENT_TYPE
+              : null,
           sourceDocumentId: admitted.resolvedPickLine?.targetOrderId ?? null,
           sourceDocumentLineId: admitted.resolvedPickLine?.targetLineId ?? null,
           remark: normalizeOptionalText(admitted.source.remark),

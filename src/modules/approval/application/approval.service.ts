@@ -89,7 +89,10 @@ export class ApprovalService {
     });
   }
 
-  async getApprovalStatus(documentType: string, documentId: number) {
+  async getApprovalStatus(
+    documentType: string,
+    documentId: number,
+  ) {
     const approval = await this.repository.findApprovalByDocument(
       documentType,
       documentId,
@@ -97,7 +100,10 @@ export class ApprovalService {
     return approval?.auditStatus ?? null;
   }
 
-  async getApprovalDocument(documentType: string, documentId: number) {
+  async getApprovalDocument(
+    documentType: string,
+    documentId: number,
+  ) {
     return this.repository.findApprovalByDocument(documentType, documentId);
   }
 

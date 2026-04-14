@@ -7,6 +7,7 @@ import {
   resolveReportPath,
 } from "../config";
 import { closePools, createMariaDbPool, withPoolConnection } from "../db";
+import { BusinessDocumentType } from "../shared/business-document-type";
 import { writeStableReport } from "../shared/report-writer";
 import {
   buildDownstreamConsumerBlockers,
@@ -23,6 +24,8 @@ import {
   buildOutboundMigrationPlan,
   hasExecutionBlockers,
 } from "./transformer";
+
+const SALES_STOCK_DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
 import { executeOutboundPlan, MAP_TABLES, TARGET_TABLES } from "./writer";
 
 interface StoredMapRow {
@@ -232,33 +235,33 @@ async function getOutboundDownstreamConsumerCounts(connection: {
     `
       SELECT 'approval_document' AS consumer, COUNT(*) AS total
       FROM approval_document
-      WHERE documentFamily = 'SALES_STOCK' OR documentType = 'SalesStockOrder'
+      WHERE documentFamily = 'SALES_STOCK' OR documentType = '${SALES_STOCK_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'document_relation' AS consumer, COUNT(*) AS total
       FROM document_relation
       WHERE upstreamFamily = 'SALES_STOCK'
          OR downstreamFamily = 'SALES_STOCK'
-         OR upstreamDocumentType = 'SalesStockOrder'
-         OR downstreamDocumentType = 'SalesStockOrder'
+         OR upstreamDocumentType = '${SALES_STOCK_DOCUMENT_TYPE}'
+         OR downstreamDocumentType = '${SALES_STOCK_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'document_line_relation' AS consumer, COUNT(*) AS total
       FROM document_line_relation
       WHERE upstreamFamily = 'SALES_STOCK'
          OR downstreamFamily = 'SALES_STOCK'
-         OR upstreamDocumentType = 'SalesStockOrder'
-         OR downstreamDocumentType = 'SalesStockOrder'
+         OR upstreamDocumentType = '${SALES_STOCK_DOCUMENT_TYPE}'
+         OR downstreamDocumentType = '${SALES_STOCK_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'inventory_log' AS consumer, COUNT(*) AS total
       FROM inventory_log
-      WHERE businessDocumentType = 'SalesStockOrder'
+      WHERE businessDocumentType = '${SALES_STOCK_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'inventory_source_usage' AS consumer, COUNT(*) AS total
       FROM inventory_source_usage
-      WHERE consumerDocumentType = 'SalesStockOrder'
+      WHERE consumerDocumentType = '${SALES_STOCK_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'factory_number_reservation' AS consumer, COUNT(*) AS total
       FROM factory_number_reservation
-      WHERE businessDocumentType = 'SalesStockOrder'
+      WHERE businessDocumentType = '${SALES_STOCK_DOCUMENT_TYPE}'
     `,
   );
 

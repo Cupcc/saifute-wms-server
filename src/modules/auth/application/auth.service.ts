@@ -154,11 +154,12 @@ export class AuthService {
     await this.authStateRepository.clearPasswordFailures(loginDto.username);
 
     const sessionUser = this.rbacService.toSessionUser(user);
-    const { accessToken, session } = await this.sessionService.createSession({
-      user: sessionUser,
-      ip: clientIp,
-      device: userAgent,
-    });
+    const { accessToken, refreshToken, session } =
+      await this.sessionService.createSession({
+        user: sessionUser,
+        ip: clientIp,
+        device: userAgent,
+      });
 
     this.emitAuthAuditEvent(
       createAuthAuditEvent({
@@ -174,9 +175,22 @@ export class AuthService {
 
     return {
       accessToken,
+      refreshToken,
       sessionId: session.sessionId,
       expiresAt: session.expiresAt,
       user: sessionUser,
+    };
+  }
+
+  async refresh(refreshToken: string) {
+    const nextSession = await this.sessionService.refreshSession(refreshToken);
+
+    return {
+      accessToken: nextSession.accessToken,
+      refreshToken: nextSession.refreshToken,
+      sessionId: nextSession.session.sessionId,
+      expiresAt: nextSession.session.expiresAt,
+      user: nextSession.session.user,
     };
   }
 

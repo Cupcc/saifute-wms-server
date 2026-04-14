@@ -89,6 +89,24 @@ export const constantRoutes = [
 // 动态路由，基于用户权限动态去加载
 export const dynamicRoutes = [
   {
+    path: "/sales/project/detail",
+    component: Layout,
+    hidden: true,
+    permissions: ["sales:project:get"],
+    children: [
+      {
+        path: ":projectId(\\d+)",
+        component: () => import("@/views/sales-project/detail/index.vue"),
+        name: "SalesProjectDetail",
+        meta: {
+          title: "销售项目详情",
+          activeMenu: "/sales/project",
+          noCache: true,
+        },
+      },
+    ],
+  },
+  {
     path: "/system/user-auth",
     component: Layout,
     hidden: true,

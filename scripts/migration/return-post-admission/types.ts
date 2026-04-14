@@ -1,3 +1,5 @@
+import type { BusinessDocumentTypeValue } from "../shared/business-document-type";
+
 export const POST_ADMISSION_MIGRATION_BATCH = "batch3f-return-post-admission";
 
 export const SALES_RETURN_ADMISSION_BATCH =
@@ -149,10 +151,10 @@ export interface ReturnLineClassification {
 export interface DocumentRelationInsert {
   relationType: DocumentRelationTypeValue;
   upstreamFamily: DocumentFamilyValue;
-  upstreamDocumentType: string;
+  upstreamDocumentType: BusinessDocumentTypeValue;
   upstreamDocumentId: number;
   downstreamFamily: DocumentFamilyValue;
-  downstreamDocumentType: string;
+  downstreamDocumentType: BusinessDocumentTypeValue;
   downstreamDocumentId: number;
   isActive: boolean;
 }
@@ -160,11 +162,11 @@ export interface DocumentRelationInsert {
 export interface DocumentLineRelationInsert {
   relationType: DocumentRelationTypeValue;
   upstreamFamily: DocumentFamilyValue;
-  upstreamDocumentType: string;
+  upstreamDocumentType: BusinessDocumentTypeValue;
   upstreamDocumentId: number;
   upstreamLineId: number;
   downstreamFamily: DocumentFamilyValue;
-  downstreamDocumentType: string;
+  downstreamDocumentType: BusinessDocumentTypeValue;
   downstreamDocumentId: number;
   downstreamLineId: number;
   linkedQty: string;
@@ -172,7 +174,7 @@ export interface DocumentLineRelationInsert {
 
 export interface SourceBackfillRecord {
   lineId: number;
-  sourceDocumentType: string;
+  sourceDocumentType: BusinessDocumentTypeValue;
   sourceDocumentId: number;
   sourceDocumentLineId: number;
 }
@@ -190,7 +192,7 @@ export interface InventoryLogInsert {
   direction: StockDirectionValue;
   operationType: InventoryOperationTypeValue;
   businessModule: string;
-  businessDocumentType: string;
+  businessDocumentType: BusinessDocumentTypeValue;
   businessDocumentId: number;
   businessDocumentNumber: string;
   businessDocumentLineId: number | null;
@@ -210,7 +212,7 @@ export interface InventoryBalanceRecord {
 export interface InventorySourceUsageInsert {
   materialId: number;
   sourceLogIdempotencyKey: string;
-  consumerDocumentType: string;
+  consumerDocumentType: BusinessDocumentTypeValue;
   consumerDocumentId: number;
   consumerLineId: number;
   allocatedQty: string;
@@ -219,7 +221,7 @@ export interface InventorySourceUsageInsert {
 
 export interface AuditDocumentInsert {
   documentFamily: DocumentFamilyValue;
-  documentType: string;
+  documentType: BusinessDocumentTypeValue;
   documentId: number;
   documentNumber: string;
   auditStatus: AuditStatusSnapshotValue;

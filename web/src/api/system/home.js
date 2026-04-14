@@ -141,9 +141,9 @@ export async function getHomeStatistics() {
       },
       inventory: {
         activeMaterialCount: home.inventory?.activeMaterialCount ?? 0,
-        activeWorkshopCount: home.inventory?.activeWorkshopCount ?? 0,
-        totalQuantityOnHand: home.inventory?.totalQuantityOnHand ?? "0.000000",
+        inventoryRecordCount: home.inventory?.inventoryRecordCount ?? 0,
         lowStockCount: home.inventory?.lowStockCount ?? 0,
+        totalInventoryValue: home.inventory?.totalInventoryValue ?? "0.00",
       },
     },
   };
@@ -157,7 +157,7 @@ export async function getInventoryCategoryStatistics() {
     code: 200,
     data: (response.data?.items || []).map((item) => ({
       ...item,
-      totalQuantity: Number(item.totalQuantityOnHand || 0),
+      totalValue: Number(item.totalInventoryValue || 0),
     })),
   };
 }

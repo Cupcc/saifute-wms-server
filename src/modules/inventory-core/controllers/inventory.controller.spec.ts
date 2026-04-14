@@ -41,6 +41,9 @@ describe("InventoryController", () => {
                   stockScopeName: stockScope === "MAIN" ? "主仓" : "研发小仓",
                 }),
               ),
+            resolveInventoryQueryWorkshopId: jest
+              .fn()
+              .mockImplementation(async (_user, workshopId) => workshopId),
             assertInventoryStockScopeAccess: jest
               .fn()
               .mockResolvedValue(undefined),
@@ -97,6 +100,41 @@ describe("InventoryController", () => {
     expect(inventoryService.listPriceLayerAvailability).toHaveBeenCalledWith({
       materialId: 7,
       stockScope: "MAIN",
+    });
+  });
+
+  it("passes stock scope and workshop filters when listing logs", async () => {
+    await controller.listLogs(
+      {
+        materialId: 7,
+        stockScope: "MAIN",
+        workshopId: 3,
+        businessDocumentType: "RdHandoffOrder",
+        businessDocumentNumber: "RDH",
+        limit: 20,
+        offset: 0,
+      },
+      undefined,
+    );
+
+    expect(
+      workshopScopeService.resolveInventoryQueryScope,
+    ).toHaveBeenCalledWith(undefined, 3, "MAIN");
+    expect(
+      workshopScopeService.resolveInventoryQueryWorkshopId,
+    ).toHaveBeenCalledWith(undefined, 3);
+    expect(inventoryService.listLogs).toHaveBeenCalledWith({
+      materialId: 7,
+      stockScope: "MAIN",
+      workshopId: 3,
+      businessDocumentId: undefined,
+      businessDocumentType: "RdHandoffOrder",
+      businessDocumentNumber: "RDH",
+      operationType: undefined,
+      bizDateFrom: undefined,
+      bizDateTo: undefined,
+      limit: 20,
+      offset: 0,
     });
   });
 

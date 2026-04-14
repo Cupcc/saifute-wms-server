@@ -16,6 +16,7 @@ import {
   buildCompactDocumentNo,
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { ApprovalService } from "../../approval/application/approval.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
@@ -30,7 +31,7 @@ import type { QueryInboundOrderDto } from "../dto/query-inbound-order.dto";
 import type { UpdateInboundOrderDto } from "../dto/update-inbound-order.dto";
 import { InboundRepository } from "../infrastructure/inbound.repository";
 
-const DOCUMENT_TYPE = "StockInOrder";
+const DOCUMENT_TYPE = BusinessDocumentType.StockInOrder;
 const BUSINESS_MODULE = "inbound";
 
 function toOperationType(orderType: StockInOrderType): InventoryOperationType {

@@ -15,6 +15,7 @@ import {
   buildDashedTimestampDocumentNo,
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import {
   FIFO_SOURCE_OPERATION_TYPES,
@@ -31,7 +32,7 @@ import {
   reverseHandoffStatusesForOrder,
 } from "./rd-material-status.helper";
 
-const DOCUMENT_TYPE = "RdHandoffOrder";
+const DOCUMENT_TYPE = BusinessDocumentType.RdHandoffOrder;
 const BUSINESS_MODULE = "rd-subwarehouse";
 
 @Injectable()

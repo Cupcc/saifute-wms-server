@@ -14,6 +14,7 @@ import {
   buildCompactDocumentNo,
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { ApprovalService } from "../../approval/application/approval.service";
 import {
@@ -25,7 +26,7 @@ import type { CreateStockInPriceCorrectionOrderDto } from "../dto/create-stock-i
 import type { QueryStockInPriceCorrectionOrderDto } from "../dto/query-stock-in-price-correction-order.dto";
 import { StockInPriceCorrectionRepository } from "../infrastructure/stock-in-price-correction.repository";
 
-const DOCUMENT_TYPE = "StockInPriceCorrectionOrder";
+const DOCUMENT_TYPE = BusinessDocumentType.StockInPriceCorrectionOrder;
 const BUSINESS_MODULE = "inbound";
 
 @Injectable()
@@ -357,7 +358,7 @@ export class StockInPriceCorrectionService {
     tx: Prisma.TransactionClient,
   ) {
     if (
-      sourceLog.businessDocumentType === "StockInOrder" &&
+      sourceLog.businessDocumentType === BusinessDocumentType.StockInOrder &&
       sourceLog.businessDocumentLineId != null
     ) {
       const [sourceOrder, sourceLine] = await Promise.all([

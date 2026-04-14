@@ -1,4 +1,5 @@
 import {
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
@@ -6,6 +7,7 @@ import {
   MaxLength,
   Min,
 } from "class-validator";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 
 export class CreateWorkshopMaterialOrderLineDto {
   @IsInt()
@@ -33,9 +35,8 @@ export class CreateWorkshopMaterialOrderLineDto {
   sourceLogId?: number;
 
   /** For return orders: upstream pick document type (e.g. WorkshopMaterialOrder). */
-  @IsString()
   @IsOptional()
-  @MaxLength(64)
+  @IsEnum(BusinessDocumentType)
   sourceDocumentType?: string;
 
   /** For return orders: upstream pick document ID. */

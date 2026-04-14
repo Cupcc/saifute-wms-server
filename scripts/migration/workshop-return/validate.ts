@@ -7,6 +7,7 @@ import {
   loadMigrationEnvironment,
 } from "../config";
 import { closePools, createMariaDbPool, withPoolConnection } from "../db";
+import { BusinessDocumentType } from "../shared/business-document-type";
 import { writeStableReport } from "../shared/report-writer";
 import { MAP_TABLES, TARGET_TABLES } from "./writer";
 
@@ -39,6 +40,9 @@ interface MapTargetLineRow {
   foundSourceDocumentId: number | null;
   foundSourceDocumentLineId: number | null;
 }
+
+const WORKSHOP_MATERIAL_DOCUMENT_TYPE =
+  BusinessDocumentType.WorkshopMaterialOrder;
 
 interface PendingRelationRow {
   legacyTable: string;
@@ -599,7 +603,7 @@ function buildIntegrityIssues(
     // sourceDocument triple is internally inconsistent (type set but id/lineId missing, or vice versa).
     if (
       row.foundSourceDocumentType !== null &&
-      row.foundSourceDocumentType !== "WorkshopMaterialOrder"
+      row.foundSourceDocumentType !== WORKSHOP_MATERIAL_DOCUMENT_TYPE
     ) {
       issues.push({
         scope: "workshop_material_order_line",

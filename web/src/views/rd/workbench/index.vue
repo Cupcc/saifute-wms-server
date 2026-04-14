@@ -14,14 +14,14 @@
       <el-row :gutter="16" class="metric-row">
         <el-col :xs="24" :sm="12" :lg="6">
           <div class="metric-box">
-            <div class="metric-label">活跃物料数</div>
+            <div class="metric-label">在库物料数</div>
             <div class="metric-value">{{ dashboard.inventory.activeMaterialCount }}</div>
           </div>
         </el-col>
         <el-col :xs="24" :sm="12" :lg="6">
           <div class="metric-box">
-            <div class="metric-label">库存总量</div>
-            <div class="metric-value">{{ dashboard.inventory.totalQuantityOnHand }}</div>
+            <div class="metric-label">库存货值</div>
+            <div class="metric-value">{{ dashboard.inventory.totalInventoryValue }}</div>
           </div>
         </el-col>
         <el-col :xs="24" :sm="12" :lg="6">
@@ -95,7 +95,7 @@ const recentInboundRows = ref([]);
 const dashboard = ref({
   inventory: {
     activeMaterialCount: 0,
-    totalQuantityOnHand: "0.000000",
+    totalInventoryValue: "0.00",
     lowStockCount: 0,
   },
   todayDocuments: {

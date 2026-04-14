@@ -84,11 +84,21 @@ export interface SessionClaims {
   sub: string;
   sid: string;
   username: string;
+  typ?: "access";
+}
+
+export interface RefreshSessionClaims {
+  sub: string;
+  sid: string;
+  username: string;
+  typ: "refresh";
+  jti: string;
 }
 
 export interface UserSession {
   version: number;
   sessionId: string;
+  refreshTokenId?: string;
   user: SessionUserSnapshot;
   loginTime: string;
   lastActiveAt: string;

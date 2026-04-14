@@ -5,6 +5,7 @@ import { type INestApplication, ValidationPipe } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { Test } from "@nestjs/testing";
 import { static as expressStatic } from "express";
+import { Prisma, SalesStockOrderType } from "../generated/prisma/client";
 import * as request from "supertest";
 import { AppModule } from "../src/app.module";
 import { HttpExceptionFilter } from "../src/shared/common/filters/http-exception.filter";
@@ -290,6 +291,112 @@ describe("Batch D slice acceptance (e2e)", () => {
       "attachment",
     );
     expect(exportResponse.text).toContain("materialCode");
+  });
+
+  it("should keep monthly reporting scoped for rd-sub users", async () => {
+    appContext = await bootstrapApp();
+    const server = appContext.app.getHttpServer();
+    const rdLogin = await login(server, "rd-operator", "rd123456");
+    const token = rdLogin.body.data.accessToken as string;
+
+    await request(server)
+      .get("/api/reporting/monthly-reporting")
+      .set("Authorization", `Bearer ${token}`)
+      .query({ yearMonth: "2026-04" })
+      .expect(200);
+
+    await request(server)
+      .get("/api/reporting/monthly-reporting")
+      .set("Authorization", `Bearer ${token}`)
+      .query({ yearMonth: "2026-04", stockScope: "MAIN" })
+      .expect(403);
+  });
+
+  it("should expose monthly reporting drill-down details with source-month evidence", async () => {
+    appContext = await bootstrapApp();
+    const server = appContext.app.getHttpServer();
+    const prisma = appContext.app.get<PrismaE2eStub>(PrismaService);
+    prisma.salesStockOrder.findMany = jest
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          id: 2,
+          documentNo: "XSTH-QA-001",
+          bizDate: new Date("2026-03-31T16:30:00.000Z"),
+          createdAt: new Date("2026-04-30T16:30:00.000Z"),
+          orderType: SalesStockOrderType.SALES_RETURN,
+          workshopId: 192,
+          workshop: {
+            workshopName: "装备车间",
+          },
+          stockScope: {
+            scopeCode: "MAIN",
+            scopeName: "主仓",
+          },
+          totalQty: new Prisma.Decimal("1"),
+          totalAmount: new Prisma.Decimal("20"),
+          lines: [
+            {
+              costAmount: new Prisma.Decimal("12.34"),
+              sourceDocumentId: 1,
+            },
+          ],
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          id: 1,
+          bizDate: new Date("2026-03-31T15:30:00.000Z"),
+          documentNo: "CK-QA-001",
+        },
+      ]);
+    const adminLogin = await login(server, "admin", "admin123");
+    const token = adminLogin.body.data.accessToken as string;
+
+    const detailResponse = await request(server)
+      .get("/api/reporting/monthly-reporting/details")
+      .set("Authorization", `Bearer ${token}`)
+      .query({
+        yearMonth: "2026-04",
+        stockScope: "MAIN",
+        topicKey: "SALES_RETURN",
+        keyword: "CK-QA-001",
+      })
+      .expect(200);
+
+    expect(detailResponse.body.data.total).toBe(1);
+    expect(detailResponse.body.data.items[0]).toMatchObject({
+      documentNo: "XSTH-QA-001",
+      documentTypeLabel: "销售退货单",
+      stockScopeName: "主仓",
+      workshopName: "装备车间",
+      amount: "20.00",
+      cost: "12.34",
+      abnormalLabels: ["补录影响", "跨月修正"],
+      sourceBizMonth: "2026-03",
+      sourceDocumentNo: "CK-QA-001",
+    });
+  });
+
+  it("should export monthly reporting data as a downloadable excel file", async () => {
+    appContext = await bootstrapApp();
+    const server = appContext.app.getHttpServer();
+    const adminLogin = await login(server, "admin", "admin123");
+    const token = adminLogin.body.data.accessToken as string;
+
+    const exportResponse = await request(server)
+      .post("/api/reporting/monthly-reporting/export")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ yearMonth: "2026-04" })
+      .expect(201);
+
+    expect(exportResponse.headers["content-type"]).toContain(
+      "application/vnd.ms-excel",
+    );
+    expect(exportResponse.headers["content-disposition"]).toContain(
+      "attachment",
+    );
+    expect(exportResponse.text).toContain("<Workbook");
   });
 
   it("should create, run, pause, resume, and list scheduler jobs", async () => {

@@ -1,4 +1,5 @@
 import {
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
@@ -6,15 +7,15 @@ import {
   MaxLength,
   Min,
 } from "class-validator";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 
 export class CreateRdHandoffOrderLineDto {
   @IsInt()
   @Min(1)
   materialId!: number;
 
-  @IsString()
   @IsOptional()
-  @MaxLength(64)
+  @IsEnum(BusinessDocumentType)
   sourceDocumentType?: string;
 
   @IsInt()

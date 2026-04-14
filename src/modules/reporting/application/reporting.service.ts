@@ -2,7 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { Prisma } from "../../../../generated/prisma/client";
 import { AppConfigService } from "../../../shared/config/app-config.service";
 import { StockScopeCompatibilityService } from "../../inventory-core/application/stock-scope-compatibility.service";
-import { type StockScopeCode } from "../../session/domain/user-session";
+import type { StockScopeCode } from "../../session/domain/user-session";
 import {
   ExportReportDto,
   type QueryInventorySummaryDto,
@@ -16,6 +16,13 @@ import {
   ReportingRepository,
 } from "../infrastructure/reporting.repository";
 
+export interface InventoryOverviewSummary {
+  activeMaterialCount: number;
+  inventoryRecordCount: number;
+  lowStockCount: number;
+  totalInventoryValue: string;
+}
+
 export interface InventorySummaryItem {
   materialId: number;
   materialCode: string;
@@ -28,6 +35,7 @@ export interface InventorySummaryItem {
   stockScope: StockScopeCode | null;
   stockScopeName: string | null;
   quantityOnHand: string;
+  inventoryValue: string;
   warningMinQty: string | null;
   warningMaxQty: string | null;
   isBelowMin: boolean;
@@ -50,21 +58,16 @@ export class ReportingService {
 
   async getHomeDashboard(stockScope?: StockScopeCode) {
     const { start, end } = this.resolveTodayRange();
-    const inventoryStockScopeIds =
-      await this.resolveInventoryStockScopeIds(stockScope);
+    const inventoryProjection = await this.loadInventoryProjection({
+      stockScope,
+    });
     const metrics = await this.repository.getHomeMetrics(start, end, {
       stockScope,
-      inventoryStockScopeIds,
     });
 
     return {
       generatedAt: new Date().toISOString(),
-      inventory: {
-        activeMaterialCount: metrics.activeMaterialCount,
-        activeWorkshopCount: metrics.activeWorkshopCount,
-        totalQuantityOnHand: this.toDecimalString(metrics.totalInventoryQty),
-        lowStockCount: metrics.lowStockCount,
-      },
+      inventory: inventoryProjection.summary,
       todayDocuments: {
         inboundCount: metrics.inboundTodayCount,
         outboundCount: metrics.outboundTodayCount,
@@ -90,16 +93,19 @@ export class ReportingService {
   async getInventorySummary(
     query: QueryInventorySummaryDto & { stockScope?: StockScopeCode },
   ) {
-    const inventoryStockScopeIds = await this.resolveInventoryStockScopeIds(
-      query.stockScope,
-    );
-    const snapshots = await this.repository.findInventoryBalanceSnapshots({
+    const inventoryProjection = await this.loadInventoryProjection({
+      stockScope: query.stockScope,
       keyword: query.keyword,
       categoryId: query.categoryId,
-      inventoryStockScopeIds,
     });
-
-    const items = snapshots.map((item) => this.toInventorySummaryItem(item));
+    const items = inventoryProjection.snapshots.map((item) =>
+      this.toInventorySummaryItem(
+        item,
+        inventoryProjection.valuationByBalanceKey.get(
+          this.toBalanceKey(item.material.id, item.stockScope?.id),
+        ),
+      ),
+    );
     const offset = query.offset ?? 0;
     const limit = Math.min(query.limit ?? 50, 100);
     const pagedItems = items.slice(offset, offset + limit);
@@ -107,39 +113,31 @@ export class ReportingService {
     return {
       total: items.length,
       items: pagedItems,
-      summary: {
-        totalQuantityOnHand: this.sumDecimalStrings(
-          items.map((item) => item.quantityOnHand),
-        ),
-        lowStockCount: items.filter((item) => item.isBelowMin).length,
-      },
+      summary: inventoryProjection.summary,
     };
   }
 
   async getMaterialCategorySummary(
     query: QueryMaterialCategorySummaryDto & { stockScope?: StockScopeCode },
   ) {
-    const inventoryStockScopeIds = await this.resolveInventoryStockScopeIds(
-      query.stockScope,
-    );
-    const snapshots = await this.repository.findInventoryBalanceSnapshots({
+    const inventoryProjection = await this.loadInventoryProjection({
+      stockScope: query.stockScope,
       keyword: query.keyword,
-      inventoryStockScopeIds,
     });
-
     const grouped = new Map<
       string,
       {
         categoryId: number | null;
         categoryCode: string | null;
         categoryName: string | null;
-        totalQuantityOnHand: Prisma.Decimal;
         materialIds: Set<number>;
-        balanceCount: number;
+        inventoryRecordCount: number;
+        lowStockCount: number;
+        totalInventoryValue: Prisma.Decimal;
       }
     >();
 
-    for (const snapshot of snapshots) {
+    for (const snapshot of inventoryProjection.snapshots) {
       const key = snapshot.material.category
         ? String(snapshot.material.category.id)
         : "uncategorized";
@@ -147,16 +145,25 @@ export class ReportingService {
         categoryId: snapshot.material.category?.id ?? null,
         categoryCode: snapshot.material.category?.categoryCode ?? null,
         categoryName: snapshot.material.category?.categoryName ?? "未分类",
-        totalQuantityOnHand: new Prisma.Decimal(0),
         materialIds: new Set<number>(),
-        balanceCount: 0,
+        inventoryRecordCount: 0,
+        lowStockCount: 0,
+        totalInventoryValue: new Prisma.Decimal(0),
       };
 
-      current.totalQuantityOnHand = current.totalQuantityOnHand.add(
-        snapshot.quantityOnHand,
-      );
       current.materialIds.add(snapshot.material.id);
-      current.balanceCount += 1;
+      current.inventoryRecordCount += 1;
+      if (
+        snapshot.material.warningMinQty &&
+        snapshot.quantityOnHand.lt(snapshot.material.warningMinQty)
+      ) {
+        current.lowStockCount += 1;
+      }
+      current.totalInventoryValue = current.totalInventoryValue.add(
+        inventoryProjection.valuationByBalanceKey.get(
+          this.toBalanceKey(snapshot.material.id, snapshot.stockScope?.id),
+        ) ?? new Prisma.Decimal(0),
+      );
       grouped.set(key, current);
     }
 
@@ -166,12 +173,13 @@ export class ReportingService {
         categoryCode: item.categoryCode,
         categoryName: item.categoryName,
         materialCount: item.materialIds.size,
-        balanceCount: item.balanceCount,
-        totalQuantityOnHand: item.totalQuantityOnHand.toFixed(6),
+        inventoryRecordCount: item.inventoryRecordCount,
+        lowStockCount: item.lowStockCount,
+        totalInventoryValue: item.totalInventoryValue.toFixed(2),
       }))
       .sort((left, right) =>
-        new Prisma.Decimal(right.totalQuantityOnHand).cmp(
-          left.totalQuantityOnHand,
+        new Prisma.Decimal(right.totalInventoryValue).cmp(
+          left.totalInventoryValue,
         ),
       );
 
@@ -181,11 +189,7 @@ export class ReportingService {
     return {
       total: rows.length,
       items: rows.slice(offset, offset + limit),
-      summary: {
-        totalQuantityOnHand: this.sumDecimalStrings(
-          rows.map((item) => item.totalQuantityOnHand),
-        ),
-      },
+      summary: inventoryProjection.summary,
     };
   }
 
@@ -276,6 +280,7 @@ export class ReportingService {
             "stockScopeName",
             "quantityOnHand",
             "unitCode",
+            "inventoryValue",
           ],
           result.items,
         );
@@ -293,8 +298,9 @@ export class ReportingService {
             "categoryCode",
             "categoryName",
             "materialCount",
-            "balanceCount",
-            "totalQuantityOnHand",
+            "inventoryRecordCount",
+            "lowStockCount",
+            "totalInventoryValue",
           ],
           result.items,
         );
@@ -321,6 +327,7 @@ export class ReportingService {
 
   private toInventorySummaryItem(
     item: InventoryBalanceSnapshot,
+    inventoryValue?: Prisma.Decimal,
   ): InventorySummaryItem {
     const warningMinQty = item.material.warningMinQty;
     const warningMaxQty = item.material.warningMaxQty;
@@ -337,6 +344,7 @@ export class ReportingService {
         (item.stockScope?.scopeCode as StockScopeCode | undefined) ?? null,
       stockScopeName: item.stockScope?.scopeName ?? null,
       quantityOnHand: item.quantityOnHand.toFixed(6),
+      inventoryValue: this.toMoneyString(inventoryValue),
       warningMinQty: warningMinQty ? warningMinQty.toFixed(6) : null,
       warningMaxQty: warningMaxQty ? warningMaxQty.toFixed(6) : null,
       isBelowMin: warningMinQty
@@ -346,13 +354,77 @@ export class ReportingService {
     };
   }
 
-  private sumDecimalStrings(values: string[]) {
-    return values
-      .reduce(
-        (accumulator, current) => accumulator.add(new Prisma.Decimal(current)),
-        new Prisma.Decimal(0),
-      )
-      .toFixed(6);
+  private async loadInventoryProjection(params: {
+    stockScope?: StockScopeCode;
+    keyword?: string;
+    categoryId?: number;
+  }) {
+    const inventoryStockScopeIds = await this.resolveInventoryStockScopeIds(
+      params.stockScope,
+    );
+    const snapshots = await this.repository.findInventoryBalanceSnapshots({
+      keyword: params.keyword,
+      categoryId: params.categoryId,
+      inventoryStockScopeIds,
+    });
+    const valuationRows =
+      await this.repository.summarizeInventoryValueByBalance({
+        inventoryStockScopeIds,
+        materialIds: [...new Set(snapshots.map((item) => item.material.id))],
+      });
+    const valuationByBalanceKey = new Map<string, Prisma.Decimal>(
+      valuationRows.map((row) => [
+        this.toBalanceKey(row.materialId, row.stockScopeId),
+        row.inventoryValue,
+      ]),
+    );
+
+    return {
+      inventoryStockScopeIds,
+      snapshots,
+      valuationByBalanceKey,
+      summary: this.buildInventoryOverviewSummary(
+        snapshots,
+        valuationByBalanceKey,
+      ),
+    };
+  }
+
+  private buildInventoryOverviewSummary(
+    snapshots: InventoryBalanceSnapshot[],
+    valuationByBalanceKey: Map<string, Prisma.Decimal>,
+  ): InventoryOverviewSummary {
+    const materialIdsWithStock = new Set<number>();
+    let lowStockCount = 0;
+    let totalInventoryValue = new Prisma.Decimal(0);
+
+    for (const snapshot of snapshots) {
+      if (snapshot.quantityOnHand.gt(0)) {
+        materialIdsWithStock.add(snapshot.material.id);
+      }
+      if (
+        snapshot.material.warningMinQty &&
+        snapshot.quantityOnHand.lt(snapshot.material.warningMinQty)
+      ) {
+        lowStockCount += 1;
+      }
+      totalInventoryValue = totalInventoryValue.add(
+        valuationByBalanceKey.get(
+          this.toBalanceKey(snapshot.material.id, snapshot.stockScope?.id),
+        ) ?? new Prisma.Decimal(0),
+      );
+    }
+
+    return {
+      activeMaterialCount: materialIdsWithStock.size,
+      inventoryRecordCount: snapshots.length,
+      lowStockCount,
+      totalInventoryValue: totalInventoryValue.toFixed(2),
+    };
+  }
+
+  private toBalanceKey(materialId: number, stockScopeId?: number | null) {
+    return `${materialId}:${stockScopeId ?? "null"}`;
   }
 
   private toDecimalString(value: Prisma.Decimal | null | undefined) {
@@ -454,6 +526,15 @@ export class ReportingService {
       value === null || typeof value === "undefined" ? "" : String(value);
     const escaped = stringValue.replace(/"/g, '""');
     return /[",\n]/.test(escaped) ? `"${escaped}"` : escaped;
+  }
+
+  private escapeHtmlValue(value: unknown) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   private parseDateOnly(value: string): {

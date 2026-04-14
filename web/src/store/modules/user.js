@@ -3,13 +3,21 @@ import { getInfo, login, logout } from "@/api/login";
 import defAva from "@/assets/images/profile.png";
 import router from "@/router";
 import useTagsViewStore from "@/store/modules/tagsView";
-import { getToken, removeToken, setToken } from "@/utils/auth";
+import {
+  getRefreshToken,
+  getToken,
+  removeRefreshToken,
+  removeToken,
+  setRefreshToken,
+  setToken,
+} from "@/utils/auth";
 import { expandPermissionAliases } from "@/utils/permissionCompat";
 import { isEmpty, isHttp } from "@/utils/validate";
 
 const useUserStore = defineStore("user", {
   state: () => ({
     token: getToken(),
+    refreshToken: getRefreshToken(),
     id: "",
     name: "",
     nickName: "",
@@ -30,6 +38,39 @@ const useUserStore = defineStore("user", {
     },
   }),
   actions: {
+    setTokens(tokens) {
+      const accessToken = tokens?.accessToken;
+      const refreshToken = tokens?.refreshToken;
+      if (!accessToken || !refreshToken) {
+        throw new Error("认证响应缺少访问令牌或刷新令牌");
+      }
+
+      setToken(accessToken);
+      setRefreshToken(refreshToken);
+      this.token = accessToken;
+      this.refreshToken = refreshToken;
+    },
+    clearAuthState() {
+      this.token = "";
+      this.refreshToken = "";
+      this.roles = [];
+      this.permissions = [];
+      this.consoleMode = "default";
+      this.department = null;
+      this.stockScope = {
+        mode: "ALL",
+        stockScope: null,
+        stockScopeName: null,
+      };
+      this.workshopScope = {
+        mode: "ALL",
+        workshopId: null,
+        workshopName: null,
+      };
+      useTagsViewStore().$reset();
+      removeToken();
+      removeRefreshToken();
+    },
     // 登录
     login(userInfo) {
       const username = userInfo.username.trim();
@@ -39,13 +80,7 @@ const useUserStore = defineStore("user", {
       return new Promise((resolve, reject) => {
         login(username, password, code, uuid)
           .then((res) => {
-            const token = res.data?.accessToken;
-            if (!token) {
-              reject(new Error("登录响应缺少访问令牌"));
-              return;
-            }
-            setToken(token);
-            this.token = token;
+            this.setTokens(res.data);
             resolve();
           })
           .catch((error) => {
@@ -122,23 +157,7 @@ const useUserStore = defineStore("user", {
       return new Promise((resolve, reject) => {
         logout(this.token)
           .then(() => {
-            this.token = "";
-            this.roles = [];
-            this.permissions = [];
-            this.consoleMode = "default";
-            this.department = null;
-            this.stockScope = {
-              mode: "ALL",
-              stockScope: null,
-              stockScopeName: null,
-            };
-            this.workshopScope = {
-              mode: "ALL",
-              workshopId: null,
-              workshopName: null,
-            };
-            useTagsViewStore().$reset();
-            removeToken();
+            this.clearAuthState();
             resolve();
           })
           .catch((error) => {

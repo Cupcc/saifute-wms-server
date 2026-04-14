@@ -16,6 +16,8 @@ export class AppConfigService {
   readonly swaggerJsonPath: string;
   readonly jwtSecret: string;
   readonly jwtExpiresInSeconds: number;
+  readonly jwtRefreshSecret: string;
+  readonly jwtRefreshExpiresInSeconds: number;
   readonly sessionTtlSeconds: number;
   readonly sessionMaxTtlSeconds: number;
   readonly sessionRefreshThresholdSeconds: number;
@@ -83,6 +85,14 @@ export class AppConfigService {
     this.sessionRefreshThresholdSeconds = this.readNumber(
       "SESSION_REFRESH_THRESHOLD_SECONDS",
       1200,
+    );
+    this.jwtRefreshSecret = this.readString(
+      "JWT_REFRESH_SECRET",
+      `${this.jwtSecret}:refresh`,
+    );
+    this.jwtRefreshExpiresInSeconds = this.readNumber(
+      "JWT_REFRESH_EXPIRES_IN_SECONDS",
+      this.sessionMaxTtlSeconds,
     );
     this.captchaTtlSeconds = this.readNumber("CAPTCHA_TTL_SECONDS", 300);
     this.captchaEnabled = this.readBoolean("CAPTCHA_ENABLED", true);

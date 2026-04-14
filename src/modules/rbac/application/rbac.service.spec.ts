@@ -84,6 +84,15 @@ describe("RbacService", () => {
     const routes = await rbacService.getRoutesForUser(5);
     expect(routes).toHaveLength(1);
     expect(routes[0]?.name).toBe("RdSubwarehouse");
+    const rdRouteNames = routes[0]?.children?.map((route) => route.name) ?? [];
+    expect(rdRouteNames).toEqual(
+      expect.arrayContaining([
+        "RdWorkbench",
+        "RdInventorySummary",
+        "RdMaterialCategorySummary",
+        "RdMonthlyReporting",
+      ]),
+    );
   });
 
   it("should keep full routes for admin user", async () => {

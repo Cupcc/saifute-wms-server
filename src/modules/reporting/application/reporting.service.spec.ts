@@ -23,6 +23,7 @@ describe("ReportingService", () => {
           useValue: {
             getHomeMetrics: jest.fn(),
             findInventoryBalanceSnapshots: jest.fn(),
+            summarizeInventoryValueByBalance: jest.fn(),
             findTrendDocuments: jest.fn(),
           },
         },
@@ -59,10 +60,6 @@ describe("ReportingService", () => {
 
   it("should build the home dashboard metrics", async () => {
     repository.getHomeMetrics.mockResolvedValue({
-      activeMaterialCount: 12,
-      activeWorkshopCount: 3,
-      totalInventoryQty: new Prisma.Decimal("88.5"),
-      lowStockCount: 2,
       inboundTodayCount: 4,
       outboundTodayCount: 1,
       workshopMaterialTodayCount: 2,
@@ -73,11 +70,67 @@ describe("ReportingService", () => {
       workshopMaterialTotalQty: new Prisma.Decimal("30"),
       workshopMaterialTotalAmount: new Prisma.Decimal("90.00"),
     });
+    repository.findInventoryBalanceSnapshots.mockResolvedValue([
+      {
+        id: 1,
+        quantityOnHand: new Prisma.Decimal("8"),
+        updatedAt: new Date("2026-03-15T00:00:00Z"),
+        stockScope: {
+          id: 1,
+          scopeCode: "MAIN",
+          scopeName: "主仓",
+        },
+        material: {
+          id: 11,
+          materialCode: "MAT-01",
+          materialName: "A",
+          specModel: null,
+          unitCode: "PCS",
+          warningMinQty: new Prisma.Decimal("10"),
+          warningMaxQty: null,
+          category: null,
+        },
+      },
+      {
+        id: 2,
+        quantityOnHand: new Prisma.Decimal("5"),
+        updatedAt: new Date("2026-03-15T00:00:00Z"),
+        stockScope: {
+          id: 2,
+          scopeCode: "RD_SUB",
+          scopeName: "研发小仓",
+        },
+        material: {
+          id: 12,
+          materialCode: "MAT-02",
+          materialName: "B",
+          specModel: null,
+          unitCode: "PCS",
+          warningMinQty: null,
+          warningMaxQty: null,
+          category: null,
+        },
+      },
+    ]);
+    repository.summarizeInventoryValueByBalance.mockResolvedValue([
+      {
+        materialId: 11,
+        stockScopeId: 1,
+        inventoryValue: new Prisma.Decimal("88.50"),
+      },
+      {
+        materialId: 12,
+        stockScopeId: 2,
+        inventoryValue: new Prisma.Decimal("12.00"),
+      },
+    ]);
 
     const result = await service.getHomeDashboard();
 
-    expect(result.inventory.activeMaterialCount).toBe(12);
-    expect(result.inventory.totalQuantityOnHand).toBe("88.500000");
+    expect(result.inventory.activeMaterialCount).toBe(2);
+    expect(result.inventory.inventoryRecordCount).toBe(2);
+    expect(result.inventory.lowStockCount).toBe(1);
+    expect(result.inventory.totalInventoryValue).toBe("100.50");
     expect(result.todayDocuments.inboundCount).toBe(4);
     expect(result.cumulativeDocuments.inbound.totalAmount).toBe("1200.50");
     expect(repository.getHomeMetrics).toHaveBeenCalledWith(
@@ -85,7 +138,6 @@ describe("ReportingService", () => {
       expect.any(Date),
       {
         stockScope: undefined,
-        inventoryStockScopeIds: [1, 2],
       },
     );
     expect(
@@ -144,13 +196,28 @@ describe("ReportingService", () => {
         },
       },
     ]);
+    repository.summarizeInventoryValueByBalance.mockResolvedValue([
+      {
+        materialId: 11,
+        stockScopeId: 1,
+        inventoryValue: new Prisma.Decimal("100.00"),
+      },
+      {
+        materialId: 12,
+        stockScopeId: 1,
+        inventoryValue: new Prisma.Decimal("50.00"),
+      },
+    ]);
 
     const result = await service.getMaterialCategorySummary({});
 
     expect(result.total).toBe(1);
     expect(result.items[0]?.categoryName).toBe("类别A");
     expect(result.items[0]?.materialCount).toBe(2);
-    expect(result.items[0]?.totalQuantityOnHand).toBe("15.000000");
+    expect(result.items[0]?.inventoryRecordCount).toBe(2);
+    expect(result.items[0]?.lowStockCount).toBe(1);
+    expect(result.items[0]?.totalInventoryValue).toBe("150.00");
+    expect(result.summary.totalInventoryValue).toBe("150.00");
   });
 
   it("should honor trend time boundaries and filters", async () => {
@@ -232,6 +299,13 @@ describe("ReportingService", () => {
         },
       },
     ]);
+    repository.summarizeInventoryValueByBalance.mockResolvedValue([
+      {
+        materialId: 11,
+        stockScopeId: 1,
+        inventoryValue: new Prisma.Decimal("96.00"),
+      },
+    ]);
 
     const result = await service.exportReport({
       reportType: ReportingExportType.INVENTORY_SUMMARY,
@@ -241,5 +315,7 @@ describe("ReportingService", () => {
     expect(result.contentType).toContain("text/csv");
     expect(result.content).toContain("materialCode");
     expect(result.content).toContain("MAT-01");
+    expect(result.content).toContain("inventoryValue");
+    expect(result.content).toContain("96.00");
   });
 });

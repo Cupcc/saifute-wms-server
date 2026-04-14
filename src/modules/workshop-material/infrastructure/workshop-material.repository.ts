@@ -5,12 +5,13 @@ import {
   Prisma,
   WorkshopMaterialOrderType,
 } from "../../../../generated/prisma/client";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import type { StockScopeCode } from "../../session/domain/user-session";
 
 type DbClient = Prisma.TransactionClient | PrismaService;
 
-const DOCUMENT_TYPE = "WorkshopMaterialOrder";
+const DOCUMENT_TYPE = BusinessDocumentType.WorkshopMaterialOrder;
 
 @Injectable()
 export class WorkshopMaterialRepository {

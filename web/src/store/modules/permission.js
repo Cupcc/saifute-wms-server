@@ -157,6 +157,14 @@ const SUPPORTED_BACKEND_ROUTE_META = {
     icon: "tree-table",
     visibleInModes: [CONSOLE_MODES.RD],
   },
+  RdMonthlyReporting: {
+    group: "rd",
+    path: "monthly-reporting",
+    component: "reporting/monthly-reporting/index",
+    title: "月度对账",
+    icon: "table",
+    visibleInModes: [CONSOLE_MODES.RD],
+  },
   BaseMaterial: {
     group: "base",
     path: "material",
@@ -450,6 +458,13 @@ const SUPPORTED_BACKEND_ROUTE_META = {
     component: "reporting/trends/index",
     title: "趋势分析",
     icon: "time",
+  },
+  MonthlyReporting: {
+    group: "reporting",
+    path: "monthly-reporting",
+    component: "reporting/monthly-reporting/index",
+    title: "月度对账",
+    icon: "table",
   },
 };
 

@@ -7,6 +7,7 @@ import {
   resolveReportPath,
 } from "../config";
 import { closePools, createMariaDbPool, withPoolConnection } from "../db";
+import { BusinessDocumentType } from "../shared/business-document-type";
 import { stableJsonStringify } from "../shared/deterministic";
 import { writeStableReport } from "../shared/report-writer";
 import { buildCutoverReadiness } from "./cutover-readiness";
@@ -19,6 +20,8 @@ import type {
   ArchivedFieldPayloadRecord,
   RdProjectMigrationPlan,
 } from "./types";
+
+const RD_PROJECT_DOCUMENT_TYPE = BusinessDocumentType.RdProject;
 import {
   PENDING_RELATION_TYPE_RD_PROJECT_LINE_MATERIAL,
   RD_PROJECT_AUTO_CREATED_MATERIAL_SOURCE_DOCUMENT_TYPE,
@@ -687,33 +690,33 @@ async function getRdProjectDownstreamConsumerCounts(connection: {
     `
       SELECT 'approval_document' AS consumer, COUNT(*) AS total
       FROM approval_document
-      WHERE documentFamily = 'RD_PROJECT' OR documentType = 'RdProject'
+      WHERE documentFamily = 'RD_PROJECT' OR documentType = '${RD_PROJECT_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'document_relation' AS consumer, COUNT(*) AS total
       FROM document_relation
       WHERE upstreamFamily = 'PROJECT'
          OR downstreamFamily = 'PROJECT'
-         OR upstreamDocumentType = 'RdProject'
-         OR downstreamDocumentType = 'RdProject'
+         OR upstreamDocumentType = '${RD_PROJECT_DOCUMENT_TYPE}'
+         OR downstreamDocumentType = '${RD_PROJECT_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'document_line_relation' AS consumer, COUNT(*) AS total
       FROM document_line_relation
       WHERE upstreamFamily = 'PROJECT'
          OR downstreamFamily = 'PROJECT'
-         OR upstreamDocumentType = 'RdProject'
-         OR downstreamDocumentType = 'RdProject'
+         OR upstreamDocumentType = '${RD_PROJECT_DOCUMENT_TYPE}'
+         OR downstreamDocumentType = '${RD_PROJECT_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'inventory_log' AS consumer, COUNT(*) AS total
       FROM inventory_log
-      WHERE businessDocumentType = 'RdProject'
+      WHERE businessDocumentType = '${RD_PROJECT_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'inventory_source_usage' AS consumer, COUNT(*) AS total
       FROM inventory_source_usage
-      WHERE consumerDocumentType = 'RdProject'
+      WHERE consumerDocumentType = '${RD_PROJECT_DOCUMENT_TYPE}'
       UNION ALL
       SELECT 'factory_number_reservation' AS consumer, COUNT(*) AS total
       FROM factory_number_reservation
-      WHERE businessDocumentType = 'RdProject'
+      WHERE businessDocumentType = '${RD_PROJECT_DOCUMENT_TYPE}'
     `,
   );
 

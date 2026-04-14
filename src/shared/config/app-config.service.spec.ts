@@ -18,6 +18,8 @@ describe("AppConfigService", () => {
         HTTP_TRUST_PROXY: " 2 ",
         API_GLOBAL_PREFIX: "/v1/",
         SWAGGER_ENABLED: " false ",
+        JWT_REFRESH_SECRET: " refresh-secret ",
+        JWT_REFRESH_EXPIRES_IN_SECONDS: " 7200 ",
         REDIS_PASSWORD: "   ",
         AUTH_IP_BLACKLIST: " 10.0.0.1, 10.0.0.2 ,, ",
         FILE_STORAGE_ROOT_PATH: "storage/files",
@@ -35,6 +37,8 @@ describe("AppConfigService", () => {
     expect(service.apiGlobalPrefix).toBe("v1");
     expect(service.swaggerEnabled).toBe(false);
     expect(service.swaggerTitle).toBe("custom-app API");
+    expect(service.jwtRefreshSecret).toBe("refresh-secret");
+    expect(service.jwtRefreshExpiresInSeconds).toBe(7200);
     expect(service.redisPassword).toBeNull();
     expect(service.authIpBlacklist).toEqual(["10.0.0.1", "10.0.0.2"]);
     expect(service.fileStorageRootPath).toBe(
@@ -78,6 +82,8 @@ describe("AppConfigService", () => {
     expect(productionService.swaggerEnabled).toBe(false);
     expect(productionService.logLevel).toBe("info");
     expect(productionService.httpTrustProxy).toBe(false);
+    expect(productionService.jwtRefreshSecret).toBe("dev-secret:refresh");
+    expect(productionService.jwtRefreshExpiresInSeconds).toBe(28800);
   });
 
   it("falls back to UPLOAD_ROOT_PATH when FILE_STORAGE_ROOT_PATH is absent", () => {

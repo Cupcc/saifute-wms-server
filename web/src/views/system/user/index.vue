@@ -190,7 +190,7 @@
 
     <!-- 用户导入对话框 -->
     <el-dialog :title="upload.title" v-model="upload.open" width="400px" append-to-body>
-      <el-upload ref="uploadRef" :limit="1" accept=".xlsx, .xls" :headers="upload.headers" :action="upload.url + '?updateSupport=' + upload.updateSupport" :disabled="upload.isUploading" :on-progress="handleFileUploadProgress" :on-success="handleFileSuccess" :auto-upload="false" drag>
+      <el-upload ref="uploadRef" :limit="1" accept=".xlsx, .xls" :headers="uploadHeaders" :action="upload.url + '?updateSupport=' + upload.updateSupport" :disabled="upload.isUploading" :on-progress="handleFileUploadProgress" :on-success="handleFileSuccess" :auto-upload="false" drag>
         <el-icon class="el-icon--upload"><upload-filled /></el-icon>
         <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
         <template #tip>
@@ -227,11 +227,12 @@ import {
 } from "@/api/system/user";
 import auth from "@/plugins/auth";
 import useAppStore from "@/store/modules/app";
-import { getToken } from "@/utils/auth";
+import useUserStore from "@/store/modules/user";
 import "splitpanes/dist/splitpanes.css";
 
 const router = useRouter();
 const appStore = useAppStore();
+const userStore = useUserStore();
 const { proxy } = getCurrentInstance();
 const { sys_normal_disable, sys_user_sex } = proxy.useDict(
   "sys_normal_disable",
@@ -256,6 +257,9 @@ const postOptions = ref([]);
 const dialogLoading = ref(false);
 const roleOptions = ref([]);
 const USER_IMPORT_ENABLED = false;
+const uploadHeaders = computed(() =>
+  userStore.token ? { Authorization: `Bearer ${userStore.token}` } : {},
+);
 /*** 用户导入参数 */
 const upload = reactive({
   // 是否显示弹出层（用户导入）
@@ -266,8 +270,6 @@ const upload = reactive({
   isUploading: false,
   // 是否更新已经存在的用户数据
   updateSupport: 0,
-  // 设置上传的请求头部
-  headers: { Authorization: `Bearer ${getToken()}` },
   // 上传的地址
   url: `${import.meta.env.VITE_APP_BASE_API}/api/system/user/importData`,
 });

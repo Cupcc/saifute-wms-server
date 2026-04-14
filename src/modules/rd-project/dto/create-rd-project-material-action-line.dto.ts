@@ -1,4 +1,5 @@
 import {
+  IsEnum,
   IsInt,
   IsOptional,
   IsString,
@@ -6,6 +7,7 @@ import {
   MaxLength,
   Min,
 } from "class-validator";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 
 export class CreateRdProjectMaterialActionLineDto {
   @IsInt()
@@ -26,9 +28,8 @@ export class CreateRdProjectMaterialActionLineDto {
   })
   unitPrice?: string;
 
-  @IsString()
   @IsOptional()
-  @MaxLength(64)
+  @IsEnum(BusinessDocumentType)
   sourceDocumentType?: string;
 
   @IsInt()

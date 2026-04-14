@@ -5,9 +5,10 @@ import {
   Prisma,
   SalesStockOrderType,
 } from "../../../../generated/prisma/client";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 
-const DOCUMENT_TYPE = "SalesStockOrder";
+const DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
 type DbClient = Prisma.TransactionClient | PrismaService;
 
 @Injectable()

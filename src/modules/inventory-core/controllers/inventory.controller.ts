@@ -48,10 +48,17 @@ export class InventoryController {
       await this.workshopScopeService.resolveInventoryQueryScope(
         user,
         query.workshopId,
+        query.stockScope,
+      );
+    const workshopId =
+      await this.workshopScopeService.resolveInventoryQueryWorkshopId(
+        user,
+        query.workshopId,
       );
     return this.inventoryService.listLogs({
       materialId: query.materialId,
       stockScope: inventoryScope?.stockScope,
+      workshopId,
       businessDocumentId: query.businessDocumentId,
       businessDocumentType: query.businessDocumentType,
       businessDocumentNumber: query.businessDocumentNumber,

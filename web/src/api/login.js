@@ -47,6 +47,21 @@ export function logout() {
   });
 }
 
+export function refreshToken(refreshToken) {
+  return request({
+    url: "/api/auth/refresh",
+    headers: {
+      isToken: false,
+      repeatSubmit: false,
+      skipTokenRefresh: true,
+    },
+    method: "post",
+    data: {
+      refreshToken,
+    },
+  });
+}
+
 // 获取验证码
 export function getCodeImg() {
   return request({

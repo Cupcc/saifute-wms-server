@@ -14,6 +14,7 @@ import {
   buildDashedTimestampDocumentNo,
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
@@ -21,7 +22,7 @@ import type { CreateRdStocktakeOrderDto } from "../dto/create-rd-stocktake-order
 import type { QueryRdStocktakeOrderDto } from "../dto/query-rd-stocktake-order.dto";
 import { RdStocktakeOrderRepository } from "../infrastructure/rd-stocktake-order.repository";
 
-const DOCUMENT_TYPE = "RdStocktakeOrder";
+const DOCUMENT_TYPE = BusinessDocumentType.RdStocktakeOrder;
 const BUSINESS_MODULE = "rd-subwarehouse";
 
 @Injectable()

@@ -4,6 +4,7 @@ import { JwtService } from "@nestjs/jwt";
 import { AppConfigService } from "../../../shared/config/app-config.service";
 import type {
   CreateSessionInput,
+  RefreshSessionClaims,
   SessionClaims,
   SessionUserSnapshot,
   UserSession,
@@ -26,6 +27,7 @@ export class SessionService {
     const session: UserSession = {
       version: 1,
       sessionId: randomUUID(),
+      refreshTokenId: randomUUID(),
       user: input.user,
       loginTime: new Date(now).toISOString(),
       lastActiveAt: new Date(now).toISOString(),
@@ -39,20 +41,17 @@ export class SessionService {
       session,
       this.appConfigService.sessionTtlSeconds,
     );
-    const accessToken = await this.jwtService.signAsync({
-      sub: String(input.user.userId),
-      sid: session.sessionId,
-      username: input.user.username,
-    });
+    const { accessToken, refreshToken } = await this.issueTokens(session);
 
     return {
       accessToken,
+      refreshToken,
       session,
     };
   }
 
   async resolveSessionFromToken(token: string): Promise<UserSession> {
-    const claims = await this.verifyToken(token);
+    const claims = await this.verifyAccessToken(token);
     const session = await this.sessionRepository.findBySessionId(claims.sid);
     if (!session) {
       throw new UnauthorizedException("登录会话不存在或已失效");
@@ -62,13 +61,35 @@ export class SessionService {
     return session;
   }
 
+  async refreshSession(refreshToken: string) {
+    const claims = await this.verifyRefreshToken(refreshToken);
+    const session = await this.sessionRepository.findBySessionId(claims.sid);
+    if (!session) {
+      throw new UnauthorizedException("登录会话不存在或已失效");
+    }
+
+    if (!session.refreshTokenId || session.refreshTokenId !== claims.jti) {
+      throw new UnauthorizedException("刷新令牌无效或已过期");
+    }
+
+    await this.refreshSessionIfNeeded(session);
+    session.refreshTokenId = randomUUID();
+    await this.persistSession(session);
+    const tokens = await this.issueTokens(session);
+
+    return {
+      ...tokens,
+      session,
+    };
+  }
+
   async invalidateSession(sessionId: string): Promise<{ removed: boolean }> {
     const removed = await this.sessionRepository.delete(sessionId);
     return { removed };
   }
 
   async invalidateToken(token: string): Promise<void> {
-    const claims = await this.verifyToken(token, true);
+    const claims = await this.verifyAccessToken(token, true);
     await this.sessionRepository.delete(claims.sid);
   }
 
@@ -131,18 +152,76 @@ export class SessionService {
     await this.sessionRepository.save(session, Math.max(1, remainingTtl));
   }
 
-  private async verifyToken(
+  private async verifyAccessToken(
     token: string,
     ignoreExpiration = false,
   ): Promise<SessionClaims> {
     try {
-      return await this.jwtService.verifyAsync<SessionClaims>(token, {
+      const claims = await this.jwtService.verifyAsync<SessionClaims>(token, {
         secret: this.appConfigService.jwtSecret,
         ignoreExpiration,
       });
+
+      if (claims.typ && claims.typ !== "access") {
+        throw new Error("Unexpected token type");
+      }
+
+      return claims;
     } catch {
       throw new UnauthorizedException("访问令牌无效或已过期");
     }
+  }
+
+  private async verifyRefreshToken(
+    token: string,
+  ): Promise<RefreshSessionClaims> {
+    try {
+      const claims = await this.jwtService.verifyAsync<RefreshSessionClaims>(
+        token,
+        {
+          secret: this.appConfigService.jwtRefreshSecret,
+        },
+      );
+
+      if (claims.typ !== "refresh" || !claims.jti) {
+        throw new Error("Unexpected token type");
+      }
+
+      return claims;
+    } catch {
+      throw new UnauthorizedException("刷新令牌无效或已过期");
+    }
+  }
+
+  private async issueTokens(session: UserSession) {
+    if (!session.refreshTokenId) {
+      throw new UnauthorizedException("登录会话不存在或已失效");
+    }
+
+    const accessToken = await this.jwtService.signAsync({
+      sub: String(session.user.userId),
+      sid: session.sessionId,
+      username: session.user.username,
+      typ: "access",
+    });
+    const refreshToken = await this.jwtService.signAsync(
+      {
+        sub: String(session.user.userId),
+        sid: session.sessionId,
+        username: session.user.username,
+        typ: "refresh",
+        jti: session.refreshTokenId,
+      },
+      {
+        secret: this.appConfigService.jwtRefreshSecret,
+        expiresIn: this.appConfigService.jwtRefreshExpiresInSeconds,
+      },
+    );
+
+    return {
+      accessToken,
+      refreshToken,
+    };
   }
 
   private async refreshSessionIfNeeded(session: UserSession): Promise<void> {
@@ -174,6 +253,20 @@ export class SessionService {
     await this.sessionRepository.save(
       session,
       Math.max(1, Math.ceil((nextExpiresAt - now) / 1000)),
+    );
+  }
+
+  private async persistSession(session: UserSession): Promise<void> {
+    const remainingMilliseconds =
+      new Date(session.expiresAt).getTime() - Date.now();
+    if (remainingMilliseconds <= 0) {
+      await this.sessionRepository.delete(session.sessionId);
+      throw new UnauthorizedException("登录会话不存在或已失效");
+    }
+
+    await this.sessionRepository.save(
+      session,
+      Math.max(1, Math.ceil(remainingMilliseconds / 1000)),
     );
   }
 

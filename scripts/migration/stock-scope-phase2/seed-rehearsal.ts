@@ -10,9 +10,12 @@ import {
   type QueryResultWithInsertId,
   withPoolConnection,
 } from "../db";
+import { BusinessDocumentType } from "../shared/business-document-type";
 import { writeStableReport } from "../shared/report-writer";
 
 const REHEARSAL_CREATED_BY = "stock-scope-rehearsal";
+const STOCK_IN_DOCUMENT_TYPE = BusinessDocumentType.StockInOrder;
+const SALES_STOCK_DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
 
 type Queryable = {
   query<T = unknown>(sql: string, values?: readonly unknown[]): Promise<T>;
@@ -372,7 +375,7 @@ async function seed(connection: Queryable) {
         businessModule, businessDocumentType, businessDocumentId, businessDocumentNumber,
         businessDocumentLineId, changeQty, beforeQty, afterQty, operatorId, idempotencyKey, note
       )
-      VALUES (?, ?, ?, 'IN', 'ACCEPTANCE_IN', 'inbound', 'StockInOrder', ?, ?, NULL, 10, 0, 10, ?, ?, ?)
+      VALUES (?, ?, ?, 'IN', 'ACCEPTANCE_IN', 'inbound', '${STOCK_IN_DOCUMENT_TYPE}', ?, ?, NULL, 10, 0, 10, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         id = LAST_INSERT_ID(id)
     `,
@@ -395,7 +398,7 @@ async function seed(connection: Queryable) {
         materialId, workshopId, businessDocumentType, businessDocumentId, businessDocumentLineId,
         startNumber, endNumber, createdBy, createdAt, updatedBy, updatedAt
       )
-      VALUES (?, ?, 'SalesStockOrder', ?, 1, 'A001', 'A005', ?, NOW(), ?, NOW())
+      VALUES (?, ?, '${SALES_STOCK_DOCUMENT_TYPE}', ?, 1, 'A001', 'A005', ?, NOW(), ?, NOW())
       ON DUPLICATE KEY UPDATE
         updatedBy = VALUES(updatedBy),
         id = LAST_INSERT_ID(id)

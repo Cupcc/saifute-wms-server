@@ -8,14 +8,13 @@ import {
   Min,
 } from "class-validator";
 import { DocumentFamily } from "../../../../generated/prisma/client";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 
 export class CreateApprovalDocumentDto {
   @IsEnum(DocumentFamily)
   documentFamily!: DocumentFamily;
 
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(64)
+  @IsEnum(BusinessDocumentType)
   documentType!: string;
 
   @IsInt()

@@ -46,6 +46,7 @@ const SKIP_RESPONSE_ENVELOPE_SWAGGER_OPERATIONS: ReadonlyArray<SwaggerOperationD
   [
     { method: "get", path: "files/download" },
     { method: "get", path: "reporting/export" },
+    { method: "post", path: "reporting/monthly-reporting/export" },
     { method: "post", path: "ai/chat" },
   ];
 
