@@ -1,4 +1,0 @@
-interface:
-  display_name: "Saifute Planner"
-  short_description: "Clarify scope and repair or create durable task handoffs"
-  default_prompt: "Use $saifute-planner to clarify scope, repair planning state, or create an execution-ready `docs/tasks/**` handoff for this repository."

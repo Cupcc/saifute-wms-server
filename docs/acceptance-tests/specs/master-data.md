@@ -7,7 +7,7 @@
 | ---- | -------------------------------------------------- |
 | 模块   | master-data                                        |
 | 需求源  | docs/requirements/domain/master-data-management.md |
-| 最近更新 | 2026-04-06                                         |
+| 最近更新 | 2026-04-17                                         |
 
 
 ## 能力覆盖
@@ -15,7 +15,7 @@
 
 | 能力              | 说明              | 状态      |
 | --------------- | --------------- | ------- |
-| F1 物料分类 CRUD    | 分类树增删改查         | `已验收`   |
+| F1 物料分类 CRUD    | 单层分类增删改查       | `已验收`   |
 | F2 物料 CRUD      | 物料主档增删改查        | `已验收`   |
 | F3 客户 CRUD      | 客户树增删改查         | `已验收`   |
 | **F4 供应商 CRUD** | 供应商增删改查+停用+下拉过滤 | **已验收** |
@@ -39,6 +39,7 @@
   - **前端**：`pnpm --dir web build:prod` 通过；`web/src/api/base/**` 对 Phase 1 实体使用真实 `/api/master-data/*` 路径；`permissionCompat.js` 覆盖 `master:*` 与 legacy `base:*` 别名。
   - **Browser QA 复验**：2026-04-06 使用 `agent-browser` 在 `http://localhost:90` 完成 `F4-BROWSER-1` 与 `F2-BROWSER-1`。其中 F4 验证供应商管理页新增/停用与 `验收单` 供应商下拉过滤；F2 在空 `material_category` 环境下首次新增返回 `500`，补最小分类 fixture 后复验通过，关键网络证据为 `POST /api/master-data/materials` = `201`、`PATCH /api/master-data/materials/6/deactivate` = `200`、`GET /api/master-data/materials?keyword=MAT-QA-20260406-001&limit=30&offset=0` = `{"items":[],"total":0}`。
   - **对齐修复复验**：同日后续切片 `task-20260406-0106` 已补齐 `物料分类管理` 页面、移除物料页默认 `categoryId=1` 并在后端收口非法分类错误语义；targeted browser 复验中，`POST /api/master-data/material-categories` = `201`、物料在“无分类选择”和“有效分类选择”两种路径下 `POST /api/master-data/materials` 均 = `201`，直接提交 `categoryId=999999` 返回 `400`，不再出现历史 `500`。
+  - **单层分类统一**：`2026-04-17` follow-on 切片把物料分类从多级树语义统一为单层分类真源；`master-data`、Prisma schema 与前端 API/page 已删除 `parentId` 合同，inbound/sales 新写入分类快照改为单节点最终分类。
   - **非阻塞残留**：仓库级 `pnpm lint`（biome）仍因**既有**前端/工具链文件未净，**本轮变更的 master-data / RBAC / web 兼容路径无新增 lint 报告**。
 
 ### 测试环境注意（门禁可复现）
@@ -58,6 +59,7 @@
 | 2026-04-06 | task-20260406-0106（F1/F2 对齐修复复验） | `.env.dev`；backend `:8112` + web `:90`；`agent-browser`；真实登录 `admin` | `passed` |
 | 2026-04-06 | task-20260406-0134（F1-F8 browser verification fix loop） | `.env.dev`；backend `:8112` + web `:90`；`agent-browser`；`pnpm --dir web build:prod`；master-data 三层回归 `3 suites / 80 tests` | `passed` |
 | 2026-04-08 | task-20260408-1842（F6 workshop runtime compatibility） | `.env.dev`；backend `:8113` + web `:5174`；authenticated API smoke；`agent-browser`；parent review handoff `approved` | `passed` |
+| 2026-04-17 | task-20260417-1702（物料分类单层统一） | local workspace；focused automated evidence（`master-data + inbound + sales + reporting tests`、`typecheck`、`web build:prod`） | `passed` |
 
 
 ---
@@ -115,7 +117,7 @@
 
 ## F1 物料分类 CRUD
 
-> 关联任务：`task-20260406-0106-master-data-material-category-alignment`（已归档）  
+> 关联任务：`task-20260417-1702-material-category-single-level-system-unification.md`  
 > Browser QA 补充证据：`docs/acceptance-tests/runs/run-20260406-0124-master-data-f1-f2-browser-alignment.md`
 
 ### 验收矩阵
@@ -123,23 +125,25 @@
 
 | AC   | 描述                         | 结论  | 执行面 | 关键证据 |
 | ---- | -------------------------- | --- | --- | ---- |
-| TC-1 | 编码唯一                       | met | unit+browser | service.spec / repository.spec：重复编码 Conflict；browser：`POST /api/master-data/material-categories` = `201` |
-| TC-2 | 树形查询                       | met | unit | 树构建与列表用例 |
+| TC-1 | 编码唯一                       | met | unit+browser | service.spec / repository.spec：重复编码 Conflict；historical browser：`POST /api/master-data/material-categories` = `201` |
+| TC-2 | 单层查询，不暴露父子层级语义            | met | unit | repository.spec 单层排序；service/page 不再依赖 `parentId / children` |
 | TC-3 | 停用前存在启用物料拦截                | met | unit | disable 守卫 |
-| TC-4 | 停用前存在启用子分类拦截               | met | unit | 子节点校验 |
-| TC-5 | 页面/API/权限兼容                | met | build+browser | `BaseMaterialCategory` 路由映射；`material-category` 页面真实可访问并回显新增分类 |
+| TC-4 | Prisma / API 合同中删除 `parentId` | met | unit+typecheck | schema、DTO、repository、前端 API 均已删除 `parentId`，`prisma generate` + `typecheck` 通过 |
+| TC-5 | 页面/API/权限兼容                | met | build+unit+historical browser | `BaseMaterialCategory` 路由映射；`material-category` 页面移除“上级分类”；`pnpm --dir web build:prod` 通过 |
 
 ### 验证摘要
 
 | 时间         | 关联 task              | 环境 | 结果 |
 | ---------- | -------------------- | ---- | ---- |
 | 2026-04-06 | `task-20260406-0106` | `.env.dev`; `agent-browser`; `/base/material-category` | `passed` |
+| 2026-04-17 | `task-20260417-1702` | local workspace; focused automated evidence (`master-data` specs + `web build:prod`) | `passed` |
 
 ### 证据索引
 
 - `src/modules/master-data/application/master-data.service.spec.ts`
 - `src/modules/master-data/infrastructure/master-data.repository.spec.ts`
 - `src/modules/master-data/controllers/master-data.controller.spec.ts`
+- `docs/tasks/task-20260417-1702-material-category-single-level-system-unification.md`
 - `docs/acceptance-tests/runs/run-20260406-0124-master-data-f1-f2-browser-alignment.md`
 
 

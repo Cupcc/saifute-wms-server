@@ -161,7 +161,6 @@ export class MasterDataService implements OnModuleInit {
       {
         categoryCode: dto.categoryCode,
         categoryName: dto.categoryName,
-        parentId: dto.parentId,
         sortOrder: dto.sortOrder ?? 0,
       },
       createdBy,
@@ -184,31 +183,12 @@ export class MasterDataService implements OnModuleInit {
       ) {
         throw new BadRequestException("系统默认分类“未分类”不允许修改名称");
       }
-      if (dto.parentId !== undefined && dto.parentId !== null) {
-        throw new BadRequestException("系统默认分类“未分类”必须保留为顶级分类");
-      }
-    }
-
-    if (dto.parentId !== undefined && dto.parentId !== null) {
-      if (dto.parentId === id) {
-        throw new BadRequestException("物料分类不能将自身设为父分类");
-      }
-      const hasCycle = await this.wouldCreateMaterialCategoryCycle(
-        id,
-        dto.parentId,
-      );
-      if (hasCycle) {
-        throw new BadRequestException(
-          "不能将物料分类挂到其自身的后代节点下，否则会形成循环",
-        );
-      }
     }
 
     return this.repository.updateMaterialCategory(
       id,
       {
         categoryName: dto.categoryName,
-        parentId: dto.parentId,
         sortOrder: dto.sortOrder,
       },
       updatedBy,
@@ -225,14 +205,6 @@ export class MasterDataService implements OnModuleInit {
     }
     if (existing.status === "DISABLED") {
       return existing;
-    }
-
-    const activeChildCount =
-      await this.repository.countActiveChildCategories(id);
-    if (activeChildCount > 0) {
-      throw new BadRequestException(
-        `该分类下存在 ${activeChildCount} 个启用中的子分类，请先停用子分类`,
-      );
     }
 
     const activeMaterialCount =
@@ -975,22 +947,6 @@ export class MasterDataService implements OnModuleInit {
     if (!category || category.status !== "ACTIVE") {
       throw new BadRequestException(`物料分类不存在或已停用: ${categoryId}`);
     }
-  }
-
-  private async wouldCreateMaterialCategoryCycle(
-    nodeId: number,
-    candidateParentId: number,
-  ): Promise<boolean> {
-    const visited = new Set<number>();
-    let currentId: number | null | undefined = candidateParentId;
-    while (currentId) {
-      if (currentId === nodeId) return true;
-      if (visited.has(currentId)) return false;
-      visited.add(currentId);
-      const record = await this.repository.findMaterialCategoryById(currentId);
-      currentId = record?.parentId ?? null;
-    }
-    return false;
   }
 
   private async wouldCreateCustomerCycle(

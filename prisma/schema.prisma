@@ -180,18 +180,14 @@ model MaterialCategory {
   id           Int                @id @default(autoincrement())
   categoryCode String             @unique @db.VarChar(64)
   categoryName String             @db.VarChar(128)
-  parentId     Int?
   sortOrder    Int                @default(0)
   status       MasterDataStatus   @default(ACTIVE)
   createdBy    String?            @db.VarChar(64)
   createdAt    DateTime           @default(now())
   updatedBy    String?            @db.VarChar(64)
   updatedAt    DateTime           @updatedAt
-  parent       MaterialCategory?  @relation("MaterialCategoryTree", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  children     MaterialCategory[] @relation("MaterialCategoryTree")
   materials    Material[]
 
-  @@index([parentId])
   @@map("material_category")
 }
 

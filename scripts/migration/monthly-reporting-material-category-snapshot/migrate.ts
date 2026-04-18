@@ -14,7 +14,6 @@ interface MigrationConnection {
 
 interface CategoryRow {
   id: number;
-  parentId: number | null;
   categoryCode: string;
   categoryName: string;
 }
@@ -227,7 +226,6 @@ async function readCategories(
     `
       SELECT
         id,
-        parentId,
         categoryCode,
         categoryName
       FROM material_category
@@ -235,48 +233,6 @@ async function readCategories(
   );
 
   return new Map(rows.map((row) => [row.id, row]));
-}
-
-function resolveCategoryPath(
-  categoryMap: Map<number, CategoryRow>,
-  categoryId: number | null,
-): Array<{
-  id: number | null;
-  categoryCode: string | null;
-  categoryName: string;
-}> {
-  if (categoryId == null) {
-    return [];
-  }
-
-  const path: Array<{
-    id: number | null;
-    categoryCode: string | null;
-    categoryName: string;
-  }> = [];
-  const visited = new Set<number>();
-  let currentId: number | null = categoryId;
-
-  while (currentId != null) {
-    if (visited.has(currentId)) {
-      break;
-    }
-    visited.add(currentId);
-
-    const current = categoryMap.get(currentId);
-    if (!current) {
-      break;
-    }
-
-    path.unshift({
-      id: current.id,
-      categoryCode: current.categoryCode,
-      categoryName: current.categoryName,
-    });
-    currentId = current.parentId;
-  }
-
-  return path;
 }
 
 function buildSnapshotPayload(
@@ -288,7 +244,7 @@ function buildSnapshotPayload(
   const material = materialMap.get(materialId) ?? null;
   const resolvedCategory =
     (material?.categoryId != null
-      ? categoryMap.get(material.categoryId) ?? null
+      ? (categoryMap.get(material.categoryId) ?? null)
       : null) ?? defaultCategory;
 
   if (!resolvedCategory) {
@@ -297,17 +253,13 @@ function buildSnapshotPayload(
     );
   }
 
-  const categoryPath = resolveCategoryPath(categoryMap, resolvedCategory.id);
-  const normalizedPath =
-    categoryPath.length > 0
-      ? categoryPath
-      : [
-          {
-            id: resolvedCategory.id,
-            categoryCode: resolvedCategory.categoryCode,
-            categoryName: resolvedCategory.categoryName,
-          },
-        ];
+  const normalizedPath = [
+    {
+      id: resolvedCategory.id,
+      categoryCode: resolvedCategory.categoryCode,
+      categoryName: resolvedCategory.categoryName,
+    },
+  ];
 
   return {
     categoryId: resolvedCategory.id,
@@ -423,7 +375,9 @@ async function applyBackfillInBatches(
       break;
     }
 
-    const materialIds = [...new Set(pendingLines.map((line) => line.materialId))];
+    const materialIds = [
+      ...new Set(pendingLines.map((line) => line.materialId)),
+    ];
     const materialMap = await readMaterials(connection, materialIds);
     const batchResult = await applyBackfillBatch(
       connection,
@@ -437,7 +391,8 @@ async function applyBackfillInBatches(
     updatedRows += batchResult.updatedRows;
     fallbackRows += batchResult.fallbackRows;
     batchCount += 1;
-    lastProcessedId = pendingLines[pendingLines.length - 1]?.id ?? lastProcessedId;
+    lastProcessedId =
+      pendingLines[pendingLines.length - 1]?.id ?? lastProcessedId;
   }
 
   return {

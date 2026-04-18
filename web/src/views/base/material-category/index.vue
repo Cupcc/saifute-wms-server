@@ -72,13 +72,6 @@
       />
       <el-table-column
         v-if="columns[2].visible"
-        show-overflow-tooltip
-        label="上级分类"
-        align="center"
-        prop="parentName"
-      />
-      <el-table-column
-        v-if="columns[3].visible"
         sortable
         show-overflow-tooltip
         label="排序"
@@ -143,16 +136,6 @@
         <el-form-item label="分类名称" prop="categoryName">
           <el-input v-model="form.categoryName" placeholder="请输入分类名称" />
         </el-form-item>
-        <el-form-item label="上级分类" prop="parentId">
-          <el-select v-model="form.parentId" clearable placeholder="可选">
-            <el-option
-              v-for="item in parentOptions"
-              :key="item.categoryId"
-              :label="item.categoryName"
-              :value="item.categoryId"
-            />
-          </el-select>
-        </el-form-item>
         <el-form-item label="排序" prop="sortOrder">
           <el-input-number v-model="form.sortOrder" :min="0" :max="9999" />
         </el-form-item>
@@ -179,8 +162,6 @@ import {
 const { proxy } = getCurrentInstance();
 
 const categoryList = ref([]);
-const categoryMap = ref(new Map());
-const parentOptions = ref([]);
 const open = ref(false);
 const loading = ref(true);
 const dialogLoading = ref(false);
@@ -211,8 +192,7 @@ const { queryParams, form, rules } = toRefs(data);
 const columns = ref([
   { key: 0, label: "分类编码", visible: true },
   { key: 1, label: "分类名称", visible: true },
-  { key: 2, label: "上级分类", visible: true },
-  { key: 3, label: "排序", visible: true },
+  { key: 2, label: "排序", visible: true },
 ]);
 
 function buildKeyword(query) {
@@ -220,40 +200,7 @@ function buildKeyword(query) {
 }
 
 function normalizeRows(rows) {
-  categoryMap.value = new Map(rows.map((item) => [item.categoryId, item]));
-  categoryList.value = rows.map((item) => ({
-    ...item,
-    parentName: item.parentId
-      ? categoryMap.value.get(item.parentId)?.categoryName || "-"
-      : "-",
-  }));
-}
-
-function getList() {
-  loading.value = true;
-  listMaterialCategory({
-    pageNum: queryParams.value.pageNum,
-    pageSize: queryParams.value.pageSize,
-    keyword: buildKeyword(queryParams.value),
-  })
-    .then((response) => {
-      normalizeRows(response.rows);
-      total.value = response.total;
-    })
-    .finally(() => {
-      loading.value = false;
-    });
-}
-
-function loadParentOptions(currentId = null) {
-  return listMaterialCategory({
-    pageNum: 1,
-    pageSize: 300,
-  }).then((response) => {
-    parentOptions.value = response.rows.filter(
-      (item) => item.categoryId !== currentId,
-    );
-  });
+  categoryList.value = rows;
 }
 
 function reset() {
@@ -261,10 +208,8 @@ function reset() {
     categoryId: null,
     categoryCode: null,
     categoryName: null,
-    parentId: null,
     sortOrder: 0,
   };
-  parentOptions.value = [];
   proxy.resetForm("categoryRef");
 }
 
@@ -286,7 +231,6 @@ function resetQuery() {
 async function handleAdd() {
   reset();
   title.value = "添加物料分类";
-  await loadParentOptions();
   open.value = true;
 }
 
@@ -301,10 +245,8 @@ async function handleUpdate(row) {
       categoryId: response.data.categoryId,
       categoryCode: response.data.categoryCode,
       categoryName: response.data.categoryName,
-      parentId: response.data.parentId,
       sortOrder: response.data.sortOrder ?? 0,
     };
-    await loadParentOptions(response.data.categoryId);
   } finally {
     dialogLoading.value = false;
   }
@@ -337,6 +279,22 @@ async function handleDeactivate(row) {
   } catch {
     // 用户取消确认时保持页面静默。
   }
+}
+
+function getList() {
+  loading.value = true;
+  listMaterialCategory({
+    pageNum: queryParams.value.pageNum,
+    pageSize: queryParams.value.pageSize,
+    keyword: buildKeyword(queryParams.value),
+  })
+    .then((response) => {
+      normalizeRows(response.rows);
+      total.value = response.total;
+    })
+    .finally(() => {
+      loading.value = false;
+    });
 }
 
 getList();

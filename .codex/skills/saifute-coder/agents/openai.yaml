@@ -1,4 +1,0 @@
-interface:
-  display_name: "Saifute Coder"
-  short_description: "Implement scoped repository changes inside explicit writable boundaries"
-  default_prompt: "Use $saifute-coder to implement the assigned repository change inside the exact writable scope and return a review-ready handoff."

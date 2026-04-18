@@ -5,8 +5,8 @@ import { type INestApplication, ValidationPipe } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { Test } from "@nestjs/testing";
 import { static as expressStatic } from "express";
-import { Prisma, SalesStockOrderType } from "../generated/prisma/client";
 import * as request from "supertest";
+import { Prisma, SalesStockOrderType } from "../generated/prisma/client";
 import { AppModule } from "../src/app.module";
 import { HttpExceptionFilter } from "../src/shared/common/filters/http-exception.filter";
 import { ResponseEnvelopeInterceptor } from "../src/shared/common/interceptors/response-envelope.interceptor";
@@ -481,28 +481,23 @@ describe("Batch D slice acceptance (e2e)", () => {
     expect(summaryResponse.body.data).toMatchObject({
       viewMode: "MATERIAL_CATEGORY",
       summary: {
-        categoryCount: 2,
+        categoryCount: 1,
         lineCount: 2,
         acceptanceInboundAmount: "30.00",
         salesReturnAmount: "8.00",
         netAmount: "38.00",
       },
     });
-    expect(summaryResponse.body.data.categories).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          categoryName: "原料",
-          categoryPathLabel: "原料",
-          acceptanceInboundAmount: "30.00",
-          salesReturnAmount: "8.00",
-        }),
-        expect.objectContaining({
-          categoryName: "化工",
-          categoryPathLabel: "原料 / 化工",
-          parentCategoryId: 10,
-        }),
-      ]),
-    );
+    expect(summaryResponse.body.data.categories).toEqual([
+      expect.objectContaining({
+        nodeKey: "11:CHEM:化工",
+        categoryId: 11,
+        categoryCode: "CHEM",
+        categoryName: "化工",
+        acceptanceInboundAmount: "30.00",
+        salesReturnAmount: "8.00",
+      }),
+    ]);
 
     const detailResponse = await request(server)
       .get("/api/reporting/monthly-reporting/details")
@@ -520,7 +515,8 @@ describe("Batch D slice acceptance (e2e)", () => {
     expect(detailResponse.body.data.items[0]).toMatchObject({
       documentNo: "XSTH-001",
       lineNo: 2,
-      categoryPathLabel: "原料 / 化工",
+      categoryCode: "CHEM",
+      categoryName: "化工",
       salesProjectCode: "SP-701",
       salesProjectName: "销售项目 A",
       abnormalLabels: ["补录影响", "跨月修正"],
@@ -543,7 +539,9 @@ describe("Batch D slice acceptance (e2e)", () => {
     );
     expect(exportResponse.text).toContain('<Worksheet ss:Name="分类汇总">');
     expect(exportResponse.text).toContain('<Worksheet ss:Name="单据行明细">');
-    expect(exportResponse.text).toContain("原料 / 化工");
+    expect(exportResponse.text).toContain("化工");
+    expect(exportResponse.text).not.toContain("分类路径");
+    expect(exportResponse.text).not.toContain("层级");
   });
 
   it("should export monthly reporting data as a downloadable excel file", async () => {

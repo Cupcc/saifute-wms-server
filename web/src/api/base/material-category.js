@@ -6,7 +6,6 @@ function mapMaterialCategory(item) {
     categoryId: item.id,
     categoryCode: item.categoryCode,
     categoryName: item.categoryName,
-    parentId: item.parentId ?? null,
     sortOrder: Number(item.sortOrder ?? 0),
     status: item.status ?? "ACTIVE",
   };
@@ -41,7 +40,6 @@ export function addMaterialCategory(data) {
     data: {
       categoryCode: data.categoryCode,
       categoryName: data.categoryName,
-      parentId: data.parentId ?? undefined,
       sortOrder: data.sortOrder ?? 0,
     },
   });
@@ -53,7 +51,6 @@ export function updateMaterialCategory(data) {
     method: "patch",
     data: {
       categoryName: data.categoryName,
-      parentId: data.parentId ?? undefined,
       sortOrder: data.sortOrder ?? undefined,
     },
   });

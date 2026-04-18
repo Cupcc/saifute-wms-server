@@ -1,4 +1,0 @@
-interface:
-  display_name: "Saifute Acceptance QA"
-  short_description: "Run requirement-level and user-flow acceptance verification"
-  default_prompt: "Use $saifute-acceptance-qa to verify requirement-level completion, browser or API acceptance paths, and final acceptance judgment for this repository."

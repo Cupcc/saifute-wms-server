@@ -35,12 +35,6 @@ const DOCUMENT_TYPE = BusinessDocumentType.StockInOrder;
 const BUSINESS_MODULE = "inbound";
 const DEFAULT_MATERIAL_CATEGORY_CODE = "UNCATEGORIZED";
 
-type MaterialCategorySnapshotNode = {
-  id: number;
-  categoryCode: string;
-  categoryName: string;
-};
-
 function toOperationType(orderType: StockInOrderType): InventoryOperationType {
   switch (orderType) {
     case StockInOrderType.ACCEPTANCE:
@@ -303,7 +297,8 @@ export class InboundService {
           supplierNameSnapshot: existing.supplierNameSnapshot,
         };
     const hasHandlerOverride =
-      Object.hasOwn(dto, "handlerPersonnelId") || Object.hasOwn(dto, "handlerName");
+      Object.hasOwn(dto, "handlerPersonnelId") ||
+      Object.hasOwn(dto, "handlerName");
     const handlerSnapshot = hasHandlerOverride
       ? await this.resolveHandlerSnapshot(
           dto.handlerPersonnelId ?? undefined,
@@ -531,10 +526,8 @@ export class InboundService {
             materialId: lineData.materialId,
             rdProcurementRequestLineId: lineData.rdProcurementRequestLineId,
             materialCategoryIdSnapshot: lineData.materialCategoryIdSnapshot,
-            materialCategoryCodeSnapshot:
-              lineData.materialCategoryCodeSnapshot,
-            materialCategoryNameSnapshot:
-              lineData.materialCategoryNameSnapshot,
+            materialCategoryCodeSnapshot: lineData.materialCategoryCodeSnapshot,
+            materialCategoryNameSnapshot: lineData.materialCategoryNameSnapshot,
             materialCategoryPathSnapshot: lineData.materialCategoryPathSnapshot,
             materialCodeSnapshot: lineData.materialCodeSnapshot,
             materialNameSnapshot: lineData.materialNameSnapshot,
@@ -1064,38 +1057,32 @@ export class InboundService {
       id: number;
       categoryCode: string;
       categoryName: string;
-      parentId: number | null;
     } | null;
   }) {
     const effectiveCategory = await this.resolveEffectiveMaterialCategory(
       material.category,
     );
-    const path = await this.buildMaterialCategoryPath(effectiveCategory);
 
     return {
       id: effectiveCategory.id,
       code: effectiveCategory.categoryCode,
       name: effectiveCategory.categoryName,
-      path: path.map(
-        (node) =>
-          ({
-            id: node.id,
-            categoryCode: node.categoryCode,
-            categoryName: node.categoryName,
-          }) satisfies Prisma.JsonObject,
-      ) as Prisma.JsonArray,
+      path: [
+        {
+          id: effectiveCategory.id,
+          categoryCode: effectiveCategory.categoryCode,
+          categoryName: effectiveCategory.categoryName,
+        } satisfies Prisma.JsonObject,
+      ] as Prisma.JsonArray,
     };
   }
 
   private async resolveEffectiveMaterialCategory(
-    category:
-      | {
-          id: number;
-          categoryCode: string;
-          categoryName: string;
-          parentId: number | null;
-        }
-      | null,
+    category: {
+      id: number;
+      categoryCode: string;
+      categoryName: string;
+    } | null,
   ) {
     if (category) {
       return category;
@@ -1107,7 +1094,6 @@ export class InboundService {
         id: true,
         categoryCode: true,
         categoryName: true,
-        parentId: true,
       },
     });
     if (!defaultCategory) {
@@ -1116,51 +1102,5 @@ export class InboundService {
       );
     }
     return defaultCategory;
-  }
-
-  private async buildMaterialCategoryPath(category: {
-    id: number;
-    categoryCode: string;
-    categoryName: string;
-    parentId: number | null;
-  }) {
-    const visited = new Set<number>();
-    const path: MaterialCategorySnapshotNode[] = [];
-    let current:
-      | {
-          id: number;
-          categoryCode: string;
-          categoryName: string;
-          parentId: number | null;
-        }
-      | null = category;
-
-    while (current) {
-      if (visited.has(current.id)) {
-        throw new BadRequestException("物料分类存在循环，无法写入分类快照");
-      }
-      visited.add(current.id);
-      path.unshift({
-        id: current.id,
-        categoryCode: current.categoryCode,
-        categoryName: current.categoryName,
-      });
-
-      if (!current.parentId) {
-        break;
-      }
-
-      const parent = await this.masterDataService.getMaterialCategoryById(
-        current.parentId,
-      );
-      current = {
-        id: parent.id,
-        categoryCode: parent.categoryCode,
-        categoryName: parent.categoryName,
-        parentId: parent.parentId ?? null,
-      };
-    }
-
-    return path;
   }
 }

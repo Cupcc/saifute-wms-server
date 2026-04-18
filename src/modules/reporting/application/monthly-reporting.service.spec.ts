@@ -2,19 +2,19 @@ import { Test } from "@nestjs/testing";
 import { Prisma } from "../../../../generated/prisma/client";
 import { AppConfigService } from "../../../shared/config/app-config.service";
 import {
-  ReportingRepository,
   type MonthlySalesProjectEntry,
+  ReportingRepository,
 } from "../infrastructure/reporting.repository";
+import { MonthlyReportingService } from "./monthly-reporting.service";
 import {
   type MaterialCategorySnapshotNode,
   type MonthlyMaterialCategoryEntry,
+  type MonthlyReportEntry,
   MonthlyReportingAbnormalFlag,
   MonthlyReportingDirection,
   MonthlyReportingTopicKey,
-  type MonthlyReportEntry,
   MonthlyReportingViewMode,
 } from "./monthly-reporting.shared";
-import { MonthlyReportingService } from "./monthly-reporting.service";
 
 describe("MonthlyReportingService", () => {
   let service: MonthlyReportingService;
@@ -365,7 +365,7 @@ describe("MonthlyReportingService", () => {
     });
   });
 
-  it("should summarize material-category view from line facts and roll up parent categories", async () => {
+  it("should summarize material-category view from line facts into leaf-only buckets", async () => {
     repository.findMonthlyMaterialCategoryEntries.mockResolvedValue([
       createMaterialCategoryEntry(),
       createMaterialCategoryEntry({
@@ -420,7 +420,7 @@ describe("MonthlyReportingService", () => {
     const result = await service.getMonthlyReportSummary({
       yearMonth: "2026-03",
       viewMode: MonthlyReportingViewMode.MATERIAL_CATEGORY,
-      categoryNodeKey: "10:RAW:原料",
+      categoryNodeKey: "11:CHEM:化工",
     });
 
     expect(repository.findMonthlyMaterialCategoryEntries).toHaveBeenCalledWith({
@@ -431,7 +431,7 @@ describe("MonthlyReportingService", () => {
     });
     expect(result.viewMode).toBe("MATERIAL_CATEGORY");
     expect(result.summary).toMatchObject({
-      categoryCount: 2,
+      categoryCount: 1,
       lineCount: 4,
       acceptanceInboundAmount: "30.00",
       productionReceiptAmount: "50.00",
@@ -440,27 +440,18 @@ describe("MonthlyReportingService", () => {
       netAmount: "48.00",
       abnormalDocumentCount: 1,
     });
-    expect(result.categories).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          categoryId: 10,
-          categoryName: "原料",
-          categoryPathLabel: "原料",
-          acceptanceInboundAmount: "30.00",
-          productionReceiptAmount: "50.00",
-          salesOutboundAmount: "40.00",
-          salesReturnAmount: "8.00",
-          netAmount: "48.00",
-        }),
-        expect.objectContaining({
-          categoryId: 11,
-          categoryName: "化工",
-          categoryPathLabel: "原料 / 化工",
-          parentCategoryId: 10,
-          salesOutboundAmount: "40.00",
-        }),
-      ]),
-    );
+    expect(result.categories).toEqual([
+      expect.objectContaining({
+        nodeKey: "11:CHEM:化工",
+        categoryId: 11,
+        categoryName: "化工",
+        acceptanceInboundAmount: "30.00",
+        productionReceiptAmount: "50.00",
+        salesOutboundAmount: "40.00",
+        salesReturnAmount: "8.00",
+        netAmount: "48.00",
+      }),
+    ]);
   });
 
   it("should expose material-category line details and export the category workbook", async () => {
@@ -499,7 +490,8 @@ describe("MonthlyReportingService", () => {
       documentNo: "XSTH-001",
       lineNo: 2,
       documentTypeLabel: "销售退货单",
-      categoryPathLabel: "原料 / 化工",
+      categoryCode: "CHEM",
+      categoryName: "化工",
       salesProjectCode: "SP-701",
       abnormalLabels: ["跨月修正"],
       sourceBizMonth: "2026-02",
@@ -510,11 +502,13 @@ describe("MonthlyReportingService", () => {
     );
     expect(exportResult.content).toContain('<Worksheet ss:Name="分类汇总">');
     expect(exportResult.content).toContain('<Worksheet ss:Name="单据行明细">');
-    expect(exportResult.content).toContain("原料 / 化工");
+    expect(exportResult.content).toContain("化工");
+    expect(exportResult.content).not.toContain("分类路径");
+    expect(exportResult.content).not.toContain("层级");
     expect(exportResult.content).toContain("XSTH-001");
   });
 
-  it("should filter material-category rows by stable node key before falling back to category id", async () => {
+  it("should treat material-category node key and category id as leaf-only filters", async () => {
     repository.findMonthlyMaterialCategoryEntries.mockResolvedValue([
       createMaterialCategoryEntry({
         documentId: 301,
@@ -531,52 +525,63 @@ describe("MonthlyReportingService", () => {
       }),
       createMaterialCategoryEntry({
         documentId: 302,
-        documentNo: "YS-302",
+        documentNo: "YS-UNCAT-302",
         amount: new Prisma.Decimal("45"),
         cost: new Prisma.Decimal("45"),
-        categoryId: 11,
-        categoryCode: "CHEM",
-        categoryName: "化工",
-        categoryPath: createMaterialCategoryPath([
-          { id: 12, categoryCode: "AUX", categoryName: "辅料" },
-          { id: 11, categoryCode: "CHEM", categoryName: "化工" },
-        ]),
+        categoryId: null,
+        categoryCode: null,
+        categoryName: "未分类",
+        categoryPath: [],
       }),
     ]);
 
-    const result = await service.getMonthlyReportSummary({
+    const nodeKeyResult = await service.getMonthlyReportSummary({
       yearMonth: "2026-03",
       viewMode: MonthlyReportingViewMode.MATERIAL_CATEGORY,
-      categoryNodeKey: "10:RAW:原料>11:CHEM:化工",
+      categoryNodeKey: "null::未分类",
+      categoryId: 11,
+    });
+    const ancestorIdResult = await service.getMonthlyReportSummary({
+      yearMonth: "2026-03",
+      viewMode: MonthlyReportingViewMode.MATERIAL_CATEGORY,
+      categoryId: 10,
+    });
+    const leafIdResult = await service.getMonthlyReportSummary({
+      yearMonth: "2026-03",
+      viewMode: MonthlyReportingViewMode.MATERIAL_CATEGORY,
+      categoryId: 11,
     });
 
-    expect(result.summary).toMatchObject({
-      categoryCount: 2,
+    expect(nodeKeyResult.summary).toMatchObject({
+      categoryCount: 1,
+      lineCount: 1,
+      acceptanceInboundAmount: "45.00",
+    });
+    expect(nodeKeyResult.categories).toEqual([
+      expect.objectContaining({
+        nodeKey: "null::未分类",
+        categoryId: null,
+        categoryCode: null,
+        categoryName: "未分类",
+      }),
+    ]);
+    expect(ancestorIdResult.summary).toMatchObject({
+      categoryCount: 0,
+      lineCount: 0,
+      acceptanceInboundAmount: "0.00",
+    });
+    expect(leafIdResult.summary).toMatchObject({
+      categoryCount: 1,
       lineCount: 1,
       acceptanceInboundAmount: "30.00",
     });
-    expect(result.categories).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          nodeKey: "10:RAW:原料",
-          categoryPathLabel: "原料",
-        }),
-        expect.objectContaining({
-          nodeKey: "10:RAW:原料>11:CHEM:化工",
-          categoryPathLabel: "原料 / 化工",
-        }),
-      ]),
-    );
-    expect(result.categories).toEqual(
-      expect.not.arrayContaining([
-        expect.objectContaining({
-          categoryPathLabel: "辅料",
-        }),
-        expect.objectContaining({
-          categoryPathLabel: "辅料 / 化工",
-        }),
-      ]),
-    );
+    expect(leafIdResult.categories).toEqual([
+      expect.objectContaining({
+        nodeKey: "11:CHEM:化工",
+        categoryId: 11,
+        categoryName: "化工",
+      }),
+    ]);
   });
 
   it("should not expose stock-scope names as workshop labels in workshop summaries or details", async () => {

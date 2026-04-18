@@ -23,6 +23,8 @@
 
 | Task 文档 | 状态 | 说明 |
 | --- | --- | --- |
+| `task-20260417-1702-material-category-single-level-system-unification.md` | `accepted` | 在 `monthly-reporting F9` 单层分类基线上，把全系统 `material-category` 真源统一为单层分类；`MaterialCategory.parentId` 已从 Prisma schema 与相关合同删除，`master-data` 文档/API/UI、inbound/sales 写侧快照与 focused validation 已完成并收口通过。 |
+| `task-20260417-0930-monthly-reporting-material-category-single-level-alignment.md` | `accepted` | 月度对账 `F9` 物料分类视角 requirement change：取消父级汇总 / 树形路径语义，改为仅按单据行稳定叶子分类快照单层聚合；shared truth、`reporting`、月报前端、导出与 focused validation 已完成，父级手动 review 收口通过。 |
 | `task-20260411-1105-monthly-reporting-domain-first-redesign.md` | `reviewing` | 在 accepted `monthly-reporting Phase 1` 基线上，已完成月度对账领域优先重切实现：先回答仓库总入 / 总出 / 净发生，再按入库、车间、销售、研发项目、RD小仓展开操作、销售项目与主仓到RD交接汇总，当前进入 review / acceptance 收口。 |
 | `task-20260414-1418-rd-sub-project-attribution-and-reporting-alignment.md` | `planned` | 围绕新确认规则收口 `RD_SUB` 项目化归属、主仓到小仓交接项目绑定、库存事实 project attribution、月报 viewpoint 重算，以及 local/test 冲突数据可受控清理重注的实施与 QA 计划。 |
 | `task-20260407-0929-workshop-material-f1-f3-autonomous-delivery.md` | `planned` | 车间物料 `F1/F2/F3` 端到端自治交付：沿用统一后端家族模型与三个既有前端页面，补齐改单补偿、主仓库存 / 来源追溯、前端 API 接通与 full acceptance；明确排除 `F4` 报表 / 净耗用 / 导出。 |

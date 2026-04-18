@@ -179,6 +179,75 @@ describe("MasterDataRepository", () => {
     });
   });
 
+  it("lists material categories in single-level sort order", async () => {
+    const findMany = jest.fn().mockResolvedValue([]);
+    const count = jest.fn().mockResolvedValue(0);
+    const repository = new MasterDataRepository({
+      materialCategory: {
+        findMany,
+        count,
+      },
+    } as unknown as PrismaService);
+
+    await repository.findMaterialCategories({
+      keyword: "电子",
+      limit: 20,
+      offset: 5,
+      status: "ACTIVE",
+    });
+
+    expect(findMany).toHaveBeenCalledWith({
+      where: {
+        status: "ACTIVE",
+        OR: [
+          { categoryCode: { contains: "电子" } },
+          { categoryName: { contains: "电子" } },
+        ],
+      },
+      take: 20,
+      skip: 5,
+      orderBy: [{ sortOrder: "asc" }, { categoryCode: "asc" }],
+    });
+    expect(count).toHaveBeenCalledWith({
+      where: {
+        status: "ACTIVE",
+        OR: [
+          { categoryCode: { contains: "电子" } },
+          { categoryName: { contains: "电子" } },
+        ],
+      },
+    });
+  });
+
+  it("creates material categories without any parent relation field", async () => {
+    const create = jest.fn().mockResolvedValue({ id: 1 });
+    const repository = new MasterDataRepository({
+      materialCategory: {
+        create,
+      },
+    } as unknown as PrismaService);
+
+    await repository.createMaterialCategory(
+      {
+        categoryCode: "ELEC",
+        categoryName: "电子元器件",
+        sortOrder: 10,
+      },
+      "1",
+    );
+
+    expect(create).toHaveBeenCalledWith({
+      data: {
+        categoryCode: "ELEC",
+        categoryName: "电子元器件",
+        sortOrder: 10,
+        status: "ACTIVE",
+        createdBy: "1",
+        updatedBy: "1",
+      },
+    });
+  });
+
   it("finds suppliers with keyword and ACTIVE status filters", async () => {
     const findMany = jest.fn().mockResolvedValue([]);
     const count = jest.fn().mockResolvedValue(0);

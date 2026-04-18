@@ -82,12 +82,8 @@
 | `id`           | INT                        | 是   | 自增       | PK  | 主键                       |
 | `categoryCode` | VARCHAR(64)                | 是   | —        | 是   | 分类编码，全局唯一                |
 | `categoryName` | VARCHAR(128)               | 是   | —        | —   | 分类名称                     |
-| `parentId`     | INT                        | 否   | —        | —   | 父分类 ID，为空表示顶级分类，自关联 `id` |
 | `sortOrder`    | INT                        | 是   | `0`      | —   | 同级排序号                    |
 | `status`       | ENUM(`ACTIVE`, `DISABLED`) | 是   | `ACTIVE` | —   | 启用状态                     |
-
-
-索引：`parentId`
 
 ### 3.2 `material` — 物料主档
 

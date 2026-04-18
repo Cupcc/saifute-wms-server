@@ -83,17 +83,11 @@ describe("InboundService", () => {
     workshopId: null,
     workshopNameSnapshot: null,
   };
-  const mockMaterialCategoryRoot = {
-    id: 90,
-    categoryCode: "ELEC",
-    categoryName: "电子类",
-    parentId: null,
-  };
   const mockMaterialCategoryLeaf = {
     id: 99,
     categoryCode: "RESISTOR",
     categoryName: "电阻",
-    parentId: 90,
+    parentId: null,
   };
   const mockUncategorizedCategory = {
     id: 1,
@@ -237,9 +231,6 @@ describe("InboundService", () => {
     (masterDataService.getMaterialById as jest.Mock).mockResolvedValue(
       mockMaterial,
     );
-    (masterDataService.getMaterialCategoryById as jest.Mock).mockResolvedValue(
-      mockMaterialCategoryRoot,
-    );
     (masterDataService.getWorkshopById as jest.Mock).mockResolvedValue(
       mockWorkshop,
     );
@@ -299,7 +290,6 @@ describe("InboundService", () => {
             materialCategoryCodeSnapshot: "RESISTOR",
             materialCategoryNameSnapshot: "电阻",
             materialCategoryPathSnapshot: [
-              { id: 90, categoryCode: "ELEC", categoryName: "电子类" },
               { id: 99, categoryCode: "RESISTOR", categoryName: "电阻" },
             ],
           }),
@@ -422,7 +412,6 @@ describe("InboundService", () => {
           id: true,
           categoryCode: true,
           categoryName: true,
-          parentId: true,
         },
       });
       expect(repository.createOrder).toHaveBeenCalledWith(
@@ -636,7 +625,6 @@ describe("InboundService", () => {
           materialCategoryCodeSnapshot: "RESISTOR",
           materialCategoryNameSnapshot: "电阻",
           materialCategoryPathSnapshot: [
-            { id: 90, categoryCode: "ELEC", categoryName: "电子类" },
             { id: 99, categoryCode: "RESISTOR", categoryName: "电阻" },
           ],
         }),
@@ -784,7 +772,6 @@ describe("InboundService", () => {
           materialCategoryCodeSnapshot: "RESISTOR",
           materialCategoryNameSnapshot: "电阻",
           materialCategoryPathSnapshot: [
-            { id: 90, categoryCode: "ELEC", categoryName: "电子类" },
             { id: 99, categoryCode: "RESISTOR", categoryName: "电阻" },
           ],
         }),

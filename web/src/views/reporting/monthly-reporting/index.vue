@@ -95,7 +95,7 @@
             <el-option
               v-for="item in categoryOptions"
               :key="item.nodeKey"
-              :label="item.categoryPathLabel"
+              :label="item.categoryLabel"
               :value="item.nodeKey"
             />
           </el-select>
@@ -356,18 +356,15 @@
           </div>
         </template>
         <el-table
-          :data="categoryTreeRows"
+          :data="categoryRows"
           stripe
           row-key="nodeKey"
-          default-expand-all
           v-loading="summaryLoading"
-          :tree-props="{ children: 'children' }"
           :row-class-name="resolveCategoryRowClassName"
           @row-click="handleCategoryRowClick"
         >
           <el-table-column prop="categoryCode" label="分类编码" min-width="140" />
           <el-table-column prop="categoryName" label="分类名称" min-width="160" />
-          <el-table-column prop="categoryPathLabel" label="分类路径" min-width="220" show-overflow-tooltip />
           <el-table-column prop="lineCount" label="单据行数" min-width="100" />
           <el-table-column prop="documentCount" label="单据数" min-width="100" />
           <el-table-column prop="abnormalDocumentCount" label="异常单据数" min-width="120" />
@@ -426,7 +423,8 @@
         </el-table>
 
         <el-table v-else :data="detailRows" stripe v-loading="detailLoading">
-          <el-table-column prop="categoryPathLabel" label="分类路径" min-width="220" show-overflow-tooltip />
+          <el-table-column prop="categoryCode" label="分类编码" min-width="140" />
+          <el-table-column prop="categoryName" label="分类名称" min-width="160" show-overflow-tooltip />
           <el-table-column prop="documentTypeLabel" label="单据类型" min-width="140" />
           <el-table-column prop="documentNo" label="单据编号" min-width="180" />
           <el-table-column prop="lineNo" label="行号" min-width="90" />
@@ -595,19 +593,15 @@ const categoryOptions = computed(() => {
       categoryId: row.categoryId,
       categoryCode: row.categoryCode,
       categoryName: row.categoryName,
-      categoryPathLabel: row.categoryPathLabel,
-      depth: row.depth,
+      categoryLabel: formatMaterialCategoryLabel(row),
     }))
     .sort((left, right) =>
-    left.categoryPathLabel.localeCompare(right.categoryPathLabel, "zh-Hans-CN"),
+      left.categoryLabel.localeCompare(right.categoryLabel, "zh-Hans-CN"),
   );
 });
-const categoryTreeRows = computed(() =>
-  buildMaterialCategoryTreeRows(categoryRows.value),
-);
 const reportingSubtitle = computed(() => {
   if (isMaterialCategoryView.value) {
-    return "物料分类视角按单据行事实统计验收入库、生产入库、销售出库和销售退货金额，分类归属使用业务发生时快照并向父级分类汇总。";
+    return "物料分类视角按单据行事实统计验收入库、生产入库、销售出库和销售退货金额，分类归属使用业务发生时快照并按单层最终分类聚合。";
   }
 
   if (filters.value.stockScope === "MAIN") {
@@ -660,11 +654,11 @@ const activeCategoryLabel = computed(() => {
 
   if (hasCategorySelection.value) {
     return current
-      ? `当前选中 ${current.categoryPathLabel}`
+      ? `当前选中 ${current.categoryLabel}`
       : "当前选中分类";
   }
 
-  return current ? `当前筛选 ${current.categoryPathLabel}` : "当前显示分类汇总";
+  return current ? `当前筛选 ${current.categoryLabel}` : "当前显示分类汇总";
 });
 const showCategoryAction = computed(
   () => hasCategorySelection.value || Boolean(filters.value.categoryNodeKey),
@@ -801,51 +795,18 @@ function buildBaseQuery({ useSelectedCategory = false } = {}) {
   };
 }
 
-function buildMaterialCategoryTreeRows(rows) {
-  const rowMap = new Map(
-    rows.map((row) => [
-      row.nodeKey,
-      {
-        ...row,
-        children: [],
-      },
-    ]),
-  );
-  const roots = [];
-
-  for (const row of rowMap.values()) {
-    const parent = row.parentNodeKey
-      ? rowMap.get(row.parentNodeKey) || null
-      : null;
-
-    if (parent) {
-      parent.children.push(row);
-      continue;
-    }
-
-    roots.push(row);
-  }
-
-  const sortRows = (items) => {
-    items.sort((left, right) =>
-      left.categoryPathLabel.localeCompare(
-        right.categoryPathLabel,
-        "zh-Hans-CN",
-      ),
-    );
-    items.forEach((item) => sortRows(item.children));
-    return items;
-  };
-
-  return sortRows(roots);
-}
-
 function formatDocumentTypeOptionLabel(item) {
   if (isMaterialCategoryView.value) {
     return item.documentTypeLabel;
   }
 
   return `${item.domainLabel} / ${item.documentTypeLabel}`;
+}
+
+function formatMaterialCategoryLabel(category) {
+  return category.categoryCode
+    ? `${category.categoryCode} ${category.categoryName}`
+    : category.categoryName;
 }
 
 async function loadWorkshopOptions() {

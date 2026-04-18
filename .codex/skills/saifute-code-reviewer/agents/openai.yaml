@@ -1,4 +1,0 @@
-interface:
-  display_name: "Saifute Code Reviewer"
-  short_description: "Find bugs, regressions, contract drift, and validation gaps"
-  default_prompt: "Use $saifute-code-reviewer to perform an independent repository review focused on correctness, regressions, and missing validation."

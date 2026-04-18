@@ -32,7 +32,6 @@ describe("MasterDataService", () => {
       findMaterialCategories: jest.fn(),
       createMaterialCategory: jest.fn(),
       updateMaterialCategory: jest.fn(),
-      countActiveChildCategories: jest.fn(),
       countActiveMaterialsByCategory: jest.fn(),
       // Material
       findMaterialById: jest.fn(),
@@ -264,25 +263,6 @@ describe("MasterDataService", () => {
       ).rejects.toThrow(ConflictException);
     });
 
-    it("blocks deactivation when active child categories exist", async () => {
-      const repository = createRepositoryMock();
-      repository.findMaterialCategoryById.mockResolvedValue({
-        id: 1,
-        categoryCode: "ELEC",
-        status: "ACTIVE",
-        children: [],
-      });
-      repository.countActiveChildCategories.mockResolvedValue(2);
-      const service = new MasterDataService(
-        repository as unknown as MasterDataRepository,
-      );
-
-      await expect(service.deactivateMaterialCategory(1, "1")).rejects.toThrow(
-        BadRequestException,
-      );
-      expect(repository.updateMaterialCategory).not.toHaveBeenCalled();
-    });
-
     it("blocks renaming the default uncategorized category", async () => {
       const repository = createRepositoryMock();
       repository.findMaterialCategoryById.mockResolvedValue({
@@ -290,7 +270,6 @@ describe("MasterDataService", () => {
         categoryCode: "UNCATEGORIZED",
         categoryName: "未分类",
         status: "ACTIVE",
-        children: [],
       });
       const service = new MasterDataService(
         repository as unknown as MasterDataRepository,
@@ -309,7 +288,6 @@ describe("MasterDataService", () => {
         categoryCode: "UNCATEGORIZED",
         categoryName: "未分类",
         status: "ACTIVE",
-        children: [],
       });
       const service = new MasterDataService(
         repository as unknown as MasterDataRepository,
@@ -327,9 +305,7 @@ describe("MasterDataService", () => {
         id: 1,
         categoryCode: "ELEC",
         status: "ACTIVE",
-        children: [],
       });
-      repository.countActiveChildCategories.mockResolvedValue(0);
       repository.countActiveMaterialsByCategory.mockResolvedValue(5);
       const service = new MasterDataService(
         repository as unknown as MasterDataRepository,
@@ -347,9 +323,7 @@ describe("MasterDataService", () => {
         id: 1,
         categoryCode: "ELEC",
         status: "ACTIVE",
-        children: [],
       });
-      repository.countActiveChildCategories.mockResolvedValue(0);
       repository.countActiveMaterialsByCategory.mockResolvedValue(0);
       repository.updateMaterialCategory.mockResolvedValue({
         id: 1,
@@ -1476,85 +1450,9 @@ describe("MasterDataService", () => {
     });
   });
 
-  // ─── Fix 3: tree self-parent and cycle guard ─────────────────────────────────
+  // ─── Fix 3: tree parent validation for Customer only ────────────────────────
 
   describe("tree parent validation", () => {
-    it("rejects self-parent on MaterialCategory update", async () => {
-      const repository = createRepositoryMock();
-      repository.findMaterialCategoryById.mockResolvedValue({
-        id: 5,
-        categoryCode: "ELEC",
-        status: "ACTIVE",
-        parentId: null,
-        children: [],
-      });
-      const service = new MasterDataService(
-        repository as unknown as MasterDataRepository,
-      );
-
-      await expect(
-        service.updateMaterialCategory(5, { parentId: 5 }, "1"),
-      ).rejects.toThrow(BadRequestException);
-      expect(repository.updateMaterialCategory).not.toHaveBeenCalled();
-    });
-
-    it("rejects cycle on MaterialCategory update (child becoming parent of its own ancestor)", async () => {
-      const repository = createRepositoryMock();
-      // Node 5 is the node being updated; candidate parentId = 10
-      // Walking up from 10: 10 → parentId=5 → hits nodeId, cycle detected
-      repository.findMaterialCategoryById
-        .mockResolvedValueOnce({
-          id: 5,
-          categoryCode: "ELEC",
-          status: "ACTIVE",
-          parentId: null,
-          children: [],
-        })
-        .mockResolvedValueOnce({
-          id: 10,
-          categoryCode: "RESISTOR",
-          parentId: 5,
-        });
-      const service = new MasterDataService(
-        repository as unknown as MasterDataRepository,
-      );
-
-      await expect(
-        service.updateMaterialCategory(5, { parentId: 10 }, "1"),
-      ).rejects.toThrow(BadRequestException);
-      expect(repository.updateMaterialCategory).not.toHaveBeenCalled();
-    });
-
-    it("accepts a valid non-cycle parent on MaterialCategory update", async () => {
-      const repository = createRepositoryMock();
-      // Node 5; candidate parentId = 3; 3's parent = null → no cycle
-      repository.findMaterialCategoryById
-        .mockResolvedValueOnce({
-          id: 5,
-          categoryCode: "ELEC",
-          status: "ACTIVE",
-          parentId: null,
-          children: [],
-        })
-        .mockResolvedValueOnce({
-          id: 3,
-          categoryCode: "COMPONENT",
-          parentId: null,
-        });
-      repository.updateMaterialCategory.mockResolvedValue({
-        id: 5,
-        parentId: 3,
-      });
-      const service = new MasterDataService(
-        repository as unknown as MasterDataRepository,
-      );
-
-      await expect(
-        service.updateMaterialCategory(5, { parentId: 3 }, "1"),
-      ).resolves.toBeDefined();
-      expect(repository.updateMaterialCategory).toHaveBeenCalled();
-    });
-
     it("rejects self-parent on Customer update", async () => {
       const repository = createRepositoryMock();
       repository.findCustomerById.mockResolvedValue({

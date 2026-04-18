@@ -20,11 +20,6 @@ export class CreateMaterialCategoryDto {
 
   @IsInt()
   @IsOptional()
-  @Min(1)
-  parentId?: number;
-
-  @IsInt()
-  @IsOptional()
   @Min(0)
   sortOrder?: number;
 }

@@ -67,7 +67,6 @@ async function upsertMaterialCategory(
       INSERT INTO material_category (
         categoryCode,
         categoryName,
-        parentId,
         sortOrder,
         status,
         createdBy,
@@ -75,7 +74,7 @@ async function upsertMaterialCategory(
         updatedBy,
         updatedAt
       ) VALUES (
-        ?, ?, NULL, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, COALESCE(?, CURRENT_TIMESTAMP)
+        ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, COALESCE(?, CURRENT_TIMESTAMP)
       )
       ON DUPLICATE KEY UPDATE
         categoryName = VALUES(categoryName),

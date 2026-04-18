@@ -61,7 +61,6 @@ const CANONICAL_STOCK_SCOPES: Prisma.StockScopeCreateManyInput[] = [
 const DEFAULT_MATERIAL_CATEGORY: Prisma.MaterialCategoryUncheckedCreateInput = {
   categoryCode: DEFAULT_MATERIAL_CATEGORY_CODE,
   categoryName: DEFAULT_MATERIAL_CATEGORY_NAME,
-  parentId: null,
   sortOrder: 9999,
   status: "ACTIVE",
   createdBy: SYSTEM_BOOTSTRAP_ACTOR,
@@ -131,7 +130,6 @@ export class MasterDataRepository {
       },
       update: {
         categoryName: DEFAULT_MATERIAL_CATEGORY_NAME,
-        parentId: null,
         sortOrder: DEFAULT_MATERIAL_CATEGORY.sortOrder,
         status: "ACTIVE",
         updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
@@ -689,7 +687,7 @@ export class MasterDataRepository {
         where,
         take: params.limit,
         skip: params.offset,
-        orderBy: [{ parentId: "asc" }, { sortOrder: "asc" }],
+        orderBy: [{ sortOrder: "asc" }, { categoryCode: "asc" }],
       }),
       this.prisma.materialCategory.count({ where }),
     ]);
@@ -700,7 +698,6 @@ export class MasterDataRepository {
   async findMaterialCategoryById(id: number) {
     return this.prisma.materialCategory.findUnique({
       where: { id },
-      include: { children: true },
     });
   }
 
@@ -713,7 +710,7 @@ export class MasterDataRepository {
   async createMaterialCategory(
     data: Pick<
       Prisma.MaterialCategoryUncheckedCreateInput,
-      "categoryCode" | "categoryName" | "parentId" | "sortOrder"
+      "categoryCode" | "categoryName" | "sortOrder"
     >,
     createdBy?: string,
   ) {
@@ -735,12 +732,6 @@ export class MasterDataRepository {
     return this.prisma.materialCategory.update({
       where: { id },
       data: { ...data, updatedBy },
-    });
-  }
-
-  async countActiveChildCategories(parentId: number) {
-    return this.prisma.materialCategory.count({
-      where: { parentId, status: "ACTIVE" },
     });
   }
 

@@ -9,10 +9,5 @@ export class UpdateMaterialCategoryDto {
   @IsInt()
   @IsOptional()
   @Min(0)
-  parentId?: number | null;
-
-  @IsInt()
-  @IsOptional()
-  @Min(0)
   sortOrder?: number;
 }

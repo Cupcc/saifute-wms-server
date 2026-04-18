@@ -114,17 +114,11 @@ describe("SalesService", () => {
       },
     ],
   };
-  const mockMaterialCategoryRoot = {
-    id: 90,
-    categoryCode: "ELEC",
-    categoryName: "电子类",
-    parentId: null,
-  };
   const mockMaterialCategoryLeaf = {
     id: 99,
     categoryCode: "RESISTOR",
     categoryName: "电阻",
-    parentId: 90,
+    parentId: null,
   };
   const mockUncategorizedCategory = {
     id: 1,
@@ -296,9 +290,6 @@ describe("SalesService", () => {
     (masterDataService.getMaterialById as jest.Mock).mockResolvedValue(
       mockMaterial,
     );
-    (masterDataService.getMaterialCategoryById as jest.Mock).mockResolvedValue(
-      mockMaterialCategoryRoot,
-    );
     (masterDataService.getWorkshopById as jest.Mock).mockResolvedValue(
       mockWorkshop,
     );
@@ -383,7 +374,6 @@ describe("SalesService", () => {
             materialCategoryCodeSnapshot: "RESISTOR",
             materialCategoryNameSnapshot: "电阻",
             materialCategoryPathSnapshot: [
-              { id: 90, categoryCode: "ELEC", categoryName: "电子类" },
               { id: 99, categoryCode: "RESISTOR", categoryName: "电阻" },
             ],
           }),
@@ -457,7 +447,6 @@ describe("SalesService", () => {
           id: true,
           categoryCode: true,
           categoryName: true,
-          parentId: true,
         },
       });
       expect(repository.createOrder).toHaveBeenCalledWith(
@@ -641,7 +630,6 @@ describe("SalesService", () => {
           materialCategoryCodeSnapshot: "RESISTOR",
           materialCategoryNameSnapshot: "电阻",
           materialCategoryPathSnapshot: [
-            { id: 90, categoryCode: "ELEC", categoryName: "电子类" },
             { id: 99, categoryCode: "RESISTOR", categoryName: "电阻" },
           ],
         }),
@@ -843,7 +831,6 @@ describe("SalesService", () => {
             materialCategoryCodeSnapshot: "RESISTOR",
             materialCategoryNameSnapshot: "电阻",
             materialCategoryPathSnapshot: [
-              { id: 90, categoryCode: "ELEC", categoryName: "电子类" },
               { id: 99, categoryCode: "RESISTOR", categoryName: "电阻" },
             ],
           }),

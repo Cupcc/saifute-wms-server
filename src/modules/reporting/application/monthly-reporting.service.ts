@@ -3,8 +3,8 @@ import { Prisma } from "../../../../generated/prisma/client";
 import { AppConfigService } from "../../../shared/config/app-config.service";
 import type { StockScopeCode } from "../../session/domain/user-session";
 import {
-  ReportingRepository,
   type MonthlySalesProjectEntry,
+  ReportingRepository,
 } from "../infrastructure/reporting.repository";
 import {
   formatDecimal,
@@ -164,13 +164,9 @@ export interface MonthlyReportMaterialCategorySummaryTotals {
 
 export interface MonthlyReportMaterialCategorySummaryItem {
   nodeKey: string;
-  parentNodeKey: string | null;
   categoryId: number | null;
-  parentCategoryId: number | null;
   categoryCode: string | null;
   categoryName: string;
-  categoryPathLabel: string;
-  depth: number;
   lineCount: number;
   documentCount: number;
   abnormalDocumentCount: number;
@@ -203,7 +199,6 @@ export interface MonthlyReportMaterialCategoryDetailItem {
   categoryId: number | null;
   categoryCode: string | null;
   categoryName: string;
-  categoryPathLabel: string;
   salesProjectCode: string | null;
   salesProjectName: string | null;
   quantity: string;
@@ -363,7 +358,9 @@ export class MonthlyReportingService {
       domains: domainItems,
       documentTypes: this.buildDocumentTypeItems(filteredRows),
       workshopItems: this.buildWorkshopItems(filteredRows),
-      salesProjectItems: this.buildSalesProjectItems(filteredSalesProjectEntries),
+      salesProjectItems: this.buildSalesProjectItems(
+        filteredSalesProjectEntries,
+      ),
       rdProjectItems: this.buildRdProjectItems(filteredRows),
       summary: {
         domainCount: domainItems.length,
@@ -635,7 +632,10 @@ export class MonthlyReportingService {
         ignoreDocumentTypeLabel: true,
       },
     );
-    const filteredEntries = this.filterMaterialCategoryEntries(entriesBeforeDocumentTypeFilter, query);
+    const filteredEntries = this.filterMaterialCategoryEntries(
+      entriesBeforeDocumentTypeFilter,
+      query,
+    );
     const categoryItems = this.buildMaterialCategoryItems(filteredEntries);
 
     return {
@@ -712,8 +712,6 @@ export class MonthlyReportingService {
           columns: [
             "分类编码",
             "分类名称",
-            "分类路径",
-            "层级",
             "单据行数",
             "单据数",
             "异常单据数",
@@ -727,8 +725,6 @@ export class MonthlyReportingService {
           rows: categoryItems.map((item) => [
             item.categoryCode ?? "",
             item.categoryName,
-            item.categoryPathLabel,
-            item.depth,
             item.lineCount,
             item.documentCount,
             item.abnormalDocumentCount,
@@ -743,9 +739,8 @@ export class MonthlyReportingService {
         {
           name: "单据行明细",
           columns: [
-            "分类路径",
-            "叶子分类编码",
-            "叶子分类名称",
+            "分类编码",
+            "分类名称",
             "单据类型",
             "单据编号",
             "行号",
@@ -768,7 +763,6 @@ export class MonthlyReportingService {
           rows: filteredEntries.map((entry) => {
             const item = this.toMaterialCategoryDetailItem(entry);
             return [
-              item.categoryPathLabel,
               item.categoryCode ?? "",
               item.categoryName,
               item.documentTypeLabel,
@@ -848,7 +842,9 @@ export class MonthlyReportingService {
             query.domainKey
           : true,
       )
-      .filter((row) => (query.topicKey ? row.topicKey === query.topicKey : true))
+      .filter((row) =>
+        query.topicKey ? row.topicKey === query.topicKey : true,
+      )
       .filter((row) =>
         options.ignoreDocumentTypeLabel || !documentTypeLabel
           ? true
@@ -859,19 +855,27 @@ export class MonthlyReportingService {
       )
       .filter((row) => this.matchesKeyword(row, query.keyword))
       .sort((left, right) => {
-        const leftDomainKey = getMonthlyReportingTopicMeta(left.topicKey).domainKey;
-        const rightDomainKey = getMonthlyReportingTopicMeta(right.topicKey).domainKey;
-        const leftDomainOrder = getMonthlyReportingDomainMeta(leftDomainKey).order;
-        const rightDomainOrder = getMonthlyReportingDomainMeta(
-          rightDomainKey,
-        ).order;
+        const leftDomainKey = getMonthlyReportingTopicMeta(
+          left.topicKey,
+        ).domainKey;
+        const rightDomainKey = getMonthlyReportingTopicMeta(
+          right.topicKey,
+        ).domainKey;
+        const leftDomainOrder =
+          getMonthlyReportingDomainMeta(leftDomainKey).order;
+        const rightDomainOrder =
+          getMonthlyReportingDomainMeta(rightDomainKey).order;
 
         if (leftDomainOrder !== rightDomainOrder) {
           return leftDomainOrder - rightDomainOrder;
         }
 
-        const leftTopicOrder = getMonthlyReportingTopicMeta(left.topicKey).order;
-        const rightTopicOrder = getMonthlyReportingTopicMeta(right.topicKey).order;
+        const leftTopicOrder = getMonthlyReportingTopicMeta(
+          left.topicKey,
+        ).order;
+        const rightTopicOrder = getMonthlyReportingTopicMeta(
+          right.topicKey,
+        ).order;
         if (leftTopicOrder !== rightTopicOrder) {
           return leftTopicOrder - rightTopicOrder;
         }
@@ -909,7 +913,9 @@ export class MonthlyReportingService {
     }
 
     return entries
-      .filter((entry) => (query.topicKey ? entry.topicKey === query.topicKey : true))
+      .filter((entry) =>
+        query.topicKey ? entry.topicKey === query.topicKey : true,
+      )
       .filter((entry) =>
         documentTypeLabel
           ? entry.documentTypeLabel === documentTypeLabel
@@ -924,7 +930,10 @@ export class MonthlyReportingService {
   private toDocumentItem(row: MonthlyReportEntry): MonthlyReportDocumentItem {
     const topicMeta = getMonthlyReportingTopicMeta(row.topicKey);
     const domainMeta = getMonthlyReportingDomainMeta(topicMeta.domainKey);
-    const workshopRef = this.normalizeWorkshopRef(row.workshopId, row.workshopName);
+    const workshopRef = this.normalizeWorkshopRef(
+      row.workshopId,
+      row.workshopName,
+    );
 
     return {
       domainKey: topicMeta.domainKey,
@@ -967,7 +976,9 @@ export class MonthlyReportingService {
     };
   }
 
-  private buildDomainItems(rows: MonthlyReportEntry[]): MonthlyReportDomainSummaryItem[] {
+  private buildDomainItems(
+    rows: MonthlyReportEntry[],
+  ): MonthlyReportDomainSummaryItem[] {
     const grouped = new Map<MonthlyReportingDomainKey, MonthlyReportEntry[]>();
 
     for (const row of rows) {
@@ -1026,7 +1037,9 @@ export class MonthlyReportingService {
         ...this.buildTotals(item.rows),
       }))
       .sort((left, right) => {
-        const leftDomainOrder = getMonthlyReportingDomainMeta(left.domainKey).order;
+        const leftDomainOrder = getMonthlyReportingDomainMeta(
+          left.domainKey,
+        ).order;
         const rightDomainOrder = getMonthlyReportingDomainMeta(
           right.domainKey,
         ).order;
@@ -1046,9 +1059,12 @@ export class MonthlyReportingService {
       .map(({ sortOrder: _sortOrder, ...item }) => item);
   }
 
-  private buildWorkshopItems(rows: MonthlyReportEntry[]): MonthlyReportWorkshopSummaryItem[] {
+  private buildWorkshopItems(
+    rows: MonthlyReportEntry[],
+  ): MonthlyReportWorkshopSummaryItem[] {
     const workshopRows = rows.filter(
-      (row) => getMonthlyReportingTopicMeta(row.topicKey).domainKey === "WORKSHOP",
+      (row) =>
+        getMonthlyReportingTopicMeta(row.topicKey).domainKey === "WORKSHOP",
     );
     const grouped = new Map<
       string,
@@ -1060,7 +1076,10 @@ export class MonthlyReportingService {
     >();
 
     for (const row of workshopRows) {
-      const workshopRef = this.normalizeWorkshopRef(row.workshopId, row.workshopName);
+      const workshopRef = this.normalizeWorkshopRef(
+        row.workshopId,
+        row.workshopName,
+      );
       const workshopId = workshopRef.workshopId;
       const workshopName = workshopRef.workshopName ?? "未区分车间";
       const mapKey = `${workshopId ?? "null"}:${workshopName}`;
@@ -1075,13 +1094,19 @@ export class MonthlyReportingService {
 
     return [...grouped.values()]
       .map((item) => {
-        const pickRows = item.rows.filter((row) => row.topicKey === "WORKSHOP_PICK");
+        const pickRows = item.rows.filter(
+          (row) => row.topicKey === "WORKSHOP_PICK",
+        );
         const returnRows = item.rows.filter(
           (row) => row.topicKey === "WORKSHOP_RETURN",
         );
-        const scrapRows = item.rows.filter((row) => row.topicKey === "WORKSHOP_SCRAP");
+        const scrapRows = item.rows.filter(
+          (row) => row.topicKey === "WORKSHOP_SCRAP",
+        );
         const pickQuantity = sumDecimals(pickRows.map((row) => row.quantity));
-        const returnQuantity = sumDecimals(returnRows.map((row) => row.quantity));
+        const returnQuantity = sumDecimals(
+          returnRows.map((row) => row.quantity),
+        );
         const scrapQuantity = sumDecimals(scrapRows.map((row) => row.quantity));
         const pickAmount = sumDecimals(pickRows.map((row) => row.amount));
         const returnAmount = sumDecimals(returnRows.map((row) => row.amount));
@@ -1199,7 +1224,9 @@ export class MonthlyReportingService {
       );
   }
 
-  private buildRdProjectItems(rows: MonthlyReportEntry[]): MonthlyReportRdProjectSummaryItem[] {
+  private buildRdProjectItems(
+    rows: MonthlyReportEntry[],
+  ): MonthlyReportRdProjectSummaryItem[] {
     const rdProjectRows = rows.filter((row) => {
       if (
         row.topicKey === "RD_PROJECT_PICK" ||
@@ -1246,8 +1273,12 @@ export class MonthlyReportingService {
 
     return [...grouped.values()]
       .map((item) => {
-        const handoffRows = item.rows.filter((row) => row.topicKey === "RD_HANDOFF");
-        const pickRows = item.rows.filter((row) => row.topicKey === "RD_PROJECT_PICK");
+        const handoffRows = item.rows.filter(
+          (row) => row.topicKey === "RD_HANDOFF",
+        );
+        const pickRows = item.rows.filter(
+          (row) => row.topicKey === "RD_PROJECT_PICK",
+        );
         const returnRows = item.rows.filter(
           (row) => row.topicKey === "RD_PROJECT_RETURN",
         );
@@ -1266,9 +1297,13 @@ export class MonthlyReportingService {
           handoffRows.map((row) => row.quantity),
         );
         const pickQuantity = sumDecimals(pickRows.map((row) => row.quantity));
-        const returnQuantity = sumDecimals(returnRows.map((row) => row.quantity));
+        const returnQuantity = sumDecimals(
+          returnRows.map((row) => row.quantity),
+        );
         const scrapQuantity = sumDecimals(scrapRows.map((row) => row.quantity));
-        const handoffInAmount = sumDecimals(handoffRows.map((row) => row.amount));
+        const handoffInAmount = sumDecimals(
+          handoffRows.map((row) => row.amount),
+        );
         const pickAmount = sumDecimals(pickRows.map((row) => row.amount));
         const returnAmount = sumDecimals(returnRows.map((row) => row.amount));
         const scrapAmount = sumDecimals(scrapRows.map((row) => row.amount));
@@ -1311,47 +1346,25 @@ export class MonthlyReportingService {
       string,
       {
         nodeKey: string;
-        parentNodeKey: string | null;
         categoryId: number | null;
-        parentCategoryId: number | null;
         categoryCode: string | null;
         categoryName: string;
-        categoryPathLabel: string;
-        depth: number;
         entries: MonthlyMaterialCategoryEntry[];
       }
     >();
 
     for (const entry of entries) {
-      const categoryPath = this.resolveMaterialCategoryPath(entry);
-
-      for (let index = 0; index < categoryPath.length; index += 1) {
-        const node = categoryPath[index];
-        const parentNode = index > 0 ? categoryPath[index - 1] : null;
-        const nodeKey = this.buildMaterialCategoryNodeKey(
-          categoryPath.slice(0, index + 1),
-        );
-        const parentNodeKey =
-          index > 0
-            ? this.buildMaterialCategoryNodeKey(categoryPath.slice(0, index))
-            : null;
-        const current = grouped.get(nodeKey) ?? {
-          nodeKey,
-          parentNodeKey,
-          categoryId: node.id,
-          parentCategoryId: parentNode?.id ?? null,
-          categoryCode: node.categoryCode,
-          categoryName: node.categoryName,
-          categoryPathLabel: categoryPath
-            .slice(0, index + 1)
-            .map((item) => item.categoryName)
-            .join(" / "),
-          depth: index,
-          entries: [],
-        };
-        current.entries.push(entry);
-        grouped.set(nodeKey, current);
-      }
+      const leafCategory = this.resolveMaterialCategoryLeaf(entry);
+      const nodeKey = this.buildMaterialCategoryNodeKey(leafCategory);
+      const current = grouped.get(nodeKey) ?? {
+        nodeKey,
+        categoryId: leafCategory.id,
+        categoryCode: leafCategory.categoryCode,
+        categoryName: leafCategory.categoryName,
+        entries: [],
+      };
+      current.entries.push(entry);
+      grouped.set(nodeKey, current);
     }
 
     return [...grouped.values()]
@@ -1369,7 +1382,9 @@ export class MonthlyReportingService {
           (entry) => entry.topicKey === "SALES_RETURN",
         );
         const documentKeys = new Set(
-          item.entries.map((entry) => `${entry.documentType}:${entry.documentId}`),
+          item.entries.map(
+            (entry) => `${entry.documentType}:${entry.documentId}`,
+          ),
         );
         const abnormalDocumentKeys = new Set(
           item.entries
@@ -1391,13 +1406,9 @@ export class MonthlyReportingService {
 
         return {
           nodeKey: item.nodeKey,
-          parentNodeKey: item.parentNodeKey,
           categoryId: item.categoryId,
-          parentCategoryId: item.parentCategoryId,
           categoryCode: item.categoryCode,
           categoryName: item.categoryName,
-          categoryPathLabel: item.categoryPathLabel,
-          depth: item.depth,
           lineCount: item.entries.length,
           documentCount: documentKeys.size,
           abnormalDocumentCount: abnormalDocumentKeys.size,
@@ -1416,12 +1427,23 @@ export class MonthlyReportingService {
           ),
         };
       })
-      .sort((left, right) =>
-        left.categoryPathLabel.localeCompare(
-          right.categoryPathLabel,
-          "zh-Hans-CN",
-        ),
-      );
+      .sort((left, right) => {
+        if (left.categoryName !== right.categoryName) {
+          return left.categoryName.localeCompare(
+            right.categoryName,
+            "zh-Hans-CN",
+          );
+        }
+
+        if ((left.categoryCode ?? "") !== (right.categoryCode ?? "")) {
+          return (left.categoryCode ?? "").localeCompare(
+            right.categoryCode ?? "",
+            "zh-Hans-CN",
+          );
+        }
+
+        return left.nodeKey.localeCompare(right.nodeKey, "zh-Hans-CN");
+      });
   }
 
   private buildDomainCatalog(): MonthlyReportDomainCatalogItem[] {
@@ -1467,8 +1489,12 @@ export class MonthlyReportingService {
     }
 
     return [...grouped.values()].sort((left, right) => {
-      const leftDomainOrder = getMonthlyReportingDomainMeta(left.domainKey).order;
-      const rightDomainOrder = getMonthlyReportingDomainMeta(right.domainKey).order;
+      const leftDomainOrder = getMonthlyReportingDomainMeta(
+        left.domainKey,
+      ).order;
+      const rightDomainOrder = getMonthlyReportingDomainMeta(
+        right.domainKey,
+      ).order;
       if (leftDomainOrder !== rightDomainOrder) {
         return leftDomainOrder - rightDomainOrder;
       }
@@ -1527,10 +1553,9 @@ export class MonthlyReportingService {
     });
   }
 
-  private buildTotals(rows: MonthlyReportEntry[]): Omit<
-    MonthlyReportSummaryTotals,
-    "domainCount"
-  > {
+  private buildTotals(
+    rows: MonthlyReportEntry[],
+  ): Omit<MonthlyReportSummaryTotals, "domainCount"> {
     const documentKeys = new Set(
       rows.map((row) => `${row.documentType}:${row.documentId}`),
     );
@@ -1624,7 +1649,9 @@ export class MonthlyReportingService {
 
     if (
       query.topicKey &&
-      !MONTHLY_REPORTING_MATERIAL_CATEGORY_TOPIC_OPTIONS.includes(query.topicKey)
+      !MONTHLY_REPORTING_MATERIAL_CATEGORY_TOPIC_OPTIONS.includes(
+        query.topicKey,
+      )
     ) {
       return [];
     }
@@ -1641,14 +1668,10 @@ export class MonthlyReportingService {
       )
       .filter((entry) =>
         categoryNodeKey
-          ? this.resolveMaterialCategoryNodeKeys(entry).includes(
-              categoryNodeKey,
-            )
+          ? this.resolveMaterialCategoryNodeKey(entry) === categoryNodeKey
           : query.categoryId
-          ? this.resolveMaterialCategoryPath(entry).some(
-              (node) => node.id === query.categoryId,
-            )
-          : true,
+            ? this.resolveMaterialCategoryLeaf(entry).id === query.categoryId
+            : true,
       )
       .filter((entry) =>
         query.abnormalOnly ? entry.abnormalFlags.length > 0 : true,
@@ -1657,14 +1680,31 @@ export class MonthlyReportingService {
         this.matchesMaterialCategoryKeyword(entry, query.keyword),
       )
       .sort((left, right) => {
-        const leftPathLabel = this.resolveMaterialCategoryPathLabel(left);
-        const rightPathLabel = this.resolveMaterialCategoryPathLabel(right);
-        if (leftPathLabel !== rightPathLabel) {
-          return leftPathLabel.localeCompare(rightPathLabel, "zh-Hans-CN");
+        const leftCategory = this.resolveMaterialCategoryLeaf(left);
+        const rightCategory = this.resolveMaterialCategoryLeaf(right);
+        if (leftCategory.categoryName !== rightCategory.categoryName) {
+          return leftCategory.categoryName.localeCompare(
+            rightCategory.categoryName,
+            "zh-Hans-CN",
+          );
         }
 
-        const leftTopicOrder = getMonthlyReportingTopicMeta(left.topicKey).order;
-        const rightTopicOrder = getMonthlyReportingTopicMeta(right.topicKey).order;
+        if (
+          (leftCategory.categoryCode ?? "") !==
+          (rightCategory.categoryCode ?? "")
+        ) {
+          return (leftCategory.categoryCode ?? "").localeCompare(
+            rightCategory.categoryCode ?? "",
+            "zh-Hans-CN",
+          );
+        }
+
+        const leftTopicOrder = getMonthlyReportingTopicMeta(
+          left.topicKey,
+        ).order;
+        const rightTopicOrder = getMonthlyReportingTopicMeta(
+          right.topicKey,
+        ).order;
         if (leftTopicOrder !== rightTopicOrder) {
           return leftTopicOrder - rightTopicOrder;
         }
@@ -1710,7 +1750,6 @@ export class MonthlyReportingService {
       categoryId: entry.categoryId,
       categoryCode: entry.categoryCode,
       categoryName: entry.categoryName,
-      categoryPathLabel: this.resolveMaterialCategoryPathLabel(entry),
       salesProjectCode: entry.salesProjectCode,
       salesProjectName: entry.salesProjectName,
       quantity: formatDecimal(entry.quantity),
@@ -1738,7 +1777,9 @@ export class MonthlyReportingService {
     }
 
     const topicMeta = getMonthlyReportingTopicMeta(row.topicKey);
-    const domainLabel = getMonthlyReportingDomainMeta(topicMeta.domainKey).label;
+    const domainLabel = getMonthlyReportingDomainMeta(
+      topicMeta.domainKey,
+    ).label;
     const abnormalLabels = row.abnormalFlags.map(
       (flag) => MONTHLY_REPORTING_ABNORMAL_LABELS[flag],
     );
@@ -1755,7 +1796,10 @@ export class MonthlyReportingService {
       this.normalizeWorkshopName(row.targetWorkshopName),
       row.rdProjectCode,
       row.rdProjectName,
-      this.formatSalesProjectLabel(row.salesProjectCodes, row.salesProjectNames),
+      this.formatSalesProjectLabel(
+        row.salesProjectCodes,
+        row.salesProjectNames,
+      ),
       row.sourceDocumentNo,
       row.sourceBizDate
         ? formatYearMonth(
@@ -1794,7 +1838,6 @@ export class MonthlyReportingService {
       entry.materialSpec,
       entry.categoryCode,
       entry.categoryName,
-      this.resolveMaterialCategoryPathLabel(entry),
       entry.salesProjectCode,
       entry.salesProjectName,
       entry.sourceDocumentNo,
@@ -1873,32 +1916,23 @@ export class MonthlyReportingService {
     ];
   }
 
-  private resolveMaterialCategoryPathLabel(entry: MonthlyMaterialCategoryEntry) {
-    return this.resolveMaterialCategoryPath(entry)
-      .map((node) => node.categoryName)
-      .join(" / ");
+  private resolveMaterialCategoryLeaf(entry: MonthlyMaterialCategoryEntry) {
+    const categoryPath = this.resolveMaterialCategoryPath(entry);
+    return categoryPath[categoryPath.length - 1];
   }
 
-  private resolveMaterialCategoryNodeKeys(entry: MonthlyMaterialCategoryEntry) {
-    const categoryPath = this.resolveMaterialCategoryPath(entry);
-    return categoryPath.map((_, index) =>
-      this.buildMaterialCategoryNodeKey(categoryPath.slice(0, index + 1)),
+  private resolveMaterialCategoryNodeKey(entry: MonthlyMaterialCategoryEntry) {
+    return this.buildMaterialCategoryNodeKey(
+      this.resolveMaterialCategoryLeaf(entry),
     );
   }
 
-  private buildMaterialCategoryNodeKey(
-    path: Array<{
-      id: number | null;
-      categoryCode: string | null;
-      categoryName: string;
-    }>,
-  ) {
-    return path
-      .map(
-        (node) =>
-          `${node.id ?? "null"}:${node.categoryCode ?? ""}:${node.categoryName}`,
-      )
-      .join(">");
+  private buildMaterialCategoryNodeKey(node: {
+    id: number | null;
+    categoryCode: string | null;
+    categoryName: string;
+  }) {
+    return `${node.id ?? "null"}:${node.categoryCode ?? ""}:${node.categoryName}`;
   }
 
   private normalizeWorkshopRef(

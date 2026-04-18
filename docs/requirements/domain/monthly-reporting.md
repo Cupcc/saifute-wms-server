@@ -142,8 +142,8 @@
 - `monthly-reporting` 已在同一页面内新增 `领域视角 / 物料分类视角` 切换，不替换既有领域视角。
 - 第一版分类视角只覆盖 `验收入库`、`生产入库`、`销售出库`、`销售退货` 四类业务事实，不扩到 `workshop-material`、`rd-project`、`rd-subwarehouse`。
 - 分类金额必须基于 `stock_in_order_line` 与 `sales_stock_order_line` 的单据行事实，不允许沿用单据头月报结果做二次 regroup。
-- 分类归属采用业务发生时快照：业务写侧在单据行上冻结叶子分类快照与根到叶祖先链快照；历史 backfill 以迁移执行时主数据为基线补齐。
-- 汇总规则固定为“叶子分类入账 + 父级分类汇总”；`未分类` 必须作为稳定分类参与汇总。
+- 分类归属采用业务发生时快照：业务写侧在单据行上冻结稳定最终分类快照；历史 backfill 以迁移执行时主数据为基线补齐。
+- 汇总规则固定为“单据行只归属一个稳定最终分类”；`未分类` 必须作为稳定分类参与汇总。
 
 ### 展示与追溯合同
 
@@ -163,8 +163,8 @@
 - 单据层默认最小追溯粒度是 `单据头`。
 - 物料分类视角属于 follow-on 分支：
   - 总览至少回答 `验收入库金额 / 生产入库金额 / 销售出库金额 / 销售退货金额 / 净发生金额`
-  - 分类汇总必须支持叶子分类入账并向父级分类汇总
-  - 分类明细的默认最小追溯粒度是 `单据行`
+  - 分类汇总必须按单层分类展示，不使用分类路径、祖先链或父级树形汇总
+  - 分类明细的默认最小追溯粒度是 `单据行`，并展示该行稳定最终分类
 - 第一阶段至少要能回答：
   - 当前仓库本月总入 / 总出分别由哪些领域构成
   - 某个领域下某个车间 / 销售项目 / 研发项目本月金额由哪些单据构成
@@ -231,7 +231,7 @@
 | `F6` | 正式月报结果与人工重算 | 系统能长期保留正式月报，并区分后续人工重算结果 | Phase 2 | `未开始` | `-` |
 | `F7` | 日期范围报表语义分离 | 日期范围报表与正式月报、重算结果在语义上清晰分离 | Phase 2 | `未开始` | `-` |
 | `F8` | RD 小仓项目化口径与视角重算 | 当 `RD_SUB` 物料全部归属研发项目后，系统能按主仓 / RD / 研发项目视角正确解释交接入出与项目入账，不再把交接和项目入账割裂 | Phase 2 | `已完成` | `task-20260414-1418-rd-sub-project-attribution-and-reporting-alignment` |
-| `F9` | 物料分类视角月度对账 | 系统可在同一月报页按物料分类核算 `验收入库 / 生产入库 / 销售出库 / 销售退货` 金额，并以行级快照稳定追溯历史月份 | Phase 1 | `已完成` | `task-20260416-1017-monthly-reporting-material-category-view` |
+| `F9` | 物料分类视角月度对账 | 系统可在同一月报页按物料分类核算 `验收入库 / 生产入库 / 销售出库 / 销售退货` 金额，并以行级快照稳定追溯历史月份 | Phase 1 | `已完成` | `task-20260417-0930-monthly-reporting-material-category-single-level-alignment` |
 
 ## 功能项说明
 
@@ -279,7 +279,7 @@
 - 完成标准：
   - `[TC-1]` 月报页面在既有领域视角之外，新增 `物料分类视角` 切换。
   - `[TC-2]` 第一版分类视角只覆盖 `验收入库 / 生产入库 / 销售出库 / 销售退货` 四类业务事实。
-  - `[TC-3]` 分类金额按单据行事实归账，并向祖先分类汇总；`未分类` 被稳定纳入。
+  - `[TC-3]` 分类金额按单据行事实只归属一个稳定最终分类；`未分类` 被稳定纳入，且不向祖先分类汇总。
   - `[TC-4]` 业务写侧与历史 backfill 都会落单据行分类快照，后续主数据改分类不会回改历史月份报表。
   - `[TC-5]` 分类明细默认下钻到单据行，并与领域视角在相同筛选条件下可对账。
 
@@ -332,8 +332,7 @@
 - 架构设计：`docs/architecture/modules/reporting.md`
 - 架构设计：`docs/architecture/20-wms-database-tables-and-schema.md`
 - 验收规格：`docs/acceptance-tests/specs/monthly-reporting.md`
-- 当前执行任务：`docs/tasks/task-20260411-1105-monthly-reporting-domain-first-redesign.md`
+- 执行与验证：`docs/tasks/TASK_CENTER.md` 与相关 `docs/tasks/*.md`
 - 历史 accepted 基线：`docs/tasks/archive/retained-completed/task-20260411-0301-monthly-reporting-phase1-delivery.md`
 - 需求收敛记录：`docs/workspace/notes/reporting-requirements-deep-interview.md`
 - 归档 workspace：`docs/workspace/archive/retained-completed/monthly-reporting/README.md`
-- 执行与验证：后续新增 `docs/tasks/*.md`
