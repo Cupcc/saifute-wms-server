@@ -63,15 +63,15 @@
 
 ## 3.1 目标技术栈
 
-本节描述的是 NestJS 迁移阶段的目标选型基线，不等同于“当前仓库已安装依赖清单”。后续模块设计、subagent 实现和代码评审默认都以这套栈为准。
+本节描述的是 NestJS 迁移阶段当前默认采用的技术基线。若历史规划表述与当前仓库实际执行链路冲突，应以仓库当前可执行路径为准；后续模块设计、subagent 实现和代码评审默认都以这套栈为准。
 
 ### 运行时与语言
 
-- `Node.js LTS`：统一服务端运行时
+- `Bun`：当前默认的服务端运行时、包管理与脚本执行入口；仓库以 `bun.lock`、`bun run`、`bun --env-file` 为主
 - `TypeScript`：所有模块默认使用严格类型
 - `NestJS`：统一模块化框架，承载 controller、guard、interceptor、provider、module 组织方式
-- `pnpm`：包管理工具
-- `Biome`：统一代码格式与静态检查工具，默认通过 `pnpm lint` 执行 `biome check .`
+- `Node.js`：保留兼容运行时与回退入口，例如 `dev:node`、`start:node`；但不是默认开发/启动路径
+- `Biome`：统一代码格式与静态检查工具，默认通过 `bun run lint` 执行 `biome check .`
 - `Husky`：统一 Git hooks 管理，依赖安装后通过 `prepare` 自动启用仓库级 hook
 - `lint-staged`：提交前只检查暂存文件，减少全量 lint 带来的本地提交流程开销
 - `commitlint`：统一提交信息校验，默认遵循 Conventional Commits 风格
@@ -115,10 +115,10 @@
 ### 测试与质量门槛
 
 - `Jest`：单元测试、集成测试、e2e 测试统一框架
-- `Biome`：统一执行 lint 与 format 检查；提交前至少运行 `pnpm lint`，需要自动修复格式时运行 `pnpm format`
-- `Husky + lint-staged`：当前仓库默认在 `pre-commit` 执行 `pnpm lint:staged`，仅校验暂存文件并应用 Biome 安全修复
+- `Biome`：统一执行 lint 与 format 检查；提交前至少运行 `bun run lint`，需要自动修复格式时运行 `bun run format`
+- `Husky + lint-staged`：当前仓库默认在 `pre-commit` 执行 `bun run lint:staged`，仅校验暂存文件并应用 Biome 安全修复
 - `commitlint`：当前仓库默认在 `commit-msg` 校验提交说明，提交信息需遵循如 `feat: ...`、`fix: ...`、`chore: ...` 的 Conventional Commits 约定
-- `pre-push`：当前仓库默认在推送前执行 `pnpm verify`，覆盖 `pnpm typecheck && pnpm test`，在进入远端前拦截类型错误和基础回归
+- `pre-push`：当前仓库默认在推送前执行 `bun run verify`，覆盖 `bun run typecheck && bun run test`，在进入远端前拦截类型错误和基础回归
 - 集成测试优先覆盖：认证会话、库存副作用、审核重置、单据逆操作、SSE 协议兼容
 - 金额与数量字段默认采用高精度十进制策略，禁止直接依赖 JS `number` 做财务口径累计
 
@@ -157,6 +157,17 @@ modules/<module>/
 - `infrastructure` 负责 Prisma repository、raw SQL query、Redis、文件、调度适配
 - `dto` 只定义接口输入输出，不承载业务逻辑
 - 当前仓库同时承载后端与前端代码；前端工程位置统一为仓库根目录下的 `web/`，本地工作区与协作路径不再引用旧的独立前端仓库路径
+
+### 4.1 大文件治理与重构约束
+
+本仓库把 `500` 行视为 `src/**` 代码文件的默认治理阈值。个别核心引擎或历史兼容文件可以阶段性超出阈值，但不能把“继续堆到原文件里”当作默认实现方式。
+
+- 当 `application`、`infrastructure`、`spec` 文件长期超过阈值时，默认视为职责边界失效信号，优先拆分职责，而不是继续追加新的 public 方法或测试块。
+- `application` 层优先按 use case 拆分；一个 application provider 不应同时承担用例编排、领域规则、数据访问细节、导出格式化等多种变化原因。
+- `infrastructure` 层优先按聚合、读模型来源或持久化适配拆分；repository 不应同时承接跨域汇总查询、表现层格式化和多资源族 CRUD。
+- 新需求默认不得继续追加到现有超长文件；优先新增更小的协作者或 provider，并让旧大类在迁移期只保留 facade / delegation 角色。
+- 重构应先保持 controller、DTO、事务边界和外部合同稳定，再逐步内聚职责；除非用户明确要求，不以“大重写”替代分批迁移。
+- `spec` 文件应跟随生产代码边界收敛；当生产代码被拆成多个 use case 或协作者时，测试也应按相同职责拆分，而不是继续镜像单个巨型 service。
 
 ## 5. 共享基础设施
 
