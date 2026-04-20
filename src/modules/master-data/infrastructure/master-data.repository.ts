@@ -85,42 +85,38 @@ export class MasterDataRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async ensureCanonicalWorkshops() {
-    await this.prisma.$transaction(async (tx) => {
-      for (const workshop of CANONICAL_WORKSHOPS) {
-        await this.ensureCanonicalWorkshop(tx, workshop);
-      }
+    for (const workshop of CANONICAL_WORKSHOPS) {
+      await this.ensureCanonicalWorkshop(workshop);
+    }
 
-      await tx.workshop.updateMany({
-        where: {
-          workshopName: { in: [...LEGACY_BOOTSTRAP_WORKSHOP_NAMES] },
-          createdBy: SYSTEM_BOOTSTRAP_ACTOR,
-          status: "ACTIVE",
-        },
-        data: {
-          status: "DISABLED",
-          updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
-        },
-      });
+    await this.prisma.workshop.updateMany({
+      where: {
+        workshopName: { in: [...LEGACY_BOOTSTRAP_WORKSHOP_NAMES] },
+        createdBy: SYSTEM_BOOTSTRAP_ACTOR,
+        status: "ACTIVE",
+      },
+      data: {
+        status: "DISABLED",
+        updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
+      },
     });
   }
 
   async ensureCanonicalStockScopes() {
-    await this.prisma.$transaction(async (tx) => {
-      for (const stockScope of CANONICAL_STOCK_SCOPES) {
-        await tx.stockScope.upsert({
-          where: {
-            scopeCode: stockScope.scopeCode,
-          },
-          update: {
-            scopeName: stockScope.scopeName,
-            scopeType: stockScope.scopeType,
-            status: stockScope.status,
-            updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
-          },
-          create: stockScope,
-        });
-      }
-    });
+    for (const stockScope of CANONICAL_STOCK_SCOPES) {
+      await this.prisma.stockScope.upsert({
+        where: {
+          scopeCode: stockScope.scopeCode,
+        },
+        update: {
+          scopeName: stockScope.scopeName,
+          scopeType: stockScope.scopeType,
+          status: stockScope.status,
+          updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
+        },
+        create: stockScope,
+      });
+    }
   }
 
   async ensureDefaultMaterialCategory() {
@@ -150,39 +146,20 @@ export class MasterDataRepository {
     });
   }
 
-  private async ensureCanonicalWorkshop(
-    tx: Prisma.TransactionClient,
-    workshop: CanonicalWorkshop,
-  ) {
-    const existing = await tx.workshop.findFirst({
+  private async ensureCanonicalWorkshop(workshop: CanonicalWorkshop) {
+    await this.prisma.workshop.upsert({
       where: {
         workshopName: workshop.workshopName,
       },
-      orderBy: {
-        id: "asc",
+      update: {
+        status: "ACTIVE",
+        updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
       },
-    });
-
-    const data = {
-      workshopName: workshop.workshopName,
-      status: "ACTIVE" as const,
-      updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
-    };
-
-    if (existing) {
-      await tx.workshop.update({
-        where: {
-          id: existing.id,
-        },
-        data,
-      });
-      return;
-    }
-
-    await tx.workshop.create({
-      data: {
-        ...data,
+      create: {
+        workshopName: workshop.workshopName,
+        status: "ACTIVE",
         createdBy: SYSTEM_BOOTSTRAP_ACTOR,
+        updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
       },
     });
   }

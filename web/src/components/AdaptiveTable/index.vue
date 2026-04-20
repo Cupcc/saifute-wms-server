@@ -2,59 +2,119 @@
   <el-table
     ref="tableRef"
     v-bind="$attrs"
-    :height="tableHeight"
+    :height="resolvedHeight"
   >
     <slot></slot>
   </el-table>
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  onUpdated,
+  ref,
+  useAttrs,
+} from "vue";
 
+const attrs = useAttrs();
 const tableRef = ref(null);
 const tableHeight = ref(400);
-const minHeight = 150; // 最小高度，确保至少显示表头和一行数据
+const minHeight = 150;
+const hasCustomHeight = computed(
+  () =>
+    attrs.height !== undefined ||
+    attrs["max-height"] !== undefined ||
+    attrs.maxHeight !== undefined,
+);
+const resolvedHeight = computed(() =>
+  hasCustomHeight.value ? undefined : tableHeight.value,
+);
+
+function getElementHeightWithMargin(element) {
+  if (!element) {
+    return 0;
+  }
+
+  const style = window.getComputedStyle(element);
+  const marginTop = Number.parseFloat(style.marginTop) || 0;
+  const marginBottom = Number.parseFloat(style.marginBottom) || 0;
+
+  return element.offsetHeight + marginTop + marginBottom;
+}
+
+function findPaginationElement(tableElement) {
+  let current = tableElement?.nextElementSibling ?? null;
+
+  while (current) {
+    if (current.classList?.contains("pagination-container")) {
+      return current;
+    }
+    current = current.nextElementSibling;
+  }
+
+  return null;
+}
 
 /** 计算表格高度 */
 function calculateTableHeight() {
-  // 获取视口高度
-  const windowHeight = window.innerHeight;
-  // 获取表格上方的元素高度（搜索表单 + 按钮行）
-  const searchForm = document.querySelector(".app-container > .el-form");
-  const buttonRow = document.querySelector(".app-container > .el-row");
-
-  let offsetHeight = 150; // 基础偏移量（包括页面边距等）
-
-  if (searchForm) {
-    offsetHeight += searchForm.offsetHeight;
-  }
-  if (buttonRow) {
-    offsetHeight += buttonRow.offsetHeight;
+  if (hasCustomHeight.value) {
+    return;
   }
 
-  // 计算表格高度，留出一些额外空间
-  const calculatedHeight = windowHeight - offsetHeight - 20;
-  // 确保表格高度不小于最小值
-  tableHeight.value = Math.max(calculatedHeight, minHeight);
+  const tableElement = tableRef.value?.$el;
+  if (!tableElement) {
+    return;
+  }
+
+  const container = tableElement.closest(".app-container");
+  const footer = document.querySelector(".copyright");
+  const pagination = findPaginationElement(tableElement);
+  const tableTop = tableElement.getBoundingClientRect().top;
+  const footerHeight = footer?.offsetHeight ?? 0;
+  const paginationHeight = getElementHeightWithMargin(pagination);
+  const containerPaddingBottom = container
+    ? Number.parseFloat(window.getComputedStyle(container).paddingBottom) || 0
+    : 0;
+  const calculatedHeight =
+    window.innerHeight -
+    tableTop -
+    paginationHeight -
+    footerHeight -
+    containerPaddingBottom;
+
+  tableHeight.value = Math.max(Math.floor(calculatedHeight), minHeight);
 }
 
-// 组件挂载后计算表格高度
+function scheduleTableHeightCalculation() {
+  if (hasCustomHeight.value) {
+    return;
+  }
+
+  nextTick(() => {
+    window.requestAnimationFrame(() => {
+      calculateTableHeight();
+    });
+  });
+}
+
 onMounted(() => {
-  // 等待 DOM 渲染完成
-  setTimeout(() => {
-    calculateTableHeight();
-  }, 100);
-  // 监听窗口大小变化
-  window.addEventListener("resize", calculateTableHeight);
+  scheduleTableHeightCalculation();
+  window.addEventListener("resize", scheduleTableHeightCalculation);
 });
 
-// 组件卸载前移除事件监听
+onUpdated(() => {
+  scheduleTableHeightCalculation();
+});
+
 onBeforeUnmount(() => {
-  window.removeEventListener("resize", calculateTableHeight);
+  window.removeEventListener("resize", scheduleTableHeightCalculation);
 });
 
-// 暴露 tableRef 以便父组件访问
 defineExpose({
   tableRef,
+  refreshHeight: scheduleTableHeightCalculation,
 });
 </script>
