@@ -1,1309 +1,388 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { Prisma } from "../../../../generated/prisma/client";
+import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
+import { MasterDataBootstrapRepository } from "./master-data-bootstrap.repository";
+import { MasterDataMaterialsRepository } from "./master-data-materials.repository";
+import { MasterDataPartyRepository } from "./master-data-party.repository";
+import { MasterDataSuggestionsRepository } from "./master-data-suggestions.repository";
+import { MasterDataWorkshopStockScopeRepository } from "./master-data-workshop-stock-scope.repository";
 
-type MaterialSuggestionField =
-  | "unitCode"
-  | "specModel"
-  | "materialName"
-  | "materialCode";
-type CustomerSuggestionField = "customerCode" | "customerName";
-type SupplierSuggestionField = "supplierCode" | "supplierName";
-type WorkshopSuggestionField = "workshopName";
-type PersonnelSuggestionField = "personnelName";
-
-type SuggestionSource = {
-  field: string;
-  load: () => Promise<Array<Record<string, unknown>>>;
-};
-
-const SYSTEM_BOOTSTRAP_ACTOR = "system-bootstrap";
-const LEGACY_BOOTSTRAP_WORKSHOP_NAMES = ["主仓", "研发小仓"] as const;
-export const DEFAULT_MATERIAL_CATEGORY_CODE = "UNCATEGORIZED";
-export const DEFAULT_MATERIAL_CATEGORY_NAME = "未分类";
-
-const CANONICAL_WORKSHOPS = [
-  {
-    workshopName: "装备车间",
-  },
-  {
-    workshopName: "硐室车间",
-  },
-  {
-    workshopName: "配件车间",
-  },
-  {
-    workshopName: "电子车间",
-  },
-] as const satisfies ReadonlyArray<
-  Pick<Prisma.WorkshopCreateManyInput, "workshopName">
->;
-
-const CANONICAL_STOCK_SCOPES: Prisma.StockScopeCreateManyInput[] = [
-  {
-    scopeCode: "MAIN",
-    scopeName: "主仓",
-    scopeType: "MAIN",
-    status: "ACTIVE",
-    createdBy: SYSTEM_BOOTSTRAP_ACTOR,
-    updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
-  },
-  {
-    scopeCode: "RD_SUB",
-    scopeName: "研发小仓",
-    scopeType: "RD_SUB",
-    status: "ACTIVE",
-    createdBy: SYSTEM_BOOTSTRAP_ACTOR,
-    updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
-  },
-];
-
-const DEFAULT_MATERIAL_CATEGORY: Prisma.MaterialCategoryUncheckedCreateInput = {
-  categoryCode: DEFAULT_MATERIAL_CATEGORY_CODE,
-  categoryName: DEFAULT_MATERIAL_CATEGORY_NAME,
-  sortOrder: 9999,
-  status: "ACTIVE",
-  createdBy: SYSTEM_BOOTSTRAP_ACTOR,
-  updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
-};
-
-type CanonicalWorkshop = (typeof CANONICAL_WORKSHOPS)[number];
-
-const WORKSHOP_WITH_DEFAULT_HANDLER_INCLUDE = {
-  defaultHandlerPersonnel: {
-    select: {
-      id: true,
-      personnelName: true,
-    },
-  },
-} as const satisfies Prisma.WorkshopInclude;
+export {
+  DEFAULT_MATERIAL_CATEGORY_CODE,
+  DEFAULT_MATERIAL_CATEGORY_NAME,
+} from "./master-data-bootstrap.repository";
 
 @Injectable()
 export class MasterDataRepository {
-  private readonly logger = new Logger(MasterDataRepository.name);
+  private readonly bootstrapRepository: MasterDataBootstrapRepository;
+  private readonly suggestionsRepository: MasterDataSuggestionsRepository;
+  private readonly materialsRepository: MasterDataMaterialsRepository;
+  private readonly partyRepository: MasterDataPartyRepository;
+  private readonly workshopStockScopeRepository: MasterDataWorkshopStockScopeRepository;
 
-  constructor(private readonly prisma: PrismaService) {}
-
-  async ensureCanonicalWorkshops() {
-    await this.prisma.$transaction(async (tx) => {
-      for (const workshop of CANONICAL_WORKSHOPS) {
-        await this.ensureCanonicalWorkshop(tx, workshop);
-      }
-
-      await tx.workshop.updateMany({
-        where: {
-          workshopName: { in: [...LEGACY_BOOTSTRAP_WORKSHOP_NAMES] },
-          createdBy: SYSTEM_BOOTSTRAP_ACTOR,
-          status: "ACTIVE",
-        },
-        data: {
-          status: "DISABLED",
-          updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
-        },
-      });
-    });
+  constructor(prisma: PrismaService) {
+    this.bootstrapRepository = new MasterDataBootstrapRepository(prisma);
+    this.suggestionsRepository = new MasterDataSuggestionsRepository(prisma);
+    this.materialsRepository = new MasterDataMaterialsRepository(prisma);
+    this.partyRepository = new MasterDataPartyRepository(prisma);
+    this.workshopStockScopeRepository =
+      new MasterDataWorkshopStockScopeRepository(prisma);
   }
 
-  async ensureCanonicalStockScopes() {
-    await this.prisma.$transaction(async (tx) => {
-      for (const stockScope of CANONICAL_STOCK_SCOPES) {
-        await tx.stockScope.upsert({
-          where: {
-            scopeCode: stockScope.scopeCode,
-          },
-          update: {
-            scopeName: stockScope.scopeName,
-            scopeType: stockScope.scopeType,
-            status: stockScope.status,
-            updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
-          },
-          create: stockScope,
-        });
-      }
-    });
-  }
-
-  async ensureDefaultMaterialCategory() {
-    return this.prisma.materialCategory.upsert({
-      where: {
-        categoryCode: DEFAULT_MATERIAL_CATEGORY_CODE,
-      },
-      update: {
-        categoryName: DEFAULT_MATERIAL_CATEGORY_NAME,
-        sortOrder: DEFAULT_MATERIAL_CATEGORY.sortOrder,
-        status: "ACTIVE",
-        updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
-      },
-      create: DEFAULT_MATERIAL_CATEGORY,
-    });
-  }
-
-  async assignDefaultCategoryToUncategorizedMaterials(categoryId: number) {
-    return this.prisma.material.updateMany({
-      where: {
-        categoryId: null,
-      },
-      data: {
-        categoryId,
-        updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
-      },
-    });
-  }
-
-  private async ensureCanonicalWorkshop(
-    tx: Prisma.TransactionClient,
-    workshop: CanonicalWorkshop,
+  async ensureCanonicalWorkshops(
+    ...args: Parameters<
+      MasterDataBootstrapRepository["ensureCanonicalWorkshops"]
+    >
   ) {
-    await tx.workshop.upsert({
-      where: {
-        workshopName: workshop.workshopName,
-      },
-      update: {
-        status: "ACTIVE",
-        updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
-      },
-      create: {
-        workshopName: workshop.workshopName,
-        status: "ACTIVE",
-        createdBy: SYSTEM_BOOTSTRAP_ACTOR,
-        updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
-      },
-    });
+    return this.bootstrapRepository.ensureCanonicalWorkshops(...args);
   }
 
-  // ─── Field Suggestions ──────────────────────────────────────────────────────
+  async ensureCanonicalStockScopes(
+    ...args: Parameters<
+      MasterDataBootstrapRepository["ensureCanonicalStockScopes"]
+    >
+  ) {
+    return this.bootstrapRepository.ensureCanonicalStockScopes(...args);
+  }
+
+  async ensureDefaultMaterialCategory(
+    ...args: Parameters<
+      MasterDataBootstrapRepository["ensureDefaultMaterialCategory"]
+    >
+  ) {
+    return this.bootstrapRepository.ensureDefaultMaterialCategory(...args);
+  }
+
+  async assignDefaultCategoryToUncategorizedMaterials(
+    ...args: Parameters<
+      MasterDataBootstrapRepository["assignDefaultCategoryToUncategorizedMaterials"]
+    >
+  ) {
+    return this.bootstrapRepository.assignDefaultCategoryToUncategorizedMaterials(
+      ...args,
+    );
+  }
 
   async findMaterialSuggestionValues(
-    field: MaterialSuggestionField,
-    limit: number,
-  ): Promise<string[]> {
-    switch (field) {
-      case "materialCode":
-        return this.mergeSuggestionSources(
-          [
-            this.createDistinctStringSource(
-              this.prisma.material,
-              "materialCode",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.stockInOrderLine,
-              "materialCodeSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.salesStockOrderLine,
-              "materialCodeSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.workshopMaterialOrderLine,
-              "materialCodeSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdProjectMaterialLine,
-              "materialCodeSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdHandoffOrderLine,
-              "materialCodeSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdProcurementRequestLine,
-              "materialCodeSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdStocktakeOrderLine,
-              "materialCodeSnapshot",
-              limit,
-            ),
-          ],
-          limit,
-        );
-      case "materialName":
-        return this.mergeSuggestionSources(
-          [
-            this.createDistinctStringSource(
-              this.prisma.material,
-              "materialName",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.stockInOrderLine,
-              "materialNameSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.salesStockOrderLine,
-              "materialNameSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.workshopMaterialOrderLine,
-              "materialNameSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdProjectMaterialLine,
-              "materialNameSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdHandoffOrderLine,
-              "materialNameSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdProcurementRequestLine,
-              "materialNameSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdStocktakeOrderLine,
-              "materialNameSnapshot",
-              limit,
-            ),
-          ],
-          limit,
-        );
-      case "specModel":
-        return this.mergeSuggestionSources(
-          [
-            this.createDistinctStringSource(
-              this.prisma.material,
-              "specModel",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.stockInOrderLine,
-              "materialSpecSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.salesStockOrderLine,
-              "materialSpecSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.workshopMaterialOrderLine,
-              "materialSpecSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdProjectMaterialLine,
-              "materialSpecSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdHandoffOrderLine,
-              "materialSpecSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdProcurementRequestLine,
-              "materialSpecSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdStocktakeOrderLine,
-              "materialSpecSnapshot",
-              limit,
-            ),
-          ],
-          limit,
-        );
-      case "unitCode":
-        return this.mergeSuggestionSources(
-          [
-            this.createDistinctStringSource(
-              this.prisma.material,
-              "unitCode",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.stockInOrderLine,
-              "unitCodeSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.salesStockOrderLine,
-              "unitCodeSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.workshopMaterialOrderLine,
-              "unitCodeSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdProjectMaterialLine,
-              "unitCodeSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdHandoffOrderLine,
-              "unitCodeSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdProcurementRequestLine,
-              "unitCodeSnapshot",
-              limit,
-            ),
-            this.createDistinctStringSource(
-              this.prisma.rdStocktakeOrderLine,
-              "unitCodeSnapshot",
-              limit,
-            ),
-          ],
-          limit,
-        );
-    }
+    ...args: Parameters<
+      MasterDataSuggestionsRepository["findMaterialSuggestionValues"]
+    >
+  ) {
+    return this.suggestionsRepository.findMaterialSuggestionValues(...args);
   }
 
   async findCustomerSuggestionValues(
-    field: CustomerSuggestionField,
-    limit: number,
-  ): Promise<string[]> {
-    if (field === "customerCode") {
-      return this.mergeSuggestionSources(
-        [
-          this.createDistinctStringSource(
-            this.prisma.customer,
-            "customerCode",
-            limit,
-          ),
-          this.createDistinctStringSource(
-            this.prisma.salesStockOrder,
-            "customerCodeSnapshot",
-            limit,
-          ),
-          this.createDistinctStringSource(
-            this.prisma.rdProject,
-            "customerCodeSnapshot",
-            limit,
-          ),
-        ],
-        limit,
-      );
-    }
-
-    return this.mergeSuggestionSources(
-      [
-        this.createDistinctStringSource(
-          this.prisma.customer,
-          "customerName",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.salesStockOrder,
-          "customerNameSnapshot",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.rdProject,
-          "customerNameSnapshot",
-          limit,
-        ),
-      ],
-      limit,
-    );
+    ...args: Parameters<
+      MasterDataSuggestionsRepository["findCustomerSuggestionValues"]
+    >
+  ) {
+    return this.suggestionsRepository.findCustomerSuggestionValues(...args);
   }
 
   async findSupplierSuggestionValues(
-    field: SupplierSuggestionField,
-    limit: number,
-  ): Promise<string[]> {
-    if (field === "supplierCode") {
-      return this.mergeSuggestionSources(
-        [
-          this.createDistinctStringSource(
-            this.prisma.supplier,
-            "supplierCode",
-            limit,
-          ),
-          this.createDistinctStringSource(
-            this.prisma.stockInOrder,
-            "supplierCodeSnapshot",
-            limit,
-          ),
-          this.createDistinctStringSource(
-            this.prisma.rdProject,
-            "supplierCodeSnapshot",
-            limit,
-          ),
-          this.createDistinctStringSource(
-            this.prisma.rdProcurementRequest,
-            "supplierCodeSnapshot",
-            limit,
-          ),
-        ],
-        limit,
-      );
-    }
-
-    return this.mergeSuggestionSources(
-      [
-        this.createDistinctStringSource(
-          this.prisma.supplier,
-          "supplierName",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.stockInOrder,
-          "supplierNameSnapshot",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.rdProject,
-          "supplierNameSnapshot",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.rdProcurementRequest,
-          "supplierNameSnapshot",
-          limit,
-        ),
-      ],
-      limit,
-    );
+    ...args: Parameters<
+      MasterDataSuggestionsRepository["findSupplierSuggestionValues"]
+    >
+  ) {
+    return this.suggestionsRepository.findSupplierSuggestionValues(...args);
   }
 
   async findWorkshopSuggestionValues(
-    _field: WorkshopSuggestionField,
-    limit: number,
-  ): Promise<string[]> {
-    return this.mergeSuggestionSources(
-      [
-        this.createDistinctStringSource(
-          this.prisma.workshop,
-          "workshopName",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.stockInOrder,
-          "workshopNameSnapshot",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.salesStockOrder,
-          "workshopNameSnapshot",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.workshopMaterialOrder,
-          "workshopNameSnapshot",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.rdProject,
-          "workshopNameSnapshot",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.rdProcurementRequest,
-          "workshopNameSnapshot",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.rdHandoffOrder,
-          "sourceWorkshopNameSnapshot",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.rdHandoffOrder,
-          "targetWorkshopNameSnapshot",
-          limit,
-        ),
-      ],
-      limit,
-    );
+    ...args: Parameters<
+      MasterDataSuggestionsRepository["findWorkshopSuggestionValues"]
+    >
+  ) {
+    return this.suggestionsRepository.findWorkshopSuggestionValues(...args);
   }
 
   async findPersonnelSuggestionValues(
-    _field: PersonnelSuggestionField,
-    limit: number,
-  ): Promise<string[]> {
-    return this.mergeSuggestionSources(
-      [
-        this.createDistinctStringSource(
-          this.prisma.personnel,
-          "personnelName",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.stockInOrder,
-          "handlerNameSnapshot",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.salesStockOrder,
-          "handlerNameSnapshot",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.workshopMaterialOrder,
-          "handlerNameSnapshot",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.rdHandoffOrder,
-          "handlerNameSnapshot",
-          limit,
-        ),
-        this.createDistinctStringSource(
-          this.prisma.rdProcurementRequest,
-          "handlerNameSnapshot",
-          limit,
-        ),
-      ],
-      limit,
-    );
+    ...args: Parameters<
+      MasterDataSuggestionsRepository["findPersonnelSuggestionValues"]
+    >
+  ) {
+    return this.suggestionsRepository.findPersonnelSuggestionValues(...args);
   }
 
-  private createDistinctStringSource(
-    delegate: {
-      findMany: (...args: any[]) => PromiseLike<Array<Record<string, unknown>>>;
-    },
-    field: string,
-    limit: number,
-  ): SuggestionSource {
-    return {
-      field,
-      load: () =>
-        Promise.resolve(
-          delegate.findMany({
-            select: { [field]: true },
-            distinct: [field],
-            orderBy: { [field]: "asc" },
-            take: limit,
-          }),
-        ),
-    };
+  async findMaterialCategories(
+    ...args: Parameters<MasterDataMaterialsRepository["findMaterialCategories"]>
+  ) {
+    return this.materialsRepository.findMaterialCategories(...args);
   }
 
-  private async mergeSuggestionSources(
-    sources: SuggestionSource[],
-    limit: number,
-  ): Promise<string[]> {
-    const loadedSources = await Promise.all(
-      sources.map(async (source) => {
-        try {
-          return {
-            field: source.field,
-            rows: await source.load(),
-          };
-        } catch (error) {
-          if (!this.isIgnorableSuggestionSourceError(error)) {
-            throw error;
-          }
-
-          const errorCode =
-            error instanceof Prisma.PrismaClientKnownRequestError
-              ? error.code
-              : "unknown";
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          this.logger.warn(
-            `Skipping field suggestion source "${source.field}" due to schema drift (${errorCode}): ${errorMessage}`,
-          );
-
-          return {
-            field: source.field,
-            rows: [],
-          };
-        }
-      }),
-    );
-
-    const values = new Set<string>();
-    for (const source of loadedSources) {
-      for (const row of source.rows) {
-        const rawValue = row[source.field];
-        if (typeof rawValue !== "string") {
-          continue;
-        }
-        const normalizedValue = rawValue.trim();
-        if (!normalizedValue) {
-          continue;
-        }
-        values.add(normalizedValue);
-      }
-    }
-
-    return [...values]
-      .sort((left, right) => left.localeCompare(right, "zh-Hans-CN"))
-      .slice(0, limit);
+  async findMaterialCategoryById(
+    ...args: Parameters<
+      MasterDataMaterialsRepository["findMaterialCategoryById"]
+    >
+  ) {
+    return this.materialsRepository.findMaterialCategoryById(...args);
   }
 
-  private isIgnorableSuggestionSourceError(error: unknown): boolean {
-    return (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      (error.code === "P2021" || error.code === "P2022")
-    );
-  }
-
-  // ─── MaterialCategory ───────────────────────────────────────────────────────
-
-  async findMaterialCategories(params: {
-    keyword?: string;
-    limit: number;
-    offset: number;
-    status?: Prisma.MaterialCategoryWhereInput["status"];
-  }) {
-    const where: Prisma.MaterialCategoryWhereInput = {};
-    if (params.status) {
-      where.status = params.status;
-    }
-    if (params.keyword) {
-      where.OR = [
-        { categoryCode: { contains: params.keyword } },
-        { categoryName: { contains: params.keyword } },
-      ];
-    }
-
-    const [items, total] = await Promise.all([
-      this.prisma.materialCategory.findMany({
-        where,
-        take: params.limit,
-        skip: params.offset,
-        orderBy: [{ sortOrder: "asc" }, { categoryCode: "asc" }],
-      }),
-      this.prisma.materialCategory.count({ where }),
-    ]);
-
-    return { items, total };
-  }
-
-  async findMaterialCategoryById(id: number) {
-    return this.prisma.materialCategory.findUnique({
-      where: { id },
-    });
-  }
-
-  async findMaterialCategoryByCode(categoryCode: string) {
-    return this.prisma.materialCategory.findUnique({
-      where: { categoryCode },
-    });
+  async findMaterialCategoryByCode(
+    ...args: Parameters<
+      MasterDataMaterialsRepository["findMaterialCategoryByCode"]
+    >
+  ) {
+    return this.materialsRepository.findMaterialCategoryByCode(...args);
   }
 
   async createMaterialCategory(
-    data: Pick<
-      Prisma.MaterialCategoryUncheckedCreateInput,
-      "categoryCode" | "categoryName" | "sortOrder"
-    >,
-    createdBy?: string,
+    ...args: Parameters<MasterDataMaterialsRepository["createMaterialCategory"]>
   ) {
-    return this.prisma.materialCategory.create({
-      data: {
-        ...data,
-        status: "ACTIVE",
-        createdBy,
-        updatedBy: createdBy,
-      },
-    });
+    return this.materialsRepository.createMaterialCategory(...args);
   }
 
   async updateMaterialCategory(
-    id: number,
-    data: Prisma.MaterialCategoryUncheckedUpdateInput,
-    updatedBy?: string,
+    ...args: Parameters<MasterDataMaterialsRepository["updateMaterialCategory"]>
   ) {
-    return this.prisma.materialCategory.update({
-      where: { id },
-      data: { ...data, updatedBy },
-    });
+    return this.materialsRepository.updateMaterialCategory(...args);
   }
 
-  async countActiveMaterialsByCategory(categoryId: number) {
-    return this.prisma.material.count({
-      where: { categoryId, status: "ACTIVE" },
-    });
+  async countActiveMaterialsByCategory(
+    ...args: Parameters<
+      MasterDataMaterialsRepository["countActiveMaterialsByCategory"]
+    >
+  ) {
+    return this.materialsRepository.countActiveMaterialsByCategory(...args);
   }
 
-  // ─── Material ────────────────────────────────────────────────────────────────
-
-  async findMaterials(params: {
-    keyword?: string;
-    limit: number;
-    offset: number;
-    status?: Prisma.MaterialWhereInput["status"];
-  }) {
-    const where: Prisma.MaterialWhereInput = {};
-    if (params.status) {
-      where.status = params.status;
-    }
-    if (params.keyword) {
-      where.OR = [
-        { materialCode: { contains: params.keyword } },
-        { materialName: { contains: params.keyword } },
-      ];
-    }
-
-    const [items, total] = await Promise.all([
-      this.prisma.material.findMany({
-        where,
-        take: params.limit,
-        skip: params.offset,
-        orderBy: { materialCode: "asc" },
-        include: { category: true },
-      }),
-      this.prisma.material.count({ where }),
-    ]);
-
-    return { items, total };
+  async findMaterials(
+    ...args: Parameters<MasterDataMaterialsRepository["findMaterials"]>
+  ) {
+    return this.materialsRepository.findMaterials(...args);
   }
 
-  async findMaterialById(id: number) {
-    return this.prisma.material.findUnique({
-      where: { id },
-      include: { category: true },
-    });
+  async findMaterialById(
+    ...args: Parameters<MasterDataMaterialsRepository["findMaterialById"]>
+  ) {
+    return this.materialsRepository.findMaterialById(...args);
   }
 
-  async findMaterialByCode(materialCode: string) {
-    return this.prisma.material.findUnique({
-      where: { materialCode },
-    });
+  async findMaterialByCode(
+    ...args: Parameters<MasterDataMaterialsRepository["findMaterialByCode"]>
+  ) {
+    return this.materialsRepository.findMaterialByCode(...args);
   }
 
   async createMaterial(
-    data: Prisma.MaterialUncheckedCreateInput,
-    createdBy?: string,
+    ...args: Parameters<MasterDataMaterialsRepository["createMaterial"]>
   ) {
-    return this.prisma.material.create({
-      data: {
-        ...data,
-        createdBy,
-        updatedBy: createdBy,
-      },
-    });
+    return this.materialsRepository.createMaterial(...args);
   }
 
   async createAutoMaterial(
-    data: Pick<
-      Prisma.MaterialUncheckedCreateInput,
-      | "materialCode"
-      | "materialName"
-      | "unitCode"
-      | "specModel"
-      | "categoryId"
-      | "sourceDocumentType"
-      | "sourceDocumentId"
-    >,
-    createdBy?: string,
+    ...args: Parameters<MasterDataMaterialsRepository["createAutoMaterial"]>
   ) {
-    return this.prisma.material.create({
-      data: {
-        ...data,
-        status: "ACTIVE",
-        creationMode: "AUTO_CREATED",
-        createdBy,
-        updatedBy: createdBy,
-      },
-    });
+    return this.materialsRepository.createAutoMaterial(...args);
   }
 
   async updateMaterial(
-    id: number,
-    data: Prisma.MaterialUncheckedUpdateInput,
-    updatedBy?: string,
+    ...args: Parameters<MasterDataMaterialsRepository["updateMaterial"]>
   ) {
-    return this.prisma.material.update({
-      where: { id },
-      data: { ...data, updatedBy },
-    });
+    return this.materialsRepository.updateMaterial(...args);
   }
 
-  async countPositiveInventoryBalanceRows(materialId: number): Promise<number> {
-    return this.prisma.inventoryBalance.count({
-      where: { materialId, quantityOnHand: { gt: 0 } },
-    });
+  async countPositiveInventoryBalanceRows(
+    ...args: Parameters<
+      MasterDataMaterialsRepository["countPositiveInventoryBalanceRows"]
+    >
+  ) {
+    return this.materialsRepository.countPositiveInventoryBalanceRows(...args);
   }
 
-  async countEffectiveDocumentReferences(materialId: number): Promise<number> {
-    const [
-      stockIn,
-      customerStock,
-      workshopMaterial,
-      rdProject,
-      rdHandoff,
-      rdProcurement,
-      rdStocktake,
-    ] = await Promise.all([
-      this.prisma.stockInOrderLine.count({
-        where: { materialId, order: { lifecycleStatus: "EFFECTIVE" } },
-      }),
-      this.prisma.salesStockOrderLine.count({
-        where: { materialId, order: { lifecycleStatus: "EFFECTIVE" } },
-      }),
-      this.prisma.workshopMaterialOrderLine.count({
-        where: { materialId, order: { lifecycleStatus: "EFFECTIVE" } },
-      }),
-      this.prisma.rdProjectMaterialLine.count({
-        where: { materialId, rdProject: { lifecycleStatus: "EFFECTIVE" } },
-      }),
-      this.prisma.rdHandoffOrderLine.count({
-        where: { materialId, order: { lifecycleStatus: "EFFECTIVE" } },
-      }),
-      this.prisma.rdProcurementRequestLine.count({
-        where: { materialId, request: { lifecycleStatus: "EFFECTIVE" } },
-      }),
-      this.prisma.rdStocktakeOrderLine.count({
-        where: { materialId, order: { lifecycleStatus: "EFFECTIVE" } },
-      }),
-    ]);
-
-    return (
-      stockIn +
-      customerStock +
-      workshopMaterial +
-      rdProject +
-      rdHandoff +
-      rdProcurement +
-      rdStocktake
-    );
+  async countEffectiveDocumentReferences(
+    ...args: Parameters<
+      MasterDataMaterialsRepository["countEffectiveDocumentReferences"]
+    >
+  ) {
+    return this.materialsRepository.countEffectiveDocumentReferences(...args);
   }
 
-  // ─── Customer ────────────────────────────────────────────────────────────────
-
-  async findCustomers(params: {
-    keyword?: string;
-    limit: number;
-    offset: number;
-    status?: Prisma.CustomerWhereInput["status"];
-  }) {
-    const where: Prisma.CustomerWhereInput = {};
-    if (params.status) {
-      where.status = params.status;
-    }
-    if (params.keyword) {
-      where.OR = [
-        { customerCode: { contains: params.keyword } },
-        { customerName: { contains: params.keyword } },
-      ];
-    }
-
-    const [items, total] = await Promise.all([
-      this.prisma.customer.findMany({
-        where,
-        take: params.limit,
-        skip: params.offset,
-        orderBy: { customerCode: "asc" },
-      }),
-      this.prisma.customer.count({ where }),
-    ]);
-
-    return { items, total };
+  async findCustomers(
+    ...args: Parameters<MasterDataPartyRepository["findCustomers"]>
+  ) {
+    return this.partyRepository.findCustomers(...args);
   }
 
-  async findCustomerById(id: number) {
-    return this.prisma.customer.findUnique({
-      where: { id },
-    });
+  async findCustomerById(
+    ...args: Parameters<MasterDataPartyRepository["findCustomerById"]>
+  ) {
+    return this.partyRepository.findCustomerById(...args);
   }
 
-  async findCustomerByCode(customerCode: string) {
-    return this.prisma.customer.findUnique({
-      where: { customerCode },
-    });
+  async findCustomerByCode(
+    ...args: Parameters<MasterDataPartyRepository["findCustomerByCode"]>
+  ) {
+    return this.partyRepository.findCustomerByCode(...args);
   }
 
   async createCustomer(
-    data: Pick<
-      Prisma.CustomerUncheckedCreateInput,
-      "customerCode" | "customerName" | "parentId"
-    >,
-    createdBy?: string,
+    ...args: Parameters<MasterDataPartyRepository["createCustomer"]>
   ) {
-    return this.prisma.customer.create({
-      data: {
-        ...data,
-        status: "ACTIVE",
-        creationMode: "MANUAL",
-        createdBy,
-        updatedBy: createdBy,
-      },
-    });
+    return this.partyRepository.createCustomer(...args);
   }
 
   async createAutoCustomer(
-    data: Pick<
-      Prisma.CustomerUncheckedCreateInput,
-      | "customerCode"
-      | "customerName"
-      | "parentId"
-      | "sourceDocumentType"
-      | "sourceDocumentId"
-    >,
-    createdBy?: string,
+    ...args: Parameters<MasterDataPartyRepository["createAutoCustomer"]>
   ) {
-    return this.prisma.customer.create({
-      data: {
-        ...data,
-        status: "ACTIVE",
-        creationMode: "AUTO_CREATED",
-        createdBy,
-        updatedBy: createdBy,
-      },
-    });
+    return this.partyRepository.createAutoCustomer(...args);
   }
 
   async updateCustomer(
-    id: number,
-    data: Prisma.CustomerUncheckedUpdateInput,
-    updatedBy?: string,
+    ...args: Parameters<MasterDataPartyRepository["updateCustomer"]>
   ) {
-    return this.prisma.customer.update({
-      where: { id },
-      data: { ...data, updatedBy },
-    });
+    return this.partyRepository.updateCustomer(...args);
   }
 
-  async countActiveChildCustomers(parentId: number) {
-    return this.prisma.customer.count({
-      where: { parentId, status: "ACTIVE" },
-    });
+  async countActiveChildCustomers(
+    ...args: Parameters<MasterDataPartyRepository["countActiveChildCustomers"]>
+  ) {
+    return this.partyRepository.countActiveChildCustomers(...args);
   }
 
-  // ─── Supplier ────────────────────────────────────────────────────────────────
-
-  async findSupplierById(id: number) {
-    return this.prisma.supplier.findUnique({
-      where: { id },
-    });
+  async findSupplierById(
+    ...args: Parameters<MasterDataPartyRepository["findSupplierById"]>
+  ) {
+    return this.partyRepository.findSupplierById(...args);
   }
 
-  async findSupplierByCode(supplierCode: string) {
-    return this.prisma.supplier.findUnique({
-      where: { supplierCode },
-    });
+  async findSupplierByCode(
+    ...args: Parameters<MasterDataPartyRepository["findSupplierByCode"]>
+  ) {
+    return this.partyRepository.findSupplierByCode(...args);
   }
 
-  async findSuppliers(params: {
-    keyword?: string;
-    limit: number;
-    offset: number;
-    status?: Prisma.SupplierWhereInput["status"];
-  }) {
-    const where: Prisma.SupplierWhereInput = {};
-    if (params.status) {
-      where.status = params.status;
-    }
-    if (params.keyword) {
-      where.OR = [
-        { supplierCode: { contains: params.keyword } },
-        { supplierName: { contains: params.keyword } },
-        { contactPerson: { contains: params.keyword } },
-        { contactPhone: { contains: params.keyword } },
-        { address: { contains: params.keyword } },
-      ];
-    }
-
-    const [items, total] = await Promise.all([
-      this.prisma.supplier.findMany({
-        where,
-        take: params.limit,
-        skip: params.offset,
-        orderBy: { supplierCode: "asc" },
-      }),
-      this.prisma.supplier.count({ where }),
-    ]);
-
-    return { items, total };
+  async findSuppliers(
+    ...args: Parameters<MasterDataPartyRepository["findSuppliers"]>
+  ) {
+    return this.partyRepository.findSuppliers(...args);
   }
 
   async createSupplier(
-    data: Pick<
-      Prisma.SupplierUncheckedCreateInput,
-      | "supplierCode"
-      | "supplierName"
-      | "contactPerson"
-      | "contactPhone"
-      | "address"
-    >,
-    createdBy?: string,
+    ...args: Parameters<MasterDataPartyRepository["createSupplier"]>
   ) {
-    return this.prisma.supplier.create({
-      data: {
-        ...data,
-        status: "ACTIVE",
-        creationMode: "MANUAL",
-        createdBy,
-        updatedBy: createdBy,
-      },
-    });
+    return this.partyRepository.createSupplier(...args);
   }
 
   async createAutoSupplier(
-    data: Pick<
-      Prisma.SupplierUncheckedCreateInput,
-      | "supplierCode"
-      | "supplierName"
-      | "sourceDocumentType"
-      | "sourceDocumentId"
-    >,
-    createdBy?: string,
+    ...args: Parameters<MasterDataPartyRepository["createAutoSupplier"]>
   ) {
-    return this.prisma.supplier.create({
-      data: {
-        ...data,
-        status: "ACTIVE",
-        creationMode: "AUTO_CREATED",
-        createdBy,
-        updatedBy: createdBy,
-      },
-    });
+    return this.partyRepository.createAutoSupplier(...args);
   }
 
   async updateSupplier(
-    id: number,
-    data: Prisma.SupplierUncheckedUpdateInput,
-    updatedBy?: string,
+    ...args: Parameters<MasterDataPartyRepository["updateSupplier"]>
   ) {
-    return this.prisma.supplier.update({
-      where: { id },
-      data: {
-        ...data,
-        updatedBy,
-      },
-    });
+    return this.partyRepository.updateSupplier(...args);
   }
 
-  // ─── Personnel ───────────────────────────────────────────────────────────────
-
-  async findPersonnel(params: {
-    keyword?: string;
-    limit: number;
-    offset: number;
-    status?: Prisma.PersonnelWhereInput["status"];
-  }) {
-    const where: Prisma.PersonnelWhereInput = {};
-    if (params.status) {
-      where.status = params.status;
-    }
-    if (params.keyword) {
-      where.personnelName = { contains: params.keyword };
-    }
-
-    const [items, total] = await Promise.all([
-      this.prisma.personnel.findMany({
-        where,
-        take: params.limit,
-        skip: params.offset,
-        orderBy: { personnelName: "asc" },
-      }),
-      this.prisma.personnel.count({ where }),
-    ]);
-
-    return { items, total };
+  async findPersonnel(
+    ...args: Parameters<MasterDataPartyRepository["findPersonnel"]>
+  ) {
+    return this.partyRepository.findPersonnel(...args);
   }
 
-  async findPersonnelById(id: number) {
-    return this.prisma.personnel.findUnique({
-      where: { id },
-    });
+  async findPersonnelById(
+    ...args: Parameters<MasterDataPartyRepository["findPersonnelById"]>
+  ) {
+    return this.partyRepository.findPersonnelById(...args);
   }
 
   async createPersonnel(
-    data: Pick<
-      Prisma.PersonnelUncheckedCreateInput,
-      "personnelName" | "contactPhone"
-    >,
-    createdBy?: string,
+    ...args: Parameters<MasterDataPartyRepository["createPersonnel"]>
   ) {
-    return this.prisma.personnel.create({
-      data: {
-        ...data,
-        status: "ACTIVE",
-        createdBy,
-        updatedBy: createdBy,
-      },
-    });
+    return this.partyRepository.createPersonnel(...args);
   }
 
   async updatePersonnel(
-    id: number,
-    data: Prisma.PersonnelUncheckedUpdateInput,
-    updatedBy?: string,
+    ...args: Parameters<MasterDataPartyRepository["updatePersonnel"]>
   ) {
-    return this.prisma.personnel.update({
-      where: { id },
-      data: { ...data, updatedBy },
-    });
+    return this.partyRepository.updatePersonnel(...args);
   }
 
-  // ─── Workshop ────────────────────────────────────────────────────────────────
-
-  async findWorkshops(params: {
-    keyword?: string;
-    limit: number;
-    offset: number;
-    status?: Prisma.WorkshopWhereInput["status"];
-  }) {
-    const where: Prisma.WorkshopWhereInput = {};
-    if (params.status) {
-      where.status = params.status;
-    }
-    if (params.keyword) {
-      where.OR = [
-        { workshopName: { contains: params.keyword } },
-        {
-          defaultHandlerPersonnel: {
-            is: {
-              personnelName: {
-                contains: params.keyword,
-              },
-            },
-          },
-        },
-      ];
-    }
-
-    const [items, total] = await Promise.all([
-      this.prisma.workshop.findMany({
-        where,
-        include: WORKSHOP_WITH_DEFAULT_HANDLER_INCLUDE,
-        take: params.limit,
-        skip: params.offset,
-        orderBy: [{ workshopName: "asc" }, { id: "asc" }],
-      }),
-      this.prisma.workshop.count({ where }),
-    ]);
-
-    return { items, total };
+  async findWorkshops(
+    ...args: Parameters<MasterDataWorkshopStockScopeRepository["findWorkshops"]>
+  ) {
+    return this.workshopStockScopeRepository.findWorkshops(...args);
   }
 
-  async findWorkshopById(id: number) {
-    return this.prisma.workshop.findUnique({
-      where: { id },
-      include: WORKSHOP_WITH_DEFAULT_HANDLER_INCLUDE,
-    });
+  async findWorkshopById(
+    ...args: Parameters<
+      MasterDataWorkshopStockScopeRepository["findWorkshopById"]
+    >
+  ) {
+    return this.workshopStockScopeRepository.findWorkshopById(...args);
   }
 
-  async findWorkshopByName(workshopName: string) {
-    return this.prisma.workshop.findFirst({
-      where: {
-        workshopName,
-      },
-      include: WORKSHOP_WITH_DEFAULT_HANDLER_INCLUDE,
-      orderBy: {
-        id: "asc",
-      },
-    });
+  async findWorkshopByName(
+    ...args: Parameters<
+      MasterDataWorkshopStockScopeRepository["findWorkshopByName"]
+    >
+  ) {
+    return this.workshopStockScopeRepository.findWorkshopByName(...args);
   }
 
   async createWorkshop(
-    data: Pick<
-      Prisma.WorkshopUncheckedCreateInput,
-      "defaultHandlerPersonnelId" | "workshopName"
-    >,
-    createdBy?: string,
+    ...args: Parameters<
+      MasterDataWorkshopStockScopeRepository["createWorkshop"]
+    >
   ) {
-    return this.prisma.workshop.create({
-      data: {
-        ...data,
-        status: "ACTIVE",
-        createdBy,
-        updatedBy: createdBy,
-      },
-      include: WORKSHOP_WITH_DEFAULT_HANDLER_INCLUDE,
-    });
+    return this.workshopStockScopeRepository.createWorkshop(...args);
   }
 
   async updateWorkshop(
-    id: number,
-    data: Prisma.WorkshopUncheckedUpdateInput,
-    updatedBy?: string,
+    ...args: Parameters<
+      MasterDataWorkshopStockScopeRepository["updateWorkshop"]
+    >
   ) {
-    return this.prisma.workshop.update({
-      where: { id },
-      data: { ...data, updatedBy },
-      include: WORKSHOP_WITH_DEFAULT_HANDLER_INCLUDE,
-    });
+    return this.workshopStockScopeRepository.updateWorkshop(...args);
   }
 
-  // ─── StockScope ──────────────────────────────────────────────────────────────
-
-  async findStockScopes(params: {
-    keyword?: string;
-    limit: number;
-    offset: number;
-    status?: Prisma.StockScopeWhereInput["status"];
-  }) {
-    const where: Prisma.StockScopeWhereInput = {};
-    if (params.status) {
-      where.status = params.status;
-    }
-    if (params.keyword) {
-      where.OR = [
-        { scopeCode: { contains: params.keyword } },
-        { scopeName: { contains: params.keyword } },
-      ];
-    }
-
-    const [items, total] = await Promise.all([
-      this.prisma.stockScope.findMany({
-        where,
-        take: params.limit,
-        skip: params.offset,
-        orderBy: { scopeCode: "asc" },
-      }),
-      this.prisma.stockScope.count({ where }),
-    ]);
-
-    return { items, total };
+  async findStockScopes(
+    ...args: Parameters<
+      MasterDataWorkshopStockScopeRepository["findStockScopes"]
+    >
+  ) {
+    return this.workshopStockScopeRepository.findStockScopes(...args);
   }
 
-  async findStockScopeById(id: number) {
-    return this.prisma.stockScope.findUnique({
-      where: { id },
-    });
+  async findStockScopeById(
+    ...args: Parameters<
+      MasterDataWorkshopStockScopeRepository["findStockScopeById"]
+    >
+  ) {
+    return this.workshopStockScopeRepository.findStockScopeById(...args);
   }
 
-  async findStockScopeByCode(scopeCode: string) {
-    return this.prisma.stockScope.findUnique({
-      where: { scopeCode },
-    });
+  async findStockScopeByCode(
+    ...args: Parameters<
+      MasterDataWorkshopStockScopeRepository["findStockScopeByCode"]
+    >
+  ) {
+    return this.workshopStockScopeRepository.findStockScopeByCode(...args);
   }
 
   async createStockScope(
-    data: Pick<
-      Prisma.StockScopeUncheckedCreateInput,
-      "scopeCode" | "scopeName"
-    >,
-    createdBy?: string,
+    ...args: Parameters<
+      MasterDataWorkshopStockScopeRepository["createStockScope"]
+    >
   ) {
-    return this.prisma.stockScope.create({
-      data: {
-        ...data,
-        status: "ACTIVE",
-        createdBy,
-        updatedBy: createdBy,
-      },
-    });
+    return this.workshopStockScopeRepository.createStockScope(...args);
   }
 
   async updateStockScope(
-    id: number,
-    data: Prisma.StockScopeUncheckedUpdateInput,
-    updatedBy?: string,
+    ...args: Parameters<
+      MasterDataWorkshopStockScopeRepository["updateStockScope"]
+    >
   ) {
-    return this.prisma.stockScope.update({
-      where: { id },
-      data: { ...data, updatedBy },
-    });
+    return this.workshopStockScopeRepository.updateStockScope(...args);
   }
 
   async countPositiveStockScopeBalanceRows(
-    stockScopeId: number,
-  ): Promise<number> {
-    return this.prisma.inventoryBalance.count({
-      where: { stockScopeId, quantityOnHand: { gt: 0 } },
-    });
+    ...args: Parameters<
+      MasterDataWorkshopStockScopeRepository["countPositiveStockScopeBalanceRows"]
+    >
+  ) {
+    return this.workshopStockScopeRepository.countPositiveStockScopeBalanceRows(
+      ...args,
+    );
   }
 }
