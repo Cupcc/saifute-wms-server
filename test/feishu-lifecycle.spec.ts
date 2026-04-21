@@ -44,10 +44,19 @@ async function runHook(
   },
 ): Promise<{ status: number | null; stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
+    const childEnv: Record<string, string | undefined> = { ...process.env };
+    // Strip hook-sensitive vars the parent shell may inject (e.g. when
+    // running under an active Claude Code session), so each test starts
+    // from a known-clean state and only options.env controls hook inputs.
+    delete childEnv.FEISHU_SESSION_STARTED_AT_MS;
+    delete childEnv.FEISHU_WEBHOOK_URL;
+    delete childEnv.FEISHU_SUBAGENT_MIN_DURATION_MS;
+    delete childEnv.CLAUDE_ENV_FILE;
+
     const child = spawn(process.execPath, [hookScript], {
       cwd: options?.cwd ?? repoRoot,
       env: {
-        ...process.env,
+        ...childEnv,
         ...options?.env,
       },
       stdio: "pipe",
