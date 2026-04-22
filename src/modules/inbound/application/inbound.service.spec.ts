@@ -19,6 +19,11 @@ import {
 } from "../../rd-subwarehouse/application/rd-material-status.helper";
 import { RdProcurementRequestService } from "../../rd-subwarehouse/application/rd-procurement-request.service";
 import { InboundRepository } from "../infrastructure/inbound.repository";
+import { InboundAcceptanceCreationService } from "./inbound-acceptance-creation.service";
+import { InboundAcceptanceUpdateService } from "./inbound-acceptance-update.service";
+import { InboundProductionReceiptCreationService } from "./inbound-production-receipt-creation.service";
+import { InboundProductionReceiptUpdateService } from "./inbound-production-receipt-update.service";
+import { InboundSharedService } from "./inbound-shared.service";
 import { InboundService } from "./inbound.service";
 
 jest.mock(
@@ -156,6 +161,11 @@ describe("InboundService", () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         InboundService,
+        InboundAcceptanceCreationService,
+        InboundAcceptanceUpdateService,
+        InboundProductionReceiptCreationService,
+        InboundProductionReceiptUpdateService,
+        InboundSharedService,
         {
           provide: PrismaService,
           useValue: prisma,
