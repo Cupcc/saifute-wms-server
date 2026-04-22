@@ -2,7 +2,10 @@ import { Module } from "@nestjs/common";
 import { MasterDataModule } from "../master-data/master-data.module";
 import { SessionModule } from "../session/session.module";
 import { RbacService } from "./application/rbac.service";
+import { SystemDictConfigService } from "./application/system-dict-config.service";
 import { SystemManagementService } from "./application/system-management.service";
+import { SystemResourceService } from "./application/system-resource.service";
+import { SystemUserService } from "./application/system-user.service";
 import { WorkshopScopeService } from "./application/workshop-scope.service";
 import { SystemManagementBootstrapService } from "./bootstrap/system-management-bootstrap.service";
 import { RbacController } from "./controllers/rbac.controller";
@@ -34,6 +37,9 @@ import { InMemoryRbacRepository } from "./infrastructure/in-memory-rbac.reposito
   providers: [
     RbacService,
     SystemManagementService,
+    SystemUserService,
+    SystemResourceService,
+    SystemDictConfigService,
     WorkshopScopeService,
     SystemManagementBootstrapService,
     InMemoryRbacRepository,
