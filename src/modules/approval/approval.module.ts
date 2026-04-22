@@ -6,6 +6,6 @@ import { ApprovalRepository } from "./infrastructure/approval.repository";
 @Module({
   controllers: [ApprovalController],
   providers: [ApprovalService, ApprovalRepository],
-  exports: [ApprovalService, ApprovalRepository],
+  exports: [ApprovalService],
 })
 export class ApprovalModule {}
