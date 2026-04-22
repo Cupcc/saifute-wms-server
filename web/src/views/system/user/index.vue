@@ -1,21 +1,21 @@
 <template>
-  <div class="app-container">
-    <el-row :gutter="20">
-      <splitpanes :horizontal="appStore.device === 'mobile'" class="default-theme">
+  <div class="app-container user-page">
+    <el-row :gutter="20" class="user-page__row">
+      <splitpanes :horizontal="appStore.device === 'mobile'" class="default-theme user-page__splitpanes">
         <!--部门数据-->
         <pane size="16">
-          <el-col>
-            <div class="head-container">
+          <el-col class="user-page__panel user-page__panel--tree">
+            <div class="head-container user-page__dept-search">
               <el-input v-model="deptName" placeholder="请输入部门名称" clearable prefix-icon="Search" style="margin-bottom: 20px" />
             </div>
-            <div class="head-container">
-              <el-tree :data="deptOptions" :props="{ label: 'label', children: 'children' }" :expand-on-click-node="false" :filter-node-method="filterNode" ref="deptTreeRef" node-key="id" highlight-current default-expand-all @node-click="handleNodeClick" />
+            <div class="head-container user-page__dept-tree">
+              <el-tree class="user-page__tree" :data="deptOptions" :props="{ label: 'label', children: 'children' }" :expand-on-click-node="false" :filter-node-method="filterNode" ref="deptTreeRef" node-key="id" highlight-current default-expand-all @node-click="handleNodeClick" />
             </div>
           </el-col>
         </pane>
         <!--用户数据-->
         <pane size="84">
-          <el-col>
+          <el-col class="user-page__panel user-page__panel--content">
             <el-form :model="queryParams" ref="queryRef" :inline="true" v-show="showSearch" label-width="68px">
               <el-form-item label="用户名称" prop="userName">
                 <el-input v-model="queryParams.userName" placeholder="请输入用户名称" clearable style="width: 240px" @keyup.enter="handleQuery" />
@@ -56,7 +56,7 @@
               <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
             </el-row>
 
-            <adaptive-table border stripe v-loading="loading" :data="userList" @selection-change="handleSelectionChange" table-layout="auto">
+            <adaptive-table class="user-page__table" border stripe v-loading="loading" :data="userList" @selection-change="handleSelectionChange" table-layout="auto">
               <el-table-column type="selection" width="50" align="center" />
               <el-table-column label="用户编号" align="center" key="userId" prop="userId" v-if="columns[0].visible" />
               <el-table-column label="用户名称" align="center" key="userName" prop="userName" v-if="columns[1].visible" :show-overflow-tooltip="true" />
@@ -629,3 +629,48 @@ onMounted(() => {
   }
 });
 </script>
+
+<style scoped lang="scss">
+.user-page {
+  height: calc(100vh - 125px);
+  overflow: hidden;
+}
+
+.user-page__row,
+.user-page__splitpanes,
+.user-page__panel {
+  height: 100%;
+}
+
+.user-page__panel {
+  width: 100%;
+  min-height: 0;
+}
+
+.user-page__panel--tree,
+.user-page__panel--content {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-page__dept-tree {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.user-page__tree {
+  height: 100%;
+  overflow: auto;
+}
+
+.user-page__table {
+  flex: 1;
+  min-height: 0;
+}
+
+.user-page__splitpanes :deep(.splitpanes__pane) {
+  display: flex;
+  min-height: 0;
+}
+</style>

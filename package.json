@@ -2,7 +2,9 @@
   "name": "saifute-wms-server-nestjs",
   "version": "0.1.0",
   "private": true,
-  "workspaces": ["web"],
+  "workspaces": [
+    "web"
+  ],
   "scripts": {
     "biome": "biome check .",
     "build": "nest build --path tsconfig.build.json",
@@ -98,6 +100,7 @@
     "class-validator": "^0.15.1",
     "cron": "^4.4.0",
     "eventemitter2": "^6.4.9",
+    "express": "^5.2.1",
     "ioredis": "^5.10.1",
     "mariadb": "^3.5.2",
     "nest-winston": "^1.10.2",

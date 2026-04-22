@@ -748,7 +748,10 @@ function createEmptySummary(viewMode = DOMAIN_VIEW) {
 }
 
 function getDefaultMonth() {
-  return new Date().toISOString().slice(0, 7);
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = `${now.getMonth() + 1}`.padStart(2, "0");
+  return `${year}-${month}`;
 }
 
 function resolveRouteViewMode(routeName = route.name) {

@@ -9,7 +9,7 @@ import {
 } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 
 const repoRoot = join(__dirname, "..");
 const hookScript = join(repoRoot, ".codex", "hooks", "feishu-stop-notify.js");
@@ -219,7 +219,7 @@ describe("codex feishu stop hook", () => {
         expect(payload.type).toBe("info");
         expect(payload.msg).toContain("Codex 已完成：已经修复飞书通知耗时。");
         expect(payload.msg).toContain("本轮对话运行：2分钟");
-        expect(payload.msg).toContain(`项目：${projectDir.split("/").pop()}`);
+        expect(payload.msg).toContain(`项目：${basename(projectDir)}`);
         expect(payload.msg).toContain("task_id：sess-s");
         expect(payload.msg).toContain("turn_id：turn-s");
       });

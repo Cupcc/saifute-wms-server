@@ -154,35 +154,19 @@ export class MasterDataRepository {
     tx: Prisma.TransactionClient,
     workshop: CanonicalWorkshop,
   ) {
-    const existing = await tx.workshop.findFirst({
+    await tx.workshop.upsert({
       where: {
         workshopName: workshop.workshopName,
       },
-      orderBy: {
-        id: "asc",
+      update: {
+        status: "ACTIVE",
+        updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
       },
-    });
-
-    const data = {
-      workshopName: workshop.workshopName,
-      status: "ACTIVE" as const,
-      updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
-    };
-
-    if (existing) {
-      await tx.workshop.update({
-        where: {
-          id: existing.id,
-        },
-        data,
-      });
-      return;
-    }
-
-    await tx.workshop.create({
-      data: {
-        ...data,
+      create: {
+        workshopName: workshop.workshopName,
+        status: "ACTIVE",
         createdBy: SYSTEM_BOOTSTRAP_ACTOR,
+        updatedBy: SYSTEM_BOOTSTRAP_ACTOR,
       },
     });
   }
