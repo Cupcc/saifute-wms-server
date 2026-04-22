@@ -4,6 +4,12 @@ import { InventoryCoreModule } from "../inventory-core/inventory-core.module";
 import { MasterDataModule } from "../master-data/master-data.module";
 import { SalesProjectModule } from "../sales-project/sales-project.module";
 import { SalesService } from "./application/sales.service";
+import { SalesOutboundService } from "./application/sales-outbound.service";
+import { SalesOutboundUpdateService } from "./application/sales-outbound-update.service";
+import { SalesReturnService } from "./application/sales-return.service";
+import { SalesReturnSourceService } from "./application/sales-return-source.service";
+import { SalesSnapshotsService } from "./application/sales-snapshots.service";
+import { SalesTraceabilityService } from "./application/sales-traceability.service";
 import { SalesController } from "./controllers/sales.controller";
 import { SalesRepository } from "./infrastructure/sales.repository";
 
@@ -15,7 +21,16 @@ import { SalesRepository } from "./infrastructure/sales.repository";
     SalesProjectModule,
   ],
   controllers: [SalesController],
-  providers: [SalesService, SalesRepository],
+  providers: [
+    SalesService,
+    SalesOutboundService,
+    SalesOutboundUpdateService,
+    SalesReturnService,
+    SalesReturnSourceService,
+    SalesSnapshotsService,
+    SalesTraceabilityService,
+    SalesRepository,
+  ],
   exports: [SalesService],
 })
 export class SalesModule {}
