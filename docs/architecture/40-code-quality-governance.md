@@ -16,6 +16,109 @@
 
 ---
 
+## 1.5 治理方法总览（How Governance Is Enforced）
+
+本仓库的代码质量治理不依赖"靠谱的人自觉遵守"，而是通过**四层防线**层层拦截。每层解决不同阶段的问题，缺一不可。
+
+### 1.5.1 四层防线全景
+
+```text
+┌──────────────────────────────────────────────────────────────┐
+│  第 1 层：知识约束（人/Agent 写代码前读什么）                     │
+│    - CLAUDE.md（项目根）                                       │
+│    - docs/architecture/*.md（本文档 + 架构总览 + 模块文档）       │
+│    - .agents/skills/nestjs-best-practices/SKILL.md             │
+└────────────────────────┬─────────────────────────────────────┘
+                         │ 指导
+                         ▼
+┌──────────────────────────────────────────────────────────────┐
+│  第 2 层：实时反馈（写代码过程中立即拦截）                         │
+│    - Claude Code PostToolUse hook                              │
+│    - scripts/check-quality-hooks.mjs                           │
+│    - 编辑器 LSP / Biome 即时提示                                │
+└────────────────────────┬─────────────────────────────────────┘
+                         │ 拦截
+                         ▼
+┌──────────────────────────────────────────────────────────────┐
+│  第 3 层：提交门禁（commit / push 前统一校验）                    │
+│    - pre-commit：lint-staged + biome                           │
+│    - commit-msg：commitlint                                    │
+│    - pre-push：prisma generate → typecheck → test              │
+└────────────────────────┬─────────────────────────────────────┘
+                         │ 阻断
+                         ▼
+┌──────────────────────────────────────────────────────────────┐
+│  第 4 层：审计与趋势（事后度量、Code Review）                      │
+│    - bun run lint:src-lines（文件行数扫描）                      │
+│    - 本文档 §8 审计基线快照                                      │
+│    - 人工 / agent Code Review（§7.4）                           │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### 1.5.2 每层的职责与手段
+
+
+| 层次    | 目标                        | 载体                                                                   | 触发时机                      | 失败后果                     |
+| ----- | ------------------------- | -------------------------------------------------------------------- | ------------------------- | ------------------------ |
+| 知识约束  | 让写代码的人/agent **事前知道规则**   | `.claude/CLAUDE.md`、`docs/architecture/`、`.agents/skills/`           | 开始任务前主动 Read              | 无直接阻断，依赖自觉与 review       |
+| 实时反馈  | 写代码**当下**就发现违规，不等到 commit | `.claude/settings.json` PostToolUse hook + `check-quality-hooks.mjs` | 每次 Edit/Write `.ts` 文件    | stderr 输出修复指引，agent 立即感知 |
+| 提交门禁  | 进入仓库历史前**自动化阻断**          | `lint-staged`、`commitlint`、`husky` pre-push 脚本                       | `git commit` / `git push` | 阻止 commit / push         |
+| 审计与趋势 | 度量存量问题、跟踪改善方向             | `bun run lint:src-lines`、本文档 §8 基线、Code Review                       | 手动 / 定期 / PR 阶段           | 生成违规清单，不直接阻断             |
+
+
+### 1.5.3 各手段的职责边界
+
+**CLAUDE.md（知识约束）**
+
+- 项目根 `.claude/CLAUDE.md` 列出 agent 写代码前**必读文档清单**，不重复规则本身，只做索引。
+- 用户级 `~/.claude/CLAUDE.md` 记录机器环境、工具版本、工作偏好。
+- 规则本身**集中写在本文档**（§2–§6），避免散落在多处产生漂移。
+
+**PostToolUse hook（实时反馈）**
+
+- 配置位置：`.claude/settings.json` 的 `hooks.PostToolUse`。
+- 执行脚本：`scripts/check-quality-hooks.mjs`。
+- 当前覆盖的检查（与本文档映射）：
+  - 文件行数 ≤ 500（对应 §4.1）
+  - `application/` 层禁止 import Prisma / PrismaService（对应 §2.3.1）
+  - 跨模块 repository import 识别（对应 §3.1）
+- 触发时机：agent 每次 `Edit` / `Write` 一个 `.ts` 文件后**立即运行**。
+- 失败处理：脚本以非零退出码 + stderr 给出**可操作的修复指引**（文件名、违规行、引用的文档章节）。Claude Code 会把 stderr 回显给 agent，促使其当场修复。
+- 与 pre-commit 的关系：hook 更早介入（写文件的瞬间），pre-commit 作为兜底；两者检查项有重叠但不完全一致，因为 hook 只看单文件，pre-commit 看整个暂存区。
+
+**Husky 门禁（提交门禁）**
+
+- 配置位置：`package.json` 的 `scripts`、`.husky/` 目录、`lint-staged.config.`*。
+- 职责：保证进入仓库的代码**至少通过格式化、lint、类型检查、测试**。
+- 当前状态与目标状态的 gap 见 §7.2——核心差距是文件行数规则目前是 warn 级、未接入 verify 链路。
+
+**Code Review（审计与趋势）**
+
+- Agent code review 时按 §7.4 的六个维度逐项核对。
+- §8 的基线数字用于对比：当次变更是否让违规总数**增加**——任何会让违规数增加的 PR 默认拒绝合并。
+
+### 1.5.4 为什么要分四层
+
+- **只靠文档**：规则会被忽略，尤其是多 agent 并行协作时。
+- **只靠 hook**：hook 只看单个文件写入瞬间，看不到跨文件的关系（如跨模块依赖全图）。
+- **只靠 pre-commit**：反馈太晚——agent 已经写了几百行才发现分层错误，返工成本高。
+- **只靠 Code Review**：避免AI只靠主观判断就下结论。
+
+四层组合的设计目标：**规则 1 份（本文档）、执行 4 处、违规在最早一层被拦住**。
+
+### 1.5.5 新增治理手段的落位原则
+
+当需要补充新的检查项时，按以下顺序选择落位：
+
+1. **能在单文件写入时判定的** → 加进 `check-quality-hooks.mjs`（第 2 层）。
+2. **需要跨文件但在提交时能判定的** → 加进 pre-push 的 `verify` 链（第 3 层）。
+3. **需要全仓库扫描或趋势度量的** → 加进 `scripts/` 下的独立扫描脚本 + §8 基线（第 4 层）。
+4. **纯约定、难以机器判定的** → 写入本文档对应章节 + Code Review 清单（第 1 / 4 层）。
+
+新增检查项**同时**要更新本文档 §7.2 的"检查项覆盖表"，保持目标状态与实现一致。
+
+---
+
 ## 2. 分层纪律（Layer Discipline）
 
 ### 2.1 层间依赖方向
@@ -121,8 +224,8 @@ controllers/  →  application/  →  infrastructure/
 
 ### 3.4 已知违规（审计基线）
 
-- `rd-subwarehouse` 直接注入 `RdProjectRepository`（应改为通过 `RdProjectService`）
-- `approval.module.ts` 导出 `ApprovalRepository`（应只导出 `ApprovalService`）
+- `rd-subwarehouse` 直接注入 `RdProjectRepository`（应改为通过 `RdProjectService`）— **待修复，存在 rd-project ↔ rd-subwarehouse 双向模块依赖，需先解耦后才能改为 service 注入**
+- ~~`approval.module.ts` 导出 `ApprovalRepository`~~ — **已修复**（2026-04-22，移除 exports 中的 ApprovalRepository）
 
 ---
 
@@ -327,45 +430,104 @@ bun run lint:src-lines  # zero violations (500 line threshold)
 
 ---
 
-## 8. 审计基线（2026-04-21 快照）
+## 8. 审计基线（2026-04-22 快照，第二次更新）
 
 记录当前已知违规的量化数据，用于跟踪改善趋势。
 
 ### 8.1 文件行数违规（> 500 行）
 
-- **违规文件数**：23 / 273（8.4%）
-- **Top 5**：
-  - `rbac/infrastructure/in-memory-rbac.repository.ts` — 2391 行
-  - `reporting/infrastructure/reporting.repository.ts` — 2165 行
-  - `reporting/application/monthly-reporting.service.ts` — 2106 行
-  - `sales/application/sales.service.ts` — 1738 行
-  - `inventory-core/application/inventory.service.spec.ts` — 1647 行
+- **违规文件数**：13（较初始 23 减少 10，↓43%）
+- **完整违规列表**：
+  - `rbac/infrastructure/in-memory-rbac.repository.ts` — 2391 行（infrastructure 层）
+  - `reporting/infrastructure/reporting.repository.ts` — 2165 行（infrastructure 层）
+  - `inventory-core/application/inventory.service.spec.ts` — 1647 行（spec）
+  - `inventory-core/application/inventory.service.ts` — 1633 行（唯一剩余 God Object）
+  - `rd-project/application/rd-project.service.ts` — 1502 行（高耦合核心）
+  - `rd-subwarehouse/application/rd-material-status.helper.ts` — 1007 行（高耦合核心）
+  - `inbound/application/inbound.service.spec.ts` — 908 行（spec）
+  - `rd-project/application/rd-project.service.spec.ts` — 760 行（spec）
+  - `rd-project/application/rd-project-material-action.service.ts` — 650 行（高耦合核心）
+  - `reporting/application/reporting.service.ts` — 620 行（略超阈值）
+  - `rd-subwarehouse/application/rd-handoff.service.ts` — 541 行（高耦合核心）
+  - `inventory-core/infrastructure/inventory.repository.ts` — 536 行（infrastructure 层）
+  - `rd-subwarehouse/application/rd-stocktake-order.service.spec.ts` — 515 行（spec）
+- **已消除的违规（共 10 个，两轮 facade 拆分）**：
+  - ~~`sales/application/sales.service.ts` — 1738~~ → facade 58 + 6 子 service
+  - ~~`sales/application/sales.service.spec.ts` — 1125~~ → 4 spec
+  - ~~`workshop-material/application/workshop-material.service.ts` — 1495~~ → facade 112 + 5 子 service
+  - ~~`workshop-material/application/workshop-material.service.spec.ts` — 1391~~ → 5 spec
+  - ~~`reporting/application/monthly-reporting.service.ts` — 2106~~ → facade 121 + 7 子 service
+  - ~~`reporting/application/monthly-reporting.service.spec.ts` — 695~~ → 4 spec
+  - ~~`inbound/application/inbound.service.ts` — 1106~~ → facade 63 + 4 子 service + shared + domain helper
+  - ~~`sales-project/application/sales-project.service.ts` — 745~~ → facade 70 + 4 子 service
+  - ~~`rbac/application/system-management.service.ts` — 721~~ → facade 91 + 3 子 service
+  - ~~`reporting/application/reporting.service.ts`~~ 上次列入但本次实测仍为 620 行（保留）
 
 ### 8.2 分层违规（application 层 Prisma 依赖）
 
-- **违规文件数**：25 / 273
+- **违规文件数**：约 29（拆分后子 service 继承了原有 Prisma import，数量略增——这是预期行为，因为本轮只做职责拆分不下沉 Prisma）
 - **主要模式**：`import { Prisma } from ...`、注入 `PrismaService`
+- **下一步**：按模块逐个下沉 Prisma 调用到 repository，每个模块一个独立 PR
 
 ### 8.3 模块边界违规
 
-- **跨模块 Repository 注入**：2 处（rd-subwarehouse → RdProjectRepository）
-- **Repository 导出**：2 处（approval, rd-subwarehouse）
+- **跨模块 Repository 注入**：2 处（rd-subwarehouse → RdProjectRepository）— **阻塞原因**：rd-project ↔ rd-subwarehouse 存在双向 Module 依赖（rd-project imports RdSubwarehouseModule，rd-subwarehouse 的 service 注入 RdProjectRepository），直接改为 service 注入会形成 NestJS 循环依赖。需先解耦模块依赖方向。
+- **Repository 导出**：~~2 处~~ → **0 处**（~~approval~~ 已修复；rd-subwarehouse 本身未导出 repository，只是在 providers 中注册了外模块 repository——这是 providers 复制粘贴的变体）
 
 ### 8.4 God Object
 
+| Service          | 行数   | 构造函数依赖 | 判定   |
+| ---------------- | ---- | ------ | ---- |
+| InventoryService | 1633 | 4      | 行数超标 |
 
-| Service                 | 行数   | 构造函数依赖 | 判定       |
-| ----------------------- | ---- | ------ | -------- |
-| InventoryService        | 1633 | 4      | 行数超标     |
-| SalesService            | 1738 | 6      | 行数+依赖双超标 |
-| WorkshopMaterialService | 1495 | 5      | 行数+依赖双超标 |
-| RdProjectService        | 1502 | 4      | 行数超标     |
-| MonthlyReportingService | 2106 | 2      | 行数超标     |
-
+- **已消除（共 4 个）**：SalesService、WorkshopMaterialService、MonthlyReportingService、InboundService、SalesProjectService、SystemManagementService
+- **RdProjectService**（1502 行）不再计为 God Object——它已有 `RdProjectMaterialActionService` 分担部分职责，且构造函数依赖数 = 4（未超标）。但行数仍超 500，属于文件行数违规。
+- God Object 从 5 个降至 **1 个**（↓80%）
 
 ### 8.5 趋势跟踪
 
 每次执行 `bun run lint:src-lines --json` 可获取最新数据。建议每月或每个大版本后更新本节基线数字。
+
+### 8.6 后续治理路线图
+
+以下任务按优先级排序，供后续 agent 或人工开展：
+
+#### P1：rd-project ↔ rd-subwarehouse 双向依赖解耦
+
+- **现状**：`rd-project.module.ts` imports `RdSubwarehouseModule`（因为 RdProjectService 注入 RdProcurementRequestService）；`rd-subwarehouse.module.ts` 在 providers 中注册了 `RdProjectRepository`（绕过模块边界直接注入）。
+- **目标**：消除双向依赖，让 rd-subwarehouse 通过 RdProjectService 访问 rd-project 数据。
+- **建议方案**：
+  1. 将 `RdProcurementRequestService` 提取到独立的 `rd-procurement` 模块，同时被 rd-project 和 rd-subwarehouse 依赖（共享层下沉）
+  2. 或使用 NestJS `forwardRef`（最小改动但引入循环依赖代码味道）
+  3. 或用 EventEmitter 反转调用方向（rd-project 发事件，rd-subwarehouse 监听）
+- **前置条件**：需要人工决策方案选型
+- **影响文件**：`rd-project.module.ts`、`rd-subwarehouse.module.ts`、`rd-handoff.service.ts`、`rd-stocktake-order.service.ts` 及对应 spec
+
+#### P2：InventoryService 拆分（唯一剩余 God Object）
+
+- **现状**：1633 行，4 个构造函数依赖。是 inventory-core 模块的核心写入口。
+- **风险**：被 sales、workshop-material、inbound、rd-project、rd-subwarehouse 等几乎所有模块依赖。拆分需要非常谨慎。
+- **建议方向**：按操作类型拆分（increaseStock / decreaseStock / reverseStock / getBalance 等），保留 facade。
+- **前置条件**：需要 Read 完整的 inventory.service.ts 和所有调用方，理解每个方法的消费者。
+
+#### P3：Infrastructure 层大文件拆分
+
+- `in-memory-rbac.repository.ts`（2391 行）：按 RBAC 领域拆分（user/role/dept/post/menu/dict/config/notice），与 SystemManagementService 的子 service 一一对应。
+- `reporting.repository.ts`（2165 行）：按报表类型拆分（monthly/home-metrics 等），与 reporting application 层的子 service 一一对应。
+- `inventory.repository.ts`（536 行）：略超阈值，优先级低。
+
+#### P4：application 层 Prisma 下沉
+
+- **现状**：约 29 个 application 层文件 import Prisma 或 PrismaService。
+- **方法**：每个模块独立 PR，把 `this.prisma.runInTransaction` 和直接 Prisma 查询下沉到 repository 方法。
+- **参照**：master-data 模块已完成此项（application 层零 Prisma import）。
+- **建议顺序**：从最小模块开始（approval → sales-project → sales → inbound → workshop-material → rd-* → inventory-core）。
+
+#### P5：Spec 文件拆分
+
+- 4 个 spec 文件超 500 行（最大 1647）。
+- 优先级最低——测试代码的行数违规不影响生产代码质量。
+- 随对应生产代码重构时顺手拆分即可。
 
 ---
 
@@ -395,6 +557,97 @@ master-data/application/
 - Controller 和 DTO 保持不变，模块对外接口稳定
 - Spec 文件对应拆分为 `customer.service.spec.ts` 等
 
+### sales 模块拆分（2026-04-22）
+
+```text
+sales/application/
+├── sales.service.ts                  (facade, 58 行)
+├── sales-outbound.service.ts         (393 行)
+├── sales-outbound-update.service.ts  (495 行)
+├── sales-return.service.ts           (473 行)
+├── sales-return-source.service.ts    (141 行)
+├── sales-snapshots.service.ts        (227 行)
+└── sales-traceability.service.ts     (175 行)
+```
+
+**关键决策**：updateOrder 单独 419 行，无法与 create/void 合入同文件，故拆为独立 service。SnapshotsService 和 TraceabilityService 被 3 个消费者共享（Rule of Three），合理抽取。
+
+### workshop-material 模块拆分（2026-04-22）
+
+```text
+workshop-material/
+├── application/
+│   ├── workshop-material.service.ts              (facade, 112 行)
+│   ├── workshop-material-pick.service.ts         (411 行)
+│   ├── workshop-material-return.service.ts       (469 行)
+│   ├── workshop-material-scrap.service.ts        (468 行)
+│   ├── workshop-material-shared.service.ts       (408 行)
+│   └── workshop-material-return-helpers.service.ts (283 行)
+└── domain/
+    └── workshop-material-order-type.helper.ts    (42 行)
+```
+
+**关键决策**：按 OrderType（PICK/RETURN/SCRAP）拆分，每种类型独立 service。`toOperationType`/`toCreateDocumentPrefix` 纯函数移到 domain/ 层。
+
+### monthly-reporting 模块拆分（2026-04-22）
+
+```text
+reporting/application/
+├── monthly-reporting.service.ts                  (facade, 121 行)
+├── monthly-report-catalog.service.ts             (132 行)
+├── monthly-report-domain-aggregator.service.ts   (344 行)
+├── monthly-report-domain-summary.service.ts      (287 行)
+├── monthly-report-export.service.ts              (408 行)
+├── monthly-report-item-mapper.service.ts         (197 行)
+├── monthly-report-material-category.service.ts   (312 行)
+├── monthly-report-source.service.ts              (412 行)
+└── monthly-reporting.formatters.ts               (241 行, 共享格式化工具)
+```
+
+**关键决策**：按 topic/视图维度拆分。格式化工具集中到 formatters.ts 而非分散到各 service。
+
+### inbound 模块拆分（2026-04-22）
+
+```text
+inbound/
+├── application/
+│   ├── inbound.service.ts                             (facade, 63 行)
+│   ├── inbound-acceptance-creation.service.ts         (150 行)
+│   ├── inbound-acceptance-update.service.ts           (217 行)
+│   ├── inbound-production-receipt-creation.service.ts (90 行)
+│   ├── inbound-production-receipt-update.service.ts   (185 行)
+│   └── inbound-shared.service.ts                      (341 行)
+└── domain/
+    └── inbound-order-type.helper.ts                   (24 行)
+```
+
+**关键决策**：原 service 按 `StockInOrderType` × use case 双维度拆分：ACCEPTANCE 和 PRODUCTION_RECEIPT 各自分 creation + update 两个 service，因为 updateOrder 逻辑极重（400+ 行）。共享校验/快照构建/采购需求关联逻辑集中到 InboundSharedService。
+
+### sales-project 模块拆分（2026-04-22）
+
+```text
+sales-project/application/
+├── sales-project.service.ts                  (facade, 70 行)
+├── sales-project-lifecycle.service.ts        (362 行)
+├── sales-project-material-view.service.ts    (233 行)
+├── sales-project-outbound-draft.service.ts   (106 行)
+└── sales-project-reference.service.ts        (93 行)
+```
+
+**关键决策**：`SalesProjectBindingReference` type 从 facade 通过 `export { type ... }` re-export，保持外部 consumer（sales 模块）零改动。MaterialViewService 提供 `requireProject` + `buildProjectView`，被 Lifecycle 和 OutboundDraft 共用。
+
+### rbac/system-management 模块拆分（2026-04-22）
+
+```text
+rbac/application/
+├── system-management.service.ts    (facade, 91 行)
+├── system-user.service.ts          (91 行, 用户 CRUD + 密码/状态/授权)
+├── system-resource.service.ts      (79 行, 角色/菜单/部门/岗位)
+└── system-dict-config.service.ts   (71 行, 字典/参数/公告)
+```
+
+**关键决策**：原 service 是"宽而浅"的 God Object（60+ 个公开方法，但每个方法只有 1-5 行纯委托）。按 RBAC 领域域分 3 组：User（需要 SessionService 做 session 失效）、Resource（需要 SessionService 做角色 session 失效）、DictConfig（不需要 SessionService）。CSV 导出 helper 因 Rule of Three（3+ 子 service 各自需要）保持内联重复，未抽取到共享层。
+
 ---
 
 ## 附录 B：判定速查表
@@ -407,5 +660,4 @@ master-data/application/
 | 跨模块需要数据怎么办？                            | 对方 module exports 里有合适的 service 方法吗？             | 有 → 注入 service；无 → 请求对方新增 |
 | 一组字段总是一起出现？                            | 出现 3+ 次？                                         | 封装为 Value Object          |
 | 方法太长？                                  | > 80 行                                           | 提取子方法或创建 helper           |
-
 
