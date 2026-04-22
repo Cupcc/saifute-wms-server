@@ -11,6 +11,10 @@ import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { SalesProjectRepository } from "../infrastructure/sales-project.repository";
+import { SalesProjectLifecycleService } from "./sales-project-lifecycle.service";
+import { SalesProjectMaterialViewService } from "./sales-project-material-view.service";
+import { SalesProjectOutboundDraftService } from "./sales-project-outbound-draft.service";
+import { SalesProjectReferenceService } from "./sales-project-reference.service";
 import { SalesProjectService } from "./sales-project.service";
 
 describe("SalesProjectService", () => {
@@ -92,6 +96,10 @@ describe("SalesProjectService", () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         SalesProjectService,
+        SalesProjectLifecycleService,
+        SalesProjectMaterialViewService,
+        SalesProjectOutboundDraftService,
+        SalesProjectReferenceService,
         {
           provide: PrismaService,
           useValue: prisma,
