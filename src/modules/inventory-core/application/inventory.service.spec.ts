@@ -13,6 +13,7 @@ import {
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { InventoryRepository } from "../infrastructure/inventory.repository";
+import { FactoryNumberRepository } from "../infrastructure/factory-number.repository";
 import {
   FIFO_SOURCE_OPERATION_TYPES,
   InventoryService,
@@ -144,6 +145,10 @@ describe("InventoryService", () => {
           },
         },
         {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
           provide: StockScopeCompatibilityService,
           useFactory: createStockScopeCompatibilityServiceMock,
         },
@@ -207,6 +212,10 @@ describe("InventoryService", () => {
             findLogById: jest.fn(),
             findReversalLogBySourceLogId: jest.fn(),
           },
+        },
+        {
+          provide: FactoryNumberRepository,
+          useValue: {},
         },
         {
           provide: StockScopeCompatibilityService,
@@ -291,6 +300,10 @@ describe("InventoryService", () => {
           },
         },
         {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
           provide: StockScopeCompatibilityService,
           useFactory: createStockScopeCompatibilityServiceMock,
         },
@@ -347,6 +360,10 @@ describe("InventoryService", () => {
             findLogById: jest.fn(),
             findReversalLogBySourceLogId: jest.fn(),
           },
+        },
+        {
+          provide: FactoryNumberRepository,
+          useValue: {},
         },
         {
           provide: StockScopeCompatibilityService,
@@ -413,6 +430,10 @@ describe("InventoryService", () => {
           },
         },
         {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
           provide: StockScopeCompatibilityService,
           useFactory: createStockScopeCompatibilityServiceMock,
         },
@@ -459,6 +480,10 @@ describe("InventoryService", () => {
             findLogById: jest.fn().mockResolvedValue(null),
             findReversalLogBySourceLogId: jest.fn(),
           },
+        },
+        {
+          provide: FactoryNumberRepository,
+          useValue: {},
         },
         {
           provide: StockScopeCompatibilityService,
@@ -527,6 +552,10 @@ describe("InventoryService", () => {
           },
         },
         {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
           provide: StockScopeCompatibilityService,
           useFactory: createStockScopeCompatibilityServiceMock,
         },
@@ -587,6 +616,10 @@ describe("InventoryService", () => {
           },
         },
         {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
           provide: StockScopeCompatibilityService,
           useFactory: createStockScopeCompatibilityServiceMock,
         },
@@ -640,6 +673,10 @@ describe("InventoryService", () => {
             createSourceUsage: jest.fn(),
             updateSourceUsage: jest.fn(),
           },
+        },
+        {
+          provide: FactoryNumberRepository,
+          useValue: {},
         },
         {
           provide: StockScopeCompatibilityService,
@@ -706,6 +743,10 @@ describe("InventoryService", () => {
           },
         },
         {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
           provide: StockScopeCompatibilityService,
           useFactory: createStockScopeCompatibilityServiceMock,
         },
@@ -765,6 +806,10 @@ describe("InventoryService", () => {
           },
         },
         {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
           provide: StockScopeCompatibilityService,
           useFactory: createStockScopeCompatibilityServiceMock,
         },
@@ -820,6 +865,10 @@ describe("InventoryService", () => {
             createSourceUsage: jest.fn(),
             updateSourceUsage: jest.fn().mockResolvedValue(releasedUsage),
           },
+        },
+        {
+          provide: FactoryNumberRepository,
+          useValue: {},
         },
         {
           provide: StockScopeCompatibilityService,
@@ -881,6 +930,10 @@ describe("InventoryService", () => {
             createSourceUsage: jest.fn(),
             updateSourceUsage: jest.fn().mockResolvedValue(restoredUsage),
           },
+        },
+        {
+          provide: FactoryNumberRepository,
+          useValue: {},
         },
         {
           provide: StockScopeCompatibilityService,
@@ -1048,7 +1101,11 @@ describe("InventoryService", () => {
             useValue: repositoryMock,
           },
           {
-            provide: StockScopeCompatibilityService,
+            provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
+          provide: StockScopeCompatibilityService,
             useFactory: createStockScopeCompatibilityServiceMock,
           },
         ],
@@ -1423,6 +1480,10 @@ describe("InventoryService", () => {
           useValue: repositoryMock,
         },
         {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
           provide: StockScopeCompatibilityService,
           useFactory: createStockScopeCompatibilityServiceMock,
         },
@@ -1492,6 +1553,10 @@ describe("InventoryService", () => {
           },
         },
         {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
           provide: StockScopeCompatibilityService,
           useFactory: createStockScopeCompatibilityServiceMock,
         },
@@ -1543,6 +1608,10 @@ describe("InventoryService", () => {
           },
         },
         {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
           provide: StockScopeCompatibilityService,
           useFactory: createStockScopeCompatibilityServiceMock,
         },
@@ -1574,6 +1643,10 @@ describe("InventoryService", () => {
               releasedQty: new Prisma.Decimal(30),
             }),
           },
+        },
+        {
+          provide: FactoryNumberRepository,
+          useValue: {},
         },
         {
           provide: StockScopeCompatibilityService,
@@ -1608,6 +1681,10 @@ describe("InventoryService", () => {
           useValue: {
             findSourceUsages,
           },
+        },
+        {
+          provide: FactoryNumberRepository,
+          useValue: {},
         },
         {
           provide: StockScopeCompatibilityService,

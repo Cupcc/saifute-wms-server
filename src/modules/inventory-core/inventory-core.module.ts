@@ -4,6 +4,7 @@ import { RbacModule } from "../rbac/rbac.module";
 import { InventoryService } from "./application/inventory.service";
 import { StockScopeCompatibilityService } from "./application/stock-scope-compatibility.service";
 import { InventoryController } from "./controllers/inventory.controller";
+import { FactoryNumberRepository } from "./infrastructure/factory-number.repository";
 import { InventoryRepository } from "./infrastructure/inventory.repository";
 
 @Module({
@@ -12,6 +13,7 @@ import { InventoryRepository } from "./infrastructure/inventory.repository";
   providers: [
     InventoryService,
     InventoryRepository,
+    FactoryNumberRepository,
     StockScopeCompatibilityService,
   ],
   exports: [InventoryService, StockScopeCompatibilityService],

@@ -15,6 +15,7 @@ import {
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { type StockScopeCode } from "../../session/domain/user-session";
+import { FactoryNumberRepository } from "../infrastructure/factory-number.repository";
 import { InventoryRepository } from "../infrastructure/inventory.repository";
 import { StockScopeCompatibilityService } from "./stock-scope-compatibility.service";
 
@@ -160,6 +161,7 @@ export class InventoryService {
     private readonly masterDataService: MasterDataService,
     private readonly prisma: PrismaService,
     private readonly repository: InventoryRepository,
+    private readonly factoryNumberRepository: FactoryNumberRepository,
     private readonly stockScopeCompatibilityService: StockScopeCompatibilityService,
   ) {}
 
@@ -1217,7 +1219,7 @@ export class InventoryService {
     });
     await this.ensureMasterDataExists(cmd.materialId, cmd.workshopId);
     return this.withTransaction(tx, async (db) => {
-      return this.repository.createFactoryNumberReservation(
+      return this.factoryNumberRepository.createFactoryNumberReservation(
         {
           materialId: cmd.materialId,
           stockScopeId: scope.stockScopeId,
@@ -1241,7 +1243,7 @@ export class InventoryService {
     tx?: Prisma.TransactionClient,
   ) {
     return this.withTransaction(tx, async (db) => {
-      return this.repository.releaseFactoryNumberReservations(
+      return this.factoryNumberRepository.releaseFactoryNumberReservations(
         {
           businessDocumentType: cmd.businessDocumentType,
           businessDocumentId: cmd.businessDocumentId,
@@ -1305,15 +1307,16 @@ export class InventoryService {
     const limit = Math.min(params.limit ?? 50, 100);
     const offset = params.offset ?? 0;
     const stockScopeIds = await this.resolveInventoryStockScopeIds(params);
-    const result = await this.repository.findFactoryNumberReservations({
-      stockScopeIds,
-      businessDocumentType: params.businessDocumentType,
-      businessDocumentLineId: params.businessDocumentLineId,
-      startNumber: params.startNumber,
-      endNumber: params.endNumber,
-      limit,
-      offset,
-    });
+    const result =
+      await this.factoryNumberRepository.findFactoryNumberReservations({
+        stockScopeIds,
+        businessDocumentType: params.businessDocumentType,
+        businessDocumentLineId: params.businessDocumentLineId,
+        startNumber: params.startNumber,
+        endNumber: params.endNumber,
+        limit,
+        offset,
+      });
 
     return {
       total: result.total,
@@ -1323,7 +1326,7 @@ export class InventoryService {
 
   async getFactoryNumberReservationById(id: number) {
     const reservation =
-      await this.repository.findFactoryNumberReservationById(id);
+      await this.factoryNumberRepository.findFactoryNumberReservationById(id);
     if (!reservation) {
       throw new NotFoundException(`编号区间不存在: ${id}`);
     }
