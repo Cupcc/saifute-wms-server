@@ -108,9 +108,11 @@ if (lineCount > 0 && lineCount <= 30) {
 // ---- Check 2: PrismaService injection into application layer ----------------
 // Only flags runtime dependency (PrismaService injection), NOT type-only imports
 // like `import { Prisma } from ...` or Prisma-generated enums. See §2.3.1.
+// Spec/test files are excluded — they must mock PrismaService for DI to work.
 const isApplicationLayer = APPLICATION_LAYER_PATTERN.test(normalized);
+const isTestFile = /\.(spec|test|test-support|spec-helpers)\.ts$/.test(normalized);
 
-if (isApplicationLayer) {
+if (isApplicationLayer && !isTestFile) {
   const prismaServiceRegex = /PrismaService/;
   const hasPrismaService = prismaServiceRegex.test(content);
 
@@ -149,6 +151,54 @@ if (moduleMatch) {
             `   → Current module \`${currentModule}\` imports repository from \`${importedModuleMatch[1]}\`.\n` +
             `   → Use the exported service of \`${importedModuleMatch[1]}\` instead.\n` +
             `   → Reference: docs/architecture/40-code-quality-governance.md §3`,
+        );
+      }
+    }
+  }
+}
+
+// ---- Check 4: constructor dependency count (§4.1) ---------------------------
+// Counts `private readonly` params inside constructor(). Facade files (< 150
+// lines where all public methods are single-line delegations) are exempt.
+// Only checks production .service.ts files, not specs/tests/repositories.
+if (
+  !isTestFile &&
+  normalized.endsWith(".service.ts") &&
+  isApplicationLayer
+) {
+  const constructorMatch = content.match(
+    /constructor\s*\(([\s\S]*?)\)\s*\{/,
+  );
+  if (constructorMatch) {
+    const constructorBody = constructorMatch[1];
+    const depCount = (
+      constructorBody.match(/\bprivate\b/g) || []
+    ).length;
+    const MAX_DEPS = 5;
+
+    if (depCount > MAX_DEPS) {
+      // Check facade exemption: < 300 lines + all public methods are
+      // single-line `return this.xxx(...)` delegations. Facade files can be
+      // large due to DTO imports and many delegate methods, but contain no
+      // business logic.
+      const isFacade =
+        lineCount < 300 &&
+        (() => {
+          const publicMethods = content.match(
+            /^\s+(async\s+)?(?!constructor)\w+\s*\([^)]*\)[^{]*\{[^}]*\}/gm,
+          );
+          if (!publicMethods || publicMethods.length === 0) return false;
+          return publicMethods.every((m) =>
+            /^\s+(async\s+)?\w+\s*\([^)]*\)[^{]*\{\s*return\s+this\.\w/.test(m),
+          );
+        })();
+
+      if (!isFacade) {
+        violations.push(
+          `⚠️  Constructor has ${depCount} dependencies (threshold: ${MAX_DEPS}).\n` +
+            `   → Consider extracting shared dependencies into a shared service.\n` +
+            `   → Facade files (< 150 lines, pure delegation) are exempt.\n` +
+            `   → Reference: docs/architecture/40-code-quality-governance.md §4.1`,
         );
       }
     }
