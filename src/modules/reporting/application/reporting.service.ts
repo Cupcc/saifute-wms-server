@@ -12,9 +12,15 @@ import {
   ReportingTrendType,
 } from "../dto/query-reporting.dto";
 import {
+  resolveDateRange,
+  resolveTodayRange,
+  toDateOnly,
+} from "../domain/reporting-date.util";
+import { HomeMetricsRepository } from "../infrastructure/home-metrics.repository";
+import {
   type InventoryBalanceSnapshot,
-  ReportingRepository,
-} from "../infrastructure/reporting.repository";
+  InventoryReportingRepository,
+} from "../infrastructure/inventory-reporting.repository";
 
 export interface InventoryOverviewSummary {
   activeMaterialCount: number;
@@ -51,17 +57,18 @@ export interface ReportingExportResult {
 @Injectable()
 export class ReportingService {
   constructor(
-    private readonly repository: ReportingRepository,
+    private readonly homeMetricsRepository: HomeMetricsRepository,
+    private readonly repository: InventoryReportingRepository,
     private readonly appConfigService: AppConfigService,
     private readonly stockScopeCompatibilityService: StockScopeCompatibilityService,
   ) {}
 
   async getHomeDashboard(stockScope?: StockScopeCode) {
-    const { start, end } = this.resolveTodayRange();
+    const { start, end } = resolveTodayRange(this.tz);
     const inventoryProjection = await this.loadInventoryProjection({
       stockScope,
     });
-    const metrics = await this.repository.getHomeMetrics(start, end, {
+    const metrics = await this.homeMetricsRepository.getHomeMetrics(start, end, {
       stockScope,
     });
 
@@ -197,7 +204,8 @@ export class ReportingService {
     query: QueryTrendSeriesDto,
     stockScope?: StockScopeCode,
   ) {
-    const { dateFrom, dateTo } = this.resolveDateRange(
+    const { dateFrom, dateTo } = resolveDateRange(
+      this.tz,
       query.dateFrom,
       query.dateTo,
     );
@@ -227,7 +235,7 @@ export class ReportingService {
     >();
 
     for (const item of filtered) {
-      const date = this.toDateOnly(item.bizDate);
+      const date = toDateOnly(item.bizDate, this.tz);
       const key = `${date}:${item.sourceType}`;
       const current = grouped.get(key) ?? {
         date,
@@ -243,8 +251,8 @@ export class ReportingService {
     }
 
     return {
-      dateFrom: this.toDateOnly(dateFrom),
-      dateTo: this.toDateOnly(dateTo),
+      dateFrom: toDateOnly(dateFrom, this.tz),
+      dateTo: toDateOnly(dateTo, this.tz),
       items: [...grouped.values()]
         .sort((left, right) =>
           left.date === right.date
@@ -323,6 +331,10 @@ export class ReportingService {
       default:
         return this.buildCsvExport(dto.reportType, [], []);
     }
+  }
+
+  private get tz() {
+    return this.appConfigService.businessTimezone;
   }
 
   private toInventorySummaryItem(
@@ -447,58 +459,6 @@ export class ReportingService {
     return this.stockScopeCompatibilityService.listRealStockScopeIds();
   }
 
-  private resolveTodayRange() {
-    const now = new Date();
-    const parts = this.getTimeZoneDateParts(now);
-    const start = this.createDateInBusinessTimezone(
-      parts.year,
-      parts.month,
-      parts.day,
-    );
-    const end = this.createDateInBusinessTimezone(
-      parts.year,
-      parts.month,
-      parts.day,
-      23,
-      59,
-      59,
-      999,
-    );
-    return { start, end };
-  }
-
-  private resolveDateRange(dateFrom?: string, dateTo?: string) {
-    const endParts = dateTo
-      ? this.parseDateOnly(dateTo)
-      : this.getTimeZoneDateParts(new Date());
-    const end = this.createDateInBusinessTimezone(
-      endParts.year,
-      endParts.month,
-      endParts.day,
-      23,
-      59,
-      59,
-      999,
-    );
-
-    const startParts = dateFrom
-      ? this.parseDateOnly(dateFrom)
-      : this.getTimeZoneDateParts(
-          new Date(end.getTime() - 6 * 24 * 60 * 60 * 1000),
-        );
-    const start = this.createDateInBusinessTimezone(
-      startParts.year,
-      startParts.month,
-      startParts.day,
-    );
-    return { dateFrom: start, dateTo: end };
-  }
-
-  private toDateOnly(value: Date) {
-    const parts = this.getTimeZoneDateParts(value);
-    return `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
-  }
-
   private buildCsvExport(
     reportType: ReportingExportType,
     columns: string[],
@@ -515,8 +475,8 @@ export class ReportingService {
     ];
 
     return {
-      fileName: `${reportType.toLowerCase()}-${this.toDateOnly(new Date())}.csv`,
-      content: `\uFEFF${csvLines.join("\n")}`,
+      fileName: `${reportType.toLowerCase()}-${toDateOnly(new Date(), this.tz)}.csv`,
+      content: `﻿${csvLines.join("\n")}`,
       contentType: "text/csv; charset=utf-8",
     };
   }
@@ -526,95 +486,5 @@ export class ReportingService {
       value === null || typeof value === "undefined" ? "" : String(value);
     const escaped = stringValue.replace(/"/g, '""');
     return /[",\n]/.test(escaped) ? `"${escaped}"` : escaped;
-  }
-
-  private escapeHtmlValue(value: unknown) {
-    return String(value ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#39;");
-  }
-
-  private parseDateOnly(value: string): {
-    year: number;
-    month: number;
-    day: number;
-  } {
-    const [year, month, day] = value.split("-").map((item) => Number(item));
-    return {
-      year,
-      month,
-      day,
-    };
-  }
-
-  private getTimeZoneDateParts(value: Date): {
-    year: number;
-    month: number;
-    day: number;
-  } {
-    const formatter = new Intl.DateTimeFormat("en-CA", {
-      timeZone: this.appConfigService.businessTimezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    });
-    const parts = formatter.formatToParts(value);
-
-    return {
-      year: Number(parts.find((part) => part.type === "year")?.value),
-      month: Number(parts.find((part) => part.type === "month")?.value),
-      day: Number(parts.find((part) => part.type === "day")?.value),
-    };
-  }
-
-  private createDateInBusinessTimezone(
-    year: number,
-    month: number,
-    day: number,
-    hour = 0,
-    minute = 0,
-    second = 0,
-    millisecond = 0,
-  ): Date {
-    const utcGuess = Date.UTC(
-      year,
-      month - 1,
-      day,
-      hour,
-      minute,
-      second,
-      millisecond,
-    );
-    const offset = this.getTimeZoneOffsetMilliseconds(new Date(utcGuess));
-    return new Date(utcGuess - offset);
-  }
-
-  private getTimeZoneOffsetMilliseconds(value: Date): number {
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone: this.appConfigService.businessTimezone,
-      hour12: false,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
-    const parts = formatter.formatToParts(value);
-    const year = Number(parts.find((part) => part.type === "year")?.value);
-    const month = Number(parts.find((part) => part.type === "month")?.value);
-    const day = Number(parts.find((part) => part.type === "day")?.value);
-    const hour = Number(parts.find((part) => part.type === "hour")?.value);
-    const minute = Number(parts.find((part) => part.type === "minute")?.value);
-    const second = Number(parts.find((part) => part.type === "second")?.value);
-
-    return (
-      Date.UTC(year, month - 1, day, hour, minute, second) -
-      value.getTime() +
-      value.getMilliseconds()
-    );
   }
 }

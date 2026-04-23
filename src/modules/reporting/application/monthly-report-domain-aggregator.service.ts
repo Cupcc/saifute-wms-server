@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { MonthlySalesProjectEntry } from "../infrastructure/reporting.repository";
+import type { MonthlySalesProjectEntry } from "../infrastructure/monthly-report.repository";
 import { normalizeMonthlyReportWorkshopRef } from "./monthly-reporting.formatters";
 import {
   formatDecimal,

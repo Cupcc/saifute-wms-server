@@ -9,7 +9,7 @@
  *
  * Checks:
  *   1. File line count ≤ 500
- *   2. application/ layer does not import Prisma / PrismaService
+ *   2. application/ layer does not inject PrismaService (type-only Prisma imports are allowed per §2.3.1)
  *   3. Cross-module repository imports are flagged
  *
  * Exit codes:
@@ -82,18 +82,20 @@ if (lineCount > MAX_LINES) {
   );
 }
 
-// ---- Check 2: Prisma leakage into application layer ------------------------
+// ---- Check 2: PrismaService injection into application layer ----------------
+// Only flags runtime dependency (PrismaService injection), NOT type-only imports
+// like `import { Prisma } from ...` or Prisma-generated enums. See §2.3.1.
 const isApplicationLayer = APPLICATION_LAYER_PATTERN.test(normalized);
 
 if (isApplicationLayer) {
-  const prismaImportRegex =
-    /import\s+[^;]*?from\s+["']@prisma\/client["']|import\s+[^;]*?\{[^}]*Prisma[^}]*\}\s+from\s+["']@prisma\/client["']|PrismaService/;
-  const hasPrismaImport = prismaImportRegex.test(content);
+  const prismaServiceRegex = /PrismaService/;
+  const hasPrismaService = prismaServiceRegex.test(content);
 
-  if (hasPrismaImport) {
+  if (hasPrismaService) {
     violations.push(
-      `❌ Application layer must not import Prisma.\n` +
+      `❌ Application layer must not inject PrismaService.\n` +
         `   → Move data access to infrastructure/ layer (repository).\n` +
+        `   → Type-only Prisma imports (enums, input types, error classes) are allowed (§2.3.1).\n` +
         `   → Reference: docs/architecture/40-code-quality-governance.md §2`,
     );
   }

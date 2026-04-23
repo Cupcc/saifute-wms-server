@@ -11,14 +11,20 @@ import { MonthlyReportSourceService } from "./application/monthly-report-source.
 import { MonthlyReportingService } from "./application/monthly-reporting.service";
 import { ReportingService } from "./application/reporting.service";
 import { ReportingController } from "./controllers/reporting.controller";
-import { ReportingRepository } from "./infrastructure/reporting.repository";
+import { HomeMetricsRepository } from "./infrastructure/home-metrics.repository";
+import { InventoryReportingRepository } from "./infrastructure/inventory-reporting.repository";
+import { MonthlyMaterialCategoryRepository } from "./infrastructure/monthly-material-category.repository";
+import { MonthlyReportRepository } from "./infrastructure/monthly-report.repository";
 
 @Module({
   imports: [RbacModule, InventoryCoreModule],
   controllers: [ReportingController],
   providers: [
     ReportingService,
-    ReportingRepository,
+    HomeMetricsRepository,
+    InventoryReportingRepository,
+    MonthlyReportRepository,
+    MonthlyMaterialCategoryRepository,
     MonthlyReportCatalogService,
     MonthlyReportSourceService,
     MonthlyReportItemMapperService,

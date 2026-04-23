@@ -178,7 +178,6 @@ logs-dev
 # Local tooling / one-off counts
 .DS_Store
 .VSCodeCounter/
-.claude/
 __pycache__/
 
 # Migration dry-run / execute / validate JSON outputs (regenerated locally)

@@ -4,10 +4,13 @@ import {
   MonthlyReportingDirection,
   MonthlyReportingTopicKey,
 } from "../application/monthly-reporting.shared";
-import { ReportingRepository } from "./reporting.repository";
+import { InventoryReportingRepository } from "./inventory-reporting.repository";
+import { MonthlyMaterialCategoryRepository } from "./monthly-material-category.repository";
+import { MonthlyReportRepository } from "./monthly-report.repository";
+import { buildAbnormalFlags } from "./reporting-repository.helpers";
 
 describe("ReportingRepository", () => {
-  function createRepository() {
+  function createMockPrisma() {
     const $queryRaw = jest.fn().mockResolvedValue([]);
     const stockInOrder = { findMany: jest.fn().mockResolvedValue([]) };
     const stockInOrderLine = { findMany: jest.fn().mockResolvedValue([]) };
@@ -20,36 +23,67 @@ describe("ReportingRepository", () => {
     const stockInPriceCorrectionOrder = {
       findMany: jest.fn().mockResolvedValue([]),
     };
-    const repository = new ReportingRepository(
-      {
-        $queryRaw,
-        stockInOrder,
-        stockInOrderLine,
-        salesStockOrder,
-        salesStockOrderLine,
-        workshopMaterialOrder,
-        rdProjectMaterialAction,
-        rdHandoffOrder,
-        rdStocktakeOrder,
-        stockInPriceCorrectionOrder,
-      } as never,
-      {
-        businessTimezone: "Asia/Shanghai",
-      } as never,
-    );
 
     return {
       $queryRaw,
-      repository,
+      stockInOrder,
       stockInOrderLine,
       salesStockOrder,
       salesStockOrderLine,
+      workshopMaterialOrder,
+      rdProjectMaterialAction,
       rdHandoffOrder,
+      rdStocktakeOrder,
+      stockInPriceCorrectionOrder,
+    };
+  }
+
+  function createAppConfig() {
+    return {
+      businessTimezone: "Asia/Shanghai",
+    } as never;
+  }
+
+  function createMonthlyReportRepository() {
+    const prisma = createMockPrisma();
+    const repository = new MonthlyReportRepository(
+      prisma as never,
+      createAppConfig(),
+    );
+
+    return {
+      ...prisma,
+      repository,
+    };
+  }
+
+  function createMaterialCategoryRepository() {
+    const prisma = createMockPrisma();
+    const repository = new MonthlyMaterialCategoryRepository(
+      prisma as never,
+      createAppConfig(),
+    );
+
+    return {
+      ...prisma,
+      repository,
+    };
+  }
+
+  function createInventoryReportingRepository() {
+    const prisma = createMockPrisma();
+    const repository = new InventoryReportingRepository(
+      prisma as never,
+    );
+
+    return {
+      ...prisma,
+      repository,
     };
   }
 
   it("keeps stock scope and workshop filters together for rd handoff queries", async () => {
-    const { repository, rdHandoffOrder } = createRepository();
+    const { repository, rdHandoffOrder } = createMonthlyReportRepository();
 
     await repository.findMonthlyReportEntries({
       start: new Date("2026-04-01T00:00:00.000Z"),
@@ -105,7 +139,7 @@ describe("ReportingRepository", () => {
   });
 
   it("filters rd handoff rows by line project workshop when one order spans multiple workshops", async () => {
-    const { repository, rdHandoffOrder } = createRepository();
+    const { repository, rdHandoffOrder } = createMonthlyReportRepository();
     rdHandoffOrder.findMany.mockResolvedValue([
       {
         id: 12,
@@ -170,7 +204,7 @@ describe("ReportingRepository", () => {
   });
 
   it("treats rd handoff as project inbound when no stock-scope viewpoint is specified", async () => {
-    const { repository, rdHandoffOrder } = createRepository();
+    const { repository, rdHandoffOrder } = createMonthlyReportRepository();
     rdHandoffOrder.findMany.mockResolvedValue([
       {
         id: 15,
@@ -223,7 +257,7 @@ describe("ReportingRepository", () => {
       stockInOrderLine,
       salesStockOrder,
       salesStockOrderLine,
-    } = createRepository();
+    } = createMaterialCategoryRepository();
 
     stockInOrderLine.findMany.mockResolvedValue([
       {
@@ -349,21 +383,11 @@ describe("ReportingRepository", () => {
   });
 
   it("marks abnormal flags with the configured business timezone", () => {
-    const { repository } = createRepository();
-
-    const flags = (
-      repository as unknown as {
-        buildAbnormalFlags: (params: {
-          bizDate: Date;
-          createdAt: Date;
-          sourceBizDate?: Date | null;
-        }) => MonthlyReportingAbnormalFlag[];
-      }
-    ).buildAbnormalFlags({
+    const flags = buildAbnormalFlags({
       bizDate: new Date("2026-03-31T16:30:00.000Z"),
       createdAt: new Date("2026-04-30T16:30:00.000Z"),
       sourceBizDate: new Date("2026-03-31T15:30:00.000Z"),
-    });
+    }, "Asia/Shanghai");
 
     expect(flags).toEqual(
       expect.arrayContaining([
@@ -374,7 +398,7 @@ describe("ReportingRepository", () => {
   });
 
   it("avoids reserved keywords in inventory valuation raw SQL aliases", async () => {
-    const { repository, $queryRaw } = createRepository();
+    const { repository, $queryRaw } = createInventoryReportingRepository();
 
     await repository.summarizeInventoryValueByBalance({
       inventoryStockScopeIds: [1, 2],

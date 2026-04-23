@@ -8,22 +8,14 @@ import {
   DocumentFamily,
   type Prisma,
 } from "../../../../generated/prisma/client";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { ApprovalRepository } from "../infrastructure/approval.repository";
+import type { CreateApprovalDocumentCommand } from "../domain/approval.types";
 
-export interface CreateApprovalDocumentCommand {
-  documentFamily: DocumentFamily;
-  documentType: string;
-  documentId: number;
-  documentNumber: string;
-  submittedBy?: string;
-  createdBy?: string;
-}
+export type { CreateApprovalDocumentCommand };
 
 @Injectable()
 export class ApprovalService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly repository: ApprovalRepository,
   ) {}
 
@@ -31,39 +23,7 @@ export class ApprovalService {
     cmd: CreateApprovalDocumentCommand,
     tx?: Prisma.TransactionClient,
   ) {
-    const db = tx ?? this.prisma;
-
-    return db.approvalDocument.upsert({
-      where: {
-        documentType_documentId: {
-          documentType: cmd.documentType,
-          documentId: cmd.documentId,
-        },
-      },
-      create: {
-        documentFamily: cmd.documentFamily,
-        documentType: cmd.documentType,
-        documentId: cmd.documentId,
-        documentNumber: cmd.documentNumber,
-        auditStatus: AuditStatusSnapshot.PENDING,
-        submittedBy: cmd.submittedBy,
-        submittedAt: cmd.submittedBy ? new Date() : null,
-        createdBy: cmd.createdBy,
-        updatedBy: cmd.createdBy,
-      },
-      update: {
-        auditStatus: AuditStatusSnapshot.PENDING,
-        documentNumber: cmd.documentNumber,
-        submittedBy: cmd.submittedBy,
-        submittedAt: cmd.submittedBy ? new Date() : undefined,
-        decidedBy: null,
-        decidedAt: null,
-        rejectReason: null,
-        resetCount: { increment: 1 },
-        lastResetAt: new Date(),
-        updatedBy: cmd.createdBy,
-      },
-    });
+    return this.repository.upsertApprovalDocument(cmd, tx);
   }
 
   async markApprovalNotRequired(
@@ -72,21 +32,12 @@ export class ApprovalService {
     updatedBy?: string,
     tx?: Prisma.TransactionClient,
   ) {
-    const db = tx ?? this.prisma;
-
-    return db.approvalDocument.updateMany({
-      where: {
-        documentType,
-        documentId,
-      },
-      data: {
-        auditStatus: AuditStatusSnapshot.NOT_REQUIRED,
-        decidedBy: null,
-        decidedAt: null,
-        rejectReason: null,
-        updatedBy,
-      },
-    });
+    return this.repository.markApprovalNotRequired(
+      documentType,
+      documentId,
+      updatedBy,
+      tx,
+    );
   }
 
   async getApprovalStatus(
@@ -118,15 +69,12 @@ export class ApprovalService {
       );
     }
 
-    return this.prisma.approvalDocument.update({
-      where: { id },
-      data: {
-        auditStatus: AuditStatusSnapshot.APPROVED,
-        decidedBy: decidedBy ?? approval.decidedBy,
-        decidedAt: new Date(),
-        rejectReason: null,
-        updatedBy: decidedBy,
-      },
+    return this.repository.updateApprovalStatus(id, {
+      auditStatus: AuditStatusSnapshot.APPROVED,
+      decidedBy: decidedBy ?? approval.decidedBy,
+      decidedAt: new Date(),
+      rejectReason: null,
+      updatedBy: decidedBy,
     });
   }
 
@@ -141,15 +89,12 @@ export class ApprovalService {
       );
     }
 
-    return this.prisma.approvalDocument.update({
-      where: { id },
-      data: {
-        auditStatus: AuditStatusSnapshot.REJECTED,
-        decidedBy: decidedBy ?? approval.decidedBy,
-        decidedAt: new Date(),
-        rejectReason: rejectReason ?? null,
-        updatedBy: decidedBy,
-      },
+    return this.repository.updateApprovalStatus(id, {
+      auditStatus: AuditStatusSnapshot.REJECTED,
+      decidedBy: decidedBy ?? approval.decidedBy,
+      decidedAt: new Date(),
+      rejectReason: rejectReason ?? null,
+      updatedBy: decidedBy,
     });
   }
 
@@ -159,17 +104,14 @@ export class ApprovalService {
       throw new NotFoundException(`审核记录不存在: ${id}`);
     }
 
-    return this.prisma.approvalDocument.update({
-      where: { id },
-      data: {
-        auditStatus: AuditStatusSnapshot.PENDING,
-        decidedBy: null,
-        decidedAt: null,
-        rejectReason: null,
-        resetCount: { increment: 1 },
-        lastResetAt: new Date(),
-        updatedBy,
-      },
+    return this.repository.updateApprovalStatus(id, {
+      auditStatus: AuditStatusSnapshot.PENDING,
+      decidedBy: null,
+      decidedAt: null,
+      rejectReason: null,
+      resetCount: { increment: 1 },
+      lastResetAt: new Date(),
+      updatedBy,
     });
   }
 

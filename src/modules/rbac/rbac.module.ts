@@ -19,6 +19,13 @@ import { SystemPostController } from "./controllers/system-post.controller";
 import { SystemRoleController } from "./controllers/system-role.controller";
 import { SystemUserController } from "./controllers/system-user.controller";
 import { InMemoryRbacRepository } from "./infrastructure/in-memory-rbac.repository";
+import { RbacDictConfigRepository } from "./infrastructure/rbac-dict-config.repository";
+import { RbacPersistenceRepository } from "./infrastructure/rbac-persistence.repository";
+import { RbacResourceRepository } from "./infrastructure/rbac-resource.repository";
+import { RbacRoutesRepository } from "./infrastructure/rbac-routes.repository";
+import { RbacSeedRepairRepository } from "./infrastructure/rbac-seed-repair.repository";
+import { RbacState } from "./infrastructure/rbac-state";
+import { RbacUserRepository } from "./infrastructure/rbac-user.repository";
 
 @Module({
   imports: [MasterDataModule, SessionModule],
@@ -42,6 +49,13 @@ import { InMemoryRbacRepository } from "./infrastructure/in-memory-rbac.reposito
     SystemDictConfigService,
     WorkshopScopeService,
     SystemManagementBootstrapService,
+    RbacState,
+    RbacRoutesRepository,
+    RbacUserRepository,
+    RbacResourceRepository,
+    RbacDictConfigRepository,
+    RbacPersistenceRepository,
+    RbacSeedRepairRepository,
     InMemoryRbacRepository,
   ],
   exports: [RbacService, SystemManagementService, WorkshopScopeService],

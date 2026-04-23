@@ -1,7 +1,8 @@
 import { Test } from "@nestjs/testing";
 import { Prisma } from "../../../../generated/prisma/client";
 import { AppConfigService } from "../../../shared/config/app-config.service";
-import { ReportingRepository } from "../infrastructure/reporting.repository";
+import { MonthlyMaterialCategoryRepository } from "../infrastructure/monthly-material-category.repository";
+import { MonthlyReportRepository } from "../infrastructure/monthly-report.repository";
 import { MonthlyReportCatalogService } from "./monthly-report-catalog.service";
 import { MonthlyReportDomainAggregatorService } from "./monthly-report-domain-aggregator.service";
 import { MonthlyReportDomainSummaryService } from "./monthly-report-domain-summary.service";
@@ -21,7 +22,8 @@ import {
 
 describe("MonthlyReportExportService", () => {
   let service: MonthlyReportExportService;
-  let repository: jest.Mocked<ReportingRepository>;
+  let repository: jest.Mocked<MonthlyReportRepository>;
+  let materialCategoryRepository: jest.Mocked<MonthlyMaterialCategoryRepository>;
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -34,10 +36,15 @@ describe("MonthlyReportExportService", () => {
         MonthlyReportDomainSummaryService,
         MonthlyReportMaterialCategoryService,
         {
-          provide: ReportingRepository,
+          provide: MonthlyReportRepository,
           useValue: {
             findMonthlyReportEntries: jest.fn(),
             findMonthlySalesProjectEntries: jest.fn(),
+          },
+        },
+        {
+          provide: MonthlyMaterialCategoryRepository,
+          useValue: {
             findMonthlyMaterialCategoryEntries: jest.fn(),
           },
         },
@@ -51,7 +58,8 @@ describe("MonthlyReportExportService", () => {
     }).compile();
 
     service = moduleRef.get(MonthlyReportExportService);
-    repository = moduleRef.get(ReportingRepository);
+    repository = moduleRef.get(MonthlyReportRepository);
+    materialCategoryRepository = moduleRef.get(MonthlyMaterialCategoryRepository);
   });
 
   function createEntry(
@@ -154,7 +162,7 @@ describe("MonthlyReportExportService", () => {
   }
 
   it("should export the material-category workbook", async () => {
-    repository.findMonthlyMaterialCategoryEntries.mockResolvedValue([
+    materialCategoryRepository.findMonthlyMaterialCategoryEntries.mockResolvedValue([
       createMaterialCategoryEntry({
         topicKey: MonthlyReportingTopicKey.SALES_RETURN,
         documentType: "SalesStockOrder",

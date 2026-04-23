@@ -6,12 +6,14 @@ import {
   ReportingExportType,
   ReportingTrendType,
 } from "../dto/query-reporting.dto";
-import { ReportingRepository } from "../infrastructure/reporting.repository";
+import { HomeMetricsRepository } from "../infrastructure/home-metrics.repository";
+import { InventoryReportingRepository } from "../infrastructure/inventory-reporting.repository";
 import { ReportingService } from "./reporting.service";
 
 describe("ReportingService", () => {
   let service: ReportingService;
-  let repository: jest.Mocked<ReportingRepository>;
+  let repository: jest.Mocked<InventoryReportingRepository>;
+  let homeMetricsRepository: jest.Mocked<HomeMetricsRepository>;
   let stockScopeCompatibilityService: jest.Mocked<StockScopeCompatibilityService>;
 
   beforeEach(async () => {
@@ -19,9 +21,14 @@ describe("ReportingService", () => {
       providers: [
         ReportingService,
         {
-          provide: ReportingRepository,
+          provide: HomeMetricsRepository,
           useValue: {
             getHomeMetrics: jest.fn(),
+          },
+        },
+        {
+          provide: InventoryReportingRepository,
+          useValue: {
             findInventoryBalanceSnapshots: jest.fn(),
             summarizeInventoryValueByBalance: jest.fn(),
             findTrendDocuments: jest.fn(),
@@ -52,14 +59,15 @@ describe("ReportingService", () => {
     }).compile();
 
     service = moduleRef.get(ReportingService);
-    repository = moduleRef.get(ReportingRepository);
+    homeMetricsRepository = moduleRef.get(HomeMetricsRepository);
+    repository = moduleRef.get(InventoryReportingRepository);
     stockScopeCompatibilityService = moduleRef.get(
       StockScopeCompatibilityService,
     );
   });
 
   it("should build the home dashboard metrics", async () => {
-    repository.getHomeMetrics.mockResolvedValue({
+    homeMetricsRepository.getHomeMetrics.mockResolvedValue({
       inboundTodayCount: 4,
       outboundTodayCount: 1,
       workshopMaterialTodayCount: 2,
@@ -133,7 +141,7 @@ describe("ReportingService", () => {
     expect(result.inventory.totalInventoryValue).toBe("100.50");
     expect(result.todayDocuments.inboundCount).toBe(4);
     expect(result.cumulativeDocuments.inbound.totalAmount).toBe("1200.50");
-    expect(repository.getHomeMetrics).toHaveBeenCalledWith(
+    expect(homeMetricsRepository.getHomeMetrics).toHaveBeenCalledWith(
       expect.any(Date),
       expect.any(Date),
       {

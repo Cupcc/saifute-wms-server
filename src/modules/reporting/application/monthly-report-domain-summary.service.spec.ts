@@ -1,10 +1,11 @@
 import { Test } from "@nestjs/testing";
 import { Prisma } from "../../../../generated/prisma/client";
 import { AppConfigService } from "../../../shared/config/app-config.service";
+import { MonthlyMaterialCategoryRepository } from "../infrastructure/monthly-material-category.repository";
 import {
   type MonthlySalesProjectEntry,
-  ReportingRepository,
-} from "../infrastructure/reporting.repository";
+  MonthlyReportRepository,
+} from "../infrastructure/monthly-report.repository";
 import { MonthlyReportCatalogService } from "./monthly-report-catalog.service";
 import { MonthlyReportDomainAggregatorService } from "./monthly-report-domain-aggregator.service";
 import { MonthlyReportDomainSummaryService } from "./monthly-report-domain-summary.service";
@@ -19,7 +20,7 @@ import {
 
 describe("MonthlyReportDomainSummaryService", () => {
   let service: MonthlyReportDomainSummaryService;
-  let repository: jest.Mocked<ReportingRepository>;
+  let repository: jest.Mocked<MonthlyReportRepository>;
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -30,10 +31,15 @@ describe("MonthlyReportDomainSummaryService", () => {
         MonthlyReportItemMapperService,
         MonthlyReportDomainAggregatorService,
         {
-          provide: ReportingRepository,
+          provide: MonthlyReportRepository,
           useValue: {
             findMonthlyReportEntries: jest.fn(),
             findMonthlySalesProjectEntries: jest.fn(),
+          },
+        },
+        {
+          provide: MonthlyMaterialCategoryRepository,
+          useValue: {
             findMonthlyMaterialCategoryEntries: jest.fn(),
           },
         },
@@ -47,7 +53,7 @@ describe("MonthlyReportDomainSummaryService", () => {
     }).compile();
 
     service = moduleRef.get(MonthlyReportDomainSummaryService);
-    repository = moduleRef.get(ReportingRepository);
+    repository = moduleRef.get(MonthlyReportRepository);
   });
 
   function createEntry(

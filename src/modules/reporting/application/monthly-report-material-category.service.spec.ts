@@ -1,7 +1,8 @@
 import { Test } from "@nestjs/testing";
 import { Prisma } from "../../../../generated/prisma/client";
 import { AppConfigService } from "../../../shared/config/app-config.service";
-import { ReportingRepository } from "../infrastructure/reporting.repository";
+import { MonthlyMaterialCategoryRepository } from "../infrastructure/monthly-material-category.repository";
+import { MonthlyReportRepository } from "../infrastructure/monthly-report.repository";
 import { MonthlyReportCatalogService } from "./monthly-report-catalog.service";
 import { MonthlyReportItemMapperService } from "./monthly-report-item-mapper.service";
 import { MonthlyReportMaterialCategoryService } from "./monthly-report-material-category.service";
@@ -17,7 +18,8 @@ import {
 
 describe("MonthlyReportMaterialCategoryService", () => {
   let service: MonthlyReportMaterialCategoryService;
-  let repository: jest.Mocked<ReportingRepository>;
+  let repository: jest.Mocked<MonthlyReportRepository>;
+  let materialCategoryRepository: jest.Mocked<MonthlyMaterialCategoryRepository>;
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -27,10 +29,15 @@ describe("MonthlyReportMaterialCategoryService", () => {
         MonthlyReportCatalogService,
         MonthlyReportItemMapperService,
         {
-          provide: ReportingRepository,
+          provide: MonthlyReportRepository,
           useValue: {
             findMonthlyReportEntries: jest.fn(),
             findMonthlySalesProjectEntries: jest.fn(),
+          },
+        },
+        {
+          provide: MonthlyMaterialCategoryRepository,
+          useValue: {
             findMonthlyMaterialCategoryEntries: jest.fn(),
           },
         },
@@ -44,7 +51,8 @@ describe("MonthlyReportMaterialCategoryService", () => {
     }).compile();
 
     service = moduleRef.get(MonthlyReportMaterialCategoryService);
-    repository = moduleRef.get(ReportingRepository);
+    repository = moduleRef.get(MonthlyReportRepository);
+    materialCategoryRepository = moduleRef.get(MonthlyMaterialCategoryRepository);
   });
 
   function createMaterialCategoryPath(
@@ -111,7 +119,7 @@ describe("MonthlyReportMaterialCategoryService", () => {
   }
 
   it("should summarize material-category view from line facts into leaf-only buckets", async () => {
-    repository.findMonthlyMaterialCategoryEntries.mockResolvedValue([
+    materialCategoryRepository.findMonthlyMaterialCategoryEntries.mockResolvedValue([
       createMaterialCategoryEntry(),
       createMaterialCategoryEntry({
         topicKey: MonthlyReportingTopicKey.PRODUCTION_RECEIPT,
@@ -168,7 +176,7 @@ describe("MonthlyReportMaterialCategoryService", () => {
       categoryNodeKey: "11:CHEM:化工",
     });
 
-    expect(repository.findMonthlyMaterialCategoryEntries).toHaveBeenCalledWith({
+    expect(materialCategoryRepository.findMonthlyMaterialCategoryEntries).toHaveBeenCalledWith({
       start: new Date("2026-02-28T16:00:00.000Z"),
       end: new Date("2026-03-31T15:59:59.999Z"),
       stockScope: undefined,
@@ -200,7 +208,7 @@ describe("MonthlyReportMaterialCategoryService", () => {
   });
 
   it("should expose material-category line details filtered by keyword", async () => {
-    repository.findMonthlyMaterialCategoryEntries.mockResolvedValue([
+    materialCategoryRepository.findMonthlyMaterialCategoryEntries.mockResolvedValue([
       createMaterialCategoryEntry({
         topicKey: MonthlyReportingTopicKey.SALES_RETURN,
         documentType: "SalesStockOrder",
@@ -241,7 +249,7 @@ describe("MonthlyReportMaterialCategoryService", () => {
   });
 
   it("should treat material-category node key and category id as leaf-only filters", async () => {
-    repository.findMonthlyMaterialCategoryEntries.mockResolvedValue([
+    materialCategoryRepository.findMonthlyMaterialCategoryEntries.mockResolvedValue([
       createMaterialCategoryEntry({
         documentId: 301,
         documentNo: "YS-301",

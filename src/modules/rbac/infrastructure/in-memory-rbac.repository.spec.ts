@@ -5,12 +5,42 @@ import type {
   ManagedRoleRecord,
 } from "../domain/rbac.types";
 import { InMemoryRbacRepository } from "./in-memory-rbac.repository";
+import { RbacDictConfigRepository } from "./rbac-dict-config.repository";
+import { RbacPersistenceRepository } from "./rbac-persistence.repository";
+import { RbacResourceRepository } from "./rbac-resource.repository";
+import { RbacRoutesRepository } from "./rbac-routes.repository";
+import { RbacSeedRepairRepository } from "./rbac-seed-repair.repository";
+import { RbacState } from "./rbac-state";
+import { RbacUserRepository } from "./rbac-user.repository";
+
+function createFullRepository(prisma?: PrismaService): InMemoryRbacRepository {
+  const state = new RbacState();
+  const routesRepo = new RbacRoutesRepository();
+  const userRepo = new RbacUserRepository(state);
+  const resourceRepo = new RbacResourceRepository(state);
+  const dictConfigRepo = new RbacDictConfigRepository(state);
+  const persistenceRepo = new RbacPersistenceRepository(state, prisma as PrismaService);
+  const seedRepairRepo = new RbacSeedRepairRepository(state);
+  return new InMemoryRbacRepository(userRepo, resourceRepo, dictConfigRepo, routesRepo, persistenceRepo, seedRepairRepo);
+}
+
+function createFullRepositoryWithState(prisma?: PrismaService): { repository: InMemoryRbacRepository; state: RbacState } {
+  const state = new RbacState();
+  const routesRepo = new RbacRoutesRepository();
+  const userRepo = new RbacUserRepository(state);
+  const resourceRepo = new RbacResourceRepository(state);
+  const dictConfigRepo = new RbacDictConfigRepository(state);
+  const persistenceRepo = new RbacPersistenceRepository(state, prisma as PrismaService);
+  const seedRepairRepo = new RbacSeedRepairRepository(state);
+  const repository = new InMemoryRbacRepository(userRepo, resourceRepo, dictConfigRepo, routesRepo, persistenceRepo, seedRepairRepo);
+  return { repository, state };
+}
 
 describe("InMemoryRbacRepository", () => {
   let repository: InMemoryRbacRepository;
 
   beforeEach(() => {
-    repository = new InMemoryRbacRepository();
+    repository = createFullRepository();
   });
 
   it("cascades descendant ancestors when moving a department", () => {
@@ -130,15 +160,12 @@ describe("InMemoryRbacRepository", () => {
   });
 
   it("realigns conflicting reporting menu ids and seed role menus for rd users", async () => {
-    const mutableRepository = repository as unknown as {
-      menus: ManagedMenuRecord[];
-      roles: ManagedRoleRecord[];
-    };
-    const exportMenu = mutableRepository.menus.find((menu) => menu.menuId === 2915);
-    const staleMonthlyMenu = mutableRepository.menus.find(
+    const { repository: repo, state } = createFullRepositoryWithState();
+    const exportMenu = state.menus.find((menu) => menu.menuId === 2915);
+    const staleMonthlyMenu = state.menus.find(
       (menu) => menu.menuId === 2914,
     );
-    const rdRole = mutableRepository.roles.find((role) => role.roleKey === "rd-operator");
+    const rdRole = state.roles.find((role) => role.roleKey === "rd-operator");
 
     expect(exportMenu).toBeDefined();
     expect(staleMonthlyMenu).toBeDefined();
@@ -148,27 +175,27 @@ describe("InMemoryRbacRepository", () => {
       ...exportMenu!,
       menuId: 2914,
     });
-    mutableRepository.menus = mutableRepository.menus.filter(
+    state.menus = state.menus.filter(
       (menu) => menu.menuId !== 2915,
     );
     rdRole!.menuIds = rdRole!.menuIds.filter((menuId) => menuId !== 2914);
 
-    const before = await repository.findUserById(5);
+    const before = await repo.findUserById(5);
     expect(before?.permissions).not.toContain("reporting:monthly-reporting:view");
 
-    const repairedMenus = repository.ensureSeedPermissionMenus(
+    const repairedMenus = repo.ensureSeedPermissionMenus(
       ["rd-operator"],
       ["reporting:monthly-reporting:view", "reporting:export"],
     );
-    const syncedRoles = repository.syncSeedRoleMenus(["rd-operator"]);
+    const syncedRoles = repo.syncSeedRoleMenus(["rd-operator"]);
 
-    const after = await repository.findUserById(5);
+    const after = await repo.findUserById(5);
     expect(repairedMenus).toBe(true);
     expect(syncedRoles).toBe(true);
-    expect(repository.listMenus({}).some((menu) => menu.menuId === 2914)).toBe(
+    expect(repo.listMenus({}).some((menu) => menu.menuId === 2914)).toBe(
       true,
     );
-    expect(repository.listMenus({}).some((menu) => menu.menuId === 2915)).toBe(
+    expect(repo.listMenus({}).some((menu) => menu.menuId === 2915)).toBe(
       true,
     );
     expect(after?.permissions).toContain("reporting:monthly-reporting:view");
@@ -214,7 +241,7 @@ describe("InMemoryRbacRepository", () => {
       sysRoleDept: modelStub,
       $transaction: txHandler,
     };
-    const persistentRepository = new InMemoryRbacRepository(
+    const persistentRepository = createFullRepository(
       mockPrisma as unknown as PrismaService,
     );
     const bootstrapService = new SystemManagementBootstrapService(
@@ -296,7 +323,7 @@ describe("InMemoryRbacRepository", () => {
       sysRoleDept: modelStub,
       $transaction: jest.fn(),
     };
-    const persistentRepository = new InMemoryRbacRepository(
+    const persistentRepository = createFullRepository(
       mockPrisma as unknown as PrismaService,
     );
     const bootstrapService = new SystemManagementBootstrapService(
@@ -357,7 +384,7 @@ describe("InMemoryRbacRepository", () => {
       sysRoleDept: modelStub,
       $transaction: txHandler,
     };
-    const persistentRepository = new InMemoryRbacRepository(
+    const persistentRepository = createFullRepository(
       mockPrisma as unknown as PrismaService,
     );
     const bootstrapService = new SystemManagementBootstrapService(

@@ -80,7 +80,7 @@
 - 执行脚本：`scripts/check-quality-hooks.mjs`。
 - 当前覆盖的检查（与本文档映射）：
   - 文件行数 ≤ 500（对应 §4.1）
-  - `application/` 层禁止 import Prisma / PrismaService（对应 §2.3.1）
+  - `application/` 层禁止注入 PrismaService / 直接执行查询（对应 §2.3，类型引用按 §2.3.1 豁免）
   - 跨模块 repository import 识别（对应 §3.1）
 - 触发时机：agent 每次 `Edit` / `Write` 一个 `.ts` 文件后**立即运行**。
 - 失败处理：脚本以非零退出码 + stderr 给出**可操作的修复指引**（文件名、违规行、引用的文档章节）。Claude Code 会把 stderr 回显给 agent，促使其当场修复。
@@ -137,7 +137,7 @@ controllers/  →  application/  →  infrastructure/
 | 层                 | 允许 import                                                                | 禁止 import                                           |
 | ----------------- | ------------------------------------------------------------------------ | --------------------------------------------------- |
 | `controllers/`    | dto/, application/ service, shared/decorators, shared/guards             | infrastructure/, Prisma, 其他模块内部                     |
-| `application/`    | domain/, dto/(仅类型), 本模块 repository interface, 其他模块的 **exported service** | `@prisma/client`, `PrismaService`, 其他模块的 repository |
+| `application/`    | domain/, dto/(仅类型), 本模块 repository interface, 其他模块的 **exported service**, Prisma 类型引用（见 §2.3.1） | `PrismaService`（运行时注入）, 直接执行 Prisma 查询/事务, 其他模块的 repository |
 | `domain/`         | 仅标准库和本模块 domain/ 内类型                                                     | 任何外部框架（NestJS, Prisma, Express）                     |
 | `infrastructure/` | Prisma, Redis, 外部 SDK, domain/                                           | controllers/, 其他模块 infrastructure                   |
 | `dto/`            | class-validator, class-transformer, shared/domain/                       | application/, infrastructure/                       |
@@ -145,9 +145,19 @@ controllers/  →  application/  →  infrastructure/
 
 ### 2.3 关键禁令
 
-1. **application 层禁止 Prisma** — 不允许 import `Prisma`, `PrismaService`, 或 `@prisma/client` 中的任何类型。需要使用 `Decimal` 时，使用 `shared/common` 或 domain 层的 value object 替代。
+1. **application 层禁止注入 PrismaService / 直接执行查询** — 不允许在 constructor 中注入 `PrismaService`，不允许调用 `this.prisma.*` 或 `tx.*` 执行查询/事务。数据访问必须通过 repository 方法。
 2. **application 层禁止直接执行事务** — 事务边界由 repository 或 Unit of Work 模式封装，service 只调用 repository 方法。
 3. **controllers 禁止业务逻辑** — 不允许 if/else 业务分支、循环计算、数据聚合。只做：解析请求 → 调用 service → 返回响应。
+
+#### 2.3.1 Prisma 类型引用豁免
+
+application 层**允许**以下 Prisma 类型的只读引用，不视为分层违规：
+
+- **输入类型**：`Prisma.XXXUncheckedUpdateInput` 等——用于构造传给 repository 的 payload，避免重复定义 1:1 映射的 interface
+- **异常类型**：`Prisma.PrismaClientKnownRequestError`——用于 catch 中做语义转换（§6.5 模式 #1），如唯一约束冲突 → 业务异常
+- **枚举/常量**：Prisma schema 生成的 enum（如 `AuditStatusSnapshot`、`DocumentFamily`）——这些是领域概念的类型表达
+
+**判定标准**：`import { Prisma } from '...'` 或 `import { SomeEnum } from '...'` 本身不违规；**注入 `PrismaService` 或调用 `prisma.*` 方法**才违规。简单说：**type-only 引用 OK，runtime 依赖禁止**。
 
 ### 2.4 过渡期处理
 
@@ -463,10 +473,11 @@ bun run lint:src-lines  # zero violations (500 line threshold)
   - ~~`rbac/application/system-management.service.ts` — 721~~ → facade 91 + 3 子 service
   - ~~`reporting/application/reporting.service.ts`~~ 上次列入但本次实测仍为 620 行（保留）
 
-### 8.2 分层违规（application 层 Prisma 依赖）
+### 8.2 分层违规（application 层 PrismaService 注入）
 
-- **违规文件数**：约 29（拆分后子 service 继承了原有 Prisma import，数量略增——这是预期行为，因为本轮只做职责拆分不下沉 Prisma）
-- **主要模式**：`import { Prisma } from ...`、注入 `PrismaService`
+- **违规文件数**：约 22（仅统计注入 `PrismaService` 或直接调用 `prisma.*` 的生产文件）
+- **主要模式**：注入 `PrismaService`、调用 `this.prisma.*` 或 `tx.*` 执行查询/事务
+- **不计为违规**：仅 import `Prisma` 类型（如 `Prisma.XXXUncheckedUpdateInput`）、Prisma 生成的 enum、`PrismaClientKnownRequestError` 异常类型（见 §2.3.1 豁免）
 - **下一步**：按模块逐个下沉 Prisma 调用到 repository，每个模块一个独立 PR
 
 ### 8.3 模块边界违规
@@ -516,9 +527,9 @@ bun run lint:src-lines  # zero violations (500 line threshold)
 - `reporting.repository.ts`（2165 行）：按报表类型拆分（monthly/home-metrics 等），与 reporting application 层的子 service 一一对应。
 - `inventory.repository.ts`（536 行）：略超阈值，优先级低。
 
-#### P4：application 层 Prisma 下沉
+#### P4：application 层 PrismaService 下沉
 
-- **现状**：约 29 个 application 层文件 import Prisma 或 PrismaService。
+- **现状**：约 22 个 application 层生产文件注入 PrismaService 并直接执行数据库查询/事务（仅 type import 已按 §2.3.1 豁免，不计入）。
 - **方法**：每个模块独立 PR，把 `this.prisma.runInTransaction` 和直接 Prisma 查询下沉到 repository 方法。
 - **参照**：master-data 模块已完成此项（application 层零 Prisma import）。
 - **建议顺序**：从最小模块开始（approval → sales-project → sales → inbound → workshop-material → rd-* → inventory-core）。

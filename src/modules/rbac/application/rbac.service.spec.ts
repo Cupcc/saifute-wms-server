@@ -1,6 +1,13 @@
 import { Test } from "@nestjs/testing";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { InMemoryRbacRepository } from "../infrastructure/in-memory-rbac.repository";
+import { RbacDictConfigRepository } from "../infrastructure/rbac-dict-config.repository";
+import { RbacPersistenceRepository } from "../infrastructure/rbac-persistence.repository";
+import { RbacResourceRepository } from "../infrastructure/rbac-resource.repository";
+import { RbacRoutesRepository } from "../infrastructure/rbac-routes.repository";
+import { RbacSeedRepairRepository } from "../infrastructure/rbac-seed-repair.repository";
+import { RbacState } from "../infrastructure/rbac-state";
+import { RbacUserRepository } from "../infrastructure/rbac-user.repository";
 import { RbacService } from "./rbac.service";
 
 describe("RbacService", () => {
@@ -10,6 +17,13 @@ describe("RbacService", () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         RbacService,
+        RbacState,
+        RbacRoutesRepository,
+        RbacUserRepository,
+        RbacResourceRepository,
+        RbacDictConfigRepository,
+        RbacPersistenceRepository,
+        RbacSeedRepairRepository,
         InMemoryRbacRepository,
         {
           provide: MasterDataService,

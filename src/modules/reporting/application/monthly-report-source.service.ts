@@ -1,10 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { AppConfigService } from "../../../shared/config/app-config.service";
 import type { StockScopeCode } from "../../session/domain/user-session";
+import { MonthlyMaterialCategoryRepository } from "../infrastructure/monthly-material-category.repository";
 import {
   type MonthlySalesProjectEntry,
-  ReportingRepository,
-} from "../infrastructure/reporting.repository";
+  MonthlyReportRepository,
+} from "../infrastructure/monthly-report.repository";
 import {
   formatMonthlyReportSalesProjectLabel,
   normalizeMonthlyReportWorkshopName,
@@ -49,7 +50,8 @@ export interface MonthlyReportSourceData {
 @Injectable()
 export class MonthlyReportSourceService {
   constructor(
-    private readonly repository: ReportingRepository,
+    private readonly repository: MonthlyReportRepository,
+    private readonly materialCategoryRepository: MonthlyMaterialCategoryRepository,
     private readonly appConfigService: AppConfigService,
   ) {}
 
@@ -88,7 +90,7 @@ export class MonthlyReportSourceService {
       query.yearMonth,
       this.appConfigService.businessTimezone,
     );
-    return this.repository.findMonthlyMaterialCategoryEntries({
+    return this.materialCategoryRepository.findMonthlyMaterialCategoryEntries({
       start,
       end,
       stockScope: query.stockScope,
