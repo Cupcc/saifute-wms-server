@@ -82,6 +82,29 @@ if (lineCount > MAX_LINES) {
   );
 }
 
+// ---- Check 1b: dead barrel / re-export shell detection ---------------------
+// A short file (≤ 30 lines) that only contains `export ... from` statements
+// (and their multi-line continuations) is a leftover barrel from a split.
+// See §4.4 — pure re-export barrels are a prohibited anti-pattern.
+if (lineCount > 0 && lineCount <= 30) {
+  const nonBlankLines = lines.filter((l) => l.trim().length > 0);
+  // Strip all `export { ... } from "..."` blocks (single and multi-line) from
+  // the content and see if anything meaningful remains.
+  const stripped = content
+    .replace(/export\s+(type\s+)?\{[^}]*\}\s+from\s+["'][^"']+["'];?/g, "")
+    .replace(/import\s+[^;]+;/g, "")
+    .trim();
+
+  if (nonBlankLines.length > 0 && stripped.length === 0) {
+    violations.push(
+      `⚠️  File appears to be a dead barrel (${nonBlankLines.length} non-blank lines, 100% re-exports).\n` +
+        `   → If no consumer imports from this file, delete it.\n` +
+        `   → Verify: rg "from.*${path.basename(absolutePath, ".ts")}" src/ -l\n` +
+        `   → Reference: docs/architecture/40-code-quality-governance.md §4.4`,
+    );
+  }
+}
+
 // ---- Check 2: PrismaService injection into application layer ----------------
 // Only flags runtime dependency (PrismaService injection), NOT type-only imports
 // like `import { Prisma } from ...` or Prisma-generated enums. See §2.3.1.
