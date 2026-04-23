@@ -440,28 +440,29 @@ bun run lint:src-lines  # zero violations (500 line threshold)
 
 ---
 
-## 8. 审计基线（2026-04-22 快照，第二次更新）
+## 8. 审计基线（2026-04-23 快照，第三次更新）
 
 记录当前已知违规的量化数据，用于跟踪改善趋势。
 
 ### 8.1 文件行数违规（> 500 行）
 
-- **违规文件数**：13（较初始 23 减少 10，↓43%）
+- **违规文件数**：7（较上次 13 减少 6，较初始 23 减少 16，↓70%）
 - **完整违规列表**：
-  - `rbac/infrastructure/in-memory-rbac.repository.ts` — 2391 行（infrastructure 层）
-  - `reporting/infrastructure/reporting.repository.ts` — 2165 行（infrastructure 层）
-  - `inventory-core/application/inventory.service.spec.ts` — 1647 行（spec）
-  - `inventory-core/application/inventory.service.ts` — 1633 行（唯一剩余 God Object）
+  - `inventory-core/application/inventory.service.spec.ts` — 1724 行（spec，因新增 FactoryNumberRepository mock 略增）
+  - `inventory-core/application/inventory.service.ts` — 1635 行（唯一剩余 God Object）
   - `rd-project/application/rd-project.service.ts` — 1502 行（高耦合核心）
   - `rd-subwarehouse/application/rd-material-status.helper.ts` — 1007 行（高耦合核心）
   - `inbound/application/inbound.service.spec.ts` — 908 行（spec）
-  - `rd-project/application/rd-project.service.spec.ts` — 760 行（spec）
   - `rd-project/application/rd-project-material-action.service.ts` — 650 行（高耦合核心）
-  - `reporting/application/reporting.service.ts` — 620 行（略超阈值）
   - `rd-subwarehouse/application/rd-handoff.service.ts` — 541 行（高耦合核心）
-  - `inventory-core/infrastructure/inventory.repository.ts` — 536 行（infrastructure 层）
-  - `rd-subwarehouse/application/rd-stocktake-order.service.spec.ts` — 515 行（spec）
-- **已消除的违规（共 10 个，两轮 facade 拆分）**：
+- **本轮消除的违规（共 6 个）**：
+  - ~~`rbac/infrastructure/in-memory-rbac.repository.ts` — 2391~~ → 拆为 rbac-persistence / rbac-resource / rbac-user / rbac-dict-config / rbac-routes / rbac-seed-repair + rbac-state（最大 489 行）
+  - ~~`reporting/infrastructure/reporting.repository.ts` — 2165~~ → 拆为 monthly-report / monthly-material-category / monthly-report-adjustment / monthly-report-rd / home-metrics / inventory-reporting + reporting-repository.helpers（最大 500 行）
+  - ~~`rd-project/application/rd-project.service.spec.ts` — 760~~ → 拆为 rd-project-actions.spec + rd-project-master.spec + rd-project-material-action.spec + spec-helpers（最大 443 行）
+  - ~~`rd-subwarehouse/application/rd-stocktake-order.service.spec.ts` — 515~~ → 精简至 434 行
+  - ~~`reporting/application/reporting.service.ts` — 620~~ → 提取 date/timezone 工具到 domain/reporting-date.util.ts（490 行）
+  - ~~`inventory-core/infrastructure/inventory.repository.ts` — 536~~ → 提取 FactoryNumberRepository（431 行）
+- **历史已消除（共 10 个，前两轮 facade 拆分）**：
   - ~~`sales/application/sales.service.ts` — 1738~~ → facade 58 + 6 子 service
   - ~~`sales/application/sales.service.spec.ts` — 1125~~ → 4 spec
   - ~~`workshop-material/application/workshop-material.service.ts` — 1495~~ → facade 112 + 5 子 service
@@ -471,11 +472,10 @@ bun run lint:src-lines  # zero violations (500 line threshold)
   - ~~`inbound/application/inbound.service.ts` — 1106~~ → facade 63 + 4 子 service + shared + domain helper
   - ~~`sales-project/application/sales-project.service.ts` — 745~~ → facade 70 + 4 子 service
   - ~~`rbac/application/system-management.service.ts` — 721~~ → facade 91 + 3 子 service
-  - ~~`reporting/application/reporting.service.ts`~~ 上次列入但本次实测仍为 620 行（保留）
 
 ### 8.2 分层违规（application 层 PrismaService 注入）
 
-- **违规文件数**：约 22（仅统计注入 `PrismaService` 或直接调用 `prisma.*` 的生产文件）
+- **违规文件数**：约 21（仅统计注入 `PrismaService` 或直接调用 `prisma.*` 的生产文件）
 - **主要模式**：注入 `PrismaService`、调用 `this.prisma.*` 或 `tx.*` 执行查询/事务
 - **不计为违规**：仅 import `Prisma` 类型（如 `Prisma.XXXUncheckedUpdateInput`）、Prisma 生成的 enum、`PrismaClientKnownRequestError` 异常类型（见 §2.3.1 豁免）
 - **下一步**：按模块逐个下沉 Prisma 调用到 repository，每个模块一个独立 PR
@@ -489,10 +489,10 @@ bun run lint:src-lines  # zero violations (500 line threshold)
 
 | Service          | 行数   | 构造函数依赖 | 判定   |
 | ---------------- | ---- | ------ | ---- |
-| InventoryService | 1633 | 4      | 行数超标 |
+| InventoryService | 1635 | 5      | 行数超标 + 依赖达阈值 |
 
-- **已消除（共 4 个）**：SalesService、WorkshopMaterialService、MonthlyReportingService、InboundService、SalesProjectService、SystemManagementService
-- **RdProjectService**（1502 行）不再计为 God Object——它已有 `RdProjectMaterialActionService` 分担部分职责，且构造函数依赖数 = 4（未超标）。但行数仍超 500，属于文件行数违规。
+- **已消除（共 6 个）**：SalesService、WorkshopMaterialService、MonthlyReportingService、InboundService、SalesProjectService、SystemManagementService
+- **RdProjectService**（1502 行）不再计为 God Object——它已有 `RdProjectMaterialActionService` 分担部分职责，且构造函数依赖数 = 5（边界）。但行数仍超 500，属于文件行数违规。
 - God Object 从 5 个降至 **1 个**（↓80%）
 
 ### 8.5 趋势跟踪
@@ -516,27 +516,27 @@ bun run lint:src-lines  # zero violations (500 line threshold)
 
 #### P2：InventoryService 拆分（唯一剩余 God Object）
 
-- **现状**：1633 行，4 个构造函数依赖。是 inventory-core 模块的核心写入口。
+- **现状**：1635 行，5 个构造函数依赖（含新增的 FactoryNumberRepository）。是 inventory-core 模块的核心写入口。
 - **风险**：被 sales、workshop-material、inbound、rd-project、rd-subwarehouse 等几乎所有模块依赖。拆分需要非常谨慎。
 - **建议方向**：按操作类型拆分（increaseStock / decreaseStock / reverseStock / getBalance 等），保留 facade。
 - **前置条件**：需要 Read 完整的 inventory.service.ts 和所有调用方，理解每个方法的消费者。
 
-#### P3：Infrastructure 层大文件拆分
+#### ~~P3：Infrastructure 层大文件拆分~~ ✅ 已完成
 
-- `in-memory-rbac.repository.ts`（2391 行）：按 RBAC 领域拆分（user/role/dept/post/menu/dict/config/notice），与 SystemManagementService 的子 service 一一对应。
-- `reporting.repository.ts`（2165 行）：按报表类型拆分（monthly/home-metrics 等），与 reporting application 层的子 service 一一对应。
-- `inventory.repository.ts`（536 行）：略超阈值，优先级低。
+- ~~`in-memory-rbac.repository.ts`（2391 行）~~ → 已拆为 6+ 文件（最大 489 行）
+- ~~`reporting.repository.ts`（2165 行）~~ → 已拆为 6 文件（最大 500 行）
+- ~~`inventory.repository.ts`（536 行）~~ → 已提取 FactoryNumberRepository（431 行）
 
 #### P4：application 层 PrismaService 下沉
 
-- **现状**：约 22 个 application 层生产文件注入 PrismaService 并直接执行数据库查询/事务（仅 type import 已按 §2.3.1 豁免，不计入）。
+- **现状**：约 21 个 application 层生产文件注入 PrismaService 并直接执行数据库查询/事务（仅 type import 已按 §2.3.1 豁免，不计入）。
 - **方法**：每个模块独立 PR，把 `this.prisma.runInTransaction` 和直接 Prisma 查询下沉到 repository 方法。
 - **参照**：master-data 模块已完成此项（application 层零 Prisma import）。
 - **建议顺序**：从最小模块开始（approval → sales-project → sales → inbound → workshop-material → rd-* → inventory-core）。
 
 #### P5：Spec 文件拆分
 
-- 4 个 spec 文件超 500 行（最大 1647）。
+- 3 个 spec 文件超 500 行（最大 1724）。
 - 优先级最低——测试代码的行数违规不影响生产代码质量。
 - 随对应生产代码重构时顺手拆分即可。
 
