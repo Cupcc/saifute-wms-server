@@ -1,7 +1,7 @@
 # Bun 运行时迁移变更日志
 
 > 分支: `feature/bun-migration`
-> 基于: `dev` (b37d9dc)
+> 基于: 集成基线快照 (b37d9dc)
 > 开始日期: 2026-04-09
 > Bun 版本: 1.3.11
 > Node 版本: 24.14.0 (对照基线)
@@ -143,7 +143,7 @@ nohup ./scripts/bun-migration/watch-stability.sh 60 0 &
 
 ## 回滚方案
 
-如迁移失败，直接切回 `dev` 分支即可，所有变更隔离在 `feature/bun-migration` 分支。
+如迁移失败，保持变更隔离在 `feature/bun-migration` 分支，不要合入 `main`；若已在本地试跑，可直接切回迁移前基线提交。
 生产部署只需将 `bun` 改回 `node` 即可回滚。
 
 ## 结论
@@ -159,4 +159,4 @@ nohup ./scripts/bun-migration/watch-stability.sh 60 0 &
 **已知问题:**
 - Verdaccio (192.168.6.128:4873) tgz 下载 500，需修复或继续用 npmmirror
 
-**建议:** 在 dev 环境用 `watch-stability.sh` 跑 24-48 小时观察后，再决定是否合入主分支。
+**建议:** 在开发环境用 `watch-stability.sh` 跑 24-48 小时观察后，再决定是否合入 `main`。

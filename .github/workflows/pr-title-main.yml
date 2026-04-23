@@ -1,0 +1,49 @@
+name: PR Policy
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+permissions:
+  pull-requests: read
+
+jobs:
+  semantic-pr-title:
+    name: semantic-pr-title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            refactor
+            perf
+            docs
+            test
+            build
+            ci
+            chore
+            revert
+
+  gate:
+    name: gate
+    if: ${{ always() }}
+    needs:
+      - semantic-pr-title
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce PR policy checks
+        run: |
+          if [ "${{ needs.semantic-pr-title.result }}" != "success" ]; then
+            echo "semantic-pr-title must pass before merging into main."
+            exit 1
+          fi
