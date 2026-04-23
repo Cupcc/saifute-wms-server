@@ -3,6 +3,7 @@ import { Prisma } from "../../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { InventoryRepository } from "../infrastructure/inventory.repository";
+import { FactoryNumberRepository } from "../infrastructure/factory-number.repository";
 import { InventoryService } from "./inventory.service";
 import { StockScopeCompatibilityService } from "./stock-scope-compatibility.service";
 import { createStockScopeCompatibilityServiceMock } from "./inventory.spec-helpers";
@@ -54,6 +55,10 @@ describe("InventoryService", () => {
           useValue: repositoryMock,
         },
         {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
           provide: StockScopeCompatibilityService,
           useFactory: createStockScopeCompatibilityServiceMock,
         },
@@ -98,6 +103,10 @@ describe("InventoryService", () => {
           },
         },
         {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
           provide: StockScopeCompatibilityService,
           useFactory: createStockScopeCompatibilityServiceMock,
         },
@@ -129,6 +138,10 @@ describe("InventoryService", () => {
               releasedQty: new Prisma.Decimal(30),
             }),
           },
+        },
+        {
+          provide: FactoryNumberRepository,
+          useValue: {},
         },
         {
           provide: StockScopeCompatibilityService,
@@ -163,6 +176,10 @@ describe("InventoryService", () => {
           useValue: {
             findSourceUsages,
           },
+        },
+        {
+          provide: FactoryNumberRepository,
+          useValue: {},
         },
         {
           provide: StockScopeCompatibilityService,
