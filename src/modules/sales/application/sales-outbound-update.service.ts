@@ -13,17 +13,11 @@ import {
   SalesStockOrderType,
 } from "../../../../generated/prisma/client";
 import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
-import { ApprovalService } from "../../approval/application/approval.service";
-import { InventoryService } from "../../inventory-core/application/inventory.service";
-import { MasterDataService } from "../../master-data/application/master-data.service";
 import type { UpdateOutboundOrderDto } from "../dto/update-outbound-order.dto";
 import { SalesRepository } from "../infrastructure/sales.repository";
 import { OUTBOUND_SOURCE_OPERATION_TYPES } from "./sales-outbound.service";
-import {
-  type OutboundLineWriteData,
-  SalesSnapshotsService,
-} from "./sales-snapshots.service";
+import { SalesSharedService } from "./sales-shared.service";
+import { type OutboundLineWriteData } from "./sales-snapshots.service";
 import { SalesTraceabilityService } from "./sales-traceability.service";
 
 const DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
@@ -32,12 +26,8 @@ const BUSINESS_MODULE = "sales";
 @Injectable()
 export class SalesOutboundUpdateService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly repository: SalesRepository,
-    private readonly masterDataService: MasterDataService,
-    private readonly inventoryService: InventoryService,
-    private readonly approvalService: ApprovalService,
-    private readonly snapshots: SalesSnapshotsService,
+    private readonly shared: SalesSharedService,
     private readonly traceability: SalesTraceabilityService,
   ) {}
 
@@ -66,24 +56,28 @@ export class SalesOutboundUpdateService {
     const nextRevision = existing.revisionNo + 1;
     const finalCustomerId = dto.customerId ?? existing.customerId ?? undefined;
     const customerSnapshot = finalCustomerId
-      ? await this.snapshots.resolveCustomerSnapshot(finalCustomerId)
+      ? await this.shared.snapshots.resolveCustomerSnapshot(finalCustomerId)
       : {
           customerCodeSnapshot: existing.customerCodeSnapshot,
           customerNameSnapshot: existing.customerNameSnapshot,
         };
     const handlerSnapshot = dto.handlerPersonnelId
-      ? await this.snapshots.resolveHandlerSnapshot(dto.handlerPersonnelId)
+      ? await this.shared.snapshots.resolveHandlerSnapshot(
+          dto.handlerPersonnelId,
+        )
       : { handlerNameSnapshot: existing.handlerNameSnapshot };
     const stockScopeRecord =
-      await this.masterDataService.getStockScopeByCode("MAIN");
+      await this.shared.masterDataService.getStockScopeByCode("MAIN");
     const workshop = dto.workshopId
-      ? await this.masterDataService.getWorkshopById(dto.workshopId)
+      ? await this.shared.masterDataService.getWorkshopById(dto.workshopId)
       : { workshopName: existing.workshopNameSnapshot };
     const salesProjectById =
-      await this.snapshots.resolveSalesProjectReferencesForLines(dto.lines);
+      await this.shared.snapshots.resolveSalesProjectReferencesForLines(
+        dto.lines,
+      );
     const plannedLines = await Promise.all(
       dto.lines.map((line, idx) =>
-        this.snapshots.buildOutboundLineWriteData(
+        this.shared.snapshots.buildOutboundLineWriteData(
           line,
           idx + 1,
           salesProjectById,
@@ -99,13 +93,13 @@ export class SalesOutboundUpdateService {
     );
     this.assertNoDuplicateOutboundPriceLayers(plannedLines);
 
-    const updatedOrder = await this.prisma.runInTransaction(async (tx) => {
+    const updatedOrder = await this.repository.runInTransaction(async (tx) => {
       const currentOrder = await this.repository.findOrderById(id, tx);
       if (!currentOrder) {
         throw new NotFoundException(`出库单不存在: ${id}`);
       }
 
-      const logs = await this.inventoryService.getLogsForDocument(
+      const logs = await this.shared.inventoryService.getLogsForDocument(
         {
           businessDocumentType: DOCUMENT_TYPE,
           businessDocumentId: id,
@@ -145,7 +139,7 @@ export class SalesOutboundUpdateService {
         }
 
         // Release this line's source allocations before reversing its OUT log.
-        await this.inventoryService.releaseSourceUsagesForConsumerLine(
+        await this.shared.inventoryService.releaseSourceUsagesForConsumerLine(
           {
             consumerDocumentType: DOCUMENT_TYPE,
             consumerDocumentId: id,
@@ -155,7 +149,7 @@ export class SalesOutboundUpdateService {
           tx,
         );
 
-        await this.inventoryService.reverseStock(
+        await this.shared.inventoryService.reverseStock(
           {
             logIdToReverse: currentLog.id,
             idempotencyKey: `SalesStockOrder:${id}:rev:${nextRevision}:delete:${currentLine.id}`,
@@ -164,7 +158,7 @@ export class SalesOutboundUpdateService {
           tx,
         );
         if (currentLine.startNumber && currentLine.endNumber) {
-          await this.inventoryService.releaseFactoryNumberReservations(
+          await this.shared.inventoryService.releaseFactoryNumberReservations(
             {
               businessDocumentType: DOCUMENT_TYPE,
               businessDocumentId: id,
@@ -209,7 +203,7 @@ export class SalesOutboundUpdateService {
             }
 
             // Release this line's source allocations before reversing its OUT log.
-            await this.inventoryService.releaseSourceUsagesForConsumerLine(
+            await this.shared.inventoryService.releaseSourceUsagesForConsumerLine(
               {
                 consumerDocumentType: DOCUMENT_TYPE,
                 consumerDocumentId: id,
@@ -219,7 +213,7 @@ export class SalesOutboundUpdateService {
               tx,
             );
 
-            await this.inventoryService.reverseStock(
+            await this.shared.inventoryService.reverseStock(
               {
                 logIdToReverse: currentLog.id,
                 idempotencyKey: `SalesStockOrder:${id}:rev:${nextRevision}:replace:${currentLine.id}`,
@@ -233,7 +227,7 @@ export class SalesOutboundUpdateService {
             currentLine.startNumber &&
             currentLine.endNumber
           ) {
-            await this.inventoryService.releaseFactoryNumberReservations(
+            await this.shared.inventoryService.releaseFactoryNumberReservations(
               {
                 businessDocumentType: DOCUMENT_TYPE,
                 businessDocumentId: id,
@@ -277,7 +271,7 @@ export class SalesOutboundUpdateService {
 
           if (inventoryNeedsRepost) {
             const repostSettlement =
-              await this.inventoryService.settleConsumerOut(
+              await this.shared.inventoryService.settleConsumerOut(
                 {
                   materialId: updatedLine.materialId,
                   stockScope: "MAIN",
@@ -313,7 +307,7 @@ export class SalesOutboundUpdateService {
             updatedLine.startNumber &&
             updatedLine.endNumber
           ) {
-            await this.inventoryService.reserveFactoryNumber(
+            await this.shared.inventoryService.reserveFactoryNumber(
               {
                 materialId: updatedLine.materialId,
                 stockScope: "MAIN",
@@ -361,28 +355,29 @@ export class SalesOutboundUpdateService {
           tx,
         );
 
-        const newLineSettlement = await this.inventoryService.settleConsumerOut(
-          {
-            materialId: createdLine.materialId,
-            stockScope: "MAIN",
-            bizDate,
-            quantity: createdLine.quantity,
-            selectedUnitCost: createdLine.selectedUnitCost,
-            operationType: InventoryOperationType.OUTBOUND_OUT,
-            businessModule: BUSINESS_MODULE,
-            businessDocumentType: DOCUMENT_TYPE,
-            businessDocumentId: id,
-            businessDocumentNumber: existing.documentNo,
-            businessDocumentLineId: createdLine.id,
-            projectTargetId:
-              projectTargetByLineNo.get(lineData.lineNo) ?? undefined,
-            operatorId: updatedBy,
-            idempotencyKey: `SalesStockOrder:${id}:rev:${nextRevision}:line:${createdLine.id}`,
-            consumerLineId: createdLine.id,
-            sourceOperationTypes: OUTBOUND_SOURCE_OPERATION_TYPES,
-          },
-          tx,
-        );
+        const newLineSettlement =
+          await this.shared.inventoryService.settleConsumerOut(
+            {
+              materialId: createdLine.materialId,
+              stockScope: "MAIN",
+              bizDate,
+              quantity: createdLine.quantity,
+              selectedUnitCost: createdLine.selectedUnitCost,
+              operationType: InventoryOperationType.OUTBOUND_OUT,
+              businessModule: BUSINESS_MODULE,
+              businessDocumentType: DOCUMENT_TYPE,
+              businessDocumentId: id,
+              businessDocumentNumber: existing.documentNo,
+              businessDocumentLineId: createdLine.id,
+              projectTargetId:
+                projectTargetByLineNo.get(lineData.lineNo) ?? undefined,
+              operatorId: updatedBy,
+              idempotencyKey: `SalesStockOrder:${id}:rev:${nextRevision}:line:${createdLine.id}`,
+              consumerLineId: createdLine.id,
+              sourceOperationTypes: OUTBOUND_SOURCE_OPERATION_TYPES,
+            },
+            tx,
+          );
         await this.repository.updateOrderLine(
           createdLine.id,
           {
@@ -393,7 +388,7 @@ export class SalesOutboundUpdateService {
         );
 
         if (createdLine.startNumber && createdLine.endNumber) {
-          await this.inventoryService.reserveFactoryNumber(
+          await this.shared.inventoryService.reserveFactoryNumber(
             {
               materialId: createdLine.materialId,
               stockScope: "MAIN",
@@ -443,7 +438,7 @@ export class SalesOutboundUpdateService {
         tx,
       );
 
-      await this.approvalService.createOrRefreshApprovalDocument(
+      await this.shared.approvalService.createOrRefreshApprovalDocument(
         {
           documentFamily: DocumentFamily.SALES_STOCK,
           documentType: DOCUMENT_TYPE,
@@ -467,16 +462,18 @@ export class SalesOutboundUpdateService {
 
   private async validateMasterDataForUpdate(dto: UpdateOutboundOrderDto) {
     if (dto.workshopId) {
-      await this.masterDataService.getWorkshopById(dto.workshopId);
+      await this.shared.masterDataService.getWorkshopById(dto.workshopId);
     }
     if (dto.customerId) {
-      await this.masterDataService.getCustomerById(dto.customerId);
+      await this.shared.masterDataService.getCustomerById(dto.customerId);
     }
     if (dto.handlerPersonnelId) {
-      await this.masterDataService.getPersonnelById(dto.handlerPersonnelId);
+      await this.shared.masterDataService.getPersonnelById(
+        dto.handlerPersonnelId,
+      );
     }
     for (const line of dto.lines) {
-      await this.masterDataService.getMaterialById(line.materialId);
+      await this.shared.masterDataService.getMaterialById(line.materialId);
     }
   }
 

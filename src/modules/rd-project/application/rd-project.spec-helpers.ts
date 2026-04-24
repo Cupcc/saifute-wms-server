@@ -12,6 +12,10 @@ import { MasterDataService } from "../../master-data/application/master-data.ser
 import { RdProcurementRequestService } from "../../rd-subwarehouse/application/rd-procurement-request.service";
 import { RdProjectRepository } from "../infrastructure/rd-project.repository";
 import { RdProjectService } from "./rd-project.service";
+import { RdProjectMasterService } from "./rd-project-master.service";
+import { RdProjectMaterialActionService } from "./rd-project-material-action.service";
+import { RdProjectMaterialActionHelperService } from "./rd-project-material-action-helper.service";
+import { RdProjectViewService } from "./rd-project-view.service";
 
 export const stockScope = {
   id: 2,
@@ -152,6 +156,10 @@ export async function setupRdProjectTestModule(): Promise<RdProjectTestContext> 
   const moduleRef = await Test.createTestingModule({
     providers: [
       RdProjectService,
+      RdProjectMasterService,
+      RdProjectViewService,
+      RdProjectMaterialActionService,
+      RdProjectMaterialActionHelperService,
       {
         provide: PrismaService,
         useValue: prisma,
@@ -159,6 +167,9 @@ export async function setupRdProjectTestModule(): Promise<RdProjectTestContext> 
       {
         provide: RdProjectRepository,
         useValue: {
+          runInTransaction: jest.fn(
+            (handler: (tx: unknown) => Promise<unknown>) => handler({}),
+          ),
           findProjectByCode: jest.fn(),
           findProjectById: jest.fn(),
           findProjects: jest.fn(),
@@ -211,9 +222,7 @@ export async function setupRdProjectTestModule(): Promise<RdProjectTestContext> 
           releaseInventorySource: jest.fn(),
           reverseStock: jest.fn(),
           getLogsForDocument: jest.fn().mockResolvedValue([]),
-          summarizeAttributedQuantities: jest
-            .fn()
-            .mockResolvedValue(new Map()),
+          summarizeAttributedQuantities: jest.fn().mockResolvedValue(new Map()),
           getBalanceSnapshot: jest.fn().mockResolvedValue({
             quantityOnHand: new Prisma.Decimal(0),
           }),

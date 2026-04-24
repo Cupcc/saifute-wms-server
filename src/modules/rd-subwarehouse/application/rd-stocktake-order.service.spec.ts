@@ -8,7 +8,7 @@ import {
 } from "../../../../generated/prisma/client";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
-import { RdProjectRepository } from "../../rd-project/infrastructure/rd-project.repository";
+import { RdProjectLookupService } from "../../rd-project/application/rd-project-lookup.service";
 import { RdStocktakeOrderRepository } from "../infrastructure/rd-stocktake-order.repository";
 import { RdStocktakeOrderService } from "./rd-stocktake-order.service";
 import {
@@ -20,7 +20,7 @@ describe("RdStocktakeOrderService", () => {
   let service: RdStocktakeOrderService;
   let repository: jest.Mocked<RdStocktakeOrderRepository>;
   let masterDataService: jest.Mocked<MasterDataService>;
-  let rdProjectRepository: jest.Mocked<RdProjectRepository>;
+  let rdProjectLookupService: jest.Mocked<RdProjectLookupService>;
   let inventoryService: jest.Mocked<InventoryService>;
 
   beforeEach(async () => {
@@ -28,7 +28,7 @@ describe("RdStocktakeOrderService", () => {
     service = ctx.service;
     repository = ctx.repository;
     masterDataService = ctx.masterDataService;
-    rdProjectRepository = ctx.rdProjectRepository;
+    rdProjectLookupService = ctx.rdProjectLookupService;
     inventoryService = ctx.inventoryService;
   });
 
@@ -216,7 +216,7 @@ describe("RdStocktakeOrderService", () => {
   it("lists project options within the requested workshop scope", async () => {
     const result = await service.listProjectOptions(6);
 
-    expect(rdProjectRepository.findProjects).toHaveBeenCalledWith({
+    expect(rdProjectLookupService.listEffectiveProjects).toHaveBeenCalledWith({
       workshopId: 6,
       stockScope: "RD_SUB",
       limit: 200,
@@ -254,11 +254,13 @@ describe("RdStocktakeOrderService", () => {
       materialId: 100,
     });
 
-    expect(inventoryService.getAttributedQuantitySnapshot).toHaveBeenCalledWith({
-      materialId: 100,
-      stockScope: "RD_SUB",
-      projectTargetId: 7001,
-    });
+    expect(inventoryService.getAttributedQuantitySnapshot).toHaveBeenCalledWith(
+      {
+        materialId: 100,
+        stockScope: "RD_SUB",
+        projectTargetId: 7001,
+      },
+    );
     expect(result).toEqual({
       workshopId: 6,
       rdProjectId: 701,
@@ -281,7 +283,7 @@ describe("RdStocktakeOrderService", () => {
       updatedBy: null,
       updatedAt: new Date("2026-03-29T00:00:00.000Z"),
     } as Awaited<ReturnType<MasterDataService["getWorkshopById"]>>);
-    rdProjectRepository.findProjectById.mockResolvedValueOnce({
+    rdProjectLookupService.requireEffectiveProjectById.mockResolvedValueOnce({
       ...mockRdProject,
       workshopId: 1,
     } as never);
@@ -429,6 +431,8 @@ describe("RdStocktakeOrderService", () => {
     ).rejects.toThrow(BadRequestException);
 
     expect(masterDataService.getWorkshopById).not.toHaveBeenCalled();
-    expect(inventoryService.getAttributedQuantitySnapshot).not.toHaveBeenCalled();
+    expect(
+      inventoryService.getAttributedQuantitySnapshot,
+    ).not.toHaveBeenCalled();
   });
 });

@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { SalesRepository } from "../infrastructure/sales.repository";
 
@@ -9,8 +8,8 @@ const DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
 @Injectable()
 export class SalesTraceabilityService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly inventoryService: InventoryService,
+    private readonly repository: SalesRepository,
   ) {}
 
   async attachOutboundTraceability(
@@ -41,43 +40,9 @@ export class SalesTraceabilityService {
     ];
 
     const correctionLines =
-      sourceLogIds.length > 0
-        ? await this.prisma.stockInPriceCorrectionOrderLine.findMany({
-            where: {
-              OR: [
-                { sourceInventoryLogId: { in: sourceLogIds } },
-                { generatedInLogId: { in: sourceLogIds } },
-              ],
-            },
-            include: {
-              order: {
-                select: {
-                  id: true,
-                  documentNo: true,
-                  bizDate: true,
-                },
-              },
-              sourceStockInOrder: {
-                select: {
-                  id: true,
-                  documentNo: true,
-                  bizDate: true,
-                },
-              },
-              sourceStockInOrderLine: {
-                select: {
-                  id: true,
-                  lineNo: true,
-                  materialId: true,
-                  materialCodeSnapshot: true,
-                  materialNameSnapshot: true,
-                  quantity: true,
-                  unitPrice: true,
-                },
-              },
-            },
-          })
-        : [];
+      await this.repository.findPriceCorrectionLinesBySourceLogIds(
+        sourceLogIds,
+      );
     const correctionByGeneratedInLogId = new Map<
       number,
       (typeof correctionLines)[number]
@@ -106,20 +71,7 @@ export class SalesTraceabilityService {
       ),
     ];
     const directStockInLines =
-      directStockInLineIds.length > 0
-        ? await this.prisma.stockInOrderLine.findMany({
-            where: { id: { in: directStockInLineIds } },
-            include: {
-              order: {
-                select: {
-                  id: true,
-                  documentNo: true,
-                  bizDate: true,
-                },
-              },
-            },
-          })
-        : [];
+      await this.repository.findStockInLinesByIds(directStockInLineIds);
     const directStockInLineById = new Map(
       directStockInLines.map((line) => [line.id, line]),
     );

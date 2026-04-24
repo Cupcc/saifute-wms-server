@@ -7,22 +7,18 @@ import {
   Prisma,
   SalesStockOrderType,
 } from "../../../../generated/prisma/client";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { SalesProjectRepository } from "../infrastructure/sales-project.repository";
+import { SalesProjectService } from "./sales-project.service";
 import { SalesProjectLifecycleService } from "./sales-project-lifecycle.service";
 import { SalesProjectMaterialViewService } from "./sales-project-material-view.service";
 import { SalesProjectOutboundDraftService } from "./sales-project-outbound-draft.service";
 import { SalesProjectReferenceService } from "./sales-project-reference.service";
-import { SalesProjectService } from "./sales-project.service";
 
 describe("SalesProjectService", () => {
   let service: SalesProjectService;
   let repository: jest.Mocked<SalesProjectRepository>;
-  let masterDataService: jest.Mocked<MasterDataService>;
-  let inventoryService: jest.Mocked<InventoryService>;
-  let prisma: { runInTransaction: jest.Mock };
 
   const stockScope = {
     id: 1,
@@ -87,12 +83,6 @@ describe("SalesProjectService", () => {
   };
 
   beforeEach(async () => {
-    prisma = {
-      runInTransaction: jest.fn((handler: (tx: unknown) => Promise<unknown>) =>
-        handler({}),
-      ),
-    };
-
     const moduleRef = await Test.createTestingModule({
       providers: [
         SalesProjectService,
@@ -101,12 +91,11 @@ describe("SalesProjectService", () => {
         SalesProjectOutboundDraftService,
         SalesProjectReferenceService,
         {
-          provide: PrismaService,
-          useValue: prisma,
-        },
-        {
           provide: SalesProjectRepository,
           useValue: {
+            runInTransaction: jest.fn(
+              (handler: (tx: unknown) => Promise<unknown>) => handler({}),
+            ),
             findProjects: jest.fn(),
             findProjectById: jest.fn(),
             findProjectByCode: jest.fn(),
@@ -160,8 +149,6 @@ describe("SalesProjectService", () => {
 
     service = moduleRef.get(SalesProjectService);
     repository = moduleRef.get(SalesProjectRepository);
-    masterDataService = moduleRef.get(MasterDataService);
-    inventoryService = moduleRef.get(InventoryService);
   });
 
   it("creates a sales project master with material scope and project target", async () => {

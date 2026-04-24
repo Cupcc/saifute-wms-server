@@ -14,11 +14,9 @@ import { SalesProjectService } from "../../sales-project/application/sales-proje
 import { SalesRepository } from "../infrastructure/sales.repository";
 import {
   buildSalesProviders,
-  createSalesPrismaMock,
   mockMaterial,
   mockOutboundOrder,
   mockUncategorizedCategory,
-  type SalesPrismaMock,
 } from "./sales.service.test-support";
 import { SalesOutboundService } from "./sales-outbound.service";
 import { SalesSnapshotsService } from "./sales-snapshots.service";
@@ -31,16 +29,14 @@ describe("SalesOutboundService", () => {
   let inventoryService: jest.Mocked<InventoryService>;
   let approvalService: jest.Mocked<ApprovalService>;
   let salesProjectService: jest.Mocked<SalesProjectService>;
-  let prisma: SalesPrismaMock;
 
   beforeEach(async () => {
-    prisma = createSalesPrismaMock();
     const moduleRef = await Test.createTestingModule({
       providers: [
         SalesOutboundService,
         SalesSnapshotsService,
         SalesTraceabilityService,
-        ...buildSalesProviders(prisma),
+        ...buildSalesProviders(),
       ],
     }).compile();
 
@@ -162,7 +158,7 @@ describe("SalesOutboundService", () => {
         ...mockMaterial,
         category: null,
       });
-      (prisma.materialCategory.findUnique as jest.Mock).mockResolvedValue(
+      (repository.findMaterialCategoryByCode as jest.Mock).mockResolvedValue(
         mockUncategorizedCategory,
       );
 
@@ -184,14 +180,9 @@ describe("SalesOutboundService", () => {
         "1",
       );
 
-      expect(prisma.materialCategory.findUnique).toHaveBeenCalledWith({
-        where: { categoryCode: "UNCATEGORIZED" },
-        select: {
-          id: true,
-          categoryCode: true,
-          categoryName: true,
-        },
-      });
+      expect(repository.findMaterialCategoryByCode).toHaveBeenCalledWith(
+        "UNCATEGORIZED",
+      );
       expect(repository.createOrder).toHaveBeenCalledWith(
         expect.anything(),
         expect.arrayContaining([
@@ -352,7 +343,9 @@ describe("SalesOutboundService", () => {
           },
         },
       ]);
-      prisma.stockInPriceCorrectionOrderLine.findMany.mockResolvedValue([
+      (
+        repository.findPriceCorrectionLinesBySourceLogIds as jest.Mock
+      ).mockResolvedValue([
         {
           id: 11,
           orderId: 1001,

@@ -8,10 +8,8 @@ import { InventoryService } from "../../inventory-core/application/inventory.ser
 import { SalesRepository } from "../infrastructure/sales.repository";
 import {
   buildSalesProviders,
-  createSalesPrismaMock,
   mockOutboundOrder,
   mockSalesReturnOrder,
-  type SalesPrismaMock,
 } from "./sales.service.test-support";
 import { SalesReturnService } from "./sales-return.service";
 import { SalesReturnSourceService } from "./sales-return-source.service";
@@ -21,16 +19,14 @@ describe("SalesReturnService", () => {
   let service: SalesReturnService;
   let repository: jest.Mocked<SalesRepository>;
   let inventoryService: jest.Mocked<InventoryService>;
-  let prisma: SalesPrismaMock;
 
   beforeEach(async () => {
-    prisma = createSalesPrismaMock();
     const moduleRef = await Test.createTestingModule({
       providers: [
         SalesReturnService,
         SalesReturnSourceService,
         SalesSnapshotsService,
-        ...buildSalesProviders(prisma),
+        ...buildSalesProviders(),
       ],
     }).compile();
 

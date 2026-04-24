@@ -17,20 +17,12 @@ import {
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
 import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
-import { ApprovalService } from "../../approval/application/approval.service";
-import {
-  FIFO_SOURCE_OPERATION_TYPES,
-  InventoryService,
-} from "../../inventory-core/application/inventory.service";
-import { MasterDataService } from "../../master-data/application/master-data.service";
+import { FIFO_SOURCE_OPERATION_TYPES } from "../../inventory-core/application/inventory.service";
 import type { CreateOutboundOrderDto } from "../dto/create-outbound-order.dto";
 import type { QueryOutboundOrderDto } from "../dto/query-outbound-order.dto";
 import { SalesRepository } from "../infrastructure/sales.repository";
-import {
-  type OutboundLineWriteData,
-  SalesSnapshotsService,
-} from "./sales-snapshots.service";
+import { SalesSharedService } from "./sales-shared.service";
+import { type OutboundLineWriteData } from "./sales-snapshots.service";
 import { SalesTraceabilityService } from "./sales-traceability.service";
 
 const DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
@@ -43,12 +35,8 @@ export const OUTBOUND_SOURCE_OPERATION_TYPES =
 @Injectable()
 export class SalesOutboundService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly repository: SalesRepository,
-    private readonly masterDataService: MasterDataService,
-    private readonly inventoryService: InventoryService,
-    private readonly approvalService: ApprovalService,
-    private readonly snapshots: SalesSnapshotsService,
+    private readonly shared: SalesSharedService,
     private readonly traceability: SalesTraceabilityService,
   ) {}
 
@@ -83,21 +71,24 @@ export class SalesOutboundService {
 
     const bizDate = new Date(dto.bizDate);
     const { customerCodeSnapshot, customerNameSnapshot } =
-      await this.snapshots.resolveCustomerSnapshot(dto.customerId);
-    const { handlerNameSnapshot } = await this.snapshots.resolveHandlerSnapshot(
-      dto.handlerPersonnelId,
-    );
+      await this.shared.snapshots.resolveCustomerSnapshot(dto.customerId);
+    const { handlerNameSnapshot } =
+      await this.shared.snapshots.resolveHandlerSnapshot(
+        dto.handlerPersonnelId,
+      );
     const stockScopeRecord =
-      await this.masterDataService.getStockScopeByCode("MAIN");
-    const workshop = await this.masterDataService.getWorkshopById(
+      await this.shared.masterDataService.getStockScopeByCode("MAIN");
+    const workshop = await this.shared.masterDataService.getWorkshopById(
       dto.workshopId,
     );
     const salesProjectById =
-      await this.snapshots.resolveSalesProjectReferencesForLines(dto.lines);
+      await this.shared.snapshots.resolveSalesProjectReferencesForLines(
+        dto.lines,
+      );
 
     const linesWithSnapshots = await Promise.all(
       dto.lines.map((line, idx) =>
-        this.snapshots.buildOutboundLineWriteData(
+        this.shared.snapshots.buildOutboundLineWriteData(
           line,
           idx + 1,
           salesProjectById,
@@ -128,7 +119,7 @@ export class SalesOutboundService {
 
     const createdOrder = await createWithGeneratedDocumentNo((attempt) => {
       const documentNo = buildCompactDocumentNo("CK", bizDate, attempt);
-      return this.prisma.runInTransaction(async (tx) => {
+      return this.repository.runInTransaction(async (tx) => {
         const order = await this.repository.createOrder(
           {
             documentNo,
@@ -158,28 +149,29 @@ export class SalesOutboundService {
         );
 
         for (const line of order.lines) {
-          const settlement = await this.inventoryService.settleConsumerOut(
-            {
-              materialId: line.materialId,
-              stockScope: "MAIN",
-              bizDate,
-              quantity: line.quantity,
-              selectedUnitCost: line.selectedUnitCost,
-              operationType: InventoryOperationType.OUTBOUND_OUT,
-              businessModule: BUSINESS_MODULE,
-              businessDocumentType: DOCUMENT_TYPE,
-              businessDocumentId: order.id,
-              businessDocumentNumber: order.documentNo,
-              businessDocumentLineId: line.id,
-              projectTargetId:
-                projectTargetByLineNo.get(line.lineNo) ?? undefined,
-              operatorId: createdBy,
-              idempotencyKey: `SalesStockOrder:${order.id}:line:${line.id}`,
-              consumerLineId: line.id,
-              sourceOperationTypes: OUTBOUND_SOURCE_OPERATION_TYPES,
-            },
-            tx,
-          );
+          const settlement =
+            await this.shared.inventoryService.settleConsumerOut(
+              {
+                materialId: line.materialId,
+                stockScope: "MAIN",
+                bizDate,
+                quantity: line.quantity,
+                selectedUnitCost: line.selectedUnitCost,
+                operationType: InventoryOperationType.OUTBOUND_OUT,
+                businessModule: BUSINESS_MODULE,
+                businessDocumentType: DOCUMENT_TYPE,
+                businessDocumentId: order.id,
+                businessDocumentNumber: order.documentNo,
+                businessDocumentLineId: line.id,
+                projectTargetId:
+                  projectTargetByLineNo.get(line.lineNo) ?? undefined,
+                operatorId: createdBy,
+                idempotencyKey: `SalesStockOrder:${order.id}:line:${line.id}`,
+                consumerLineId: line.id,
+                sourceOperationTypes: OUTBOUND_SOURCE_OPERATION_TYPES,
+              },
+              tx,
+            );
           await this.repository.updateOrderLine(
             line.id,
             {
@@ -190,7 +182,7 @@ export class SalesOutboundService {
           );
 
           if (line.startNumber && line.endNumber) {
-            await this.inventoryService.reserveFactoryNumber(
+            await this.shared.inventoryService.reserveFactoryNumber(
               {
                 materialId: line.materialId,
                 stockScope: "MAIN",
@@ -206,7 +198,7 @@ export class SalesOutboundService {
           }
         }
 
-        await this.approvalService.createOrRefreshApprovalDocument(
+        await this.shared.approvalService.createOrRefreshApprovalDocument(
           {
             documentFamily: DocumentFamily.SALES_STOCK,
             documentType: DOCUMENT_TYPE,
@@ -247,7 +239,7 @@ export class SalesOutboundService {
       throw new BadRequestException("库存状态异常，无法作废");
     }
 
-    return this.prisma.runInTransaction(async (tx) => {
+    return this.repository.runInTransaction(async (tx) => {
       const hasActiveDownstream =
         await this.repository.hasActiveDownstreamSalesReturns(id, tx);
       if (hasActiveDownstream) {
@@ -257,7 +249,7 @@ export class SalesOutboundService {
       }
 
       // Release FIFO source allocations before reversing the OUT log.
-      await this.inventoryService.releaseAllSourceUsagesForConsumer(
+      await this.shared.inventoryService.releaseAllSourceUsagesForConsumer(
         {
           consumerDocumentType: DOCUMENT_TYPE,
           consumerDocumentId: id,
@@ -266,7 +258,7 @@ export class SalesOutboundService {
         tx,
       );
 
-      const logs = await this.inventoryService.getLogsForDocument(
+      const logs = await this.shared.inventoryService.getLogsForDocument(
         {
           businessDocumentType: DOCUMENT_TYPE,
           businessDocumentId: id,
@@ -279,7 +271,7 @@ export class SalesOutboundService {
       }
 
       for (const log of logs) {
-        await this.inventoryService.reverseStock(
+        await this.shared.inventoryService.reverseStock(
           {
             logIdToReverse: log.id,
             idempotencyKey: `SalesStockOrder:void:${id}:log:${log.id}`,
@@ -289,7 +281,7 @@ export class SalesOutboundService {
         );
       }
 
-      await this.inventoryService.releaseFactoryNumberReservations(
+      await this.shared.inventoryService.releaseFactoryNumberReservations(
         {
           businessDocumentType: DOCUMENT_TYPE,
           businessDocumentId: id,
@@ -312,7 +304,7 @@ export class SalesOutboundService {
         tx,
       );
 
-      await this.approvalService.markApprovalNotRequired(
+      await this.shared.approvalService.markApprovalNotRequired(
         DOCUMENT_TYPE,
         id,
         voidedBy,
@@ -324,15 +316,17 @@ export class SalesOutboundService {
   }
 
   private async validateMasterDataForOutbound(dto: CreateOutboundOrderDto) {
-    await this.masterDataService.getWorkshopById(dto.workshopId);
+    await this.shared.masterDataService.getWorkshopById(dto.workshopId);
     if (dto.customerId) {
-      await this.masterDataService.getCustomerById(dto.customerId);
+      await this.shared.masterDataService.getCustomerById(dto.customerId);
     }
     if (dto.handlerPersonnelId) {
-      await this.masterDataService.getPersonnelById(dto.handlerPersonnelId);
+      await this.shared.masterDataService.getPersonnelById(
+        dto.handlerPersonnelId,
+      );
     }
     for (const line of dto.lines) {
-      await this.masterDataService.getMaterialById(line.materialId);
+      await this.shared.masterDataService.getMaterialById(line.materialId);
     }
   }
 
@@ -361,7 +355,7 @@ export class SalesOutboundService {
 
     for (const materialId of materialIds) {
       const priceLayers =
-        await this.inventoryService.listPriceLayerAvailability({
+        await this.shared.inventoryService.listPriceLayerAvailability({
           materialId,
           stockScope: "MAIN",
           workshopId,

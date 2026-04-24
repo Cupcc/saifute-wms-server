@@ -4,12 +4,12 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { Prisma } from "../../../../generated/prisma/client";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import {
   type SalesProjectBindingReference,
   SalesProjectService,
 } from "../../sales-project/application/sales-project.service";
+import { SalesRepository } from "../infrastructure/sales.repository";
 
 const DEFAULT_MATERIAL_CATEGORY_CODE = "UNCATEGORIZED";
 
@@ -47,7 +47,7 @@ export type MaterialCategorySnapshot = {
 @Injectable()
 export class SalesSnapshotsService {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly repository: SalesRepository,
     private readonly masterDataService: MasterDataService,
     private readonly salesProjectService: SalesProjectService,
   ) {}
@@ -209,14 +209,9 @@ export class SalesSnapshotsService {
       return category;
     }
 
-    const defaultCategory = await this.prisma.materialCategory.findUnique({
-      where: { categoryCode: DEFAULT_MATERIAL_CATEGORY_CODE },
-      select: {
-        id: true,
-        categoryCode: true,
-        categoryName: true,
-      },
-    });
+    const defaultCategory = await this.repository.findMaterialCategoryByCode(
+      DEFAULT_MATERIAL_CATEGORY_CODE,
+    );
     if (!defaultCategory) {
       throw new BadRequestException(
         "物料缺少有效分类，且默认未分类不存在，无法写入分类快照",

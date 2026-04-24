@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common";
 import { InventoryCoreModule } from "../inventory-core/inventory-core.module";
 import { MasterDataModule } from "../master-data/master-data.module";
 import { RbacModule } from "../rbac/rbac.module";
-import { RdProjectRepository } from "../rd-project/infrastructure/rd-project.repository";
+import { RdProjectSharedModule } from "../rd-project/rd-project-shared.module";
 import { RdHandoffService } from "./application/rd-handoff.service";
 import { RdProcurementRequestService } from "./application/rd-procurement-request.service";
 import { RdStocktakeOrderService } from "./application/rd-stocktake-order.service";
@@ -14,7 +14,12 @@ import { RdProcurementRequestRepository } from "./infrastructure/rd-procurement-
 import { RdStocktakeOrderRepository } from "./infrastructure/rd-stocktake-order.repository";
 
 @Module({
-  imports: [MasterDataModule, InventoryCoreModule, RbacModule],
+  imports: [
+    MasterDataModule,
+    InventoryCoreModule,
+    RbacModule,
+    RdProjectSharedModule,
+  ],
   controllers: [
     RdHandoffController,
     RdProcurementRequestController,
@@ -27,7 +32,6 @@ import { RdStocktakeOrderRepository } from "./infrastructure/rd-stocktake-order.
     RdProcurementRequestRepository,
     RdStocktakeOrderService,
     RdStocktakeOrderRepository,
-    RdProjectRepository,
   ],
   exports: [
     RdHandoffService,

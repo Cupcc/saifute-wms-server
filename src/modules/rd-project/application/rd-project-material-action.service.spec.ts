@@ -11,6 +11,7 @@ import { InventoryService } from "../../inventory-core/application/inventory.ser
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { RdProjectRepository } from "../infrastructure/rd-project.repository";
 import { RdProjectMaterialActionService } from "./rd-project-material-action.service";
+import { RdProjectMaterialActionHelperService } from "./rd-project-material-action-helper.service";
 
 describe("RdProjectMaterialActionService", () => {
   let service: RdProjectMaterialActionService;
@@ -65,6 +66,7 @@ describe("RdProjectMaterialActionService", () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         RdProjectMaterialActionService,
+        RdProjectMaterialActionHelperService,
         {
           provide: PrismaService,
           useValue: prisma,
@@ -72,6 +74,9 @@ describe("RdProjectMaterialActionService", () => {
         {
           provide: RdProjectRepository,
           useValue: {
+            runInTransaction: jest.fn(
+              (handler: (tx: unknown) => Promise<unknown>) => handler({}),
+            ),
             findProjectById: jest.fn().mockResolvedValue(project),
             findMaterialActionsByProjectId: jest.fn().mockResolvedValue([]),
             findMaterialActionById: jest.fn(),

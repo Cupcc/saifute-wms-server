@@ -17,6 +17,10 @@ const DOCUMENT_TYPE = BusinessDocumentType.WorkshopMaterialOrder;
 export class WorkshopMaterialRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  runInTransaction<T>(handler: (tx: Prisma.TransactionClient) => Promise<T>) {
+    return this.prisma.runInTransaction(handler);
+  }
+
   private db(db?: DbClient) {
     return db ?? this.prisma;
   }
@@ -210,6 +214,73 @@ export class WorkshopMaterialRepository {
     return this.db(db).documentLineRelation.create({ data });
   }
 
+  async upsertReturnFromPickRelation(
+    params: {
+      returnOrderId: number;
+      returnLineId: number;
+      sourceDocumentId: number;
+      sourceDocumentLineId: number;
+      linkedQty: Prisma.Decimal;
+      createdBy?: string;
+    },
+    db?: DbClient,
+  ) {
+    const client = this.db(db);
+    await client.documentRelation.upsert({
+      where: {
+        relationType_upstreamFamily_upstreamDocumentId_downstreamFamily_downstreamDocumentId:
+          {
+            relationType: DocumentRelationType.WORKSHOP_RETURN_FROM_PICK,
+            upstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
+            upstreamDocumentId: params.sourceDocumentId,
+            downstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
+            downstreamDocumentId: params.returnOrderId,
+          },
+      },
+      create: {
+        relationType: DocumentRelationType.WORKSHOP_RETURN_FROM_PICK,
+        upstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
+        upstreamDocumentType: DOCUMENT_TYPE,
+        upstreamDocumentId: params.sourceDocumentId,
+        downstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
+        downstreamDocumentType: DOCUMENT_TYPE,
+        downstreamDocumentId: params.returnOrderId,
+        isActive: true,
+        createdBy: params.createdBy,
+        updatedBy: params.createdBy,
+      },
+      update: { isActive: true, updatedBy: params.createdBy },
+    });
+
+    await client.documentLineRelation.upsert({
+      where: {
+        relationType_upstreamFamily_upstreamLineId_downstreamFamily_downstreamLineId:
+          {
+            relationType: DocumentRelationType.WORKSHOP_RETURN_FROM_PICK,
+            upstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
+            upstreamLineId: params.sourceDocumentLineId,
+            downstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
+            downstreamLineId: params.returnLineId,
+          },
+      },
+      create: {
+        relationType: DocumentRelationType.WORKSHOP_RETURN_FROM_PICK,
+        upstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
+        upstreamDocumentType: DOCUMENT_TYPE,
+        upstreamDocumentId: params.sourceDocumentId,
+        upstreamLineId: params.sourceDocumentLineId,
+        downstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
+        downstreamDocumentType: DOCUMENT_TYPE,
+        downstreamDocumentId: params.returnOrderId,
+        downstreamLineId: params.returnLineId,
+        linkedQty: params.linkedQty,
+        createdBy: params.createdBy,
+        updatedBy: params.createdBy,
+      },
+      update: { linkedQty: params.linkedQty, updatedBy: params.createdBy },
+    });
+  }
+
   async deactivateDocumentRelationsForReturn(
     returnOrderId: number,
     db?: DbClient,
@@ -298,5 +369,12 @@ export class WorkshopMaterialRepository {
       );
     }
     return result;
+  }
+
+  async findRdProcurementRequestForScrapSource(id: number, db?: DbClient) {
+    return this.db(db).rdProcurementRequest.findUnique({
+      where: { id },
+      include: { lines: true },
+    });
   }
 }

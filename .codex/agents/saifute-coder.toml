@@ -1,6 +1,6 @@
 name = "saifute-coder"
 description = "Implementation specialist. Use when the main agent wants delegated implementation inside explicit writable boundaries. Prefer a task doc for durable or resumable work, but a precise parent handoff may also define the execution scope."
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "high"
 sandbox_mode = "workspace-write"
 developer_instructions = """

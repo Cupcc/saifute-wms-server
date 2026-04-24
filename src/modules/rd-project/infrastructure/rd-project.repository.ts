@@ -22,6 +22,10 @@ export class RdProjectRepository {
     return db ?? this.prisma;
   }
 
+  runInTransaction<T>(handler: (db: Prisma.TransactionClient) => Promise<T>) {
+    return this.prisma.runInTransaction(handler);
+  }
+
   async findProjects(
     params: {
       projectCode?: string;

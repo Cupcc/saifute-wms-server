@@ -15,7 +15,6 @@ import {
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
 import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { ApprovalService } from "../../approval/application/approval.service";
 import {
   FIFO_SOURCE_OPERATION_TYPES,
@@ -32,7 +31,6 @@ const BUSINESS_MODULE = "inbound";
 @Injectable()
 export class StockInPriceCorrectionService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly repository: StockInPriceCorrectionRepository,
     private readonly masterDataService: MasterDataService,
     private readonly inventoryService: InventoryService,
@@ -72,14 +70,14 @@ export class StockInPriceCorrectionService {
     const bizDate = new Date(dto.bizDate);
     const workshopId = this.requireWorkshopId(dto.workshopId);
 
-    const workshop = await this.masterDataService.getWorkshopById(workshopId);
+    const _workshop = await this.masterDataService.getWorkshopById(workshopId);
     const stockScopeRecord =
       await this.masterDataService.getStockScopeByCode("MAIN");
     this.assertNoDuplicateSourceLogs(dto.lines);
 
     const createdOrder = await createWithGeneratedDocumentNo((attempt) => {
       const documentNo = buildCompactDocumentNo("PC", bizDate, attempt);
-      return this.prisma.runInTransaction(async (tx) => {
+      return this.repository.runInTransaction(async (tx) => {
         const order = await this.repository.createOrder(
           {
             documentNo,

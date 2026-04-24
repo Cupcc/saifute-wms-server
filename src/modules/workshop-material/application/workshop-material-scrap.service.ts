@@ -20,13 +20,12 @@ import {
   reverseScrapStatusesForOrder,
 } from "../../rd-subwarehouse/application/rd-material-status.helper";
 import { type StockScopeCode } from "../../session/domain/user-session";
+import { toOperationType } from "../domain/workshop-material-order-type.helper";
 import type { CreateWorkshopMaterialOrderDto } from "../dto/create-workshop-material-order.dto";
 import type { CreateWorkshopMaterialOrderLineDto } from "../dto/create-workshop-material-order-line.dto";
 import type { QueryWorkshopMaterialOrderDto } from "../dto/query-workshop-material-order.dto";
 import type { UpdateWorkshopMaterialOrderDto } from "../dto/update-workshop-material-order.dto";
-import { toOperationType } from "../domain/workshop-material-order-type.helper";
 import {
-  type RdScrapRequestCache,
   WORKSHOP_MATERIAL_BUSINESS_MODULE,
   WORKSHOP_MATERIAL_DOCUMENT_TYPE,
   type WorkshopMaterialLineWriteData,
@@ -420,27 +419,28 @@ export class WorkshopMaterialScrapService {
 
     for (const line of params.lines) {
       const lineDto = params.inputLines[line.lineNo - 1];
-      const settlement =
-        await (this.shared.inventoryService as InventoryService).settleConsumerOut(
-          {
-            materialId: line.materialId,
-            stockScope: params.inventoryStockScope,
-            bizDate: params.bizDate,
-            quantity: line.quantity,
-            operationType,
-            businessModule: WORKSHOP_MATERIAL_BUSINESS_MODULE,
-            businessDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
-            businessDocumentId: params.orderId,
-            businessDocumentNumber: params.documentNo,
-            businessDocumentLineId: line.id,
-            operatorId: params.operatorId,
-            idempotencyKey: `${params.idempotencyPrefix}:line:${line.id}`,
-            consumerLineId: line.id,
-            sourceLogId: lineDto?.sourceLogId ?? undefined,
-            sourceOperationTypes: sourceTypes,
-          },
-          params.tx,
-        );
+      const settlement = await (
+        this.shared.inventoryService as InventoryService
+      ).settleConsumerOut(
+        {
+          materialId: line.materialId,
+          stockScope: params.inventoryStockScope,
+          bizDate: params.bizDate,
+          quantity: line.quantity,
+          operationType,
+          businessModule: WORKSHOP_MATERIAL_BUSINESS_MODULE,
+          businessDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
+          businessDocumentId: params.orderId,
+          businessDocumentNumber: params.documentNo,
+          businessDocumentLineId: line.id,
+          operatorId: params.operatorId,
+          idempotencyKey: `${params.idempotencyPrefix}:line:${line.id}`,
+          consumerLineId: line.id,
+          sourceLogId: lineDto?.sourceLogId ?? undefined,
+          sourceOperationTypes: sourceTypes,
+        },
+        params.tx,
+      );
       logIdByLineId.set(line.id, settlement.outLog.id);
       await this.shared.repository.updateOrderLineCost(
         line.id,

@@ -5,12 +5,12 @@ import {
   Prisma,
   SalesStockOrderType,
 } from "../../../../generated/prisma/client";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { ApprovalService } from "../../approval/application/approval.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { SalesProjectService } from "../../sales-project/application/sales-project.service";
 import { SalesRepository } from "../infrastructure/sales.repository";
+import { SalesSharedService } from "./sales-shared.service";
 
 export const mockMaterialCategoryLeaf = {
   id: 99,
@@ -152,36 +152,15 @@ export const mockSalesReturnOrder = {
   ],
 };
 
-export type SalesPrismaMock = {
-  runInTransaction: jest.Mock;
-  materialCategory: { findUnique: jest.Mock };
-  stockInPriceCorrectionOrderLine: { findMany: jest.Mock };
-  stockInOrderLine: { findMany: jest.Mock };
-};
-
-export function createSalesPrismaMock(): SalesPrismaMock {
-  return {
-    runInTransaction: jest.fn((handler: (tx: unknown) => Promise<unknown>) =>
-      handler({}),
-    ),
-    materialCategory: {
-      findUnique: jest.fn().mockResolvedValue(mockMaterialCategoryLeaf),
-    },
-    stockInPriceCorrectionOrderLine: {
-      findMany: jest.fn().mockResolvedValue([]),
-    },
-    stockInOrderLine: {
-      findMany: jest.fn().mockResolvedValue([]),
-    },
-  };
-}
-
-export function buildSalesProviders(prismaMock: SalesPrismaMock) {
+export function buildSalesProviders() {
   return [
-    { provide: PrismaService, useValue: prismaMock },
+    SalesSharedService,
     {
       provide: SalesRepository,
       useValue: {
+        runInTransaction: jest.fn(
+          (handler: (tx: unknown) => Promise<unknown>) => handler({}),
+        ),
         findOrderByDocumentNo: jest.fn(),
         findOrderById: jest.fn().mockResolvedValue(mockOutboundOrder),
         findOrders: jest.fn(),
@@ -198,6 +177,11 @@ export function buildSalesProviders(prismaMock: SalesPrismaMock) {
         sumActiveReturnedQtyByOutboundLine: jest
           .fn()
           .mockResolvedValue(new Map()),
+        findMaterialCategoryByCode: jest
+          .fn()
+          .mockResolvedValue(mockMaterialCategoryLeaf),
+        findPriceCorrectionLinesBySourceLogIds: jest.fn().mockResolvedValue([]),
+        findStockInLinesByIds: jest.fn().mockResolvedValue([]),
       },
     },
     {

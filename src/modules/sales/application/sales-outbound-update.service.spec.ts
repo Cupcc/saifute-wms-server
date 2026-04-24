@@ -4,9 +4,7 @@ import { InventoryService } from "../../inventory-core/application/inventory.ser
 import { SalesRepository } from "../infrastructure/sales.repository";
 import {
   buildSalesProviders,
-  createSalesPrismaMock,
   mockOutboundOrder,
-  type SalesPrismaMock,
 } from "./sales.service.test-support";
 import { SalesOutboundUpdateService } from "./sales-outbound-update.service";
 import { SalesSnapshotsService } from "./sales-snapshots.service";
@@ -16,16 +14,14 @@ describe("SalesOutboundUpdateService", () => {
   let service: SalesOutboundUpdateService;
   let repository: jest.Mocked<SalesRepository>;
   let inventoryService: jest.Mocked<InventoryService>;
-  let prisma: SalesPrismaMock;
 
   beforeEach(async () => {
-    prisma = createSalesPrismaMock();
     const moduleRef = await Test.createTestingModule({
       providers: [
         SalesOutboundUpdateService,
         SalesSnapshotsService,
         SalesTraceabilityService,
-        ...buildSalesProviders(prisma),
+        ...buildSalesProviders(),
       ],
     }).compile();
 

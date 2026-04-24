@@ -13,6 +13,10 @@ type DbClient = Prisma.TransactionClient | PrismaService;
 export class SalesProjectRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  runInTransaction<T>(handler: (tx: Prisma.TransactionClient) => Promise<T>) {
+    return this.prisma.runInTransaction(handler);
+  }
+
   private db(db?: DbClient) {
     return db ?? this.prisma;
   }

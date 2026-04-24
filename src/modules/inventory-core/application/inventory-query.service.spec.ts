@@ -2,11 +2,12 @@ import { Test } from "@nestjs/testing";
 import { Prisma } from "../../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
-import { InventoryRepository } from "../infrastructure/inventory.repository";
 import { FactoryNumberRepository } from "../infrastructure/factory-number.repository";
+import { InventoryRepository } from "../infrastructure/inventory.repository";
 import { InventoryService } from "./inventory.service";
-import { StockScopeCompatibilityService } from "./stock-scope-compatibility.service";
 import { createStockScopeCompatibilityServiceMock } from "./inventory.spec-helpers";
+import { InventoryQueryService } from "./inventory-query.service";
+import { StockScopeCompatibilityService } from "./stock-scope-compatibility.service";
 
 describe("InventoryService", () => {
   it("should aggregate available quantity by price layer", async () => {
@@ -39,6 +40,7 @@ describe("InventoryService", () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         InventoryService,
+        InventoryQueryService,
         {
           provide: MasterDataService,
           useValue: {
@@ -85,6 +87,7 @@ describe("InventoryService", () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         InventoryService,
+        InventoryQueryService,
         {
           provide: MasterDataService,
           useValue: {},
@@ -122,6 +125,7 @@ describe("InventoryService", () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         InventoryService,
+        InventoryQueryService,
         {
           provide: MasterDataService,
           useValue: {},
@@ -163,6 +167,7 @@ describe("InventoryService", () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
         InventoryService,
+        InventoryQueryService,
         {
           provide: MasterDataService,
           useValue: {},

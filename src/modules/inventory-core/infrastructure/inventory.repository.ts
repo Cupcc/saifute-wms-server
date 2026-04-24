@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { ConflictException, Injectable } from "@nestjs/common";
 import {
   InventoryOperationType,
   Prisma,
@@ -11,6 +11,43 @@ type InventoryDbClient = Prisma.TransactionClient | PrismaService;
 @Injectable()
 export class InventoryRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  runInTransaction<T>(
+    tx: Prisma.TransactionClient | undefined,
+    handler: (db: Prisma.TransactionClient) => Promise<T>,
+  ) {
+    if (tx) {
+      return handler(tx);
+    }
+
+    return this.prisma.runInTransaction(handler);
+  }
+
+  async updateBalanceOptimistically(
+    params: {
+      balanceId: number;
+      expectedRowVersion: number;
+      nextQuantityOnHand: Prisma.Decimal;
+      updatedBy?: string;
+    },
+    db: InventoryDbClient = this.prisma,
+  ) {
+    const result = await db.inventoryBalance.updateMany({
+      where: {
+        id: params.balanceId,
+        rowVersion: params.expectedRowVersion,
+      },
+      data: {
+        quantityOnHand: params.nextQuantityOnHand,
+        rowVersion: { increment: 1 },
+        updatedBy: params.updatedBy,
+      },
+    });
+
+    if (result.count !== 1) {
+      throw new ConflictException("库存余额已被并发更新，请重试");
+    }
+  }
 
   async findBalances(params: {
     materialId?: number;

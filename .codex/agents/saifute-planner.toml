@@ -1,6 +1,6 @@
 name = "saifute-planner"
 description = "Planning specialist. Use when the main agent needs scope clarification, planning repair, or a new durable docs/tasks handoff for non-trivial, ambiguous, cross-cutting, or high-risk work."
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
 sandbox_mode = "workspace-write"
 developer_instructions = """

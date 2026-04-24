@@ -16,17 +16,16 @@ import {
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
 import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { ApprovalService } from "../../approval/application/approval.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE } from "../../rd-subwarehouse/application/rd-material-status.helper";
 import { type StockScopeCode } from "../../session/domain/user-session";
+import { toCreateDocumentPrefix } from "../domain/workshop-material-order-type.helper";
 import type { CreateWorkshopMaterialOrderDto } from "../dto/create-workshop-material-order.dto";
 import type { CreateWorkshopMaterialOrderLineDto } from "../dto/create-workshop-material-order-line.dto";
 import type { QueryWorkshopMaterialOrderDto } from "../dto/query-workshop-material-order.dto";
 import type { UpdateWorkshopMaterialOrderDto } from "../dto/update-workshop-material-order.dto";
-import { toCreateDocumentPrefix } from "../domain/workshop-material-order-type.helper";
 import { WorkshopMaterialRepository } from "../infrastructure/workshop-material.repository";
 
 export const WORKSHOP_MATERIAL_DOCUMENT_TYPE =
@@ -73,7 +72,6 @@ export type WorkshopMaterialLineWriteData = {
 @Injectable()
 export class WorkshopMaterialSharedService {
   constructor(
-    public readonly prisma: PrismaService,
     public readonly repository: WorkshopMaterialRepository,
     public readonly masterDataService: MasterDataService,
     public readonly inventoryService: InventoryService,
@@ -250,22 +248,19 @@ export class WorkshopMaterialSharedService {
   async createWithDocumentNo<T>(
     orderType: WorkshopMaterialOrderType,
     bizDate: Date,
-    run: (
-      documentNo: string,
-      tx: Prisma.TransactionClient,
-    ) => Promise<T>,
+    run: (documentNo: string, tx: Prisma.TransactionClient) => Promise<T>,
   ): Promise<T> {
     const prefix = toCreateDocumentPrefix(orderType);
     return createWithGeneratedDocumentNo((attempt) => {
       const documentNo = buildCompactDocumentNo(prefix, bizDate, attempt);
-      return this.prisma.runInTransaction((tx) => run(documentNo, tx));
+      return this.repository.runInTransaction((tx) => run(documentNo, tx));
     });
   }
 
   runInTransaction<T>(
     handler: (tx: Prisma.TransactionClient) => Promise<T>,
   ): Promise<T> {
-    return this.prisma.runInTransaction(handler);
+    return this.repository.runInTransaction(handler);
   }
 
   // ─── Approval bookkeeping ────────────────────────────────────────────────
@@ -374,10 +369,9 @@ export class WorkshopMaterialSharedService {
 
     let request = requestCache.get(line.sourceDocumentId);
     if (!request) {
-      request = await this.prisma.rdProcurementRequest.findUnique({
-        where: { id: line.sourceDocumentId },
-        include: { lines: true },
-      });
+      request = await this.repository.findRdProcurementRequestForScrapSource(
+        line.sourceDocumentId,
+      );
       requestCache.set(line.sourceDocumentId, request);
     }
     if (

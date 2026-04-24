@@ -11,6 +11,19 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/post_tool_use_quality_check.mjs\"",
+            "timeout": 60,
+            "statusMessage": "Checking Codex-edited TypeScript files"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

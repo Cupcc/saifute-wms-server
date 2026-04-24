@@ -12,6 +12,10 @@ export class RdHandoffRepository {
     return db ?? this.prisma;
   }
 
+  runInTransaction<T>(handler: (tx: Prisma.TransactionClient) => Promise<T>) {
+    return this.prisma.runInTransaction(handler);
+  }
+
   async findOrders(
     params: {
       documentNo?: string;

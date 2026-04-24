@@ -12,7 +12,6 @@ import {
   buildDashedTimestampDocumentNo,
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import type { ApplyRdProcurementStatusActionDto } from "../dto/apply-rd-procurement-status-action.dto";
 import type { CreateRdProcurementRequestDto } from "../dto/create-rd-procurement-request.dto";
@@ -31,7 +30,6 @@ import {
 @Injectable()
 export class RdProcurementRequestService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly repository: RdProcurementRequestRepository,
     private readonly masterDataService: MasterDataService,
   ) {}
@@ -123,7 +121,7 @@ export class RdProcurementRequestService {
         bizDate,
         attempt,
       );
-      return this.prisma.runInTransaction(async (tx) => {
+      return this.repository.runInTransaction(async (tx) => {
         const request = await this.repository.createRequest(
           {
             documentNo,
@@ -180,7 +178,7 @@ export class RdProcurementRequestService {
       throw new BadRequestException("单据已作废");
     }
 
-    return this.prisma.runInTransaction(async (tx) => {
+    return this.repository.runInTransaction(async (tx) => {
       await this.assertCanVoidRequest(request.lines, tx);
 
       for (const line of request.lines) {
@@ -235,7 +233,7 @@ export class RdProcurementRequestService {
       throw new BadRequestException("状态动作目标行不属于当前采购需求");
     }
 
-    return this.prisma.runInTransaction(async (tx) => {
+    return this.repository.runInTransaction(async (tx) => {
       await this.applyLineStatusAction(
         request.id,
         request.documentNo,
@@ -374,7 +372,7 @@ export class RdProcurementRequestService {
         ...line,
         statusLedger: line.statusLedger
           ? line.statusLedger
-          : await getStatusLedgerProjection(line.id, tx ?? this.prisma),
+          : await this.getMissingStatusProjection(line.id, tx),
       })),
     );
 
@@ -382,6 +380,16 @@ export class RdProcurementRequestService {
       ...request,
       lines,
     };
+  }
+
+  private getMissingStatusProjection(
+    requestLineId: number,
+    tx?: Prisma.TransactionClient,
+  ) {
+    if (!tx) {
+      throw new Error("RD 采购需求状态台账未预加载");
+    }
+    return getStatusLedgerProjection(requestLineId, tx);
   }
 
   private assertNeverAction(actionType: never): never {

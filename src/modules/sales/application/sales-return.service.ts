@@ -18,16 +18,12 @@ import {
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
 import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
-import { ApprovalService } from "../../approval/application/approval.service";
-import { InventoryService } from "../../inventory-core/application/inventory.service";
-import { MasterDataService } from "../../master-data/application/master-data.service";
 import { SalesProjectService } from "../../sales-project/application/sales-project.service";
 import type { CreateSalesReturnDto } from "../dto/create-sales-return.dto";
 import type { QuerySalesReturnDto } from "../dto/query-sales-return.dto";
 import { SalesRepository } from "../infrastructure/sales.repository";
 import { SalesReturnSourceService } from "./sales-return-source.service";
-import { SalesSnapshotsService } from "./sales-snapshots.service";
+import { SalesSharedService } from "./sales-shared.service";
 
 const DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
 const BUSINESS_MODULE = "sales";
@@ -35,13 +31,9 @@ const BUSINESS_MODULE = "sales";
 @Injectable()
 export class SalesReturnService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly repository: SalesRepository,
-    private readonly masterDataService: MasterDataService,
-    private readonly inventoryService: InventoryService,
-    private readonly approvalService: ApprovalService,
+    private readonly shared: SalesSharedService,
     private readonly salesProjectService: SalesProjectService,
-    private readonly snapshots: SalesSnapshotsService,
     private readonly returnSource: SalesReturnSourceService,
   ) {}
 
@@ -96,13 +88,14 @@ export class SalesReturnService {
     const bizDate = new Date(dto.bizDate);
     const customerId = dto.customerId ?? sourceOutbound.customerId ?? undefined;
     const { customerCodeSnapshot, customerNameSnapshot } =
-      await this.snapshots.resolveCustomerSnapshot(customerId);
-    const { handlerNameSnapshot } = await this.snapshots.resolveHandlerSnapshot(
-      dto.handlerPersonnelId,
-    );
+      await this.shared.snapshots.resolveCustomerSnapshot(customerId);
+    const { handlerNameSnapshot } =
+      await this.shared.snapshots.resolveHandlerSnapshot(
+        dto.handlerPersonnelId,
+      );
     const stockScopeRecord =
-      await this.masterDataService.getStockScopeByCode("MAIN");
-    const workshop = await this.masterDataService.getWorkshopById(
+      await this.shared.masterDataService.getStockScopeByCode("MAIN");
+    const workshop = await this.shared.masterDataService.getWorkshopById(
       dto.workshopId,
     );
 
@@ -172,11 +165,11 @@ export class SalesReturnService {
             `明细 ${idx + 1} 退货数量不能超过来源出库数量`,
           );
         }
-        const material = await this.masterDataService.getMaterialById(
+        const material = await this.shared.masterDataService.getMaterialById(
           line.materialId,
         );
         const materialCategorySnapshot =
-          await this.snapshots.buildMaterialCategorySnapshot(material);
+          await this.shared.snapshots.buildMaterialCategorySnapshot(material);
         const unitPrice = new Prisma.Decimal(line.unitPrice ?? "0");
         const amount = returnQty.mul(unitPrice);
         const selectedUnitCost = new Prisma.Decimal(
@@ -227,7 +220,7 @@ export class SalesReturnService {
 
     return createWithGeneratedDocumentNo((attempt) => {
       const documentNo = buildCompactDocumentNo("XSTH", bizDate, attempt);
-      return this.prisma.runInTransaction(async (tx) => {
+      return this.repository.runInTransaction(async (tx) => {
         const order = await this.repository.createOrder(
           {
             documentNo,
@@ -290,7 +283,7 @@ export class SalesReturnService {
             returnCostAmount = releaseResult.releasedCostAmount;
           }
 
-          await this.inventoryService.increaseStock(
+          await this.shared.inventoryService.increaseStock(
             {
               materialId: line.materialId,
               stockScope: "MAIN",
@@ -343,7 +336,7 @@ export class SalesReturnService {
           }
         }
 
-        await this.approvalService.createOrRefreshApprovalDocument(
+        await this.shared.approvalService.createOrRefreshApprovalDocument(
           {
             documentFamily: DocumentFamily.SALES_STOCK,
             documentType: DOCUMENT_TYPE,
@@ -375,7 +368,7 @@ export class SalesReturnService {
       throw new BadRequestException("库存状态异常，无法作废");
     }
 
-    return this.prisma.runInTransaction(async (tx) => {
+    return this.repository.runInTransaction(async (tx) => {
       // Restore the outbound source allocations that were released when this
       // return was created (mirrors the release done in createSalesReturn).
       for (const line of order.lines) {
@@ -393,7 +386,7 @@ export class SalesReturnService {
         }
       }
 
-      const logs = await this.inventoryService.getLogsForDocument(
+      const logs = await this.shared.inventoryService.getLogsForDocument(
         {
           businessDocumentType: DOCUMENT_TYPE,
           businessDocumentId: id,
@@ -406,7 +399,7 @@ export class SalesReturnService {
       }
 
       for (const log of logs) {
-        await this.inventoryService.reverseStock(
+        await this.shared.inventoryService.reverseStock(
           {
             logIdToReverse: log.id,
             idempotencyKey: `SalesStockOrder:void:${id}:log:${log.id}`,
@@ -436,7 +429,7 @@ export class SalesReturnService {
         tx,
       );
 
-      await this.approvalService.markApprovalNotRequired(
+      await this.shared.approvalService.markApprovalNotRequired(
         DOCUMENT_TYPE,
         id,
         voidedBy,
@@ -451,7 +444,7 @@ export class SalesReturnService {
     dto: CreateSalesReturnDto,
     sourceOutbound: { workshopId: number; customerId: number | null },
   ) {
-    await this.masterDataService.getWorkshopById(dto.workshopId);
+    await this.shared.masterDataService.getWorkshopById(dto.workshopId);
     if (dto.workshopId !== sourceOutbound.workshopId) {
       throw new BadRequestException("销售退货车间必须与来源出库单一致");
     }
@@ -461,13 +454,15 @@ export class SalesReturnService {
       }
     }
     if (dto.customerId) {
-      await this.masterDataService.getCustomerById(dto.customerId);
+      await this.shared.masterDataService.getCustomerById(dto.customerId);
     }
     if (dto.handlerPersonnelId) {
-      await this.masterDataService.getPersonnelById(dto.handlerPersonnelId);
+      await this.shared.masterDataService.getPersonnelById(
+        dto.handlerPersonnelId,
+      );
     }
     for (const line of dto.lines) {
-      await this.masterDataService.getMaterialById(line.materialId);
+      await this.shared.masterDataService.getMaterialById(line.materialId);
     }
   }
 }

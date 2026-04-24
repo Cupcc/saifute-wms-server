@@ -163,9 +163,7 @@ describe("WorkshopMaterialReturnService / lifecycle", () => {
       (
         mocks.inventoryService.getLogsForDocument as jest.Mock
       ).mockResolvedValue([{ id: 5, businessDocumentLineId: 10 }]);
-      (
-        mocks.inventoryService.listSourceUsagesForConsumerLine as jest.Mock
-      )
+      (mocks.inventoryService.listSourceUsagesForConsumerLine as jest.Mock)
         .mockResolvedValueOnce([
           {
             sourceLogId: 10,

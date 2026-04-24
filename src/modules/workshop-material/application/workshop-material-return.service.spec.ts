@@ -1,5 +1,8 @@
 import { BadRequestException } from "@nestjs/common";
-import { Prisma, WorkshopMaterialOrderType } from "../../../../generated/prisma/client";
+import {
+  Prisma,
+  WorkshopMaterialOrderType,
+} from "../../../../generated/prisma/client";
 import {
   applyDefaultMasterDataResponses,
   buildMockPickOrder,
@@ -258,9 +261,9 @@ describe("WorkshopMaterialReturnService / createReturnOrder", () => {
 
     await service.createReturnOrder(dto, "1");
 
-    expect(
-      mocks.inventoryService.releaseInventorySource,
-    ).toHaveBeenCalledTimes(1);
+    expect(mocks.inventoryService.releaseInventorySource).toHaveBeenCalledTimes(
+      1,
+    );
     expect(mocks.inventoryService.releaseInventorySource).toHaveBeenCalledWith(
       expect.objectContaining({
         sourceLogId: 10,

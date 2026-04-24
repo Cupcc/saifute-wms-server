@@ -5,7 +5,6 @@ import {
   DocumentLifecycleStatus,
   Prisma,
 } from "../../../../generated/prisma/client";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { RdProcurementRequestRepository } from "../infrastructure/rd-procurement-request.repository";
 import {
@@ -106,25 +105,17 @@ describe("RdProcurementRequestService", () => {
   let service: RdProcurementRequestService;
   let repository: jest.Mocked<RdProcurementRequestRepository>;
   let masterDataService: jest.Mocked<MasterDataService>;
-  let prisma: { runInTransaction: jest.Mock };
 
   beforeEach(async () => {
-    prisma = {
-      runInTransaction: jest.fn((handler: (tx: unknown) => Promise<unknown>) =>
-        handler({}),
-      ),
-    };
-
     const moduleRef = await Test.createTestingModule({
       providers: [
         RdProcurementRequestService,
         {
-          provide: PrismaService,
-          useValue: prisma,
-        },
-        {
           provide: RdProcurementRequestRepository,
           useValue: {
+            runInTransaction: jest.fn(
+              (handler: (tx: unknown) => Promise<unknown>) => handler({}),
+            ),
             findRequests: jest.fn(),
             findRequestById: jest.fn(),
             findRequestByDocumentNo: jest.fn(),

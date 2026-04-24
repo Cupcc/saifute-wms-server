@@ -8,6 +8,10 @@ type DbClient = Prisma.TransactionClient | PrismaService;
 export class InboundRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  runInTransaction<T>(handler: (tx: Prisma.TransactionClient) => Promise<T>) {
+    return this.prisma.runInTransaction(handler);
+  }
+
   private db(db?: DbClient) {
     return db ?? this.prisma;
   }
@@ -238,5 +242,16 @@ export class InboundRepository {
       );
     });
     return totals;
+  }
+
+  async findMaterialCategoryByCode(categoryCode: string, db?: DbClient) {
+    return this.db(db).materialCategory.findUnique({
+      where: { categoryCode },
+      select: {
+        id: true,
+        categoryCode: true,
+        categoryName: true,
+      },
+    });
   }
 }

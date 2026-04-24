@@ -15,11 +15,11 @@ import {
   InventoryService,
 } from "../../inventory-core/application/inventory.service";
 import { type StockScopeCode } from "../../session/domain/user-session";
+import { toOperationType } from "../domain/workshop-material-order-type.helper";
 import type { CreateWorkshopMaterialOrderDto } from "../dto/create-workshop-material-order.dto";
 import type { CreateWorkshopMaterialOrderLineDto } from "../dto/create-workshop-material-order-line.dto";
 import type { QueryWorkshopMaterialOrderDto } from "../dto/query-workshop-material-order.dto";
 import type { UpdateWorkshopMaterialOrderDto } from "../dto/update-workshop-material-order.dto";
-import { toOperationType } from "../domain/workshop-material-order-type.helper";
 import {
   WORKSHOP_MATERIAL_BUSINESS_MODULE,
   WORKSHOP_MATERIAL_DOCUMENT_TYPE,
@@ -201,8 +201,10 @@ export class WorkshopMaterialPickService {
 
       const nextRevision = currentOrder.revisionNo + 1;
 
-      const hasReturn =
-        await this.shared.repository.hasActiveReturnDownstream(id, tx);
+      const hasReturn = await this.shared.repository.hasActiveReturnDownstream(
+        id,
+        tx,
+      );
       if (hasReturn) {
         throw new BadRequestException("存在未作废的退料单下游，不能修改领料单");
       }
@@ -291,8 +293,10 @@ export class WorkshopMaterialPickService {
     }
 
     return this.shared.runInTransaction(async (tx) => {
-      const hasReturn =
-        await this.shared.repository.hasActiveReturnDownstream(id, tx);
+      const hasReturn = await this.shared.repository.hasActiveReturnDownstream(
+        id,
+        tx,
+      );
       if (hasReturn) {
         throw new BadRequestException("存在未作废的退料单下游，不能作废领料单");
       }
@@ -377,27 +381,28 @@ export class WorkshopMaterialPickService {
 
     for (const line of params.lines) {
       const lineDto = params.inputLines[line.lineNo - 1];
-      const settlement =
-        await (this.shared.inventoryService as InventoryService).settleConsumerOut(
-          {
-            materialId: line.materialId,
-            stockScope: params.inventoryStockScope,
-            bizDate: params.bizDate,
-            quantity: line.quantity,
-            operationType,
-            businessModule: WORKSHOP_MATERIAL_BUSINESS_MODULE,
-            businessDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
-            businessDocumentId: params.orderId,
-            businessDocumentNumber: params.documentNo,
-            businessDocumentLineId: line.id,
-            operatorId: params.operatorId,
-            idempotencyKey: `${params.idempotencyPrefix}:line:${line.id}`,
-            consumerLineId: line.id,
-            sourceLogId: lineDto?.sourceLogId ?? undefined,
-            sourceOperationTypes: sourceTypes,
-          },
-          params.tx,
-        );
+      const settlement = await (
+        this.shared.inventoryService as InventoryService
+      ).settleConsumerOut(
+        {
+          materialId: line.materialId,
+          stockScope: params.inventoryStockScope,
+          bizDate: params.bizDate,
+          quantity: line.quantity,
+          operationType,
+          businessModule: WORKSHOP_MATERIAL_BUSINESS_MODULE,
+          businessDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
+          businessDocumentId: params.orderId,
+          businessDocumentNumber: params.documentNo,
+          businessDocumentLineId: line.id,
+          operatorId: params.operatorId,
+          idempotencyKey: `${params.idempotencyPrefix}:line:${line.id}`,
+          consumerLineId: line.id,
+          sourceLogId: lineDto?.sourceLogId ?? undefined,
+          sourceOperationTypes: sourceTypes,
+        },
+        params.tx,
+      );
       await this.shared.repository.updateOrderLineCost(
         line.id,
         {

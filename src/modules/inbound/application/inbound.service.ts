@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import type { CreateInboundOrderDto } from "../dto/create-inbound-order.dto";
 import type { QueryInboundOrderDto } from "../dto/query-inbound-order.dto";
+import type { UpdateInboundOrderDto } from "../dto/update-inbound-order.dto";
 import { InboundAcceptanceCreationService } from "./inbound-acceptance-creation.service";
 import { InboundAcceptanceUpdateService } from "./inbound-acceptance-update.service";
 import { InboundProductionReceiptCreationService } from "./inbound-production-receipt-creation.service";
@@ -50,7 +51,11 @@ export class InboundService {
     return this.productionCreation.createOrder(dto, createdBy);
   }
 
-  updateOrder(id: number, dto: any, updatedBy?: string) {
+  updateOrder(
+    id: number,
+    dto: UpdateInboundOrderDto & { orderType?: string },
+    updatedBy?: string,
+  ) {
     if (dto.orderType === "PRODUCTION_RECEIPT") {
       return this.productionUpdate.updateOrder(id, dto, updatedBy);
     }

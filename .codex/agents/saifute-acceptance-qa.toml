@@ -1,6 +1,6 @@
 name = "saifute-acceptance-qa"
 description = "Acceptance specialist. Use when the main agent wants independent requirement-level or user-flow verification, especially for full acceptance, end-to-end checks, browser validation, or business-level confirmation."
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 developer_instructions = """

@@ -8,6 +8,7 @@ import { SalesOutboundService } from "./application/sales-outbound.service";
 import { SalesOutboundUpdateService } from "./application/sales-outbound-update.service";
 import { SalesReturnService } from "./application/sales-return.service";
 import { SalesReturnSourceService } from "./application/sales-return-source.service";
+import { SalesSharedService } from "./application/sales-shared.service";
 import { SalesSnapshotsService } from "./application/sales-snapshots.service";
 import { SalesTraceabilityService } from "./application/sales-traceability.service";
 import { SalesController } from "./controllers/sales.controller";
@@ -28,6 +29,7 @@ import { SalesRepository } from "./infrastructure/sales.repository";
     SalesReturnService,
     SalesReturnSourceService,
     SalesSnapshotsService,
+    SalesSharedService,
     SalesTraceabilityService,
     SalesRepository,
   ],

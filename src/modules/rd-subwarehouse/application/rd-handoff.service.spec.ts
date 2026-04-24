@@ -8,10 +8,9 @@ import {
   Prisma,
   StockDirection,
 } from "../../../../generated/prisma/client";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
-import { RdProjectRepository } from "../../rd-project/infrastructure/rd-project.repository";
+import { RdProjectLookupService } from "../../rd-project/application/rd-project-lookup.service";
 import { RdHandoffRepository } from "../infrastructure/rd-handoff.repository";
 import { RdProcurementRequestRepository } from "../infrastructure/rd-procurement-request.repository";
 import { RdHandoffService } from "./rd-handoff.service";
@@ -110,25 +109,16 @@ describe("RdHandoffService", () => {
   let rdProcurementRequestRepository: jest.Mocked<RdProcurementRequestRepository>;
   let masterDataService: jest.Mocked<MasterDataService>;
   let inventoryService: jest.Mocked<InventoryService>;
-  let prisma: { runInTransaction: jest.Mock };
-
   beforeEach(async () => {
-    prisma = {
-      runInTransaction: jest.fn((handler: (tx: unknown) => Promise<unknown>) =>
-        handler({}),
-      ),
-    };
-
     const moduleRef = await Test.createTestingModule({
       providers: [
         RdHandoffService,
         {
-          provide: PrismaService,
-          useValue: prisma,
-        },
-        {
           provide: RdHandoffRepository,
           useValue: {
+            runInTransaction: jest.fn(
+              (handler: (tx: unknown) => Promise<unknown>) => handler({}),
+            ),
             findOrders: jest.fn(),
             findOrderById: jest.fn(),
             findOrderByDocumentNo: jest.fn(),
@@ -144,14 +134,15 @@ describe("RdHandoffService", () => {
           },
         },
         {
-          provide: RdProjectRepository,
+          provide: RdProjectLookupService,
           useValue: {
-            findProjectByCode: jest.fn().mockResolvedValue(mockRdProject),
-            findProjectById: jest.fn().mockResolvedValue(mockRdProject),
-            findProjectTargetBySource: jest.fn(),
-            updateProjectTarget: jest.fn(),
-            attachProjectTargetToProject: jest.fn(),
-            createProjectTarget: jest.fn(),
+            requireEffectiveProjectByCode: jest
+              .fn()
+              .mockResolvedValue(mockRdProject),
+            requireEffectiveProjectById: jest
+              .fn()
+              .mockResolvedValue(mockRdProject),
+            ensureProjectTarget: jest.fn().mockResolvedValue(7001),
           },
         },
         {

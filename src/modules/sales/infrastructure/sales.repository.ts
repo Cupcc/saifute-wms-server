@@ -15,6 +15,10 @@ type DbClient = Prisma.TransactionClient | PrismaService;
 export class SalesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  runInTransaction<T>(handler: (tx: Prisma.TransactionClient) => Promise<T>) {
+    return this.prisma.runInTransaction(handler);
+  }
+
   private db(db?: DbClient) {
     return db ?? this.prisma;
   }
@@ -314,5 +318,80 @@ export class SalesRepository {
       );
     }
     return result;
+  }
+
+  async findMaterialCategoryByCode(categoryCode: string, db?: DbClient) {
+    return this.db(db).materialCategory.findUnique({
+      where: { categoryCode },
+      select: {
+        id: true,
+        categoryCode: true,
+        categoryName: true,
+      },
+    });
+  }
+
+  async findPriceCorrectionLinesBySourceLogIds(
+    sourceLogIds: number[],
+    db?: DbClient,
+  ) {
+    if (sourceLogIds.length === 0) {
+      return [];
+    }
+
+    return this.db(db).stockInPriceCorrectionOrderLine.findMany({
+      where: {
+        OR: [
+          { sourceInventoryLogId: { in: sourceLogIds } },
+          { generatedInLogId: { in: sourceLogIds } },
+        ],
+      },
+      include: {
+        order: {
+          select: {
+            id: true,
+            documentNo: true,
+            bizDate: true,
+          },
+        },
+        sourceStockInOrder: {
+          select: {
+            id: true,
+            documentNo: true,
+            bizDate: true,
+          },
+        },
+        sourceStockInOrderLine: {
+          select: {
+            id: true,
+            lineNo: true,
+            materialId: true,
+            materialCodeSnapshot: true,
+            materialNameSnapshot: true,
+            quantity: true,
+            unitPrice: true,
+          },
+        },
+      },
+    });
+  }
+
+  async findStockInLinesByIds(lineIds: number[], db?: DbClient) {
+    if (lineIds.length === 0) {
+      return [];
+    }
+
+    return this.db(db).stockInOrderLine.findMany({
+      where: { id: { in: lineIds } },
+      include: {
+        order: {
+          select: {
+            id: true,
+            documentNo: true,
+            bizDate: true,
+          },
+        },
+      },
+    });
   }
 }

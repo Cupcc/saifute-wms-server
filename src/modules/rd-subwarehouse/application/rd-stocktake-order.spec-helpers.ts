@@ -1,9 +1,8 @@
 import { Test } from "@nestjs/testing";
 import { DocumentLifecycleStatus } from "../../../../generated/prisma/client";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
-import { RdProjectRepository } from "../../rd-project/infrastructure/rd-project.repository";
+import { RdProjectLookupService } from "../../rd-project/application/rd-project-lookup.service";
 import { RdStocktakeOrderRepository } from "../infrastructure/rd-stocktake-order.repository";
 import { RdStocktakeOrderService } from "./rd-stocktake-order.service";
 
@@ -20,28 +19,20 @@ export interface RdStocktakeOrderTestContext {
   service: RdStocktakeOrderService;
   repository: jest.Mocked<RdStocktakeOrderRepository>;
   masterDataService: jest.Mocked<MasterDataService>;
-  rdProjectRepository: jest.Mocked<RdProjectRepository>;
+  rdProjectLookupService: jest.Mocked<RdProjectLookupService>;
   inventoryService: jest.Mocked<InventoryService>;
-  prisma: { runInTransaction: jest.Mock };
 }
 
 export async function setupRdStocktakeOrderTestModule(): Promise<RdStocktakeOrderTestContext> {
-  const prisma = {
-    runInTransaction: jest.fn((handler: (tx: unknown) => Promise<unknown>) =>
-      handler({}),
-    ),
-  };
-
   const moduleRef = await Test.createTestingModule({
     providers: [
       RdStocktakeOrderService,
       {
-        provide: PrismaService,
-        useValue: prisma,
-      },
-      {
         provide: RdStocktakeOrderRepository,
         useValue: {
+          runInTransaction: jest.fn(
+            (handler: (tx: unknown) => Promise<unknown>) => handler({}),
+          ),
           findOrders: jest.fn(),
           findOrderById: jest.fn(),
           findOrderByDocumentNo: jest.fn(),
@@ -63,17 +54,16 @@ export async function setupRdStocktakeOrderTestModule(): Promise<RdStocktakeOrde
         },
       },
       {
-        provide: RdProjectRepository,
+        provide: RdProjectLookupService,
         useValue: {
-          findProjects: jest.fn().mockResolvedValue({
+          listEffectiveProjects: jest.fn().mockResolvedValue({
             items: [mockRdProject],
             total: 1,
           }),
-          findProjectById: jest.fn().mockResolvedValue(mockRdProject),
-          findProjectTargetBySource: jest.fn(),
-          updateProjectTarget: jest.fn(),
-          attachProjectTargetToProject: jest.fn(),
-          createProjectTarget: jest.fn(),
+          requireEffectiveProjectById: jest
+            .fn()
+            .mockResolvedValue(mockRdProject),
+          ensureProjectTarget: jest.fn().mockResolvedValue(7001),
         },
       },
       {
@@ -89,12 +79,13 @@ export async function setupRdStocktakeOrderTestModule(): Promise<RdStocktakeOrde
   }).compile();
 
   const service = moduleRef.get(RdStocktakeOrderService);
-  const repository: jest.Mocked<RdStocktakeOrderRepository> =
-    moduleRef.get(RdStocktakeOrderRepository);
+  const repository: jest.Mocked<RdStocktakeOrderRepository> = moduleRef.get(
+    RdStocktakeOrderRepository,
+  );
   const masterDataService: jest.Mocked<MasterDataService> =
     moduleRef.get(MasterDataService);
-  const rdProjectRepository: jest.Mocked<RdProjectRepository> =
-    moduleRef.get(RdProjectRepository);
+  const rdProjectLookupService: jest.Mocked<RdProjectLookupService> =
+    moduleRef.get(RdProjectLookupService);
   const inventoryService: jest.Mocked<InventoryService> =
     moduleRef.get(InventoryService);
 
@@ -115,8 +106,7 @@ export async function setupRdStocktakeOrderTestModule(): Promise<RdStocktakeOrde
     service,
     repository,
     masterDataService,
-    rdProjectRepository,
+    rdProjectLookupService,
     inventoryService,
-    prisma,
   };
 }

@@ -10,11 +10,11 @@ import {
   Prisma,
   WorkshopMaterialOrderType,
 } from "../../../../generated/prisma/client";
+import { toOperationType } from "../domain/workshop-material-order-type.helper";
 import type { CreateWorkshopMaterialOrderDto } from "../dto/create-workshop-material-order.dto";
 import type { CreateWorkshopMaterialOrderLineDto } from "../dto/create-workshop-material-order-line.dto";
 import type { QueryWorkshopMaterialOrderDto } from "../dto/query-workshop-material-order.dto";
 import type { UpdateWorkshopMaterialOrderDto } from "../dto/update-workshop-material-order.dto";
-import { toOperationType } from "../domain/workshop-material-order-type.helper";
 import { WorkshopMaterialReturnHelpersService } from "./workshop-material-return-helpers.service";
 import {
   WORKSHOP_MATERIAL_BUSINESS_MODULE,

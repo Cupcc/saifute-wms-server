@@ -11,6 +11,17 @@ type InventoryDbClient = Prisma.TransactionClient | PrismaService;
 export class FactoryNumberRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  runInTransaction<T>(
+    tx: Prisma.TransactionClient | undefined,
+    handler: (db: Prisma.TransactionClient) => Promise<T>,
+  ) {
+    if (tx) {
+      return handler(tx);
+    }
+
+    return this.prisma.runInTransaction(handler);
+  }
+
   async createFactoryNumberReservation(
     data: Prisma.FactoryNumberReservationUncheckedCreateInput,
     db: InventoryDbClient = this.prisma,

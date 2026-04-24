@@ -4,7 +4,6 @@ import {
   Prisma,
   StockInOrderType,
 } from "../../../../generated/prisma/client";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { RdProcurementRequestService } from "../../rd-subwarehouse/application/rd-procurement-request.service";
 import type { CreateInboundOrderDto } from "../dto/create-inbound-order.dto";
@@ -14,7 +13,6 @@ import { InboundRepository } from "../infrastructure/inbound.repository";
 @Injectable()
 export class InboundSharedService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly masterDataService: MasterDataService,
     private readonly rdProcurementRequestService: RdProcurementRequestService,
     private readonly inboundRepository: InboundRepository,
@@ -85,7 +83,10 @@ export class InboundSharedService {
     };
   }
 
-  async resolveHandlerSnapshot(handlerPersonnelId?: number, handlerName?: string) {
+  async resolveHandlerSnapshot(
+    handlerPersonnelId?: number,
+    handlerName?: string,
+  ) {
     if (!handlerPersonnelId) {
       return { handlerNameSnapshot: handlerName?.trim() || null };
     }
@@ -110,7 +111,9 @@ export class InboundSharedService {
       seenRdProcurementLineIds?: Set<number>;
     },
   ) {
-    const material = await this.masterDataService.getMaterialById(line.materialId);
+    const material = await this.masterDataService.getMaterialById(
+      line.materialId,
+    );
     const materialCategorySnapshot =
       await this.buildMaterialCategorySnapshot(material);
     const quantity = new Prisma.Decimal(line.quantity);
@@ -237,7 +240,10 @@ export class InboundSharedService {
         >
       | null
       | undefined,
-    lines: Array<{ rdProcurementRequestLineId: number | null; quantity: Prisma.Decimal }>,
+    lines: Array<{
+      rdProcurementRequestLineId: number | null;
+      quantity: Prisma.Decimal;
+    }>,
     excludeOrderId?: number,
     tx?: Prisma.TransactionClient,
   ) {
@@ -314,23 +320,19 @@ export class InboundSharedService {
     };
   }
 
-  private async resolveEffectiveMaterialCategory(category: {
-    id: number;
-    categoryCode: string;
-    categoryName: string;
-  } | null) {
+  private async resolveEffectiveMaterialCategory(
+    category: {
+      id: number;
+      categoryCode: string;
+      categoryName: string;
+    } | null,
+  ) {
     if (category) {
       return category;
     }
 
-    const defaultCategory = await this.prisma.materialCategory.findUnique({
-      where: { categoryCode: "UNCATEGORIZED" },
-      select: {
-        id: true,
-        categoryCode: true,
-        categoryName: true,
-      },
-    });
+    const defaultCategory =
+      await this.inboundRepository.findMaterialCategoryByCode("UNCATEGORIZED");
     if (!defaultCategory) {
       throw new BadRequestException(
         "物料缺少有效分类，且默认未分类不存在，无法写入分类快照",

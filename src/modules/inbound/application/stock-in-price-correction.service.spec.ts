@@ -108,6 +108,10 @@ describe("StockInPriceCorrectionService", () => {
         {
           provide: StockInPriceCorrectionRepository,
           useValue: {
+            runInTransaction: jest.fn(
+              (handler: (tx: unknown) => Promise<unknown>) =>
+                prisma.runInTransaction(handler),
+            ),
             findOrders: jest.fn(),
             findOrderById: jest.fn().mockResolvedValue({
               ...mockOrder,
@@ -254,8 +258,7 @@ describe("StockInPriceCorrectionService", () => {
   });
 
   it("should only record historical diff when the source is already fully consumed", async () => {
-    const prisma = (service as unknown as { prisma: PrismaService }).prisma;
-    (prisma.runInTransaction as jest.Mock).mockImplementation(
+    (repository.runInTransaction as jest.Mock).mockImplementation(
       (handler: (tx: unknown) => Promise<unknown>) =>
         handler({
           $queryRaw: jest.fn().mockResolvedValue([]),
@@ -313,7 +316,6 @@ describe("StockInPriceCorrectionService", () => {
   });
 
   it("should keep tracing back to the original stock-in line when correcting a prior correction-in source", async () => {
-    const prisma = (service as unknown as { prisma: PrismaService }).prisma;
     (repository.findLineByGeneratedInLogId as jest.Mock).mockResolvedValue({
       id: 11,
       sourceStockInOrderId: 900,
@@ -326,7 +328,7 @@ describe("StockInPriceCorrectionService", () => {
         bizDate: new Date("2026-04-01"),
       },
     });
-    (prisma.runInTransaction as jest.Mock).mockImplementation(
+    (repository.runInTransaction as jest.Mock).mockImplementation(
       (handler: (tx: unknown) => Promise<unknown>) =>
         handler({
           $queryRaw: jest.fn().mockResolvedValue([]),

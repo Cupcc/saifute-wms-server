@@ -15,11 +15,9 @@ import {
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
 import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
-import { ensureProjectTarget } from "../../rd-project/application/rd-project.shared";
-import { RdProjectRepository } from "../../rd-project/infrastructure/rd-project.repository";
+import { RdProjectLookupService } from "../../rd-project/application/rd-project-lookup.service";
 import type { CreateRdStocktakeOrderDto } from "../dto/create-rd-stocktake-order.dto";
 import type { QueryRdStocktakeOrderDto } from "../dto/query-rd-stocktake-order.dto";
 import { RdStocktakeOrderRepository } from "../infrastructure/rd-stocktake-order.repository";
@@ -30,11 +28,10 @@ const BUSINESS_MODULE = "rd-subwarehouse";
 @Injectable()
 export class RdStocktakeOrderService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly repository: RdStocktakeOrderRepository,
     private readonly masterDataService: MasterDataService,
     private readonly inventoryService: InventoryService,
-    private readonly rdProjectRepository: RdProjectRepository,
+    private readonly rdProjectLookupService: RdProjectLookupService,
   ) {}
 
   async listOrders(query: QueryRdStocktakeOrderDto) {
@@ -53,7 +50,7 @@ export class RdStocktakeOrderService {
 
   async listProjectOptions(workshopId?: number) {
     const resolvedWorkshopId = this.requireWorkshopId(workshopId);
-    const result = await this.rdProjectRepository.findProjects({
+    const result = await this.rdProjectLookupService.listEffectiveProjects({
       workshopId: resolvedWorkshopId,
       stockScope: "RD_SUB",
       limit: 200,
@@ -113,7 +110,7 @@ export class RdStocktakeOrderService {
     this.assertUniqueMaterials(dto);
     const workshopId = this.requireWorkshopId(dto.workshopId);
 
-    const workshop = await this.masterDataService.getWorkshopById(workshopId);
+    await this.masterDataService.getWorkshopById(workshopId);
     const stockScopeRecord =
       await this.masterDataService.getStockScopeByCode("RD_SUB");
     const bizDate = new Date(dto.bizDate);
@@ -124,7 +121,7 @@ export class RdStocktakeOrderService {
         bizDate,
         attempt,
       );
-      return this.prisma.runInTransaction(async (tx) => {
+      return this.repository.runInTransaction(async (tx) => {
         const projectTargetIdByProjectId = new Map<number, number>();
         const linesWithSnapshots = await Promise.all(
           dto.lines.map(async (line, idx) => {
@@ -139,12 +136,12 @@ export class RdStocktakeOrderService {
             const countedQty = new Prisma.Decimal(line.countedQty);
             let projectTargetId = projectTargetIdByProjectId.get(rdProject.id);
             if (projectTargetId == null) {
-              projectTargetId = await ensureProjectTarget({
-                project: rdProject,
-                updatedBy: createdBy,
-                repository: this.rdProjectRepository,
-                tx,
-              });
+              projectTargetId =
+                await this.rdProjectLookupService.ensureProjectTarget({
+                  project: rdProject,
+                  updatedBy: createdBy,
+                  tx,
+                });
               projectTargetIdByProjectId.set(rdProject.id, projectTargetId);
             }
             const bookQty =
@@ -219,7 +216,9 @@ export class RdStocktakeOrderService {
           if (!line.rdProjectId) {
             throw new BadRequestException("RD 盘点明细缺少研发项目归属");
           }
-          const projectTargetId = projectTargetIdByProjectId.get(line.rdProjectId);
+          const projectTargetId = projectTargetIdByProjectId.get(
+            line.rdProjectId,
+          );
           if (projectTargetId == null) {
             throw new BadRequestException("RD 盘点明细缺少项目目标映射");
           }
@@ -299,7 +298,7 @@ export class RdStocktakeOrderService {
       throw new BadRequestException("库存状态异常，无法作废");
     }
 
-    return this.prisma.runInTransaction(async (tx) => {
+    return this.repository.runInTransaction(async (tx) => {
       for (const line of order.lines) {
         if (!line.inventoryLogId) {
           continue;
@@ -360,13 +359,11 @@ export class RdStocktakeOrderService {
     workshopId: number,
     tx?: Prisma.TransactionClient,
   ) {
-    const project = await this.rdProjectRepository.findProjectById(rdProjectId, tx);
-    if (!project) {
-      throw new BadRequestException(`研发项目不存在: ${rdProjectId}`);
-    }
-    if (project.lifecycleStatus !== DocumentLifecycleStatus.EFFECTIVE) {
-      throw new BadRequestException(`研发项目已失效: ${project.projectCode}`);
-    }
+    const project =
+      await this.rdProjectLookupService.requireEffectiveProjectById(
+        rdProjectId,
+        tx,
+      );
     if (project.workshopId !== workshopId) {
       throw new BadRequestException(
         `研发项目与盘点业务车间不一致: ${project.projectCode}`,

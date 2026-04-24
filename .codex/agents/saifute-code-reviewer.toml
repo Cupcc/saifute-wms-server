@@ -1,6 +1,6 @@
 name = "saifute-code-reviewer"
 description = "Review specialist. Use when the main agent wants an independent check for bugs, regressions, contract drift, or validation gaps on a changed or proposed scope."
-model = "gpt-5.4"
+model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
 sandbox_mode = "read-only"
 developer_instructions = """

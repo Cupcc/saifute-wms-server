@@ -80,6 +80,7 @@ export const createStockScopeCompatibilityServiceMock = () => ({
       };
     }),
   listRealStockWorkshopIds: jest.fn().mockResolvedValue([20]),
+  listRealStockScopeIds: jest.fn().mockResolvedValue([1]),
   resolveByStockScope: jest.fn(),
   resolveByWorkshopId: jest.fn(),
 });

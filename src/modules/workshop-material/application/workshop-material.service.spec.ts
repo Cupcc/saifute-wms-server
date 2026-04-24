@@ -1,7 +1,7 @@
+import { WorkshopMaterialService } from "./workshop-material.service";
 import { WorkshopMaterialPickService } from "./workshop-material-pick.service";
 import { WorkshopMaterialReturnService } from "./workshop-material-return.service";
 import { WorkshopMaterialScrapService } from "./workshop-material-scrap.service";
-import { WorkshopMaterialService } from "./workshop-material.service";
 
 /**
  * The facade itself is a thin delegator — behavioural coverage lives in the
@@ -77,7 +77,11 @@ describe("WorkshopMaterialService (facade)", () => {
     expect(returnService.getReturnOrderById).toHaveBeenCalledWith(2);
     expect(returnService.createReturnOrder).toHaveBeenCalledTimes(1);
     expect(returnService.updateReturnOrder).toHaveBeenCalledTimes(1);
-    expect(returnService.voidReturnOrder).toHaveBeenCalledWith(2, "reason", "1");
+    expect(returnService.voidReturnOrder).toHaveBeenCalledWith(
+      2,
+      "reason",
+      "1",
+    );
   });
 
   it("delegates SCRAP methods to WorkshopMaterialScrapService", async () => {

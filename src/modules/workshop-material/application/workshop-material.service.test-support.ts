@@ -18,15 +18,14 @@ import { WorkshopMaterialSharedService } from "./workshop-material-shared.servic
 
 export function createPrismaMock() {
   return {
-    runInTransaction: jest.fn(
-      (handler: (tx: unknown) => Promise<unknown>) =>
-        handler({
-          documentRelation: { upsert: jest.fn().mockResolvedValue({}) },
-          documentLineRelation: { upsert: jest.fn().mockResolvedValue({}) },
-          rdMaterialStatusHistory: {
-            findMany: jest.fn().mockResolvedValue([]),
-          },
-        }),
+    runInTransaction: jest.fn((handler: (tx: unknown) => Promise<unknown>) =>
+      handler({
+        documentRelation: { upsert: jest.fn().mockResolvedValue({}) },
+        documentLineRelation: { upsert: jest.fn().mockResolvedValue({}) },
+        rdMaterialStatusHistory: {
+          findMany: jest.fn().mockResolvedValue([]),
+        },
+      }),
     ),
   } as unknown as PrismaService & { runInTransaction: jest.Mock };
 }
@@ -49,6 +48,17 @@ export function createRepositoryMock() {
       .fn()
       .mockResolvedValue({ count: 0 }),
     sumActiveReturnedQtyByPickLine: jest.fn().mockResolvedValue(new Map()),
+    runInTransaction: jest.fn((handler: (tx: unknown) => Promise<unknown>) =>
+      handler({
+        documentRelation: { upsert: jest.fn().mockResolvedValue({}) },
+        documentLineRelation: { upsert: jest.fn().mockResolvedValue({}) },
+        rdMaterialStatusHistory: {
+          findMany: jest.fn().mockResolvedValue([]),
+        },
+      }),
+    ),
+    upsertReturnFromPickRelation: jest.fn().mockResolvedValue(undefined),
+    findRdProcurementRequestForScrapSource: jest.fn().mockResolvedValue(null),
   } as unknown as jest.Mocked<WorkshopMaterialRepository>;
 }
 
@@ -112,7 +122,6 @@ export function createMocks(): WorkshopMaterialMocks {
 
 export function createSharedService(mocks: WorkshopMaterialMocks) {
   return new WorkshopMaterialSharedService(
-    mocks.prisma,
     mocks.repository,
     mocks.masterDataService,
     mocks.inventoryService,
@@ -122,7 +131,6 @@ export function createSharedService(mocks: WorkshopMaterialMocks) {
 
 export function createReturnHelpersService(mocks: WorkshopMaterialMocks) {
   return new WorkshopMaterialReturnHelpersService(
-    mocks.prisma,
     mocks.repository,
     mocks.inventoryService,
   );

@@ -1,12 +1,9 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import {
-  DocumentFamily,
   DocumentLifecycleStatus,
-  DocumentRelationType,
   Prisma,
   WorkshopMaterialOrderType,
 } from "../../../../generated/prisma/client";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import type { CreateWorkshopMaterialOrderLineDto } from "../dto/create-workshop-material-order-line.dto";
 import { WorkshopMaterialRepository } from "../infrastructure/workshop-material.repository";
@@ -24,7 +21,6 @@ import {
 @Injectable()
 export class WorkshopMaterialReturnHelpersService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly repository: WorkshopMaterialRepository,
     private readonly inventoryService: InventoryService,
   ) {}
@@ -172,60 +168,17 @@ export class WorkshopMaterialReturnHelpersService {
         `领料来源库存释放不足: pickOrderId=${sourceDocumentId}, pickLineId=${sourceDocumentLineId}，退料需释放 ${new Prisma.Decimal(linkedQty).toFixed()} 但实际只能释放 ${new Prisma.Decimal(linkedQty).sub(remainingToRelease).toFixed()}`,
       );
     }
-    const client = tx ?? this.prisma;
-    await client.documentRelation.upsert({
-      where: {
-        relationType_upstreamFamily_upstreamDocumentId_downstreamFamily_downstreamDocumentId:
-          {
-            relationType: DocumentRelationType.WORKSHOP_RETURN_FROM_PICK,
-            upstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
-            upstreamDocumentId: sourceDocumentId,
-            downstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
-            downstreamDocumentId: returnOrderId,
-          },
-      },
-      create: {
-        relationType: DocumentRelationType.WORKSHOP_RETURN_FROM_PICK,
-        upstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
-        upstreamDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
-        upstreamDocumentId: sourceDocumentId,
-        downstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
-        downstreamDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
-        downstreamDocumentId: returnOrderId,
-        isActive: true,
-        createdBy,
-        updatedBy: createdBy,
-      },
-      update: { isActive: true, updatedBy: createdBy },
-    });
-
-    await client.documentLineRelation.upsert({
-      where: {
-        relationType_upstreamFamily_upstreamLineId_downstreamFamily_downstreamLineId:
-          {
-            relationType: DocumentRelationType.WORKSHOP_RETURN_FROM_PICK,
-            upstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
-            upstreamLineId: sourceDocumentLineId,
-            downstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
-            downstreamLineId: returnLineId,
-          },
-      },
-      create: {
-        relationType: DocumentRelationType.WORKSHOP_RETURN_FROM_PICK,
-        upstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
-        upstreamDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
-        upstreamDocumentId: sourceDocumentId,
-        upstreamLineId: sourceDocumentLineId,
-        downstreamFamily: DocumentFamily.WORKSHOP_MATERIAL,
-        downstreamDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
-        downstreamDocumentId: returnOrderId,
-        downstreamLineId: returnLineId,
+    await this.repository.upsertReturnFromPickRelation(
+      {
+        returnOrderId,
+        returnLineId,
+        sourceDocumentId,
+        sourceDocumentLineId,
         linkedQty,
         createdBy,
-        updatedBy: createdBy,
       },
-      update: { linkedQty, updatedBy: createdBy },
-    });
+      tx,
+    );
   }
 
   /**

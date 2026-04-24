@@ -7,24 +7,22 @@ import {
   DocumentLifecycleStatus,
   Prisma,
 } from "../../../../generated/prisma/client";
-import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import type { CreateSalesProjectDto } from "../dto/create-sales-project.dto";
 import type { QuerySalesProjectDto } from "../dto/query-sales-project.dto";
 import type { UpdateSalesProjectDto } from "../dto/update-sales-project.dto";
 import { SalesProjectRepository } from "../infrastructure/sales-project.repository";
-import { SalesProjectMaterialViewService } from "./sales-project-material-view.service";
 import {
   ensureSalesProjectTarget,
   SALES_PROJECT_LABEL,
   SALES_PROJECT_STOCK_SCOPE,
   toDecimal,
 } from "./sales-project.shared";
+import { SalesProjectMaterialViewService } from "./sales-project-material-view.service";
 
 @Injectable()
 export class SalesProjectLifecycleService {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly repository: SalesProjectRepository,
     private readonly masterDataService: MasterDataService,
     private readonly materialView: SalesProjectMaterialViewService,
@@ -84,7 +82,7 @@ export class SalesProjectLifecycleService {
       new Prisma.Decimal(0),
     );
 
-    return this.prisma.runInTransaction(async (tx) => {
+    return this.repository.runInTransaction(async (tx) => {
       const project = await this.repository.createProject(
         {
           salesProjectCode: dto.salesProjectCode,
@@ -189,7 +187,7 @@ export class SalesProjectLifecycleService {
       new Prisma.Decimal(0),
     );
 
-    return this.prisma.runInTransaction(async (tx) => {
+    return this.repository.runInTransaction(async (tx) => {
       await this.repository.updateProject(
         id,
         {
@@ -252,7 +250,7 @@ export class SalesProjectLifecycleService {
       throw new BadRequestException("销售项目已作废");
     }
 
-    return this.prisma.runInTransaction(async (tx) => {
+    return this.repository.runInTransaction(async (tx) => {
       await this.repository.updateProject(
         id,
         {
