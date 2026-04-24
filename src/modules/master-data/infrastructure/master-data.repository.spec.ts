@@ -5,18 +5,14 @@ import { MasterDataRepository } from "./master-data.repository";
 
 describe("MasterDataRepository", () => {
   it("reconciles canonical workshops and disables legacy pseudo-workshops", async () => {
-    const findFirst = jest.fn().mockResolvedValue(null);
-    const create = jest.fn().mockResolvedValue({});
-    const update = jest.fn().mockResolvedValue({});
+    const upsert = jest.fn().mockResolvedValue({});
     const updateMany = jest.fn().mockResolvedValue({ count: 2 });
     const $transaction = jest
       .fn()
       .mockImplementation(async (handler: (tx: unknown) => Promise<unknown>) =>
         handler({
           workshop: {
-            findFirst,
-            create,
-            update,
+            upsert,
             updateMany,
           },
         }),
@@ -27,19 +23,26 @@ describe("MasterDataRepository", () => {
 
     await repository.ensureCanonicalWorkshops();
 
-    const findFirstCalls = findFirst.mock.calls.map(([payload]) => payload);
-    expect(findFirstCalls).toHaveLength(4);
+    const upsertCalls = upsert.mock.calls.map(([payload]) => payload);
+    expect(upsertCalls).toHaveLength(4);
     expect(
-      new Set(findFirstCalls.map((payload) => payload.where.workshopName)).size,
+      new Set(upsertCalls.map((payload) => payload.where.workshopName)).size,
     ).toBe(4);
-    expect(create).toHaveBeenCalledTimes(4);
-    expect(update).not.toHaveBeenCalled();
-    for (const [payload] of create.mock.calls) {
-      expect(payload.data).toEqual({
-        workshopName: expect.any(String),
-        status: "ACTIVE",
-        createdBy: "system-bootstrap",
-        updatedBy: "system-bootstrap",
+    for (const payload of upsertCalls) {
+      expect(payload).toEqual({
+        where: {
+          workshopName: expect.any(String),
+        },
+        update: {
+          status: "ACTIVE",
+          updatedBy: "system-bootstrap",
+        },
+        create: {
+          workshopName: expect.any(String),
+          status: "ACTIVE",
+          createdBy: "system-bootstrap",
+          updatedBy: "system-bootstrap",
+        },
       });
     }
     expect($transaction).toHaveBeenCalledTimes(1);
@@ -54,55 +57,6 @@ describe("MasterDataRepository", () => {
         updatedBy: "system-bootstrap",
       },
     });
-  });
-
-  it("reactivates canonical workshops through updates", async () => {
-    const findFirst = jest.fn().mockResolvedValue({ id: 123 });
-    const create = jest.fn().mockResolvedValue({});
-    const update = jest.fn().mockResolvedValue({});
-    const updateMany = jest.fn().mockResolvedValue({ count: 0 });
-    const $transaction = jest
-      .fn()
-      .mockImplementation(async (handler: (tx: unknown) => Promise<unknown>) =>
-        handler({
-          workshop: {
-            findFirst,
-            create,
-            update,
-            updateMany,
-          },
-        }),
-      );
-    const repository = new MasterDataRepository({
-      $transaction,
-    } as unknown as PrismaService);
-
-    await repository.ensureCanonicalWorkshops();
-
-    expect($transaction).toHaveBeenCalledTimes(1);
-    expect(findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          workshopName: expect.any(String),
-        },
-        orderBy: {
-          id: "asc",
-        },
-      }),
-    );
-    expect(update).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: {
-          id: 123,
-        },
-        data: {
-          workshopName: expect.any(String),
-          status: "ACTIVE",
-          updatedBy: "system-bootstrap",
-        },
-      }),
-    );
-    expect(create).not.toHaveBeenCalled();
   });
 
   it("reconciles canonical stock scopes by scopeCode", async () => {

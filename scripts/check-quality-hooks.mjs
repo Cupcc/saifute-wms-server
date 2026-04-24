@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 /**
- * Quality hook for Claude Code PostToolUse events.
+ * Quality hook for Claude Code and Codex PostToolUse events.
  *
  * Triggered after Edit/Write operations, this script enforces
  * the code quality baseline defined in
@@ -9,13 +9,15 @@
  *
  * Checks:
  *   1. File line count ≤ 500
- *   2. application/ layer does not inject PrismaService (type-only Prisma imports are allowed per §2.3.1)
- *   3. Cross-module repository imports are flagged
+ *   2. Dead barrel / pure re-export shells are flagged
+ *   3. application/ layer does not inject PrismaService (type-only Prisma imports are allowed per §2.3.1)
+ *   4. Cross-module repository imports are flagged
+ *   5. Constructor dependency count stays within the governance threshold
  *
  * Exit codes:
  *   0 — clean, no violation
  *   1 — violation detected (stderr carries a clear, actionable message
- *       so Claude Code surfaces it to the agent)
+ *       so the coding environment surfaces it to the agent)
  *
  * Usage:
  *   bun ./scripts/check-quality-hooks.mjs <absolute-or-relative-file-path>
@@ -110,7 +112,9 @@ if (lineCount > 0 && lineCount <= 30) {
 // like `import { Prisma } from ...` or Prisma-generated enums. See §2.3.1.
 // Spec/test files are excluded — they must mock PrismaService for DI to work.
 const isApplicationLayer = APPLICATION_LAYER_PATTERN.test(normalized);
-const isTestFile = /\.(spec|test|test-support|spec-helpers)\.ts$/.test(normalized);
+const isTestFile = /\.(spec|test|test-support|spec-helpers)\.ts$/.test(
+  normalized,
+);
 
 if (isApplicationLayer && !isTestFile) {
   const prismaServiceRegex = /PrismaService/;
@@ -158,22 +162,14 @@ if (moduleMatch) {
 }
 
 // ---- Check 4: constructor dependency count (§4.1) ---------------------------
-// Counts `private readonly` params inside constructor(). Facade files (< 150
+// Counts `private readonly` params inside constructor(). Facade files (< 300
 // lines where all public methods are single-line delegations) are exempt.
 // Only checks production .service.ts files, not specs/tests/repositories.
-if (
-  !isTestFile &&
-  normalized.endsWith(".service.ts") &&
-  isApplicationLayer
-) {
-  const constructorMatch = content.match(
-    /constructor\s*\(([\s\S]*?)\)\s*\{/,
-  );
+if (!isTestFile && normalized.endsWith(".service.ts") && isApplicationLayer) {
+  const constructorMatch = content.match(/constructor\s*\(([\s\S]*?)\)\s*\{/);
   if (constructorMatch) {
     const constructorBody = constructorMatch[1];
-    const depCount = (
-      constructorBody.match(/\bprivate\b/g) || []
-    ).length;
+    const depCount = (constructorBody.match(/\bprivate\b/g) || []).length;
     const MAX_DEPS = 5;
 
     if (depCount > MAX_DEPS) {
@@ -197,7 +193,7 @@ if (
         violations.push(
           `⚠️  Constructor has ${depCount} dependencies (threshold: ${MAX_DEPS}).\n` +
             `   → Consider extracting shared dependencies into a shared service.\n` +
-            `   → Facade files (< 150 lines, pure delegation) are exempt.\n` +
+            `   → Facade files (< 300 lines, pure delegation) are exempt.\n` +
             `   → Reference: docs/architecture/40-code-quality-governance.md §4.1`,
         );
       }

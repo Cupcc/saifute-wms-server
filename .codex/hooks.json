@@ -13,13 +13,26 @@
     ],
     "PostToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Edit|Write|apply_patch",
         "hooks": [
           {
             "type": "command",
             "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/post_tool_use_quality_check.mjs\"",
             "timeout": 60,
             "statusMessage": "Checking Codex-edited TypeScript files"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Shell|exec_command",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/pre_tool_use_git_guard.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Checking Git workflow safety"
           }
         ]
       }

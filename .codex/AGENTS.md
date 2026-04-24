@@ -70,6 +70,7 @@ When changing frontend code under `web/`, use the workspace’s own scripts from
 
 Use these docs before making broad architectural changes:
 
+- Contribution / Git workflow: `CONTRIBUTING.md` — read before PR, sync, merge, rebase, or push operations targeting `main`.
 - Architecture: `docs/architecture/README.md`
 - Requirements: `docs/requirements/README.md`
 - Acceptance tests: `docs/acceptance-tests/README.md`

@@ -22,6 +22,35 @@ function git(args, cwd) {
   }).trim();
 }
 
+function normalizePatchPath(filePath) {
+  return filePath.trim().replace(/^['"]|['"]$/g, "");
+}
+
+function extractPatchFiles(command) {
+  if (!command) return [];
+
+  const files = [];
+  for (const line of command.split(/\r?\n/)) {
+    const match = line.match(
+      /^\*\*\* (?:Add|Update|Delete) File: (.+)$|^\*\*\* Move to: (.+)$/,
+    );
+    const filePath = match?.[1] || match?.[2];
+    if (filePath) {
+      files.push(normalizePatchPath(filePath));
+    }
+  }
+
+  return files;
+}
+
+function isTargetFile(file) {
+  return (
+    file.endsWith(".ts") &&
+    (file.startsWith("src/modules/") || file.startsWith("src/shared/")) &&
+    !file.includes("/generated/")
+  );
+}
+
 const payloadText = await readStdin();
 const payload = payloadText ? JSON.parse(payloadText) : {};
 const cwd = payload.cwd || process.cwd();
@@ -38,33 +67,11 @@ if (!existsSync(qualityScript)) {
   process.exit(0);
 }
 
-const trackedChanges = git(
-  ["diff", "--name-only", "--diff-filter=ACMR", "HEAD", "--"],
-  repoRoot,
-);
-const untrackedChanges = git(
-  [
-    "ls-files",
-    "--others",
-    "--exclude-standard",
-    "--",
-    "src/modules",
-    "src/shared",
-  ],
-  repoRoot,
-);
-
 const changedFiles = new Set(
-  `${trackedChanges}\n${untrackedChanges}`
-    .split("\n")
+  extractPatchFiles(payload.tool_input?.command)
     .map((file) => file.trim())
     .filter(Boolean)
-    .filter((file) => file.endsWith(".ts"))
-    .filter(
-      (file) =>
-        (file.startsWith("src/modules/") || file.startsWith("src/shared/")) &&
-        !file.includes("/generated/"),
-    ),
+    .filter(isTargetFile),
 );
 
 if (changedFiles.size === 0) {

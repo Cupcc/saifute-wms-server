@@ -62,7 +62,7 @@
 | 层次    | 目标                        | 载体                                                                   | 触发时机                      | 失败后果                     |
 | ----- | ------------------------- | -------------------------------------------------------------------- | ------------------------- | ------------------------ |
 | 知识约束  | 让写代码的人/agent **事前知道规则**   | `.claude/CLAUDE.md`、`docs/architecture/`、`.agents/skills/`           | 开始任务前主动 Read              | 无直接阻断，依赖自觉与 review       |
-| 实时反馈  | 写代码**当下**就发现违规，不等到 commit | `.claude/settings.json` / `.codex/hooks.json` PostToolUse hook + `check-quality-hooks.mjs` | Claude 每次 Edit/Write `.ts` 文件；Codex 每次 Bash 后扫描 git 变更 `.ts` 文件 | stderr 输出修复指引，agent 立即感知 |
+| 实时反馈  | 写代码**当下**就发现违规，不等到 commit | `.claude/settings.json` / `.codex/hooks.json` PostToolUse hook + `check-quality-hooks.mjs` | Claude 每次 Edit/Write `.ts` 文件；Codex 每次 apply_patch/Edit/Write 涉及目标 `.ts` 文件 | stderr 输出修复指引，agent 立即感知 |
 | 提交门禁  | 进入仓库历史前**自动化阻断**          | `lint-staged`、`commitlint`、`husky` pre-push 脚本                       | `git commit` / `git push` | 阻止 commit / push         |
 | 审计与趋势 | 度量存量问题、跟踪改善方向             | `bun run lint:src-lines`、本文档 §8 基线、Code Review                       | 手动 / 定期 / PR 阶段           | 生成违规清单，不直接阻断             |
 
@@ -87,9 +87,9 @@
   - 拆分残留检测：≤ 30 行且 ≥ 80% 为 re-export 的文件（对应 §4.4 反模式）
   - `application/` 层禁止注入 PrismaService / 直接执行查询（对应 §2.3，类型引用按 §2.3.1 豁免）
   - 跨模块 repository import 识别（对应 §3.1）
-- 触发时机：Claude 每次 `Edit` / `Write` 一个 `.ts` 文件后**立即运行**；Codex 当前 `PostToolUse` 只稳定暴露 `Bash`，因此在 Bash 后扫描当前 git 变更中的 `src/modules/**`、`src/shared/**` TypeScript 文件。
+- 触发时机：Claude 每次 `Edit` / `Write` 一个 `.ts` 文件后**立即运行**；Codex 每次 `apply_patch` / `Edit` / `Write` 后解析本次 patch 涉及的 `src/modules/**`、`src/shared/**` TypeScript 文件。
 - 失败处理：脚本以非零退出码 + stderr 给出**可操作的修复指引**（文件名、违规行、引用的文档章节）。Claude Code / Codex 会把 stderr 回显给 agent，促使其当场修复。
-- 与 pre-commit 的关系：hook 更早介入（写文件的瞬间），pre-commit 作为兜底；两者检查项有重叠但不完全一致，因为 hook 只看单文件，pre-commit 看整个暂存区。
+- 与 pre-commit 的关系：hook 更早介入（写文件的瞬间），pre-commit 作为兜底；两者检查项有重叠但不完全一致，因为 hook 只看本次编辑涉及的文件，pre-commit 看整个暂存区。
 
 **Husky 门禁（提交门禁）**
 
