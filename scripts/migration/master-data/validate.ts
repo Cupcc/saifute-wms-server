@@ -613,11 +613,14 @@ async function main(): Promise<void> {
           id: number;
           customerCode: string;
           customerName: string;
+          contactPerson: string | null;
+          contactPhone: string | null;
+          address: string | null;
           parentId: number | null;
           status: string;
         }>(
           targetConnection,
-          "SELECT id, customerCode, customerName, parentId, status FROM customer",
+          "SELECT id, customerCode, customerName, contactPerson, contactPhone, address, parentId, status FROM customer",
           "customerCode",
         );
         const materialRowsByCode = await getTargetRowsByCode<{
@@ -903,6 +906,27 @@ async function main(): Promise<void> {
             "customer.customerName",
             record.target.customerName,
             targetRow.customerName,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "customer.contactPerson",
+            record.target.contactPerson,
+            targetRow.contactPerson,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "customer.contactPhone",
+            record.target.contactPhone,
+            targetRow.contactPhone,
+          );
+          pushValueMismatch(
+            validationIssues,
+            context,
+            "customer.address",
+            record.target.address,
+            targetRow.address,
           );
           pushValueMismatch(
             validationIssues,

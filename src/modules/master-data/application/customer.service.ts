@@ -44,6 +44,9 @@ export class CustomerService {
         {
           customerCode: dto.customerCode,
           customerName: dto.customerName,
+          contactPerson: this.normalizeOptionalText(dto.contactPerson),
+          contactPhone: this.normalizeOptionalText(dto.contactPhone),
+          address: this.normalizeOptionalText(dto.address),
           parentId: dto.parentId,
         },
         createdBy,
@@ -71,14 +74,22 @@ export class CustomerService {
       }
     }
 
-    return this.repository.updateCustomer(
-      id,
-      {
-        customerName: dto.customerName,
-        parentId: dto.parentId,
-      },
-      updatedBy,
-    );
+    const payload: Prisma.CustomerUncheckedUpdateInput = {
+      customerName: dto.customerName,
+      parentId: dto.parentId,
+    };
+
+    if (Object.hasOwn(dto, "contactPerson")) {
+      payload.contactPerson = this.normalizeOptionalText(dto.contactPerson);
+    }
+    if (Object.hasOwn(dto, "contactPhone")) {
+      payload.contactPhone = this.normalizeOptionalText(dto.contactPhone);
+    }
+    if (Object.hasOwn(dto, "address")) {
+      payload.address = this.normalizeOptionalText(dto.address);
+    }
+
+    return this.repository.updateCustomer(id, payload, updatedBy);
   }
 
   async deactivate(id: number, updatedBy?: string) {
@@ -165,5 +176,14 @@ export class CustomerService {
       currentId = record?.parentId ?? null;
     }
     return false;
+  }
+
+  private normalizeOptionalText(value?: string | null): string | null {
+    if (typeof value !== "string") {
+      return null;
+    }
+
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized : null;
   }
 }

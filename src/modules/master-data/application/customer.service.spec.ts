@@ -34,11 +34,27 @@ describe("CustomerService", () => {
     });
 
     const result = await service.create(
-      { customerCode: "CUS-001", customerName: "测试客户" },
+      {
+        customerCode: "CUS-001",
+        customerName: "测试客户",
+        contactPerson: "张三",
+        contactPhone: "13800000000",
+        address: "苏州工业园区",
+      },
       "1",
     );
 
-    expect(repository.createCustomer).toHaveBeenCalled();
+    expect(repository.createCustomer).toHaveBeenCalledWith(
+      {
+        customerCode: "CUS-001",
+        customerName: "测试客户",
+        contactPerson: "张三",
+        contactPhone: "13800000000",
+        address: "苏州工业园区",
+        parentId: undefined,
+      },
+      "1",
+    );
     expect(result).toEqual(
       expect.objectContaining({ customerCode: "CUS-001" }),
     );
@@ -182,5 +198,45 @@ describe("CustomerService", () => {
       service.update(7, { parentId: 2 }, "1"),
     ).resolves.toBeDefined();
     expect(repository.updateCustomer).toHaveBeenCalled();
+  });
+
+  it("updates customer contact fields and allows clearing them", async () => {
+    const { repository, service } = createService();
+    repository.findCustomerById.mockResolvedValue({
+      id: 7,
+      customerCode: "CUS-001",
+      status: "ACTIVE",
+      parentId: null,
+    });
+    repository.updateCustomer.mockResolvedValue({
+      id: 7,
+      customerName: "新客户",
+      contactPerson: null,
+      contactPhone: "13800000000",
+      address: null,
+    });
+
+    await service.update(
+      7,
+      {
+        customerName: "新客户",
+        contactPerson: "",
+        contactPhone: "13800000000",
+        address: null,
+      },
+      "1",
+    );
+
+    expect(repository.updateCustomer).toHaveBeenCalledWith(
+      7,
+      {
+        customerName: "新客户",
+        parentId: undefined,
+        contactPerson: null,
+        contactPhone: "13800000000",
+        address: null,
+      },
+      "1",
+    );
   });
 });

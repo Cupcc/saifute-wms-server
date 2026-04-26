@@ -114,6 +114,9 @@
 | `id`                 | INT                            | 是   | 自增       | PK  | 主键                      |
 | `customerCode`       | VARCHAR(64)                    | 是   | —        | 是   | 客户编码，全局唯一               |
 | `customerName`       | VARCHAR(128)                   | 是   | —        | —   | 客户名称                    |
+| `contactPerson`      | VARCHAR(128)                   | 否   | —        | —   | 联系人                     |
+| `contactPhone`       | VARCHAR(32)                    | 否   | —        | —   | 联系方式                    |
+| `address`            | VARCHAR(255)                   | 否   | —        | —   | 客户地址                    |
 | `parentId`           | INT                            | 否   | —        | —   | 父客户 ID，支持客户层级树，自关联 `id` |
 | `status`             | ENUM(`ACTIVE`, `DISABLED`)     | 是   | `ACTIVE` | —   | 启用状态                    |
 | `creationMode`       | ENUM(`MANUAL`, `AUTO_CREATED`) | 是   | `MANUAL` | —   | 创建方式                    |

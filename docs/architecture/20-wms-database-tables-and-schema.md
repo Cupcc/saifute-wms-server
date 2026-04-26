@@ -341,7 +341,7 @@ NestJS `rd-project` / `reporting` 模块映射补充：
 | ------------------- | ----- | ---------------------------------------------------------------------------------------------------------- | ------------------ |
 | `material_category` | 物料分类 | `categoryCode`、`categoryName`、`sortOrder`                                                                   | `categoryCode` 唯一  |
 | `material`          | 物料主档  | `materialCode`、`materialName`、`specModel`、`categoryId`、`unitCode`、`warningMinQty`、`warningMaxQty`、`status` | `materialCode` 唯一  |
-| `customer`       | 客户主档  | `customerCode`、`customerName`、`parentId`、`status`                                                          | `customerCode` 唯一  |
+| `customer`       | 客户主档  | `customerCode`、`customerName`、`contactPerson`、`contactPhone`、`address`、`parentId`、`status`                    | `customerCode` 唯一  |
 | `supplier`          | 供应商主档 | `supplierCode`、`supplierName`、`status`                                                                     | `supplierCode` 唯一  |
 | `personnel`         | 人员主档  | `personnelName`、`status`                                                                                   | —                  |
 | `workshop`          | 车间主档  | `workshopName`、`defaultHandlerPersonnelId`、`status`                                                       | `workshopName` 唯一 |

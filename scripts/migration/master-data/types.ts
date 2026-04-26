@@ -165,6 +165,9 @@ export interface PersonnelTargetInsert {
 export interface CustomerTargetInsert {
   customerCode: string;
   customerName: string;
+  contactPerson: string | null;
+  contactPhone: string | null;
+  address: string | null;
   status: MasterDataStatusValue;
   creationMode: "MANUAL";
   sourceDocumentType: null;

@@ -27,6 +27,9 @@ export class MasterDataPartyRepository {
       where.OR = [
         { customerCode: { contains: params.keyword } },
         { customerName: { contains: params.keyword } },
+        { contactPerson: { contains: params.keyword } },
+        { contactPhone: { contains: params.keyword } },
+        { address: { contains: params.keyword } },
       ];
     }
 
@@ -58,7 +61,12 @@ export class MasterDataPartyRepository {
   async createCustomer(
     data: Pick<
       Prisma.CustomerUncheckedCreateInput,
-      "customerCode" | "customerName" | "parentId"
+      | "customerCode"
+      | "customerName"
+      | "contactPerson"
+      | "contactPhone"
+      | "address"
+      | "parentId"
     >,
     createdBy?: string,
   ) {

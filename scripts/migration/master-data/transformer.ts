@@ -694,9 +694,6 @@ function transformCustomers(rows: readonly LegacyCustomerRow[]): {
               {
                 customerShortName: normalizeOptionalText(row.customerShortName),
                 customerType: normalizeOptionalText(row.customerType),
-                contactPerson: normalizeOptionalText(row.contactPerson),
-                contactPhone: normalizeOptionalText(row.contactPhone),
-                address: normalizeOptionalText(row.address),
                 remark: normalizeOptionalText(row.remark),
                 voidDescription: normalizeOptionalText(row.voidDescription),
               },
@@ -712,6 +709,9 @@ function transformCustomers(rows: readonly LegacyCustomerRow[]): {
           customerCode: targetCode,
           customerName:
             customerName ?? `MISSING-CUSTOMER-NAME-${row.customerId}`,
+          contactPerson: normalizeOptionalText(row.contactPerson),
+          contactPhone: normalizeOptionalText(row.contactPhone),
+          address: normalizeOptionalText(row.address),
           status: toStatus(row.delFlag),
           creationMode: "MANUAL" as const,
           sourceDocumentType: null,

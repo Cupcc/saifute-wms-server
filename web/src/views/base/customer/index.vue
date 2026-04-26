@@ -164,13 +164,13 @@
 	        />
         </el-form-item>
         <el-form-item label="联系人" prop="contactPerson">
-          <el-input v-model="form.contactPerson" placeholder="请输入联系人" />
+          <el-input v-model="form.contactPerson" placeholder="请输入联系人" maxlength="128" />
         </el-form-item>
         <el-form-item label="联系方式" prop="contactPhone">
-          <el-input v-model="form.contactPhone" placeholder="请输入联系方式" />
+          <el-input v-model="form.contactPhone" placeholder="请输入联系方式" maxlength="32" />
         </el-form-item>
         <el-form-item label="客户地址" prop="address">
-          <el-input v-model="form.address" placeholder="请输入客户地址" />
+          <el-input v-model="form.address" placeholder="请输入客户地址" maxlength="255" />
         </el-form-item>
         <el-form-item label="备注" prop="remark">
           <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />

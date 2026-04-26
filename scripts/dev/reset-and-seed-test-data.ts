@@ -162,6 +162,9 @@ async function createMasterFixture(
     {
       customerCode: "TEST-CUS-001",
       customerName: "测试客户A",
+      contactPerson: "陈工",
+      contactPhone: "13800000002",
+      address: "开发测试区 2 号",
     },
     RESET_ACTOR,
   );

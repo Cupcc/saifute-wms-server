@@ -245,6 +245,9 @@ async function upsertCustomer(
       INSERT INTO customer (
         customerCode,
         customerName,
+        contactPerson,
+        contactPhone,
+        address,
         parentId,
         status,
         creationMode,
@@ -255,10 +258,13 @@ async function upsertCustomer(
         updatedBy,
         updatedAt
       ) VALUES (
-        ?, ?, NULL, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, COALESCE(?, CURRENT_TIMESTAMP)
+        ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?, COALESCE(?, CURRENT_TIMESTAMP), ?, COALESCE(?, CURRENT_TIMESTAMP)
       )
       ON DUPLICATE KEY UPDATE
         customerName = VALUES(customerName),
+        contactPerson = VALUES(contactPerson),
+        contactPhone = VALUES(contactPhone),
+        address = VALUES(address),
         status = VALUES(status),
         creationMode = VALUES(creationMode),
         sourceDocumentType = VALUES(sourceDocumentType),
@@ -272,6 +278,9 @@ async function upsertCustomer(
     [
       record.target.customerCode,
       record.target.customerName,
+      record.target.contactPerson,
+      record.target.contactPhone,
+      record.target.address,
       record.target.status,
       record.target.creationMode,
       record.target.sourceDocumentType,

@@ -237,12 +237,48 @@ describe("MasterDataController", () => {
 
   it("creates customers with the current user id", async () => {
     await controller.createCustomer(
-      { customerCode: "CUS-001", customerName: "测试客户" },
+      {
+        customerCode: "CUS-001",
+        customerName: "测试客户",
+        contactPerson: "张三",
+        contactPhone: "13800000000",
+        address: "苏州工业园区",
+      },
       adminUser,
     );
 
     expect(masterDataService.createCustomer).toHaveBeenCalledWith(
-      { customerCode: "CUS-001", customerName: "测试客户" },
+      {
+        customerCode: "CUS-001",
+        customerName: "测试客户",
+        contactPerson: "张三",
+        contactPhone: "13800000000",
+        address: "苏州工业园区",
+      },
+      "1",
+    );
+  });
+
+  it("updates customers with contact fields and the current user id", async () => {
+    await controller.updateCustomer(
+      7,
+      {
+        customerName: "已更新客户",
+        contactPerson: "李四",
+        contactPhone: "13900000000",
+        address: "上海市",
+      },
+      adminUser,
+    );
+
+    expect(masterDataService.updateCustomer).toHaveBeenCalledWith(
+      7,
+      {
+        customerName: "已更新客户",
+        contactPerson: "李四",
+        contactPhone: "13900000000",
+        address: "上海市",
+      },
       "1",
     );
   });

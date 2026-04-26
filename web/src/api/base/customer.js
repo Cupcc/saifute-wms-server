@@ -18,6 +18,15 @@ function applyCustomerTypeFilter(rows, customerType) {
   );
 }
 
+function normalizeOptionalText(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
 // 查询客户列表
 export function listCustomer(query = {}) {
   const { limit, offset } = buildPageQuery(query);
@@ -78,6 +87,9 @@ export function addCustomer(data) {
     data: {
       customerCode: data.customerCode,
       customerName: data.customerName,
+      contactPerson: normalizeOptionalText(data.contactPerson),
+      contactPhone: normalizeOptionalText(data.contactPhone),
+      address: normalizeOptionalText(data.address),
       parentId: normalizeOptionalId(data.parentId),
     },
   });
@@ -90,6 +102,9 @@ export function updateCustomer(data) {
     method: "patch",
     data: {
       customerName: data.customerName,
+      contactPerson: normalizeOptionalText(data.contactPerson),
+      contactPhone: normalizeOptionalText(data.contactPhone),
+      address: normalizeOptionalText(data.address),
       parentId: normalizeOptionalId(data.parentId, { allowNull: true }),
     },
   });

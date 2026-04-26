@@ -234,6 +234,9 @@ model Customer {
   id                 Int               @id @default(autoincrement())
   customerCode       String            @unique @db.VarChar(64)
   customerName       String            @db.VarChar(128)
+  contactPerson      String?           @db.VarChar(128)
+  contactPhone       String?           @db.VarChar(32)
+  address            String?           @db.VarChar(255)
   parentId           Int?
   status             MasterDataStatus  @default(ACTIVE)
   creationMode       DataCreationMode  @default(MANUAL)
