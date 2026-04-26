@@ -1,4 +1,12 @@
-import { IsNotEmpty, IsOptional, IsString, MaxLength } from "class-validator";
+import { Type } from "class-transformer";
+import {
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MaxLength,
+  Min,
+} from "class-validator";
 
 export class CreatePersonnelDto {
   @IsString()
@@ -10,4 +18,10 @@ export class CreatePersonnelDto {
   @IsString()
   @MaxLength(32)
   contactPhone?: string | null;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  workshopId?: number | null;
 }

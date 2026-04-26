@@ -24,6 +24,7 @@ export function listPersonnel(query = {}) {
     method: "get",
     params: {
       keyword: pickKeyword(query, ["name"]),
+      workshopId: query.workshopId || undefined,
       includeDisabled: query.includeDisabled || undefined,
       limit,
       offset,
@@ -50,6 +51,7 @@ export function addPersonnel(data) {
     data: {
       personnelName: data.name || data.personnelName,
       contactPhone: normalizeOptionalText(data.contactPhone),
+      workshopId: data.workshopId ?? null,
     },
   });
 }
@@ -57,13 +59,18 @@ export function addPersonnel(data) {
 // 修改人员信息
 export function updatePersonnel(data) {
   const personnelId = data.personnelId ?? data.id;
+  const payload = {
+    personnelName: data.name || data.personnelName,
+    contactPhone: normalizeOptionalText(data.contactPhone),
+  };
+  if (Object.hasOwn(data, "workshopId")) {
+    payload.workshopId = data.workshopId ?? null;
+  }
+
   return request({
     url: `/api/master-data/personnel/${personnelId}`,
     method: "patch",
-    data: {
-      personnelName: data.name || data.personnelName,
-      contactPhone: normalizeOptionalText(data.contactPhone),
-    },
+    data: payload,
   });
 }
 

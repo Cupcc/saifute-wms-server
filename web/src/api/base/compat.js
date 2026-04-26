@@ -123,10 +123,15 @@ export function mapSupplier(item) {
 }
 
 export function mapPersonnel(item) {
+  const workshop =
+    item.workshop && typeof item.workshop === "object" ? item.workshop : null;
+
   return {
     personnelId: item.id,
     name: item.personnelName,
     contactPhone: item.contactPhone ?? "",
+    workshopId: workshop?.id ?? item.workshopId ?? null,
+    workshopName: workshop?.workshopName ?? item.workshopName ?? "",
     status: item.status ?? "ACTIVE",
   };
 }

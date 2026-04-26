@@ -28,6 +28,7 @@ describe("PersonnelService", () => {
       id: 1,
       personnelName: "张三",
       contactPhone: "13800000000",
+      workshopId: null,
       status: "ACTIVE",
     });
 
@@ -37,7 +38,11 @@ describe("PersonnelService", () => {
     );
 
     expect(repository.createPersonnel).toHaveBeenCalledWith(
-      { personnelName: "张三", contactPhone: "13800000000" },
+      {
+        personnelName: "张三",
+        contactPhone: "13800000000",
+        workshopId: null,
+      },
       "1",
     );
     expect(result).toEqual(
@@ -45,6 +50,34 @@ describe("PersonnelService", () => {
         personnelName: "张三",
         contactPhone: "13800000000",
       }),
+    );
+  });
+
+  it("creates personnel with an optional workshop after validating it", async () => {
+    const { repository, service } = createService();
+    repository.findWorkshopById.mockResolvedValue({
+      id: 2,
+      workshopName: "装配车间",
+      status: "ACTIVE",
+    });
+    repository.createPersonnel.mockResolvedValue({
+      id: 1,
+      personnelName: "张三",
+      contactPhone: null,
+      workshopId: 2,
+      status: "ACTIVE",
+    });
+
+    await service.create({ personnelName: "张三", workshopId: 2 }, "1");
+
+    expect(repository.findWorkshopById).toHaveBeenCalledWith(2);
+    expect(repository.createPersonnel).toHaveBeenCalledWith(
+      {
+        personnelName: "张三",
+        contactPhone: null,
+        workshopId: 2,
+      },
+      "1",
     );
   });
 
@@ -75,6 +108,31 @@ describe("PersonnelService", () => {
         personnelName: "张三",
         contactPhone: null,
       }),
+    );
+  });
+
+  it("updates personnel and allows clearing workshop", async () => {
+    const { repository, service } = createService();
+    repository.findPersonnelById.mockResolvedValue({
+      id: 1,
+      personnelName: "张三",
+      workshopId: 2,
+      status: "ACTIVE",
+    });
+    repository.updatePersonnel.mockResolvedValue({
+      id: 1,
+      personnelName: "张三",
+      workshopId: null,
+      status: "ACTIVE",
+    });
+
+    await service.update(1, { workshopId: null }, "1");
+
+    expect(repository.findWorkshopById).not.toHaveBeenCalled();
+    expect(repository.updatePersonnel).toHaveBeenCalledWith(
+      1,
+      { personnelName: undefined, workshopId: null },
+      "1",
     );
   });
 

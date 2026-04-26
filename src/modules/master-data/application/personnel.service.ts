@@ -17,6 +17,7 @@ export class PersonnelService {
       limit,
       offset,
       status: query.includeDisabled ? undefined : "ACTIVE",
+      workshopId: query.workshopId,
     });
   }
 
@@ -29,10 +30,15 @@ export class PersonnelService {
   }
 
   async create(dto: CreatePersonnelDto, createdBy?: string) {
+    if (dto.workshopId) {
+      await this.requireWorkshop(dto.workshopId);
+    }
+
     return this.repository.createPersonnel(
       {
         personnelName: dto.personnelName,
         contactPhone: this.normalizeOptionalText(dto.contactPhone),
+        workshopId: dto.workshopId ?? null,
       },
       createdBy,
     );
@@ -46,6 +52,12 @@ export class PersonnelService {
     };
     if (Object.hasOwn(dto, "contactPhone")) {
       payload.contactPhone = this.normalizeOptionalText(dto.contactPhone);
+    }
+    if (Object.hasOwn(dto, "workshopId")) {
+      if (dto.workshopId) {
+        await this.requireWorkshop(dto.workshopId);
+      }
+      payload.workshopId = dto.workshopId ?? null;
     }
 
     return this.repository.updatePersonnel(id, payload, updatedBy);
@@ -71,5 +83,13 @@ export class PersonnelService {
 
     const normalized = value.trim();
     return normalized.length > 0 ? normalized : null;
+  }
+
+  private async requireWorkshop(id: number) {
+    const workshop = await this.repository.findWorkshopById(id);
+    if (!workshop) {
+      throw new NotFoundException(`车间不存在: ${id}`);
+    }
+    return workshop;
   }
 }

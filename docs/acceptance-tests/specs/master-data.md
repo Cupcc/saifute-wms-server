@@ -226,9 +226,9 @@
 
 | AC   | 描述     | 结论  | 执行面 | 关键证据 |
 | ---- | ------ | --- | --- | ---- |
-| TC-1 | 编码唯一   | met | unit | 唯一性 |
+| TC-1 | 姓名必填   | met | unit | DTO / service |
 | TC-2 | 停用后下拉过滤 | met | unit | active-only / list |
-| TC-3 | 自动补建审计 | met | unit | 合同测试 |
+| TC-3 | 所属车间可选绑定 | met | unit | workshopId nullable + relation include |
 
 
 ### 证据索引

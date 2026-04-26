@@ -10,6 +10,27 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
+      <el-form-item label="车间" prop="workshopId">
+        <el-select
+          v-model="queryParams.workshopId"
+          filterable
+          remote
+          clearable
+          reserve-keyword
+          placeholder="请输入车间名称搜索"
+          style="width: 240px"
+          :remote-method="searchWorkshop"
+          :loading="workshopLoading"
+          @focus="searchWorkshop('')"
+        >
+          <el-option
+            v-for="item in workshopOptions"
+            :key="item.workshopId"
+            :label="item.workshopName"
+            :value="item.workshopId"
+          />
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="Search" @click="handleQuery">搜索</el-button>
         <el-button icon="Refresh" @click="resetQuery">重置</el-button>
@@ -33,6 +54,11 @@
       <el-table-column type="index" width="50" align="center" />
       <el-table-column sortable show-overflow-tooltip label="姓名" align="center" prop="name" v-if="columns[0].visible" />
       <el-table-column sortable show-overflow-tooltip label="手机号" align="center" prop="contactPhone" v-if="columns[1].visible" />
+      <el-table-column sortable show-overflow-tooltip label="所属车间" align="center" prop="workshopName" v-if="columns[2].visible">
+        <template #default="scope">
+          {{ scope.row.workshopName || "-" }}
+        </template>
+      </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['base:personnel:edit']">修改</el-button>
@@ -58,6 +84,27 @@
         <el-form-item label="手机号" prop="contactPhone">
           <el-input v-model="form.contactPhone" placeholder="请输入手机号" maxlength="32" />
         </el-form-item>
+        <el-form-item label="所属车间" prop="workshopId">
+          <el-select
+            v-model="form.workshopId"
+            filterable
+            remote
+            clearable
+            reserve-keyword
+            placeholder="请输入车间名称搜索"
+            style="width: 100%"
+            :remote-method="searchWorkshop"
+            :loading="workshopLoading"
+            @focus="searchWorkshop('')"
+          >
+            <el-option
+              v-for="item in workshopOptions"
+              :key="item.workshopId"
+              :label="item.workshopName"
+              :value="item.workshopId"
+            />
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <div class="dialog-footer">
@@ -77,6 +124,7 @@ import {
   listPersonnel,
   updatePersonnel,
 } from "@/api/base/personnel";
+import { listByNameOrContact } from "@/api/base/workshop";
 
 const { proxy } = getCurrentInstance();
 
@@ -90,6 +138,8 @@ const single = ref(true);
 const multiple = ref(true);
 const total = ref(0);
 const title = ref("");
+const workshopLoading = ref(false);
+const workshopOptions = ref([]);
 
 const data = reactive({
   form: {},
@@ -97,6 +147,7 @@ const data = reactive({
     pageNum: 1,
     pageSize: 30,
     name: null,
+    workshopId: null,
   },
   rules: {
     name: [{ required: true, message: "姓名不能为空", trigger: "blur" }],
@@ -108,6 +159,7 @@ const { queryParams, form, rules } = toRefs(data);
 const columns = ref([
   { key: 0, label: `姓名`, visible: true },
   { key: 1, label: `手机号`, visible: true },
+  { key: 2, label: `所属车间`, visible: true },
 ]);
 
 /** 查询人员信息列表 */
@@ -132,6 +184,8 @@ function reset() {
     personnelId: null,
     name: null,
     contactPhone: "",
+    workshopId: null,
+    workshopName: "",
   };
   proxy.resetForm("personnelRef");
 }
@@ -158,6 +212,7 @@ function handleSelectionChange(selection) {
 /** 新增按钮操作 */
 function handleAdd() {
   reset();
+  searchWorkshop("");
   open.value = true;
   title.value = "添加人员信息";
 }
@@ -172,9 +227,40 @@ function handleUpdate(row) {
   getPersonnel(_personnelId)
     .then((response) => {
       form.value = response.data;
+      ensureWorkshopOption(response.data);
     })
     .finally(() => {
       dialogLoading.value = false;
+    });
+}
+
+function ensureWorkshopOption(item) {
+  if (!item?.workshopId || !item?.workshopName) {
+    return;
+  }
+  const exists = workshopOptions.value.some(
+    (option) => option.workshopId === item.workshopId,
+  );
+  if (!exists) {
+    workshopOptions.value = [
+      ...workshopOptions.value,
+      {
+        workshopId: item.workshopId,
+        workshopName: item.workshopName,
+      },
+    ];
+  }
+}
+
+function searchWorkshop(keyword) {
+  workshopLoading.value = true;
+  listByNameOrContact({ workshopName: keyword })
+    .then((response) => {
+      workshopOptions.value = response.rows || [];
+      ensureWorkshopOption(form.value);
+    })
+    .finally(() => {
+      workshopLoading.value = false;
     });
 }
 

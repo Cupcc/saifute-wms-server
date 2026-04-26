@@ -280,11 +280,13 @@ model Personnel {
   id                      Int                     @id @default(autoincrement())
   personnelName           String                  @db.VarChar(128)
   contactPhone            String?                 @map("contact_phone") @db.VarChar(32)
+  workshopId              Int?                    @map("workshop_id")
   status                  MasterDataStatus        @default(ACTIVE)
   createdBy               String?                 @db.VarChar(64)
   createdAt               DateTime                @default(now())
   updatedBy               String?                 @db.VarChar(64)
   updatedAt               DateTime                @updatedAt
+  workshop                Workshop?               @relation("PersonnelWorkshop", fields: [workshopId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   stockInOrders           StockInOrder[]          @relation("StockInOrderHandler")
   salesStockOrders        SalesStockOrder[]       @relation("SalesStockOrderHandler")
   managedSalesProjects    SalesProject[]          @relation("SalesProjectManager")
@@ -294,6 +296,7 @@ model Personnel {
   rdHandoffOrders         RdHandoffOrder[]        @relation("RdHandoffOrderHandler")
   rdProcurementRequests   RdProcurementRequest[]  @relation("RdProcurementRequestHandler")
 
+  @@index([workshopId])
   @@map("personnel")
 }
 
@@ -320,6 +323,7 @@ model Workshop {
   rdHandoffTargetOrders        RdHandoffOrder[]              @relation("RdHandoffTargetWorkshop")
   rdProcurementRequests        RdProcurementRequest[]
   rdStocktakeOrders            RdStocktakeOrder[]
+  personnel                    Personnel[]                   @relation("PersonnelWorkshop")
 
   @@index([defaultHandlerPersonnelId])
   @@map("workshop")

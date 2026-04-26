@@ -1,6 +1,15 @@
 import { Prisma } from "../../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 
+const PERSONNEL_WITH_WORKSHOP_INCLUDE = {
+  workshop: {
+    select: {
+      id: true,
+      workshopName: true,
+    },
+  },
+} as const satisfies Prisma.PersonnelInclude;
+
 export class MasterDataPartyRepository {
   constructor(private readonly prisma: PrismaService) {}
 
@@ -210,21 +219,38 @@ export class MasterDataPartyRepository {
     limit: number;
     offset: number;
     status?: Prisma.PersonnelWhereInput["status"];
+    workshopId?: number;
   }) {
     const where: Prisma.PersonnelWhereInput = {};
     if (params.status) {
       where.status = params.status;
     }
+    if (params.workshopId) {
+      where.workshopId = params.workshopId;
+    }
     if (params.keyword) {
-      where.personnelName = { contains: params.keyword };
+      where.OR = [
+        { personnelName: { contains: params.keyword } },
+        { contactPhone: { contains: params.keyword } },
+        {
+          workshop: {
+            is: {
+              workshopName: {
+                contains: params.keyword,
+              },
+            },
+          },
+        },
+      ];
     }
 
     const [items, total] = await Promise.all([
       this.prisma.personnel.findMany({
         where,
+        include: PERSONNEL_WITH_WORKSHOP_INCLUDE,
         take: params.limit,
         skip: params.offset,
-        orderBy: { personnelName: "asc" },
+        orderBy: [{ personnelName: "asc" }, { id: "asc" }],
       }),
       this.prisma.personnel.count({ where }),
     ]);
@@ -235,13 +261,14 @@ export class MasterDataPartyRepository {
   async findPersonnelById(id: number) {
     return this.prisma.personnel.findUnique({
       where: { id },
+      include: PERSONNEL_WITH_WORKSHOP_INCLUDE,
     });
   }
 
   async createPersonnel(
     data: Pick<
       Prisma.PersonnelUncheckedCreateInput,
-      "personnelName" | "contactPhone"
+      "personnelName" | "contactPhone" | "workshopId"
     >,
     createdBy?: string,
   ) {
@@ -252,6 +279,7 @@ export class MasterDataPartyRepository {
         createdBy,
         updatedBy: createdBy,
       },
+      include: PERSONNEL_WITH_WORKSHOP_INCLUDE,
     });
   }
 
@@ -263,6 +291,7 @@ export class MasterDataPartyRepository {
     return this.prisma.personnel.update({
       where: { id },
       data: { ...data, updatedBy },
+      include: PERSONNEL_WITH_WORKSHOP_INCLUDE,
     });
   }
 }

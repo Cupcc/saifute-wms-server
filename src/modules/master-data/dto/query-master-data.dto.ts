@@ -30,4 +30,10 @@ export class QueryMasterDataDto {
   @Transform(({ value }) => value === true || value === "true")
   @IsBoolean()
   includeDisabled?: boolean = false;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  workshopId?: number;
 }

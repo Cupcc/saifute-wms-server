@@ -324,6 +324,58 @@ describe("MasterDataRepository", () => {
     });
   });
 
+  it("lists personnel with optional workshop filter and workshop relation", async () => {
+    const findMany = jest.fn().mockResolvedValue([]);
+    const count = jest.fn().mockResolvedValue(0);
+    const repository = new MasterDataRepository({
+      personnel: {
+        findMany,
+        count,
+      },
+    } as unknown as PrismaService);
+
+    await repository.findPersonnel({
+      keyword: "装配",
+      workshopId: 2,
+      limit: 20,
+      offset: 5,
+      status: "ACTIVE",
+    });
+
+    const expectedWhere = {
+      status: "ACTIVE",
+      workshopId: 2,
+      OR: [
+        { personnelName: { contains: "装配" } },
+        { contactPhone: { contains: "装配" } },
+        {
+          workshop: {
+            is: {
+              workshopName: {
+                contains: "装配",
+              },
+            },
+          },
+        },
+      ],
+    };
+    expect(findMany).toHaveBeenCalledWith({
+      where: expectedWhere,
+      include: {
+        workshop: {
+          select: {
+            id: true,
+            workshopName: true,
+          },
+        },
+      },
+      take: 20,
+      skip: 5,
+      orderBy: [{ personnelName: "asc" }, { id: "asc" }],
+    });
+    expect(count).toHaveBeenCalledWith({ where: expectedWhere });
+  });
+
   it("keeps material suggestions available when one source table is missing", async () => {
     const warnSpy = jest.spyOn(Logger.prototype, "warn").mockImplementation();
     const materialFindMany = jest
