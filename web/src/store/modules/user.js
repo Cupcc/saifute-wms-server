@@ -11,7 +11,6 @@ import {
   setRefreshToken,
   setToken,
 } from "@/utils/auth";
-import { expandPermissionAliases } from "@/utils/permissionCompat";
 import { isEmpty, isHttp } from "@/utils/validate";
 
 const useUserStore = defineStore("user", {
@@ -95,9 +94,9 @@ const useUserStore = defineStore("user", {
           .then((res) => {
             const user = res.data || {};
             const roles = Array.isArray(user.roles) ? user.roles : [];
-            const permissions = expandPermissionAliases(
-              Array.isArray(user.permissions) ? user.permissions : [],
-            );
+            const permissions = Array.isArray(user.permissions)
+              ? user.permissions
+              : [];
             let avatar = user.avatarUrl || "";
             if (!isHttp(avatar)) {
               avatar = isEmpty(avatar)

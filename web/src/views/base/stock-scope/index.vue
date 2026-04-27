@@ -40,7 +40,7 @@
           plain
           icon="Plus"
           @click="handleAdd"
-          v-hasPermi="['base:stockScope:add']"
+          v-hasPermi="['master:stock-scope:create']"
         >
           新增
         </el-button>
@@ -77,7 +77,7 @@
             type="primary"
             icon="Edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['base:stockScope:edit']"
+            v-hasPermi="['master:stock-scope:update']"
           >
             修改
           </el-button>
@@ -86,7 +86,7 @@
             type="primary"
             icon="Delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['base:stockScope:remove']"
+            v-hasPermi="['master:stock-scope:deactivate']"
           >
             停用
           </el-button>

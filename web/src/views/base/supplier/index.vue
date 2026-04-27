@@ -55,7 +55,7 @@
           plain
           icon="Plus"
           @click="handleAdd"
-          v-hasPermi="['base:supplier:add']"
+          v-hasPermi="['master:supplier:create']"
         >
           新增
         </el-button>
@@ -116,7 +116,7 @@
             type="primary"
             icon="Edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['base:supplier:edit']"
+            v-hasPermi="['master:supplier:update']"
           >
             修改
           </el-button>
@@ -125,7 +125,7 @@
             type="primary"
             icon="Delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['base:supplier:remove']"
+            v-hasPermi="['master:supplier:deactivate']"
           >
             停用
           </el-button>

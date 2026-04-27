@@ -151,9 +151,6 @@ export function mapWorkshop(item) {
       defaultHandler?.id ?? item.defaultHandlerPersonnelId ?? null,
     defaultHandlerPersonnelName,
     status: item.status ?? "ACTIVE",
-    // Keep legacy aliases populated while pages finish migrating.
-    contactPerson: defaultHandlerPersonnelName,
-    chargeBy: defaultHandlerPersonnelName,
   };
 }
 

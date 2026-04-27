@@ -50,7 +50,7 @@
           plain
           icon="Plus"
           @click="handleAdd"
-          v-hasPermi="['stock:scrapOrder:add']"
+          v-hasPermi="['workshop-material:scrap-order:create']"
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -60,7 +60,7 @@
           icon="Edit"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['stock:scrapOrder:edit']"
+          v-hasPermi="['workshop-material:scrap-order:update']"
         >修改</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -70,7 +70,7 @@
           icon="Delete"
           :disabled="multiple"
           @click="handleDelete"
-          v-hasPermi="['stock:scrapOrder:remove']"
+          v-hasPermi="['workshop-material:scrap-order:void']"
         >作废</el-button>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
@@ -124,8 +124,8 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['stock:scrapOrder:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['stock:scrapOrder:remove']">作废</el-button>
+          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['workshop-material:scrap-order:update']">修改</el-button>
+          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['workshop-material:scrap-order:void']">作废</el-button>
         </template>
       </el-table-column>
     </adaptive-table>

@@ -86,7 +86,7 @@
           plain
           icon="Plus"
           @click="handleAdd"
-          v-hasPermi="['entry:order:add']"
+          v-hasPermi="['inbound:order:create']"
         >新增</el-button>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
@@ -169,8 +169,8 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-	        <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['entry:order:edit']" v-if="scope.row.auditStatus !== '1' && (username === scope.row.createBy || username === 'admin')">修改</el-button>
-	        <el-button link type="primary" icon="Delete" @click.stop="handleDelete(scope.row)" v-hasPermi="['entry:order:remove']" v-if="username === scope.row.createBy || username === 'admin'">作废</el-button>
+	        <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['inbound:order:update']" v-if="scope.row.auditStatus !== '1' && (username === scope.row.createBy || username === 'admin')">修改</el-button>
+	        <el-button link type="primary" icon="Delete" @click.stop="handleDelete(scope.row)" v-hasPermi="['inbound:order:void']" v-if="username === scope.row.createBy || username === 'admin'">作废</el-button>
         </template>
       </el-table-column>
     </adaptive-table>

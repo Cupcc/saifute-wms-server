@@ -49,7 +49,7 @@
           plain
           icon="Plus"
           @click="handleAdd"
-          v-hasPermi="['base:material:add']"
+          v-hasPermi="['master:material:create']"
         >新增</el-button>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
@@ -69,8 +69,8 @@
       <el-table-column sortable show-overflow-tooltip label="安全库存" align="center" prop="stockMin" v-if="columns[5].visible" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['base:material:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['base:material:remove']">作废</el-button>
+          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['master:material:update']">修改</el-button>
+          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['master:material:deactivate']">作废</el-button>
         </template>
       </el-table-column>
     </adaptive-table>

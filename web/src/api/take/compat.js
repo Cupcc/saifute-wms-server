@@ -209,7 +209,6 @@ function mapOrder(
     workshopName: order.workshopNameSnapshot ?? "",
     [config.personKey]: order.handlerNameSnapshot ?? "",
     attn: order.handlerNameSnapshot ?? "",
-    chargeBy: order.handlerNameSnapshot ?? "",
     createBy: order.createdBy ?? "",
     updateBy: order.updatedBy ?? "",
     createdAt: order.createdAt,
@@ -385,8 +384,7 @@ function buildLinePayload(line, mode = "pickOrder", parentData = {}) {
 
 function buildWorkshopPayload(data, mode = "pickOrder", handlerPersonnelId) {
   const config = MODE_CONFIG[mode];
-  const handlerName =
-    data[config.personKey] ?? data.attn ?? data.chargeBy ?? undefined;
+  const handlerName = data[config.personKey] ?? data.attn ?? undefined;
   const lines = Array.isArray(data.details) ? data.details : [];
   const isUpdate = Boolean(data[config.idKey]);
 
@@ -531,7 +529,7 @@ export async function getWorkshopOrder(id, mode = "pickOrder") {
 export async function submitWorkshopOrder(data, mode = "pickOrder") {
   const config = MODE_CONFIG[mode];
   const handlerPersonnelId = await resolveHandlerPersonnelId(
-    data[config.personKey] ?? data.attn ?? data.chargeBy,
+    data[config.personKey] ?? data.attn,
   ).catch(() => undefined);
   const payload = buildWorkshopPayload(data, mode, handlerPersonnelId);
   const orderId = data[config.idKey];
@@ -568,7 +566,6 @@ export async function listWorkshopOrderDetails(query = {}, mode = "pickOrder") {
       [config.dateKey]: row[config.dateKey],
       workshopName: row.workshopName,
       [config.personKey]: row[config.personKey],
-      chargeBy: row.chargeBy,
       createBy: row.createBy,
       disposalMethod: row.disposalMethod,
       pickNo: row.pickNo,

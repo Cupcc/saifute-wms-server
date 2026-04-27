@@ -70,7 +70,7 @@
           plain
           icon="Plus"
           @click="handleAdd"
-          v-hasPermi="['base:customer:add']"
+          v-hasPermi="['master:customer:create']"
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -116,8 +116,8 @@
       <el-table-column sortable show-overflow-tooltip label="客户地址" align="center" prop="address" v-if="columns[6].visible" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['base:customer:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['base:customer:remove']" v-if="!scope.row.children || scope.row.children.length === 0">停用</el-button>
+          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['master:customer:update']">修改</el-button>
+          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['master:customer:deactivate']" v-if="!scope.row.children || scope.row.children.length === 0">停用</el-button>
         </template>
       </el-table-column>
     </adaptive-table>

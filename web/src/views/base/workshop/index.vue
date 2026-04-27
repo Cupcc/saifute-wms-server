@@ -40,7 +40,7 @@
           plain
           icon="Plus"
           @click="handleAdd"
-          v-hasPermi="['base:workshop:add']"
+          v-hasPermi="['master:workshop:create']"
         >
           新增
         </el-button>
@@ -81,7 +81,7 @@
             type="primary"
             icon="Edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['base:workshop:edit']"
+            v-hasPermi="['master:workshop:update']"
           >
             修改
           </el-button>
@@ -90,7 +90,7 @@
             type="primary"
             icon="Delete"
             @click="handleDelete(scope.row)"
-            v-hasPermi="['base:workshop:remove']"
+            v-hasPermi="['master:workshop:deactivate']"
           >
             停用
           </el-button>

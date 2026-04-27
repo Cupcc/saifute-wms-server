@@ -40,7 +40,7 @@
           plain
           icon="Plus"
           @click="handleAdd"
-          v-hasPermi="['base:materialCategory:add']"
+          v-hasPermi="['master:material-category:create']"
         >
           新增
         </el-button>
@@ -86,7 +86,7 @@
             type="primary"
             icon="Edit"
             @click="handleUpdate(scope.row)"
-            v-hasPermi="['base:materialCategory:edit']"
+            v-hasPermi="['master:material-category:update']"
           >
             修改
           </el-button>
@@ -96,7 +96,7 @@
             type="primary"
             icon="Delete"
             @click="handleDeactivate(scope.row)"
-            v-hasPermi="['base:materialCategory:remove']"
+            v-hasPermi="['master:material-category:deactivate']"
           >
             停用
           </el-button>

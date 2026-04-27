@@ -72,7 +72,7 @@
           plain
           icon="Plus"
           @click="handleAdd"
-          v-hasPermi="['take:pickOrder:add']"
+          v-hasPermi="['workshop-material:pick-order:create']"
         >新增</el-button>
       </el-col>
       <el-col :span="1.5">
@@ -82,7 +82,7 @@
           icon="Edit"
           :disabled="single"
           @click="handleUpdate"
-          v-hasPermi="['take:pickOrder:edit']"
+          v-hasPermi="['workshop-material:pick-order:update']"
         >修改</el-button>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
@@ -145,8 +145,8 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['take:pickOrder:edit']" v-if="scope.row.auditStatus !== '1' && (username === scope.row.createBy || username === 'admin')">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleVoid(scope.row)" v-hasPermi="['take:pickOrder:remove']" v-if="username === scope.row.createBy || username === 'admin'">作废</el-button>
+          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['workshop-material:pick-order:update']" v-if="scope.row.auditStatus !== '1' && (username === scope.row.createBy || username === 'admin')">修改</el-button>
+          <el-button link type="primary" icon="Delete" @click="handleVoid(scope.row)" v-hasPermi="['workshop-material:pick-order:void']" v-if="username === scope.row.createBy || username === 'admin'">作废</el-button>
         </template>
       </el-table-column>
     </adaptive-table>
@@ -676,7 +676,6 @@ function handleUpdate(row) {
         pickDate: orderData.pickDate,
         picker: orderData.picker,
         workshopId: orderData.workshopId,
-        chargeBy: orderData.chargeBy,
         remark: orderData.remark,
         delFlag: orderData.delFlag,
         voidDescription: orderData.voidDescription,

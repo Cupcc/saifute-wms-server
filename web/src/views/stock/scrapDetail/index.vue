@@ -65,35 +65,6 @@
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-      <el-col :span="1.5">
-        <el-button
-          type="primary"
-          plain
-          icon="Plus"
-          @click="handleAdd"
-          v-hasPermi="['stock:scrapDetail:add']"
-        >新增</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="success"
-          plain
-          icon="Edit"
-          :disabled="single"
-          @click="handleUpdate"
-          v-hasPermi="['stock:scrapDetail:edit']"
-        >修改</el-button>
-      </el-col>
-      <el-col :span="1.5">
-        <el-button
-          type="danger"
-          plain
-          icon="Delete"
-          :disabled="multiple"
-          @click="handleDelete"
-          v-hasPermi="['stock:scrapDetail:remove']"
-        >作废</el-button>
-      </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
@@ -108,12 +79,6 @@
       <el-table-column sortable show-overflow-tooltip label="单位" align="center" prop="unit" v-if="columns[6].visible" />
       <el-table-column sortable show-overflow-tooltip label="预估损失金额" align="center" prop="estimatedLoss" v-if="columns[7].visible" />
       <el-table-column sortable show-overflow-tooltip label="明细备注" align="center" prop="remark" v-if="columns[8].visible" />
-      <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
-        <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['stock:scrapDetail:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['stock:scrapDetail:remove']">作废</el-button>
-        </template>
-      </el-table-column>
     </adaptive-table>
     
     <pagination

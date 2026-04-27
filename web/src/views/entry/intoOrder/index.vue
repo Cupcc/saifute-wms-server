@@ -83,7 +83,7 @@
           plain
           icon="Plus"
           @click="handleAdd"
-          v-hasPermi="['entry:intoOrder:add']"
+          v-hasPermi="['inbound:into-order:create']"
         >新增</el-button>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
@@ -159,8 +159,8 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['entry:intoOrder:edit']" v-if="scope.row.auditStatus !== '1' && (username === scope.row.createBy || username === 'admin')">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click.stop="handleDelete(scope.row)" v-hasPermi="['entry:intoOrder:remove']" v-if="username === scope.row.createBy || username === 'admin'">作废</el-button>
+          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['inbound:into-order:update']" v-if="scope.row.auditStatus !== '1' && (username === scope.row.createBy || username === 'admin')">修改</el-button>
+          <el-button link type="primary" icon="Delete" @click.stop="handleDelete(scope.row)" v-hasPermi="['inbound:into-order:void']" v-if="username === scope.row.createBy || username === 'admin'">作废</el-button>
         </template>
       </el-table-column>
     </adaptive-table>
@@ -412,8 +412,7 @@
 	  <el-dialog title="部门详情" v-model="workshopOpen" width="500px" append-to-body>
 		  <el-descriptions :column="1" border>
 			  <el-descriptions-item label="部门名称">{{ workshopDetail.workshopName }}</el-descriptions-item>
-			  <el-descriptions-item label="经办人">{{ workshopDetail.contactPerson }}</el-descriptions-item>
-			  <el-descriptions-item label="负责人">{{ workshopDetail.chargeBy }}</el-descriptions-item>
+			  <el-descriptions-item label="默认经办人">{{ workshopDetail.defaultHandlerPersonnelName || "-" }}</el-descriptions-item>
 		  </el-descriptions>
 		  <template #footer>
 			  <div class="dialog-footer">
@@ -582,12 +581,7 @@ function compareIntoDateRows(left, right) {
 }
 
 function getWorkshopDefaultHandlerName(workshop) {
-  return (
-    workshop?.defaultHandlerPersonnelName ||
-    workshop?.contactPerson ||
-    workshop?.chargeBy ||
-    ""
-  );
+  return workshop?.defaultHandlerPersonnelName || "";
 }
 
 /** 查询入库单列表 */

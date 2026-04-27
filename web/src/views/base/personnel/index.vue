@@ -44,7 +44,7 @@
           plain
           icon="Plus"
           @click="handleAdd"
-          v-hasPermi="['base:personnel:add']"
+          v-hasPermi="['master:personnel:create']"
         >新增</el-button>
       </el-col>
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
@@ -61,8 +61,8 @@
       </el-table-column>
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
-          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['base:personnel:edit']">修改</el-button>
-          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['base:personnel:remove']">停用</el-button>
+          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['master:personnel:update']">修改</el-button>
+          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['master:personnel:deactivate']">停用</el-button>
         </template>
       </el-table-column>
     </adaptive-table>
