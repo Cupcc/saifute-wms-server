@@ -40,6 +40,10 @@ export class InboundService {
     return this.acceptanceCreation.getOrderById(id);
   }
 
+  getIntoOrderById(id: number) {
+    return this.productionCreation.getOrderById(id);
+  }
+
   createOrder(dto: CreateInboundOrderDto, createdBy?: string) {
     if (dto.orderType === "PRODUCTION_RECEIPT") {
       return this.productionCreation.createOrder(dto, createdBy);
@@ -62,7 +66,15 @@ export class InboundService {
     return this.acceptanceUpdate.updateOrder(id, dto, updatedBy);
   }
 
+  updateIntoOrder(id: number, dto: UpdateInboundOrderDto, updatedBy?: string) {
+    return this.productionUpdate.updateOrder(id, dto, updatedBy);
+  }
+
   voidOrder(id: number, voidReason?: string, voidedBy?: string) {
     return this.acceptanceUpdate.voidOrder(id, voidReason, voidedBy);
+  }
+
+  voidIntoOrder(id: number, voidReason?: string, voidedBy?: string) {
+    return this.productionUpdate.voidOrder(id, voidReason, voidedBy);
   }
 }

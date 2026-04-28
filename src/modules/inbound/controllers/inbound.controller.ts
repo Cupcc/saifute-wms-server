@@ -185,7 +185,7 @@ export class InboundController {
     @Param("id", ParseIntPipe) id: number,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    const order = await this.inboundService.getOrderById(id);
+    const order = await this.inboundService.getIntoOrderById(id);
     await this.workshopScopeService.assertInventoryStockScopeAccess(
       user,
       order.stockScopeId,
@@ -216,7 +216,7 @@ export class InboundController {
     @Body() dto: UpdateInboundOrderDto,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    const order = await this.inboundService.getOrderById(id);
+    const order = await this.inboundService.getIntoOrderById(id);
     await this.workshopScopeService.assertInventoryStockScopeAccess(
       user,
       order.stockScopeId,
@@ -225,7 +225,7 @@ export class InboundController {
       user,
       dto,
     );
-    return this.inboundService.updateOrder(
+    return this.inboundService.updateIntoOrder(
       id,
       scopedDto,
       user?.userId?.toString(),
@@ -239,12 +239,12 @@ export class InboundController {
     @Body() dto: VoidInboundOrderDto,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    const order = await this.inboundService.getOrderById(id);
+    const order = await this.inboundService.getIntoOrderById(id);
     await this.workshopScopeService.assertInventoryStockScopeAccess(
       user,
       order.stockScopeId,
     );
-    return this.inboundService.voidOrder(
+    return this.inboundService.voidIntoOrder(
       id,
       dto.voidReason,
       user?.userId?.toString(),

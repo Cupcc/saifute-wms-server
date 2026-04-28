@@ -78,6 +78,12 @@ describe("InboundService", () => {
       },
     ],
   };
+  const mockProductionOrder = {
+    ...mockOrder,
+    id: 3,
+    documentNo: "RK-003",
+    orderType: StockInOrderType.PRODUCTION_RECEIPT,
+  };
   const _mockOrderWithoutWorkshop = {
     ...mockOrder,
     workshopId: null,
@@ -360,6 +366,24 @@ describe("InboundService", () => {
       await expect(service.getOrderById(999)).rejects.toThrow(
         NotFoundException,
       );
+    });
+
+    it("should return production receipt orders through getIntoOrderById", async () => {
+      (repository.findOrderById as jest.Mock).mockResolvedValue(
+        mockProductionOrder,
+      );
+
+      const result = await service.getIntoOrderById(3);
+
+      expect(result).toEqual(mockProductionOrder);
+    });
+
+    it("should keep getOrderById scoped to acceptance orders", async () => {
+      (repository.findOrderById as jest.Mock).mockResolvedValue(
+        mockProductionOrder,
+      );
+
+      await expect(service.getOrderById(3)).rejects.toThrow("不是验收单：3");
     });
   });
 });

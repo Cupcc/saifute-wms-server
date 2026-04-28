@@ -75,6 +75,7 @@ describe("Batch A acceptance (e2e)", () => {
       .get("/api/auth/captcha")
       .expect(200);
     return {
+      captchaEnabled: Boolean(captchaResponse.body.data.captchaEnabled),
       captchaId: captchaResponse.body.data.captchaId as string,
       captchaCode: captchaResponse.body.data.captchaCode as string,
     };
@@ -85,21 +86,23 @@ describe("Batch A acceptance (e2e)", () => {
     { username, password, headers }: LoginOptions,
     expectedStatus = 201,
   ) {
-    const { captchaId, captchaCode } = await getCaptcha(server);
+    const { captchaEnabled, captchaId, captchaCode } = await getCaptcha(server);
     let httpRequest = request(server).post("/api/auth/login");
 
     for (const [headerName, headerValue] of Object.entries(headers ?? {})) {
       httpRequest = httpRequest.set(headerName, headerValue);
     }
 
-    return httpRequest
-      .send({
-        username,
-        password,
-        captchaId,
-        captchaCode,
-      })
-      .expect(expectedStatus);
+    const loginPayload: Record<string, string> = {
+      username,
+      password,
+    };
+    if (captchaEnabled) {
+      loginPayload.captchaId = captchaId;
+      loginPayload.captchaCode = captchaCode;
+    }
+
+    return httpRequest.send(loginPayload).expect(expectedStatus);
   }
 
   it("should complete the admin auth/session/rbac acceptance flow", async () => {
