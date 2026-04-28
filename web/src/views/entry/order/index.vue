@@ -628,7 +628,12 @@ function compareInboundDateRows(left, right) {
 /** 查询验收单列表 */
 function getList() {
   loading.value = true;
-  listOrder(proxy.addDateRange(queryParams.value, dateRange.value)).then(
+  const [bizDateFrom, bizDateTo] = Array.isArray(dateRange.value)
+    ? dateRange.value
+    : [];
+  const query = { ...queryParams.value };
+  delete query.params;
+  listOrder({ ...query, bizDateFrom, bizDateTo }).then(
     (response) => {
       orderList.value = response.rows;
       total.value = response.total;

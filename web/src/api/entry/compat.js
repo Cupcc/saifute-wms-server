@@ -40,6 +40,39 @@ function buildPageQuery(query = {}) {
   };
 }
 
+function formatDateOnly(value) {
+  if (!value) {
+    return value;
+  }
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return String(value).slice(0, 10);
+  }
+
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function resolveBizDateRange(query = {}) {
+  const params = query.params ?? {};
+
+  return {
+    bizDateFrom:
+      query.bizDateFrom ??
+      query.beginTime ??
+      params.bizDateFrom ??
+      params.beginTime,
+    bizDateTo:
+      query.bizDateTo ?? query.endTime ?? params.bizDateTo ?? params.endTime,
+  };
+}
+
 function toDecimalString(value) {
   if (value === null || typeof value === "undefined" || value === "") {
     return undefined;
@@ -67,7 +100,7 @@ function mapInboundLine(line, config, order, audit = null) {
     [config.detailIdKey]: line.id,
     [config.idKey]: order.id,
     [config.noKey]: order.documentNo,
-    [config.dateKey]: order.bizDate,
+    [config.dateKey]: formatDateOnly(order.bizDate),
     materialId: line.materialId,
     materialCode: line.materialCodeSnapshot,
     quantity,
@@ -99,7 +132,7 @@ function mapInboundOrder(order, config, audit = null) {
   return {
     [config.idKey]: order.id,
     [config.noKey]: order.documentNo,
-    [config.dateKey]: order.bizDate,
+    [config.dateKey]: formatDateOnly(order.bizDate),
     supplierId: order.supplierId,
     supplierName: order.supplierNameSnapshot ?? "",
     workshopId: order.workshopId,
@@ -189,6 +222,7 @@ function buildInboundPayload(
 async function listOrdersInternal(query = {}, mode = "order") {
   const config = MODE_CONFIG[mode];
   const { limit, offset } = buildPageQuery(query);
+  const { bizDateFrom, bizDateTo } = resolveBizDateRange(query);
   const response = await request({
     url: config.listUrl,
     method: "get",
@@ -199,8 +233,8 @@ async function listOrdersInternal(query = {}, mode = "order") {
       materialId: query.materialId,
       materialName: query.materialName,
       workshopId: query.workshopId,
-      bizDateFrom: query.params?.beginTime,
-      bizDateTo: query.params?.endTime,
+      bizDateFrom,
+      bizDateTo,
       limit,
       offset,
     },
