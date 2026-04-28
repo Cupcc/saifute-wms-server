@@ -355,6 +355,10 @@ import {
   updateScrapOrder,
   voidScrapOrder,
 } from "@/api/stock/scrapOrder";
+import {
+  materialOptionsFromDocumentSnapshots,
+  mergeMaterialOptions,
+} from "@/utils/materialOptions";
 import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
 
 const { proxy } = getCurrentInstance();
@@ -573,7 +577,10 @@ function searchMaterial(query) {
     materialCode: query,
   })
     .then((response) => {
-      materialOptions.value = response.rows;
+      materialOptions.value = mergeMaterialOptions(
+        response.rows || [],
+        materialOptions.value,
+      );
       materialLoading.value = false;
     })
     .catch(() => {
@@ -690,6 +697,10 @@ function handleUpdate(row) {
       searchWorkshop(response.data.workshopName ?? "");
       if (response.data.details && response.data.details.length > 0) {
         detailList.value = response.data.details;
+        materialOptions.value = mergeMaterialOptions(
+          materialOptions.value,
+          materialOptionsFromDocumentSnapshots(response.data.details),
+        );
       }
       loadMaterialOptions();
     })
@@ -703,7 +714,10 @@ function loadMaterialOptions() {
   materialLoading.value = true;
   listMaterialByCodeOrName({ materialCode: "" })
     .then((response) => {
-      materialOptions.value = response.rows || [];
+      materialOptions.value = mergeMaterialOptions(
+        response.rows || [],
+        materialOptions.value,
+      );
       materialLoading.value = false;
     })
     .catch(() => {

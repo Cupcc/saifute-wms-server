@@ -417,6 +417,10 @@ import {
 } from "@/api/take/pickOrder";
 import useAiActionStore from "@/store/modules/aiAction";
 import useUserStore from "@/store/modules/user";
+import {
+  materialOptionsFromDocumentSnapshots,
+  mergeMaterialOptions,
+} from "@/utils/materialOptions";
 import { formatDateToYYYYMMDD, generateOrderNo } from "@/utils/orderNumber";
 
 const { proxy } = getCurrentInstance();
@@ -703,6 +707,10 @@ function handleUpdate(row) {
           instruction: detail.instruction ?? "",
           remark: detail.remark,
         }));
+        materialOptions.value = mergeMaterialOptions(
+          materialOptions.value,
+          materialOptionsFromDocumentSnapshots(orderData.details),
+        );
         const materialIds = orderData.details
           .filter((detail) => detail.materialId)
           .map((detail) => detail.materialId);
@@ -711,7 +719,10 @@ function handleUpdate(row) {
             materialIds: materialIds,
           })
             .then((response) => {
-              materialOptions.value = response.rows || [];
+              materialOptions.value = mergeMaterialOptions(
+                materialOptions.value,
+                response.rows || [],
+              );
             })
             .catch((error) => {
               console.error("预加载物料数据失败:", error);
@@ -903,7 +914,10 @@ function searchMaterialForDetail(query, rowIndex) {
     currentQty: 0,
   })
     .then((response) => {
-      materialOptions.value = response.rows;
+      materialOptions.value = mergeMaterialOptions(
+        response.rows || [],
+        materialOptions.value,
+      );
       materialLoading.value = false;
     })
     .catch(() => {
@@ -1215,7 +1229,10 @@ async function handleAiPrefill(formData) {
             materialCode: item.materialName,
             currentQty: 0,
           });
-          materialOptions.value = matRes.rows || [];
+          materialOptions.value = mergeMaterialOptions(
+            matRes.rows || [],
+            materialOptions.value,
+          );
           if (matRes.rows?.length > 0) {
             row.materialId = matRes.rows[0].materialId;
           }

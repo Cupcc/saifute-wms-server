@@ -439,6 +439,10 @@ import {
 } from "@/api/entry/intoOrder";
 import useAiActionStore from "@/store/modules/aiAction";
 import useUserStore from "@/store/modules/user";
+import {
+  materialOptionsFromDocumentSnapshots,
+  mergeMaterialOptions,
+} from "@/utils/materialOptions";
 import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
 
 const userStore = useUserStore();
@@ -646,7 +650,10 @@ function searchMaterial(query) {
     materialCode: query,
   })
     .then((response) => {
-      materialOptions.value = response.rows;
+      materialOptions.value = mergeMaterialOptions(
+        response.rows || [],
+        materialOptions.value,
+      );
       materialLoading.value = false;
     })
     .catch(() => {
@@ -663,7 +670,10 @@ function searchMaterialForDetail(query, rowIndex) {
     materialCode: query,
   })
     .then((response) => {
-      materialOptions.value = response.rows;
+      materialOptions.value = mergeMaterialOptions(
+        response.rows || [],
+        materialOptions.value,
+      );
       materialLoading.value = false;
     })
     .catch(() => {
@@ -816,13 +826,14 @@ function handleUpdate(row) {
   title.value = "修改入库单";
   open.value = true;
   dialogLoading.value = true;
-  listMaterialByCodeOrName().then((response) => {
-    materialOptions.value = response.rows;
-  });
   searchWorkshopForForm();
   const intoId = row.intoId || ids.value[0];
-  getIntoOrder(intoId)
-    .then((response) => {
+  Promise.all([
+    listMaterialByCodeOrName().catch(() => ({ rows: [] })),
+    getIntoOrder(intoId),
+  ])
+    .then(([materialResponse, response]) => {
+      materialOptions.value = materialResponse.rows || [];
       const orderData = response.data;
       form.value = {
         intoId: orderData.intoId,
@@ -835,6 +846,10 @@ function handleUpdate(row) {
         remark: orderData.remark,
       };
       if (orderData.details && orderData.details.length > 0) {
+        materialOptions.value = mergeMaterialOptions(
+          materialOptions.value,
+          materialOptionsFromDocumentSnapshots(orderData.details),
+        );
         detailList.value = orderData.details.map((detail) => ({
           detailId: detail.detailId,
           materialId: detail.materialId,
@@ -1143,7 +1158,10 @@ async function handleAiPrefill(formData) {
           const matRes = await listMaterialByCodeOrName({
             materialCode: item.materialName,
           });
-          materialOptions.value = matRes.rows || [];
+          materialOptions.value = mergeMaterialOptions(
+            matRes.rows || [],
+            materialOptions.value,
+          );
           if (matRes.rows?.length > 0) {
             row.materialId = matRes.rows[0].materialId;
             if (!row.unitPrice) {

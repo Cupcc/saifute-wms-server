@@ -98,7 +98,16 @@ function matchesMaterialKeyword(row, keyword) {
 }
 
 function matchesInventoryQuery(row, query = {}) {
-  if (query.materialId && row.materialId !== query.materialId) {
+  if (
+    Array.isArray(query.materialIds) &&
+    query.materialIds.length > 0 &&
+    !new Set(query.materialIds.map((id) => String(id))).has(
+      String(row.materialId),
+    )
+  ) {
+    return false;
+  }
+  if (query.materialId && String(row.materialId) !== String(query.materialId)) {
     return false;
   }
   const keyword = toQueryText(query.keyword);
@@ -226,7 +235,9 @@ export async function listInventoryGroupByMaterial(query = {}) {
   });
   const rows = buildInventoryRows(items, query);
   return {
+    rows,
     data: rows,
+    total: rows.length,
   };
 }
 

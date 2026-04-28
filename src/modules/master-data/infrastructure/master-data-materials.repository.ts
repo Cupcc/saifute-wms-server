@@ -94,6 +94,7 @@ export class MasterDataMaterialsRepository {
       where.OR = [
         { materialCode: { contains: params.keyword } },
         { materialName: { contains: params.keyword } },
+        { specModel: { contains: params.keyword } },
       ];
     }
 

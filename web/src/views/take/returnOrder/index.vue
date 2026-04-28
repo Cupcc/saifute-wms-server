@@ -510,6 +510,10 @@ import {
   updateReturnOrder,
 } from "@/api/take/returnOrder";
 import useUserStore from "@/store/modules/user";
+import {
+  materialOptionsFromDocumentSnapshots,
+  mergeMaterialOptions,
+} from "@/utils/materialOptions";
 import { formatDateToYYYYMMDD, generateOrderNo } from "@/utils/orderNumber";
 
 const { proxy } = getCurrentInstance();
@@ -704,7 +708,10 @@ function searchMaterial(query) {
     materialCode: query,
   })
     .then((response) => {
-      materialOptions.value = response.rows;
+      materialOptions.value = mergeMaterialOptions(
+        response.rows || [],
+        materialOptions.value,
+      );
       materialLoading.value = false;
     })
     .catch(() => {
@@ -742,9 +749,13 @@ function updateMaterialOptionsForRowIndex(rowIndex, allMaterials) {
     }
   });
 
-  // 过滤掉其他行已选择的物料
-  materialOptions.value = allMaterials.filter(
+  // 过滤掉其他行已选择的物料，同时保留已选行的显示名称
+  const filteredMaterials = allMaterials.filter(
     (item) => !selectedMaterialIds.has(item.materialId),
+  );
+  materialOptions.value = mergeMaterialOptions(
+    filteredMaterials,
+    materialOptions.value,
   );
 }
 
@@ -764,20 +775,6 @@ function getFilteredMaterialOptions(rowIndex) {
   return materialOptions.value.filter(
     (item) => !selectedMaterialIds.has(item.materialId),
   );
-}
-
-function mergeMaterialOptions(materials = []) {
-  const materialMap = new Map(
-    materialOptions.value.map((item) => [item.materialId, item]),
-  );
-
-  materials.forEach((item) => {
-    if (item?.materialId) {
-      materialMap.set(item.materialId, item);
-    }
-  });
-
-  materialOptions.value = [...materialMap.values()];
 }
 
 /** 查询人员 */
@@ -1061,7 +1058,10 @@ function handleUpdate(row) {
               ? (detail.returnQty * detail.unitPrice).toFixed(2)
               : "0.00",
         }));
-        mergeMaterialOptions(orderData.details.map((detail) => detail.material));
+        materialOptions.value = mergeMaterialOptions(
+          materialOptions.value,
+          materialOptionsFromDocumentSnapshots(orderData.details),
+        );
       }
       searchMaterial();
     })
@@ -1277,8 +1277,9 @@ function handlePickOrderSelect(row) {
                 : "0.00",
           };
         });
-        mergeMaterialOptions(
-          selectedPickOrder.value.details.map((pickDetail) => pickDetail.material),
+        materialOptions.value = mergeMaterialOptions(
+          materialOptions.value,
+          materialOptionsFromDocumentSnapshots(selectedPickOrder.value.details),
         );
       }
 

@@ -393,6 +393,7 @@ import {
 import {
   addSalesReturnOrder,
 } from "@/api/sales/salesReturnOrder";
+import { mergeMaterialOptions } from "@/utils/materialOptions";
 import request from "@/utils/request";
 import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
 
@@ -971,7 +972,10 @@ async function searchMaterials(keyword) {
       pageNum: 1,
       pageSize: 100,
     });
-    materialOptions.value = response.rows || [];
+    materialOptions.value = mergeMaterialOptions(
+      response.rows || [],
+      materialOptions.value,
+    );
   } finally {
     materialLoading.value = false;
   }

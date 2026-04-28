@@ -441,6 +441,10 @@ import { listSupplier, listSupplierByKeyword } from "@/api/base/supplier";
 import { listNoPage } from "@/api/entry/detail.js";
 import { selectSaifuteInventoryListGroupByMaterial } from "@/api/stock/inventory.js";
 import { getUsedByMaterialIdAndQuantity } from "@/api/stock/used.js";
+import {
+  materialOptionsFromDocumentSnapshots,
+  mergeMaterialOptions,
+} from "@/utils/materialOptions";
 
 const { proxy } = getCurrentInstance();
 
@@ -663,21 +667,26 @@ function handleUpdate(row) {
   open.value = true;
   dialogLoading.value = true;
   getClassificationOptions();
-  listMaterialByCodeOrName().then((response) => {
-    materialOptions.value = response.rows;
-  });
+  const materialOptionsRequest = listMaterialByCodeOrName().catch(() => ({
+    rows: [],
+  }));
   listSupplier().then((response) => {
     if (response.rows) {
       supplierOptions.value = response.rows;
     }
   });
   const _productId = row.productId || ids.value;
-  getProduct(_productId)
-    .then((response) => {
-      form.value = response.data;
+  Promise.all([materialOptionsRequest, getProduct(_productId)])
+    .then(([materialResponse, productResponse]) => {
+      materialOptions.value = materialResponse.rows || [];
+      form.value = productResponse.data;
       if (!form.value.materialList) {
         form.value.materialList = [];
       }
+      materialOptions.value = mergeMaterialOptions(
+        materialOptions.value,
+        materialOptionsFromDocumentSnapshots(form.value.materialList),
+      );
       calculateTotalAmount();
       getCustomerTree();
     })
@@ -814,7 +823,10 @@ function searchMaterial(query) {
     materialCode: query,
     currentQty: 0,
   }).then((response) => {
-    materialOptions.value = response.rows;
+    materialOptions.value = mergeMaterialOptions(
+      response.rows || [],
+      materialOptions.value,
+    );
     materialLoading.value = false;
   });
 }
