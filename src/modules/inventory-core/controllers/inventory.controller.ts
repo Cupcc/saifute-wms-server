@@ -29,10 +29,13 @@ export class InventoryController {
       await this.workshopScopeService.resolveInventoryQueryScope(
         user,
         query.workshopId,
+        query.stockScope,
       );
     return this.inventoryService.listBalances({
       materialId: query.materialId,
       stockScope: inventoryScope?.stockScope,
+      keyword: query.keyword,
+      categoryIds: query.categoryIds,
       limit: query.limit,
       offset: query.offset,
     });

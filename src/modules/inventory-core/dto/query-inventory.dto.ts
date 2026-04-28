@@ -1,5 +1,6 @@
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import {
+  IsArray,
   IsDateString,
   IsEnum,
   IsIn,
@@ -10,6 +11,19 @@ import {
   Min,
 } from "class-validator";
 import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
+
+function toOptionalPositiveNumberArray(value: unknown): number[] | undefined {
+  if (value === null || typeof value === "undefined" || value === "") {
+    return undefined;
+  }
+
+  const values = (
+    Array.isArray(value) ? value : String(value).split(",")
+  ).filter((item) => String(item).trim() !== "");
+  const numbers = values.map((item) => Number(item));
+
+  return numbers.length > 0 ? numbers : undefined;
+}
 
 export class QueryInventoryBalancesDto {
   @IsOptional()
@@ -23,6 +37,22 @@ export class QueryInventoryBalancesDto {
   @IsInt()
   @Min(1)
   workshopId?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  keyword?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => toOptionalPositiveNumberArray(value))
+  @IsArray()
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  categoryIds?: number[];
+
+  @IsOptional()
+  @IsIn(["MAIN", "RD_SUB"])
+  stockScope?: "MAIN" | "RD_SUB";
 
   @IsOptional()
   @Type(() => Number)

@@ -60,6 +60,32 @@ describe("InventoryController", () => {
     workshopScopeService = moduleRef.get(WorkshopScopeService);
   });
 
+  it("passes stock-scope and material filters when listing balances", async () => {
+    await controller.listBalances(
+      {
+        materialId: 7,
+        stockScope: "MAIN",
+        keyword: "电阻",
+        categoryIds: [3, 4],
+        limit: 20,
+        offset: 0,
+      },
+      undefined,
+    );
+
+    expect(
+      workshopScopeService.resolveInventoryQueryScope,
+    ).toHaveBeenCalledWith(undefined, undefined, "MAIN");
+    expect(inventoryService.listBalances).toHaveBeenCalledWith({
+      materialId: 7,
+      stockScope: "MAIN",
+      keyword: "电阻",
+      categoryIds: [3, 4],
+      limit: 20,
+      offset: 0,
+    });
+  });
+
   it("applies inventory scope when listing source usages", async () => {
     await controller.listSourceUsages(
       {

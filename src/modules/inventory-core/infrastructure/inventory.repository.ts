@@ -52,6 +52,8 @@ export class InventoryRepository {
   async findBalances(params: {
     materialId?: number;
     stockScopeIds?: number[];
+    keyword?: string;
+    categoryIds?: number[];
     limit: number;
     offset: number;
   }) {
@@ -62,18 +64,49 @@ export class InventoryRepository {
     } else if (params.stockScopeIds?.length) {
       where.stockScopeId = { in: params.stockScopeIds };
     }
+    const materialWhere = this.buildInventoryBalanceMaterialWhere(params);
+    if (materialWhere) {
+      where.material = materialWhere;
+    }
 
     const [items, total] = await Promise.all([
       this.prisma.inventoryBalance.findMany({
         where,
         take: params.limit,
         skip: params.offset,
+        orderBy: [
+          { material: { materialCode: "asc" } },
+          { stockScopeId: "asc" },
+          { id: "asc" },
+        ],
         include: { material: true, stockScope: true },
       }),
       this.prisma.inventoryBalance.count({ where }),
     ]);
 
     return { items, total };
+  }
+
+  private buildInventoryBalanceMaterialWhere(params: {
+    keyword?: string;
+    categoryIds?: number[];
+  }): Prisma.MaterialWhereInput | undefined {
+    const materialWhere: Prisma.MaterialWhereInput = {};
+    const keyword = params.keyword?.trim();
+    if (keyword) {
+      materialWhere.OR = [
+        { materialCode: { contains: keyword } },
+        { materialName: { contains: keyword } },
+        { specModel: { contains: keyword } },
+      ];
+    }
+    if (params.categoryIds?.length === 1) {
+      materialWhere.categoryId = params.categoryIds[0];
+    } else if (params.categoryIds?.length) {
+      materialWhere.categoryId = { in: params.categoryIds };
+    }
+
+    return Object.keys(materialWhere).length > 0 ? materialWhere : undefined;
   }
 
   async findBalanceByMaterialAndStockScope(

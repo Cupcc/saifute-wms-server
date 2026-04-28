@@ -221,4 +221,87 @@ describe("InventoryService", () => {
       undefined,
     );
   });
+
+  it("should pass inventory balance filters to repository", async () => {
+    const findBalances = jest.fn().mockResolvedValue({
+      items: [
+        {
+          id: 1,
+          materialId: 10,
+          quantityOnHand: new Prisma.Decimal(5),
+          stockScope: {
+            id: 2,
+            scopeCode: "RD_SUB",
+            scopeName: "研发小仓",
+          },
+        },
+      ],
+      total: 1,
+    });
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        InventoryService,
+        InventoryQueryService,
+        {
+          provide: MasterDataService,
+          useValue: {},
+        },
+        {
+          provide: PrismaService,
+          useValue: {},
+        },
+        {
+          provide: InventoryRepository,
+          useValue: {
+            findBalances,
+          },
+        },
+        {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
+          provide: StockScopeCompatibilityService,
+          useValue: {
+            ...createStockScopeCompatibilityServiceMock(),
+            resolveOptional: jest.fn().mockResolvedValue({
+              stockScope: "RD_SUB",
+              stockScopeId: 2,
+              stockScopeName: "研发小仓",
+            }),
+          },
+        },
+      ],
+    }).compile();
+
+    const service = moduleRef.get(InventoryService);
+
+    const result = await service.listBalances({
+      stockScope: "RD_SUB",
+      materialId: 10,
+      keyword: "电阻",
+      categoryIds: [3, 4],
+      limit: 20,
+      offset: 5,
+    });
+
+    expect(findBalances).toHaveBeenCalledWith({
+      materialId: 10,
+      stockScopeIds: [2],
+      keyword: "电阻",
+      categoryIds: [3, 4],
+      limit: 20,
+      offset: 5,
+    });
+    expect(result).toEqual({
+      items: [
+        expect.objectContaining({
+          id: 1,
+          stockScope: "RD_SUB",
+        }),
+      ],
+      total: 1,
+    });
+  });
 });

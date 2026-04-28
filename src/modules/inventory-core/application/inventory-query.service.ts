@@ -30,6 +30,8 @@ export class InventoryQueryService {
     materialId?: number;
     stockScope?: StockScopeCode;
     workshopId?: number;
+    keyword?: string;
+    categoryIds?: number[];
     limit?: number;
     offset?: number;
   }) {
@@ -39,6 +41,8 @@ export class InventoryQueryService {
     const result = await this.repository.findBalances({
       materialId: params.materialId,
       stockScopeIds,
+      keyword: params.keyword,
+      categoryIds: params.categoryIds,
       limit,
       offset,
     });
