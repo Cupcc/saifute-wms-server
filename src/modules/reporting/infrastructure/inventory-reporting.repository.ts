@@ -6,7 +6,6 @@ import {
 } from "../../../../generated/prisma/client";
 import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
-import type { StockScopeCode } from "../../session/domain/user-session";
 
 export interface InventoryBalanceSnapshot {
   id: number;
@@ -111,7 +110,7 @@ export class InventoryReportingRepository {
     }
 
     const materialFilter = params.materialIds?.length
-      ? Prisma.sql`AND src_log.materialId IN (${Prisma.join(params.materialIds)})`
+      ? Prisma.sql`AND src_log.material_id IN (${Prisma.join(params.materialIds)})`
       : Prisma.empty;
     const rows = await this.prisma.$queryRaw<
       Array<{
@@ -121,42 +120,41 @@ export class InventoryReportingRepository {
       }>
     >(Prisma.sql`
       SELECT
-        src_log.materialId AS materialId,
-        src_log.stockScopeId AS stockScopeId,
+        src_log.material_id AS materialId,
+        src_log.stock_scope_id AS stockScopeId,
         SUM(
-          (src_log.changeQty - COALESCE(usage_summary.netAllocatedQty, 0)) * src_log.unitCost
+          (src_log.change_qty - COALESCE(usage_summary.netAllocatedQty, 0)) * src_log.unit_cost
         ) AS inventoryValue
       FROM inventory_log src_log
-      INNER JOIN material material ON material.id = src_log.materialId
+      INNER JOIN material material ON material.id = src_log.material_id
       LEFT JOIN (
         SELECT
-          sourceLogId,
-          SUM(allocatedQty - releasedQty) AS netAllocatedQty
+          source_log_id,
+          SUM(allocated_qty - released_qty) AS netAllocatedQty
         FROM inventory_source_usage
-        GROUP BY sourceLogId
-      ) usage_summary ON usage_summary.sourceLogId = src_log.id
-      WHERE src_log.stockScopeId IN (${Prisma.join(params.inventoryStockScopeIds)})
+        GROUP BY source_log_id
+      ) usage_summary ON usage_summary.source_log_id = src_log.id
+      WHERE src_log.stock_scope_id IN (${Prisma.join(params.inventoryStockScopeIds)})
         ${materialFilter}
         AND material.status = ${MasterDataStatus.ACTIVE}
         AND src_log.direction = ${"IN"}
-        AND src_log.operationType IN (${Prisma.join(
+        AND src_log.operation_type IN (${Prisma.join(
           INVENTORY_VALUE_SOURCE_OPERATION_TYPES,
         )})
-        AND src_log.unitCost IS NOT NULL
-        AND src_log.reversalOfLogId IS NULL
+        AND src_log.unit_cost IS NOT NULL
+        AND src_log.reversal_of_log_id IS NULL
         AND NOT EXISTS (
           SELECT 1
           FROM inventory_log reversed
-          WHERE reversed.reversalOfLogId = src_log.id
+          WHERE reversed.reversal_of_log_id = src_log.id
         )
-      GROUP BY src_log.materialId, src_log.stockScopeId
-      HAVING SUM(src_log.changeQty - COALESCE(usage_summary.netAllocatedQty, 0)) > 0
+      GROUP BY src_log.material_id, src_log.stock_scope_id
+      HAVING SUM(src_log.change_qty - COALESCE(usage_summary.netAllocatedQty, 0)) > 0
     `);
 
     return rows.map((row) => ({
       materialId: Number(row.materialId),
-      stockScopeId:
-        row.stockScopeId === null ? null : Number(row.stockScopeId),
+      stockScopeId: row.stockScopeId === null ? null : Number(row.stockScopeId),
       inventoryValue: new Prisma.Decimal(row.inventoryValue ?? 0),
     }));
   }

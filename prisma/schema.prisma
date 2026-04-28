@@ -177,15 +177,15 @@ enum SchedulerJobLogStatus {
 }
 
 model MaterialCategory {
-  id           Int                @id @default(autoincrement())
-  categoryCode String             @unique @db.VarChar(64)
-  categoryName String             @db.VarChar(128)
-  sortOrder    Int                @default(0)
-  status       MasterDataStatus   @default(ACTIVE)
-  createdBy    String?            @db.VarChar(64)
-  createdAt    DateTime           @default(now())
-  updatedBy    String?            @db.VarChar(64)
-  updatedAt    DateTime           @updatedAt
+  id           Int              @id @default(autoincrement())
+  categoryCode String           @unique @map("category_code") @db.VarChar(64)
+  categoryName String           @map("category_name") @db.VarChar(128)
+  sortOrder    Int              @default(0) @map("sort_order")
+  status       MasterDataStatus @default(ACTIVE)
+  createdBy    String?          @map("created_by") @db.VarChar(64)
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedBy    String?          @map("updated_by") @db.VarChar(64)
+  updatedAt    DateTime         @updatedAt @map("updated_at")
   materials    Material[]
 
   @@map("material_category")
@@ -193,21 +193,21 @@ model MaterialCategory {
 
 model Material {
   id                           Int                               @id @default(autoincrement())
-  materialCode                 String                            @unique @db.VarChar(64)
-  materialName                 String                            @db.VarChar(128)
-  specModel                    String?                           @db.VarChar(128)
-  categoryId                   Int?
-  unitCode                     String                            @db.VarChar(32)
-  warningMinQty                Decimal?                          @db.Decimal(18, 6)
-  warningMaxQty                Decimal?                          @db.Decimal(18, 6)
+  materialCode                 String                            @unique @map("material_code") @db.VarChar(64)
+  materialName                 String                            @map("material_name") @db.VarChar(128)
+  specModel                    String?                           @map("spec_model") @db.VarChar(128)
+  categoryId                   Int?                              @map("category_id")
+  unitCode                     String                            @map("unit_code") @db.VarChar(32)
+  warningMinQty                Decimal?                          @map("warning_min_qty") @db.Decimal(18, 6)
+  warningMaxQty                Decimal?                          @map("warning_max_qty") @db.Decimal(18, 6)
   status                       MasterDataStatus                  @default(ACTIVE)
-  creationMode                 DataCreationMode                  @default(MANUAL)
-  sourceDocumentType           String?                           @db.VarChar(64)
-  sourceDocumentId             Int?
-  createdBy                    String?                           @db.VarChar(64)
-  createdAt                    DateTime                          @default(now())
-  updatedBy                    String?                           @db.VarChar(64)
-  updatedAt                    DateTime                          @updatedAt
+  creationMode                 DataCreationMode                  @default(MANUAL) @map("creation_mode")
+  sourceDocumentType           String?                           @map("source_document_type") @db.VarChar(64)
+  sourceDocumentId             Int?                              @map("source_document_id")
+  createdBy                    String?                           @map("created_by") @db.VarChar(64)
+  createdAt                    DateTime                          @default(now()) @map("created_at")
+  updatedBy                    String?                           @map("updated_by") @db.VarChar(64)
+  updatedAt                    DateTime                          @updatedAt @map("updated_at")
   category                     MaterialCategory?                 @relation(fields: [categoryId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   inventoryBalances            InventoryBalance[]
   inventoryLogs                InventoryLog[]
@@ -232,20 +232,20 @@ model Material {
 
 model Customer {
   id                 Int               @id @default(autoincrement())
-  customerCode       String            @unique @db.VarChar(64)
-  customerName       String            @db.VarChar(128)
-  contactPerson      String?           @db.VarChar(128)
-  contactPhone       String?           @db.VarChar(32)
+  customerCode       String            @unique @map("customer_code") @db.VarChar(64)
+  customerName       String            @map("customer_name") @db.VarChar(128)
+  contactPerson      String?           @map("contact_person") @db.VarChar(128)
+  contactPhone       String?           @map("contact_phone") @db.VarChar(32)
   address            String?           @db.VarChar(255)
-  parentId           Int?
+  parentId           Int?              @map("parent_id")
   status             MasterDataStatus  @default(ACTIVE)
-  creationMode       DataCreationMode  @default(MANUAL)
-  sourceDocumentType String?           @db.VarChar(64)
-  sourceDocumentId   Int?
-  createdBy          String?           @db.VarChar(64)
-  createdAt          DateTime          @default(now())
-  updatedBy          String?           @db.VarChar(64)
-  updatedAt          DateTime          @updatedAt
+  creationMode       DataCreationMode  @default(MANUAL) @map("creation_mode")
+  sourceDocumentType String?           @map("source_document_type") @db.VarChar(64)
+  sourceDocumentId   Int?              @map("source_document_id")
+  createdBy          String?           @map("created_by") @db.VarChar(64)
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedBy          String?           @map("updated_by") @db.VarChar(64)
+  updatedAt          DateTime          @updatedAt @map("updated_at")
   parent             Customer?         @relation("CustomerTree", fields: [parentId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   children           Customer[]        @relation("CustomerTree")
   salesStockOrders   SalesStockOrder[]
@@ -258,20 +258,20 @@ model Customer {
 
 model Supplier {
   id                    Int                    @id @default(autoincrement())
-  supplierCode          String                 @unique @db.VarChar(64)
-  supplierName          String                 @db.VarChar(128)
-  supplierShortName     String?                @db.VarChar(128)
-  contactPerson         String?                @db.VarChar(128)
-  contactPhone          String?                @db.VarChar(32)
+  supplierCode          String                 @unique @map("supplier_code") @db.VarChar(64)
+  supplierName          String                 @map("supplier_name") @db.VarChar(128)
+  supplierShortName     String?                @map("supplier_short_name") @db.VarChar(128)
+  contactPerson         String?                @map("contact_person") @db.VarChar(128)
+  contactPhone          String?                @map("contact_phone") @db.VarChar(32)
   address               String?                @db.VarChar(255)
   status                MasterDataStatus       @default(ACTIVE)
-  creationMode          DataCreationMode       @default(MANUAL)
-  sourceDocumentType    String?                @db.VarChar(64)
-  sourceDocumentId      Int?
-  createdBy             String?                @db.VarChar(64)
-  createdAt             DateTime               @default(now())
-  updatedBy             String?                @db.VarChar(64)
-  updatedAt             DateTime               @updatedAt
+  creationMode          DataCreationMode       @default(MANUAL) @map("creation_mode")
+  sourceDocumentType    String?                @map("source_document_type") @db.VarChar(64)
+  sourceDocumentId      Int?                   @map("source_document_id")
+  createdBy             String?                @map("created_by") @db.VarChar(64)
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedBy             String?                @map("updated_by") @db.VarChar(64)
+  updatedAt             DateTime               @updatedAt @map("updated_at")
   stockInOrders         StockInOrder[]
   rdProjects            RdProject[]
   rdProcurementRequests RdProcurementRequest[]
@@ -281,14 +281,14 @@ model Supplier {
 
 model Personnel {
   id                      Int                     @id @default(autoincrement())
-  personnelName           String                  @db.VarChar(128)
+  personnelName           String                  @map("personnel_name") @db.VarChar(128)
   contactPhone            String?                 @map("contact_phone") @db.VarChar(32)
   workshopId              Int?                    @map("workshop_id")
   status                  MasterDataStatus        @default(ACTIVE)
-  createdBy               String?                 @db.VarChar(64)
-  createdAt               DateTime                @default(now())
-  updatedBy               String?                 @db.VarChar(64)
-  updatedAt               DateTime                @updatedAt
+  createdBy               String?                 @map("created_by") @db.VarChar(64)
+  createdAt               DateTime                @default(now()) @map("created_at")
+  updatedBy               String?                 @map("updated_by") @db.VarChar(64)
+  updatedAt               DateTime                @updatedAt @map("updated_at")
   workshop                Workshop?               @relation("PersonnelWorkshop", fields: [workshopId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   stockInOrders           StockInOrder[]          @relation("StockInOrderHandler")
   salesStockOrders        SalesStockOrder[]       @relation("SalesStockOrderHandler")
@@ -305,13 +305,13 @@ model Personnel {
 
 model Workshop {
   id                           Int                           @id @default(autoincrement())
-  workshopName                 String                        @unique @db.VarChar(128)
+  workshopName                 String                        @unique @map("workshop_name") @db.VarChar(128)
   defaultHandlerPersonnelId    Int?                          @map("default_handler_personnel_id")
   status                       MasterDataStatus              @default(ACTIVE)
-  createdBy                    String?                       @db.VarChar(64)
-  createdAt                    DateTime                      @default(now())
-  updatedBy                    String?                       @db.VarChar(64)
-  updatedAt                    DateTime                      @updatedAt
+  createdBy                    String?                       @map("created_by") @db.VarChar(64)
+  createdAt                    DateTime                      @default(now()) @map("created_at")
+  updatedBy                    String?                       @map("updated_by") @db.VarChar(64)
+  updatedAt                    DateTime                      @updatedAt @map("updated_at")
   inventoryLogs                InventoryLog[]
   factoryNumberReservations    FactoryNumberReservation[]
   stockInOrders                StockInOrder[]
@@ -334,14 +334,14 @@ model Workshop {
 
 model StockScope {
   id                           Int                           @id @default(autoincrement())
-  scopeCode                    String                        @unique @db.VarChar(64)
-  scopeName                    String                        @db.VarChar(128)
-  scopeType                    StockScopeType                @default(MAIN)
+  scopeCode                    String                        @unique @map("scope_code") @db.VarChar(64)
+  scopeName                    String                        @map("scope_name") @db.VarChar(128)
+  scopeType                    StockScopeType                @default(MAIN) @map("scope_type")
   status                       MasterDataStatus              @default(ACTIVE)
-  createdBy                    String?                       @db.VarChar(64)
-  createdAt                    DateTime                      @default(now())
-  updatedBy                    String?                       @db.VarChar(64)
-  updatedAt                    DateTime                      @updatedAt
+  createdBy                    String?                       @map("created_by") @db.VarChar(64)
+  createdAt                    DateTime                      @default(now()) @map("created_at")
+  updatedBy                    String?                       @map("updated_by") @db.VarChar(64)
+  updatedAt                    DateTime                      @updatedAt @map("updated_at")
   inventoryBalances            InventoryBalance[]
   inventoryLogs                InventoryLog[]
   factoryNumberReservations    FactoryNumberReservation[]
@@ -363,14 +363,14 @@ model StockScope {
 
 model InventoryBalance {
   id             Int            @id @default(autoincrement())
-  materialId     Int
-  stockScopeId   Int?
-  quantityOnHand Decimal        @default(0) @db.Decimal(18, 6)
-  rowVersion     Int            @default(0)
-  createdBy      String?        @db.VarChar(64)
-  createdAt      DateTime       @default(now())
-  updatedBy      String?        @db.VarChar(64)
-  updatedAt      DateTime       @updatedAt
+  materialId     Int            @map("material_id")
+  stockScopeId   Int?           @map("stock_scope_id")
+  quantityOnHand Decimal        @default(0) @map("quantity_on_hand") @db.Decimal(18, 6)
+  rowVersion     Int            @default(0) @map("row_version")
+  createdBy      String?        @map("created_by") @db.VarChar(64)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedBy      String?        @map("updated_by") @db.VarChar(64)
+  updatedAt      DateTime       @updatedAt @map("updated_at")
   material       Material       @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   stockScope     StockScope?    @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   logs           InventoryLog[]
@@ -382,17 +382,17 @@ model InventoryBalance {
 
 model ProjectTarget {
   id                 Int               @id @default(autoincrement())
-  targetType         ProjectTargetType
-  targetCode         String            @unique @db.VarChar(64)
-  targetName         String            @db.VarChar(128)
-  sourceDocumentType String?           @db.VarChar(64)
-  sourceDocumentId   Int?
-  isSystemDefault    Boolean           @default(false)
+  targetType         ProjectTargetType @map("target_type")
+  targetCode         String            @unique @map("target_code") @db.VarChar(64)
+  targetName         String            @map("target_name") @db.VarChar(128)
+  sourceDocumentType String?           @map("source_document_type") @db.VarChar(64)
+  sourceDocumentId   Int?              @map("source_document_id")
+  isSystemDefault    Boolean           @default(false) @map("is_system_default")
   remark             String?           @db.VarChar(500)
-  createdBy          String?           @db.VarChar(64)
-  createdAt          DateTime          @default(now())
-  updatedBy          String?           @db.VarChar(64)
-  updatedAt          DateTime          @updatedAt
+  createdBy          String?           @map("created_by") @db.VarChar(64)
+  createdAt          DateTime          @default(now()) @map("created_at")
+  updatedBy          String?           @map("updated_by") @db.VarChar(64)
+  updatedAt          DateTime          @updatedAt @map("updated_at")
   salesProject       SalesProject?
   rdProject          RdProject?
   inventoryLogs      InventoryLog[]
@@ -404,28 +404,28 @@ model ProjectTarget {
 
 model InventoryLog {
   id                         Int                              @id @default(autoincrement())
-  balanceId                  Int
-  materialId                 Int
-  stockScopeId               Int?
-  workshopId                 Int?
-  projectTargetId            Int?
-  bizDate                    DateTime                         @db.Date
+  balanceId                  Int                              @map("balance_id")
+  materialId                 Int                              @map("material_id")
+  stockScopeId               Int?                             @map("stock_scope_id")
+  workshopId                 Int?                             @map("workshop_id")
+  projectTargetId            Int?                             @map("project_target_id")
+  bizDate                    DateTime                         @map("biz_date") @db.Date
   direction                  StockDirection
-  operationType              InventoryOperationType
-  businessModule             String                           @db.VarChar(64)
-  businessDocumentType       String                           @db.VarChar(64)
-  businessDocumentId         Int
-  businessDocumentNumber     String                           @db.VarChar(64)
-  businessDocumentLineId     Int?
-  changeQty                  Decimal                          @db.Decimal(18, 6)
-  beforeQty                  Decimal                          @db.Decimal(18, 6)
-  afterQty                   Decimal                          @db.Decimal(18, 6)
-  unitCost                   Decimal?                         @db.Decimal(18, 2)
-  costAmount                 Decimal?                         @db.Decimal(18, 2)
-  operatorId                 String?                          @db.VarChar(64)
-  occurredAt                 DateTime                         @default(now())
-  reversalOfLogId            Int?                             @unique
-  idempotencyKey             String                           @unique @db.VarChar(128)
+  operationType              InventoryOperationType           @map("operation_type")
+  businessModule             String                           @map("business_module") @db.VarChar(64)
+  businessDocumentType       String                           @map("business_document_type") @db.VarChar(64)
+  businessDocumentId         Int                              @map("business_document_id")
+  businessDocumentNumber     String                           @map("business_document_number") @db.VarChar(64)
+  businessDocumentLineId     Int?                             @map("business_document_line_id")
+  changeQty                  Decimal                          @map("change_qty") @db.Decimal(18, 6)
+  beforeQty                  Decimal                          @map("before_qty") @db.Decimal(18, 6)
+  afterQty                   Decimal                          @map("after_qty") @db.Decimal(18, 6)
+  unitCost                   Decimal?                         @map("unit_cost") @db.Decimal(18, 2)
+  costAmount                 Decimal?                         @map("cost_amount") @db.Decimal(18, 2)
+  operatorId                 String?                          @map("operator_id") @db.VarChar(64)
+  occurredAt                 DateTime                         @default(now()) @map("occurred_at")
+  reversalOfLogId            Int?                             @unique @map("reversal_of_log_id")
+  idempotencyKey             String                           @unique @map("idempotency_key") @db.VarChar(128)
   note                       String?                          @db.VarChar(500)
   balance                    InventoryBalance                 @relation(fields: [balanceId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   material                   Material                         @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -456,18 +456,18 @@ model InventoryLog {
 
 model InventorySourceUsage {
   id                   Int               @id @default(autoincrement())
-  materialId           Int
-  sourceLogId          Int
-  consumerDocumentType String            @db.VarChar(64)
-  consumerDocumentId   Int
-  consumerLineId       Int
-  allocatedQty         Decimal           @db.Decimal(18, 6)
-  releasedQty          Decimal           @default(0) @db.Decimal(18, 6)
+  materialId           Int               @map("material_id")
+  sourceLogId          Int               @map("source_log_id")
+  consumerDocumentType String            @map("consumer_document_type") @db.VarChar(64)
+  consumerDocumentId   Int               @map("consumer_document_id")
+  consumerLineId       Int               @map("consumer_line_id")
+  allocatedQty         Decimal           @map("allocated_qty") @db.Decimal(18, 6)
+  releasedQty          Decimal           @default(0) @map("released_qty") @db.Decimal(18, 6)
   status               SourceUsageStatus @default(ALLOCATED)
-  createdBy            String?           @db.VarChar(64)
-  createdAt            DateTime          @default(now())
-  updatedBy            String?           @db.VarChar(64)
-  updatedAt            DateTime          @updatedAt
+  createdBy            String?           @map("created_by") @db.VarChar(64)
+  createdAt            DateTime          @default(now()) @map("created_at")
+  updatedBy            String?           @map("updated_by") @db.VarChar(64)
+  updatedAt            DateTime          @updatedAt @map("updated_at")
   material             Material          @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   sourceLog            InventoryLog      @relation(fields: [sourceLogId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
@@ -479,18 +479,18 @@ model InventorySourceUsage {
 
 model InventoryMonthlySnapshot {
   id           Int    @id @default(autoincrement())
-  yearMonth    String @db.Char(7)
-  materialId   Int
-  stockScopeId Int?
+  yearMonth    String @map("year_month") @db.Char(7)
+  materialId   Int    @map("material_id")
+  stockScopeId Int?   @map("stock_scope_id")
 
-  openingQty     Decimal @default(0) @db.Decimal(18, 6)
-  closingQty     Decimal @default(0) @db.Decimal(18, 6)
-  totalInQty     Decimal @default(0) @db.Decimal(18, 6)
-  totalInAmount  Decimal @default(0) @db.Decimal(18, 2)
-  totalOutQty    Decimal @default(0) @db.Decimal(18, 6)
-  totalOutAmount Decimal @default(0) @db.Decimal(18, 2)
+  openingQty     Decimal @default(0) @map("opening_qty") @db.Decimal(18, 6)
+  closingQty     Decimal @default(0) @map("closing_qty") @db.Decimal(18, 6)
+  totalInQty     Decimal @default(0) @map("total_in_qty") @db.Decimal(18, 6)
+  totalInAmount  Decimal @default(0) @map("total_in_amount") @db.Decimal(18, 2)
+  totalOutQty    Decimal @default(0) @map("total_out_qty") @db.Decimal(18, 6)
+  totalOutAmount Decimal @default(0) @map("total_out_amount") @db.Decimal(18, 2)
 
-  snapshotAt DateTime    @default(now())
+  snapshotAt DateTime    @default(now()) @map("snapshot_at")
   material   Material    @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   stockScope StockScope? @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
@@ -502,21 +502,21 @@ model InventoryMonthlySnapshot {
 
 model FactoryNumberReservation {
   id                     Int                            @id @default(autoincrement())
-  materialId             Int
-  stockScopeId           Int?
-  workshopId             Int?
-  businessDocumentType   String                         @db.VarChar(64)
-  businessDocumentId     Int
-  businessDocumentLineId Int
-  startNumber            String                         @db.VarChar(64)
-  endNumber              String                         @db.VarChar(64)
+  materialId             Int                            @map("material_id")
+  stockScopeId           Int?                           @map("stock_scope_id")
+  workshopId             Int?                           @map("workshop_id")
+  businessDocumentType   String                         @map("business_document_type") @db.VarChar(64)
+  businessDocumentId     Int                            @map("business_document_id")
+  businessDocumentLineId Int                            @map("business_document_line_id")
+  startNumber            String                         @map("start_number") @db.VarChar(64)
+  endNumber              String                         @map("end_number") @db.VarChar(64)
   status                 FactoryNumberReservationStatus @default(RESERVED)
-  reservedAt             DateTime                       @default(now())
-  releasedAt             DateTime?
-  createdBy              String?                        @db.VarChar(64)
-  createdAt              DateTime                       @default(now())
-  updatedBy              String?                        @db.VarChar(64)
-  updatedAt              DateTime                       @updatedAt
+  reservedAt             DateTime                       @default(now()) @map("reserved_at")
+  releasedAt             DateTime?                      @map("released_at")
+  createdBy              String?                        @map("created_by") @db.VarChar(64)
+  createdAt              DateTime                       @default(now()) @map("created_at")
+  updatedBy              String?                        @map("updated_by") @db.VarChar(64)
+  updatedAt              DateTime                       @updatedAt @map("updated_at")
   material               Material                       @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   stockScope             StockScope?                    @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   workshop               Workshop?                      @relation(fields: [workshopId], references: [id], onDelete: SetNull, onUpdate: Cascade)
@@ -530,22 +530,22 @@ model FactoryNumberReservation {
 
 model ApprovalDocument {
   id             Int                 @id @default(autoincrement())
-  documentFamily DocumentFamily
-  documentType   String              @db.VarChar(64)
-  documentId     Int
-  documentNumber String              @db.VarChar(64)
-  auditStatus    AuditStatusSnapshot @default(PENDING)
-  submittedBy    String?             @db.VarChar(64)
-  submittedAt    DateTime?
-  decidedBy      String?             @db.VarChar(64)
-  decidedAt      DateTime?
-  rejectReason   String?             @db.VarChar(500)
-  resetCount     Int                 @default(0)
-  lastResetAt    DateTime?
-  createdBy      String?             @db.VarChar(64)
-  createdAt      DateTime            @default(now())
-  updatedBy      String?             @db.VarChar(64)
-  updatedAt      DateTime            @updatedAt
+  documentFamily DocumentFamily      @map("document_family")
+  documentType   String              @map("document_type") @db.VarChar(64)
+  documentId     Int                 @map("document_id")
+  documentNumber String              @map("document_number") @db.VarChar(64)
+  auditStatus    AuditStatusSnapshot @default(PENDING) @map("audit_status")
+  submittedBy    String?             @map("submitted_by") @db.VarChar(64)
+  submittedAt    DateTime?           @map("submitted_at")
+  decidedBy      String?             @map("decided_by") @db.VarChar(64)
+  decidedAt      DateTime?           @map("decided_at")
+  rejectReason   String?             @map("reject_reason") @db.VarChar(500)
+  resetCount     Int                 @default(0) @map("reset_count")
+  lastResetAt    DateTime?           @map("last_reset_at")
+  createdBy      String?             @map("created_by") @db.VarChar(64)
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedBy      String?             @map("updated_by") @db.VarChar(64)
+  updatedAt      DateTime            @updatedAt @map("updated_at")
 
   @@unique([documentType, documentId])
   @@index([documentFamily, auditStatus])
@@ -555,35 +555,35 @@ model ApprovalDocument {
 
 model StockInOrder {
   id                               Int                               @id @default(autoincrement())
-  documentNo                       String                            @unique @db.VarChar(64)
-  orderType                        StockInOrderType
-  bizDate                          DateTime                          @db.Date
-  supplierId                       Int?
-  handlerPersonnelId               Int?
-  stockScopeId                     Int?
-  workshopId                       Int?
-  rdProcurementRequestId           Int?
-  lifecycleStatus                  DocumentLifecycleStatus           @default(EFFECTIVE)
-  auditStatusSnapshot              AuditStatusSnapshot               @default(PENDING)
-  inventoryEffectStatus            InventoryEffectStatus             @default(POSTED)
-  revisionNo                       Int                               @default(1)
-  supplierCodeSnapshot             String?                           @db.VarChar(64)
-  supplierNameSnapshot             String?                           @db.VarChar(128)
-  handlerNameSnapshot              String?                           @db.VarChar(128)
-  workshopNameSnapshot             String?                           @db.VarChar(128)
-  rdProcurementRequestNoSnapshot   String?                           @db.VarChar(64)
-  rdProcurementProjectCodeSnapshot String?                           @db.VarChar(64)
-  rdProcurementProjectNameSnapshot String?                           @db.VarChar(128)
-  totalQty                         Decimal                           @default(0) @db.Decimal(18, 6)
-  totalAmount                      Decimal                           @default(0) @db.Decimal(18, 2)
+  documentNo                       String                            @unique @map("document_no") @db.VarChar(64)
+  orderType                        StockInOrderType                  @map("order_type")
+  bizDate                          DateTime                          @map("biz_date") @db.Date
+  supplierId                       Int?                              @map("supplier_id")
+  handlerPersonnelId               Int?                              @map("handler_personnel_id")
+  stockScopeId                     Int?                              @map("stock_scope_id")
+  workshopId                       Int?                              @map("workshop_id")
+  rdProcurementRequestId           Int?                              @map("rd_procurement_request_id")
+  lifecycleStatus                  DocumentLifecycleStatus           @default(EFFECTIVE) @map("lifecycle_status")
+  auditStatusSnapshot              AuditStatusSnapshot               @default(PENDING) @map("audit_status_snapshot")
+  inventoryEffectStatus            InventoryEffectStatus             @default(POSTED) @map("inventory_effect_status")
+  revisionNo                       Int                               @default(1) @map("revision_no")
+  supplierCodeSnapshot             String?                           @map("supplier_code_snapshot") @db.VarChar(64)
+  supplierNameSnapshot             String?                           @map("supplier_name_snapshot") @db.VarChar(128)
+  handlerNameSnapshot              String?                           @map("handler_name_snapshot") @db.VarChar(128)
+  workshopNameSnapshot             String?                           @map("workshop_name_snapshot") @db.VarChar(128)
+  rdProcurementRequestNoSnapshot   String?                           @map("rd_procurement_request_no_snapshot") @db.VarChar(64)
+  rdProcurementProjectCodeSnapshot String?                           @map("rd_procurement_project_code_snapshot") @db.VarChar(64)
+  rdProcurementProjectNameSnapshot String?                           @map("rd_procurement_project_name_snapshot") @db.VarChar(128)
+  totalQty                         Decimal                           @default(0) @map("total_qty") @db.Decimal(18, 6)
+  totalAmount                      Decimal                           @default(0) @map("total_amount") @db.Decimal(18, 2)
   remark                           String?                           @db.VarChar(500)
-  voidReason                       String?                           @db.VarChar(500)
-  voidedBy                         String?                           @db.VarChar(64)
-  voidedAt                         DateTime?
-  createdBy                        String?                           @db.VarChar(64)
-  createdAt                        DateTime                          @default(now())
-  updatedBy                        String?                           @db.VarChar(64)
-  updatedAt                        DateTime                          @updatedAt
+  voidReason                       String?                           @map("void_reason") @db.VarChar(500)
+  voidedBy                         String?                           @map("voided_by") @db.VarChar(64)
+  voidedAt                         DateTime?                         @map("voided_at")
+  createdBy                        String?                           @map("created_by") @db.VarChar(64)
+  createdAt                        DateTime                          @default(now()) @map("created_at")
+  updatedBy                        String?                           @map("updated_by") @db.VarChar(64)
+  updatedAt                        DateTime                          @updatedAt @map("updated_at")
   supplier                         Supplier?                         @relation(fields: [supplierId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   handlerPersonnel                 Personnel?                        @relation("StockInOrderHandler", fields: [handlerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   stockScope                       StockScope?                       @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -601,31 +601,31 @@ model StockInOrder {
 }
 
 model StockInOrderLine {
-  id                         Int                               @id @default(autoincrement())
-  orderId                    Int
-  lineNo                     Int
-  materialId                 Int
-  rdProcurementRequestLineId Int?
-  materialCategoryIdSnapshot Int?
-  materialCategoryCodeSnapshot String?                        @db.VarChar(64)
-  materialCategoryNameSnapshot String?                        @db.VarChar(128)
-  materialCategoryPathSnapshot Json?
-  materialCodeSnapshot       String                            @db.VarChar(64)
-  materialNameSnapshot       String                            @db.VarChar(128)
-  materialSpecSnapshot       String?                           @db.VarChar(128)
-  unitCodeSnapshot           String                            @db.VarChar(32)
-  quantity                   Decimal                           @db.Decimal(18, 6)
-  unitPrice                  Decimal                           @default(0) @db.Decimal(18, 2)
-  amount                     Decimal                           @default(0) @db.Decimal(18, 2)
-  remark                     String?                           @db.VarChar(500)
-  createdBy                  String?                           @db.VarChar(64)
-  createdAt                  DateTime                          @default(now())
-  updatedBy                  String?                           @db.VarChar(64)
-  updatedAt                  DateTime                          @updatedAt
-  order                      StockInOrder                      @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  material                   Material                          @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  rdProcurementRequestLine   RdProcurementRequestLine?         @relation(fields: [rdProcurementRequestLineId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  priceCorrectionLines       StockInPriceCorrectionOrderLine[] @relation("PriceCorrectionSourceStockInOrderLine")
+  id                           Int                               @id @default(autoincrement())
+  orderId                      Int                               @map("order_id")
+  lineNo                       Int                               @map("line_no")
+  materialId                   Int                               @map("material_id")
+  rdProcurementRequestLineId   Int?                              @map("rd_procurement_request_line_id")
+  materialCategoryIdSnapshot   Int?                              @map("material_category_id_snapshot")
+  materialCategoryCodeSnapshot String?                           @map("material_category_code_snapshot") @db.VarChar(64)
+  materialCategoryNameSnapshot String?                           @map("material_category_name_snapshot") @db.VarChar(128)
+  materialCategoryPathSnapshot Json?                             @map("material_category_path_snapshot")
+  materialCodeSnapshot         String                            @map("material_code_snapshot") @db.VarChar(64)
+  materialNameSnapshot         String                            @map("material_name_snapshot") @db.VarChar(128)
+  materialSpecSnapshot         String?                           @map("material_spec_snapshot") @db.VarChar(128)
+  unitCodeSnapshot             String                            @map("unit_code_snapshot") @db.VarChar(32)
+  quantity                     Decimal                           @db.Decimal(18, 6)
+  unitPrice                    Decimal                           @default(0) @map("unit_price") @db.Decimal(18, 2)
+  amount                       Decimal                           @default(0) @db.Decimal(18, 2)
+  remark                       String?                           @db.VarChar(500)
+  createdBy                    String?                           @map("created_by") @db.VarChar(64)
+  createdAt                    DateTime                          @default(now()) @map("created_at")
+  updatedBy                    String?                           @map("updated_by") @db.VarChar(64)
+  updatedAt                    DateTime                          @updatedAt @map("updated_at")
+  order                        StockInOrder                      @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  material                     Material                          @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  rdProcurementRequestLine     RdProcurementRequestLine?         @relation(fields: [rdProcurementRequestLineId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  priceCorrectionLines         StockInPriceCorrectionOrderLine[] @relation("PriceCorrectionSourceStockInOrderLine")
 
   @@unique([orderId, lineNo])
   @@index([materialId])
@@ -635,31 +635,31 @@ model StockInOrderLine {
 
 model SalesStockOrder {
   id                    Int                     @id @default(autoincrement())
-  documentNo            String                  @unique @db.VarChar(64)
-  orderType             SalesStockOrderType
-  bizDate               DateTime                @db.Date
-  customerId            Int?
-  handlerPersonnelId    Int?
-  stockScopeId          Int?
-  workshopId            Int
-  lifecycleStatus       DocumentLifecycleStatus @default(EFFECTIVE)
-  auditStatusSnapshot   AuditStatusSnapshot     @default(PENDING)
-  inventoryEffectStatus InventoryEffectStatus   @default(POSTED)
-  revisionNo            Int                     @default(1)
-  customerCodeSnapshot  String?                 @db.VarChar(64)
-  customerNameSnapshot  String?                 @db.VarChar(128)
-  handlerNameSnapshot   String?                 @db.VarChar(128)
-  workshopNameSnapshot  String                  @db.VarChar(128)
-  totalQty              Decimal                 @default(0) @db.Decimal(18, 6)
-  totalAmount           Decimal                 @default(0) @db.Decimal(18, 2)
+  documentNo            String                  @unique @map("document_no") @db.VarChar(64)
+  orderType             SalesStockOrderType     @map("order_type")
+  bizDate               DateTime                @map("biz_date") @db.Date
+  customerId            Int?                    @map("customer_id")
+  handlerPersonnelId    Int?                    @map("handler_personnel_id")
+  stockScopeId          Int?                    @map("stock_scope_id")
+  workshopId            Int                     @map("workshop_id")
+  lifecycleStatus       DocumentLifecycleStatus @default(EFFECTIVE) @map("lifecycle_status")
+  auditStatusSnapshot   AuditStatusSnapshot     @default(PENDING) @map("audit_status_snapshot")
+  inventoryEffectStatus InventoryEffectStatus   @default(POSTED) @map("inventory_effect_status")
+  revisionNo            Int                     @default(1) @map("revision_no")
+  customerCodeSnapshot  String?                 @map("customer_code_snapshot") @db.VarChar(64)
+  customerNameSnapshot  String?                 @map("customer_name_snapshot") @db.VarChar(128)
+  handlerNameSnapshot   String?                 @map("handler_name_snapshot") @db.VarChar(128)
+  workshopNameSnapshot  String                  @map("workshop_name_snapshot") @db.VarChar(128)
+  totalQty              Decimal                 @default(0) @map("total_qty") @db.Decimal(18, 6)
+  totalAmount           Decimal                 @default(0) @map("total_amount") @db.Decimal(18, 2)
   remark                String?                 @db.VarChar(500)
-  voidReason            String?                 @db.VarChar(500)
-  voidedBy              String?                 @db.VarChar(64)
-  voidedAt              DateTime?
-  createdBy             String?                 @db.VarChar(64)
-  createdAt             DateTime                @default(now())
-  updatedBy             String?                 @db.VarChar(64)
-  updatedAt             DateTime                @updatedAt
+  voidReason            String?                 @map("void_reason") @db.VarChar(500)
+  voidedBy              String?                 @map("voided_by") @db.VarChar(64)
+  voidedAt              DateTime?               @map("voided_at")
+  createdBy             String?                 @map("created_by") @db.VarChar(64)
+  createdAt             DateTime                @default(now()) @map("created_at")
+  updatedBy             String?                 @map("updated_by") @db.VarChar(64)
+  updatedAt             DateTime                @updatedAt @map("updated_at")
   customer              Customer?               @relation(fields: [customerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   handlerPersonnel      Personnel?              @relation("SalesStockOrderHandler", fields: [handlerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   stockScope            StockScope?             @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -674,40 +674,40 @@ model SalesStockOrder {
 }
 
 model SalesStockOrderLine {
-  id                       Int             @id @default(autoincrement())
-  orderId                  Int
-  lineNo                   Int
-  materialId               Int
-  salesProjectId           Int?
-  salesProjectCodeSnapshot String?         @db.VarChar(64)
-  salesProjectNameSnapshot String?         @db.VarChar(128)
-  materialCategoryIdSnapshot Int?
-  materialCategoryCodeSnapshot String?     @db.VarChar(64)
-  materialCategoryNameSnapshot String?     @db.VarChar(128)
-  materialCategoryPathSnapshot Json?
-  materialCodeSnapshot     String          @db.VarChar(64)
-  materialNameSnapshot     String          @db.VarChar(128)
-  materialSpecSnapshot     String?         @db.VarChar(128)
-  unitCodeSnapshot         String          @db.VarChar(32)
-  quantity                 Decimal         @db.Decimal(18, 6)
-  unitPrice                Decimal         @default(0) @db.Decimal(18, 2)
-  amount                   Decimal         @default(0) @db.Decimal(18, 2)
-  selectedUnitCost         Decimal         @db.Decimal(18, 2)
-  costUnitPrice            Decimal?        @db.Decimal(18, 2)
-  costAmount               Decimal?        @db.Decimal(18, 2)
-  startNumber              String?         @db.VarChar(64)
-  endNumber                String?         @db.VarChar(64)
-  sourceDocumentType       String?         @db.VarChar(64)
-  sourceDocumentId         Int?
-  sourceDocumentLineId     Int?
-  remark                   String?         @db.VarChar(500)
-  createdBy                String?         @db.VarChar(64)
-  createdAt                DateTime        @default(now())
-  updatedBy                String?         @db.VarChar(64)
-  updatedAt                DateTime        @updatedAt
-  order                    SalesStockOrder @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  material                 Material        @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  salesProject             SalesProject?   @relation(fields: [salesProjectId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  id                           Int             @id @default(autoincrement())
+  orderId                      Int             @map("order_id")
+  lineNo                       Int             @map("line_no")
+  materialId                   Int             @map("material_id")
+  salesProjectId               Int?            @map("sales_project_id")
+  salesProjectCodeSnapshot     String?         @map("sales_project_code_snapshot") @db.VarChar(64)
+  salesProjectNameSnapshot     String?         @map("sales_project_name_snapshot") @db.VarChar(128)
+  materialCategoryIdSnapshot   Int?            @map("material_category_id_snapshot")
+  materialCategoryCodeSnapshot String?         @map("material_category_code_snapshot") @db.VarChar(64)
+  materialCategoryNameSnapshot String?         @map("material_category_name_snapshot") @db.VarChar(128)
+  materialCategoryPathSnapshot Json?           @map("material_category_path_snapshot")
+  materialCodeSnapshot         String          @map("material_code_snapshot") @db.VarChar(64)
+  materialNameSnapshot         String          @map("material_name_snapshot") @db.VarChar(128)
+  materialSpecSnapshot         String?         @map("material_spec_snapshot") @db.VarChar(128)
+  unitCodeSnapshot             String          @map("unit_code_snapshot") @db.VarChar(32)
+  quantity                     Decimal         @db.Decimal(18, 6)
+  unitPrice                    Decimal         @default(0) @map("unit_price") @db.Decimal(18, 2)
+  amount                       Decimal         @default(0) @db.Decimal(18, 2)
+  selectedUnitCost             Decimal         @map("selected_unit_cost") @db.Decimal(18, 2)
+  costUnitPrice                Decimal?        @map("cost_unit_price") @db.Decimal(18, 2)
+  costAmount                   Decimal?        @map("cost_amount") @db.Decimal(18, 2)
+  startNumber                  String?         @map("start_number") @db.VarChar(64)
+  endNumber                    String?         @map("end_number") @db.VarChar(64)
+  sourceDocumentType           String?         @map("source_document_type") @db.VarChar(64)
+  sourceDocumentId             Int?            @map("source_document_id")
+  sourceDocumentLineId         Int?            @map("source_document_line_id")
+  remark                       String?         @db.VarChar(500)
+  createdBy                    String?         @map("created_by") @db.VarChar(64)
+  createdAt                    DateTime        @default(now()) @map("created_at")
+  updatedBy                    String?         @map("updated_by") @db.VarChar(64)
+  updatedAt                    DateTime        @updatedAt @map("updated_at")
+  order                        SalesStockOrder @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  material                     Material        @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  salesProject                 SalesProject?   @relation(fields: [salesProjectId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@unique([orderId, lineNo])
   @@index([materialId])
@@ -718,32 +718,32 @@ model SalesStockOrderLine {
 
 model SalesProject {
   id                    Int                        @id @default(autoincrement())
-  salesProjectCode      String                     @unique @db.VarChar(64)
-  salesProjectName      String                     @db.VarChar(128)
-  bizDate               DateTime                   @db.Date
-  customerId            Int?
-  managerPersonnelId    Int?
-  stockScopeId          Int?
-  workshopId            Int
-  projectTargetId       Int?                       @unique
-  lifecycleStatus       DocumentLifecycleStatus    @default(EFFECTIVE)
-  auditStatusSnapshot   AuditStatusSnapshot        @default(NOT_REQUIRED)
-  inventoryEffectStatus InventoryEffectStatus      @default(POSTED)
-  revisionNo            Int                        @default(1)
-  customerCodeSnapshot  String?                    @db.VarChar(64)
-  customerNameSnapshot  String?                    @db.VarChar(128)
-  managerNameSnapshot   String?                    @db.VarChar(128)
-  workshopNameSnapshot  String                     @db.VarChar(128)
-  totalQty              Decimal                    @default(0) @db.Decimal(18, 6)
-  totalAmount           Decimal                    @default(0) @db.Decimal(18, 2)
+  salesProjectCode      String                     @unique @map("sales_project_code") @db.VarChar(64)
+  salesProjectName      String                     @map("sales_project_name") @db.VarChar(128)
+  bizDate               DateTime                   @map("biz_date") @db.Date
+  customerId            Int?                       @map("customer_id")
+  managerPersonnelId    Int?                       @map("manager_personnel_id")
+  stockScopeId          Int?                       @map("stock_scope_id")
+  workshopId            Int                        @map("workshop_id")
+  projectTargetId       Int?                       @unique @map("project_target_id")
+  lifecycleStatus       DocumentLifecycleStatus    @default(EFFECTIVE) @map("lifecycle_status")
+  auditStatusSnapshot   AuditStatusSnapshot        @default(NOT_REQUIRED) @map("audit_status_snapshot")
+  inventoryEffectStatus InventoryEffectStatus      @default(POSTED) @map("inventory_effect_status")
+  revisionNo            Int                        @default(1) @map("revision_no")
+  customerCodeSnapshot  String?                    @map("customer_code_snapshot") @db.VarChar(64)
+  customerNameSnapshot  String?                    @map("customer_name_snapshot") @db.VarChar(128)
+  managerNameSnapshot   String?                    @map("manager_name_snapshot") @db.VarChar(128)
+  workshopNameSnapshot  String                     @map("workshop_name_snapshot") @db.VarChar(128)
+  totalQty              Decimal                    @default(0) @map("total_qty") @db.Decimal(18, 6)
+  totalAmount           Decimal                    @default(0) @map("total_amount") @db.Decimal(18, 2)
   remark                String?                    @db.VarChar(500)
-  voidReason            String?                    @db.VarChar(500)
-  voidedBy              String?                    @db.VarChar(64)
-  voidedAt              DateTime?
-  createdBy             String?                    @db.VarChar(64)
-  createdAt             DateTime                   @default(now())
-  updatedBy             String?                    @db.VarChar(64)
-  updatedAt             DateTime                   @updatedAt
+  voidReason            String?                    @map("void_reason") @db.VarChar(500)
+  voidedBy              String?                    @map("voided_by") @db.VarChar(64)
+  voidedAt              DateTime?                  @map("voided_at")
+  createdBy             String?                    @map("created_by") @db.VarChar(64)
+  createdAt             DateTime                   @default(now()) @map("created_at")
+  updatedBy             String?                    @map("updated_by") @db.VarChar(64)
+  updatedAt             DateTime                   @updatedAt @map("updated_at")
   customer              Customer?                  @relation(fields: [customerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   managerPersonnel      Personnel?                 @relation("SalesProjectManager", fields: [managerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   stockScope            StockScope?                @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -761,21 +761,21 @@ model SalesProject {
 
 model SalesProjectMaterialLine {
   id                   Int          @id @default(autoincrement())
-  projectId            Int
-  lineNo               Int
-  materialId           Int
-  materialCodeSnapshot String       @db.VarChar(64)
-  materialNameSnapshot String       @db.VarChar(128)
-  materialSpecSnapshot String?      @db.VarChar(128)
-  unitCodeSnapshot     String       @db.VarChar(32)
+  projectId            Int          @map("project_id")
+  lineNo               Int          @map("line_no")
+  materialId           Int          @map("material_id")
+  materialCodeSnapshot String       @map("material_code_snapshot") @db.VarChar(64)
+  materialNameSnapshot String       @map("material_name_snapshot") @db.VarChar(128)
+  materialSpecSnapshot String?      @map("material_spec_snapshot") @db.VarChar(128)
+  unitCodeSnapshot     String       @map("unit_code_snapshot") @db.VarChar(32)
   quantity             Decimal      @db.Decimal(18, 6)
-  unitPrice            Decimal      @default(0) @db.Decimal(18, 2)
+  unitPrice            Decimal      @default(0) @map("unit_price") @db.Decimal(18, 2)
   amount               Decimal      @default(0) @db.Decimal(18, 2)
   remark               String?      @db.VarChar(500)
-  createdBy            String?      @db.VarChar(64)
-  createdAt            DateTime     @default(now())
-  updatedBy            String?      @db.VarChar(64)
-  updatedAt            DateTime     @updatedAt
+  createdBy            String?      @map("created_by") @db.VarChar(64)
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedBy            String?      @map("updated_by") @db.VarChar(64)
+  updatedAt            DateTime     @updatedAt @map("updated_at")
   salesProject         SalesProject @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   material             Material     @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
@@ -786,20 +786,20 @@ model SalesProjectMaterialLine {
 
 model StockInPriceCorrectionOrder {
   id                        Int                               @id @default(autoincrement())
-  documentNo                String                            @unique @db.VarChar(64)
-  bizDate                   DateTime                          @db.Date
-  stockScopeId              Int?
-  workshopId                Int
-  lifecycleStatus           DocumentLifecycleStatus           @default(EFFECTIVE)
-  auditStatusSnapshot       AuditStatusSnapshot               @default(PENDING)
-  inventoryEffectStatus     InventoryEffectStatus             @default(POSTED)
-  totalLineCount            Int                               @default(0)
-  totalHistoricalDiffAmount Decimal                           @default(0) @db.Decimal(18, 2)
+  documentNo                String                            @unique @map("document_no") @db.VarChar(64)
+  bizDate                   DateTime                          @map("biz_date") @db.Date
+  stockScopeId              Int?                              @map("stock_scope_id")
+  workshopId                Int                               @map("workshop_id")
+  lifecycleStatus           DocumentLifecycleStatus           @default(EFFECTIVE) @map("lifecycle_status")
+  auditStatusSnapshot       AuditStatusSnapshot               @default(PENDING) @map("audit_status_snapshot")
+  inventoryEffectStatus     InventoryEffectStatus             @default(POSTED) @map("inventory_effect_status")
+  totalLineCount            Int                               @default(0) @map("total_line_count")
+  totalHistoricalDiffAmount Decimal                           @default(0) @map("total_historical_diff_amount") @db.Decimal(18, 2)
   remark                    String?                           @db.VarChar(500)
-  createdBy                 String?                           @db.VarChar(64)
-  createdAt                 DateTime                          @default(now())
-  updatedBy                 String?                           @db.VarChar(64)
-  updatedAt                 DateTime                          @updatedAt
+  createdBy                 String?                           @map("created_by") @db.VarChar(64)
+  createdAt                 DateTime                          @default(now()) @map("created_at")
+  updatedBy                 String?                           @map("updated_by") @db.VarChar(64)
+  updatedAt                 DateTime                          @updatedAt @map("updated_at")
   stockScope                StockScope?                       @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   workshop                  Workshop                          @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   lines                     StockInPriceCorrectionOrderLine[]
@@ -812,31 +812,31 @@ model StockInPriceCorrectionOrder {
 
 model StockInPriceCorrectionOrderLine {
   id                       Int                         @id @default(autoincrement())
-  orderId                  Int
-  lineNo                   Int
-  materialId               Int
-  sourceStockInOrderId     Int?
-  sourceStockInOrderLineId Int?
-  sourceInventoryLogId     Int                         @unique
-  sourceDocumentNoSnapshot String?                     @db.VarChar(64)
-  sourceBizDateSnapshot    DateTime?                   @db.Date
-  wrongUnitCost            Decimal                     @db.Decimal(18, 2)
-  correctUnitCost          Decimal                     @db.Decimal(18, 2)
-  sourceInQty              Decimal                     @default(0) @db.Decimal(18, 6)
-  consumedQtyAtCorrection  Decimal                     @default(0) @db.Decimal(18, 6)
-  remainingQtyAtCorrection Decimal                     @default(0) @db.Decimal(18, 6)
-  historicalDiffAmount     Decimal                     @default(0) @db.Decimal(18, 2)
-  generatedOutLogId        Int?                        @unique
-  generatedInLogId         Int?                        @unique
+  orderId                  Int                         @map("order_id")
+  lineNo                   Int                         @map("line_no")
+  materialId               Int                         @map("material_id")
+  sourceStockInOrderId     Int?                        @map("source_stock_in_order_id")
+  sourceStockInOrderLineId Int?                        @map("source_stock_in_order_line_id")
+  sourceInventoryLogId     Int                         @unique @map("source_inventory_log_id")
+  sourceDocumentNoSnapshot String?                     @map("source_document_no_snapshot") @db.VarChar(64)
+  sourceBizDateSnapshot    DateTime?                   @map("source_biz_date_snapshot") @db.Date
+  wrongUnitCost            Decimal                     @map("wrong_unit_cost") @db.Decimal(18, 2)
+  correctUnitCost          Decimal                     @map("correct_unit_cost") @db.Decimal(18, 2)
+  sourceInQty              Decimal                     @default(0) @map("source_in_qty") @db.Decimal(18, 6)
+  consumedQtyAtCorrection  Decimal                     @default(0) @map("consumed_qty_at_correction") @db.Decimal(18, 6)
+  remainingQtyAtCorrection Decimal                     @default(0) @map("remaining_qty_at_correction") @db.Decimal(18, 6)
+  historicalDiffAmount     Decimal                     @default(0) @map("historical_diff_amount") @db.Decimal(18, 2)
+  generatedOutLogId        Int?                        @unique @map("generated_out_log_id")
+  generatedInLogId         Int?                        @unique @map("generated_in_log_id")
   remark                   String?                     @db.VarChar(500)
-  createdBy                String?                     @db.VarChar(64)
-  createdAt                DateTime                    @default(now())
-  updatedBy                String?                     @db.VarChar(64)
-  updatedAt                DateTime                    @updatedAt
+  createdBy                String?                     @map("created_by") @db.VarChar(64)
+  createdAt                DateTime                    @default(now()) @map("created_at")
+  updatedBy                String?                     @map("updated_by") @db.VarChar(64)
+  updatedAt                DateTime                    @updatedAt @map("updated_at")
   order                    StockInPriceCorrectionOrder @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   material                 Material                    @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  sourceStockInOrder       StockInOrder?               @relation("PriceCorrectionSourceStockInOrder", fields: [sourceStockInOrderId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  sourceStockInOrderLine   StockInOrderLine?           @relation("PriceCorrectionSourceStockInOrderLine", fields: [sourceStockInOrderLineId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  sourceStockInOrder       StockInOrder?               @relation("PriceCorrectionSourceStockInOrder", fields: [sourceStockInOrderId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "fk_price_correction_line_source_order")
+  sourceStockInOrderLine   StockInOrderLine?           @relation("PriceCorrectionSourceStockInOrderLine", fields: [sourceStockInOrderLineId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "fk_price_correction_line_source_order_line")
   sourceInventoryLog       InventoryLog                @relation("PriceCorrectionSourceInventoryLog", fields: [sourceInventoryLogId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   generatedOutLog          InventoryLog?               @relation("PriceCorrectionGeneratedOutLog", fields: [generatedOutLogId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   generatedInLog           InventoryLog?               @relation("PriceCorrectionGeneratedInLog", fields: [generatedInLogId], references: [id], onDelete: SetNull, onUpdate: Cascade)
@@ -850,28 +850,28 @@ model StockInPriceCorrectionOrderLine {
 
 model WorkshopMaterialOrder {
   id                    Int                         @id @default(autoincrement())
-  documentNo            String                      @unique @db.VarChar(64)
-  orderType             WorkshopMaterialOrderType
-  bizDate               DateTime                    @db.Date
-  handlerPersonnelId    Int?
-  stockScopeId          Int?
-  workshopId            Int
-  lifecycleStatus       DocumentLifecycleStatus     @default(EFFECTIVE)
-  auditStatusSnapshot   AuditStatusSnapshot         @default(PENDING)
-  inventoryEffectStatus InventoryEffectStatus       @default(POSTED)
-  revisionNo            Int                         @default(1)
-  handlerNameSnapshot   String?                     @db.VarChar(128)
-  workshopNameSnapshot  String                      @db.VarChar(128)
-  totalQty              Decimal                     @default(0) @db.Decimal(18, 6)
-  totalAmount           Decimal                     @default(0) @db.Decimal(18, 2)
+  documentNo            String                      @unique @map("document_no") @db.VarChar(64)
+  orderType             WorkshopMaterialOrderType   @map("order_type")
+  bizDate               DateTime                    @map("biz_date") @db.Date
+  handlerPersonnelId    Int?                        @map("handler_personnel_id")
+  stockScopeId          Int?                        @map("stock_scope_id")
+  workshopId            Int                         @map("workshop_id")
+  lifecycleStatus       DocumentLifecycleStatus     @default(EFFECTIVE) @map("lifecycle_status")
+  auditStatusSnapshot   AuditStatusSnapshot         @default(PENDING) @map("audit_status_snapshot")
+  inventoryEffectStatus InventoryEffectStatus       @default(POSTED) @map("inventory_effect_status")
+  revisionNo            Int                         @default(1) @map("revision_no")
+  handlerNameSnapshot   String?                     @map("handler_name_snapshot") @db.VarChar(128)
+  workshopNameSnapshot  String                      @map("workshop_name_snapshot") @db.VarChar(128)
+  totalQty              Decimal                     @default(0) @map("total_qty") @db.Decimal(18, 6)
+  totalAmount           Decimal                     @default(0) @map("total_amount") @db.Decimal(18, 2)
   remark                String?                     @db.VarChar(500)
-  voidReason            String?                     @db.VarChar(500)
-  voidedBy              String?                     @db.VarChar(64)
-  voidedAt              DateTime?
-  createdBy             String?                     @db.VarChar(64)
-  createdAt             DateTime                    @default(now())
-  updatedBy             String?                     @db.VarChar(64)
-  updatedAt             DateTime                    @updatedAt
+  voidReason            String?                     @map("void_reason") @db.VarChar(500)
+  voidedBy              String?                     @map("voided_by") @db.VarChar(64)
+  voidedAt              DateTime?                   @map("voided_at")
+  createdBy             String?                     @map("created_by") @db.VarChar(64)
+  createdAt             DateTime                    @default(now()) @map("created_at")
+  updatedBy             String?                     @map("updated_by") @db.VarChar(64)
+  updatedAt             DateTime                    @updatedAt @map("updated_at")
   handlerPersonnel      Personnel?                  @relation("WorkshopMaterialOrderHandler", fields: [handlerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   stockScope            StockScope?                 @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   workshop              Workshop                    @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -885,26 +885,26 @@ model WorkshopMaterialOrder {
 
 model WorkshopMaterialOrderLine {
   id                   Int                   @id @default(autoincrement())
-  orderId              Int
-  lineNo               Int
-  materialId           Int
-  materialCodeSnapshot String                @db.VarChar(64)
-  materialNameSnapshot String                @db.VarChar(128)
-  materialSpecSnapshot String?               @db.VarChar(128)
-  unitCodeSnapshot     String                @db.VarChar(32)
+  orderId              Int                   @map("order_id")
+  lineNo               Int                   @map("line_no")
+  materialId           Int                   @map("material_id")
+  materialCodeSnapshot String                @map("material_code_snapshot") @db.VarChar(64)
+  materialNameSnapshot String                @map("material_name_snapshot") @db.VarChar(128)
+  materialSpecSnapshot String?               @map("material_spec_snapshot") @db.VarChar(128)
+  unitCodeSnapshot     String                @map("unit_code_snapshot") @db.VarChar(32)
   quantity             Decimal               @db.Decimal(18, 6)
-  unitPrice            Decimal               @default(0) @db.Decimal(18, 2)
+  unitPrice            Decimal               @default(0) @map("unit_price") @db.Decimal(18, 2)
   amount               Decimal               @default(0) @db.Decimal(18, 2)
-  costUnitPrice        Decimal?              @db.Decimal(18, 2)
-  costAmount           Decimal?              @db.Decimal(18, 2)
-  sourceDocumentType   String?               @db.VarChar(64)
-  sourceDocumentId     Int?
-  sourceDocumentLineId Int?
+  costUnitPrice        Decimal?              @map("cost_unit_price") @db.Decimal(18, 2)
+  costAmount           Decimal?              @map("cost_amount") @db.Decimal(18, 2)
+  sourceDocumentType   String?               @map("source_document_type") @db.VarChar(64)
+  sourceDocumentId     Int?                  @map("source_document_id")
+  sourceDocumentLineId Int?                  @map("source_document_line_id")
   remark               String?               @db.VarChar(500)
-  createdBy            String?               @db.VarChar(64)
-  createdAt            DateTime              @default(now())
-  updatedBy            String?               @db.VarChar(64)
-  updatedAt            DateTime              @updatedAt
+  createdBy            String?               @map("created_by") @db.VarChar(64)
+  createdAt            DateTime              @default(now()) @map("created_at")
+  updatedBy            String?               @map("updated_by") @db.VarChar(64)
+  updatedAt            DateTime              @updatedAt @map("updated_at")
   order                WorkshopMaterialOrder @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   material             Material              @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
@@ -916,35 +916,35 @@ model WorkshopMaterialOrderLine {
 
 model RdProject {
   id                    Int                       @id @default(autoincrement())
-  projectCode           String                    @unique @db.VarChar(64)
-  projectName           String                    @db.VarChar(128)
-  bizDate               DateTime                  @db.Date
-  customerId            Int?
-  supplierId            Int?
-  managerPersonnelId    Int?
-  stockScopeId          Int?
-  workshopId            Int
-  projectTargetId       Int?                      @unique
-  lifecycleStatus       DocumentLifecycleStatus   @default(EFFECTIVE)
-  auditStatusSnapshot   AuditStatusSnapshot       @default(NOT_REQUIRED)
-  inventoryEffectStatus InventoryEffectStatus     @default(POSTED)
-  revisionNo            Int                       @default(1)
-  customerCodeSnapshot  String?                   @db.VarChar(64)
-  customerNameSnapshot  String?                   @db.VarChar(128)
-  supplierCodeSnapshot  String?                   @db.VarChar(64)
-  supplierNameSnapshot  String?                   @db.VarChar(128)
-  managerNameSnapshot   String?                   @db.VarChar(128)
-  workshopNameSnapshot  String                    @db.VarChar(128)
-  totalQty              Decimal                   @default(0) @db.Decimal(18, 6)
-  totalAmount           Decimal                   @default(0) @db.Decimal(18, 2)
+  projectCode           String                    @unique @map("project_code") @db.VarChar(64)
+  projectName           String                    @map("project_name") @db.VarChar(128)
+  bizDate               DateTime                  @map("biz_date") @db.Date
+  customerId            Int?                      @map("customer_id")
+  supplierId            Int?                      @map("supplier_id")
+  managerPersonnelId    Int?                      @map("manager_personnel_id")
+  stockScopeId          Int?                      @map("stock_scope_id")
+  workshopId            Int                       @map("workshop_id")
+  projectTargetId       Int?                      @unique @map("project_target_id")
+  lifecycleStatus       DocumentLifecycleStatus   @default(EFFECTIVE) @map("lifecycle_status")
+  auditStatusSnapshot   AuditStatusSnapshot       @default(NOT_REQUIRED) @map("audit_status_snapshot")
+  inventoryEffectStatus InventoryEffectStatus     @default(POSTED) @map("inventory_effect_status")
+  revisionNo            Int                       @default(1) @map("revision_no")
+  customerCodeSnapshot  String?                   @map("customer_code_snapshot") @db.VarChar(64)
+  customerNameSnapshot  String?                   @map("customer_name_snapshot") @db.VarChar(128)
+  supplierCodeSnapshot  String?                   @map("supplier_code_snapshot") @db.VarChar(64)
+  supplierNameSnapshot  String?                   @map("supplier_name_snapshot") @db.VarChar(128)
+  managerNameSnapshot   String?                   @map("manager_name_snapshot") @db.VarChar(128)
+  workshopNameSnapshot  String                    @map("workshop_name_snapshot") @db.VarChar(128)
+  totalQty              Decimal                   @default(0) @map("total_qty") @db.Decimal(18, 6)
+  totalAmount           Decimal                   @default(0) @map("total_amount") @db.Decimal(18, 2)
   remark                String?                   @db.VarChar(500)
-  voidReason            String?                   @db.VarChar(500)
-  voidedBy              String?                   @db.VarChar(64)
-  voidedAt              DateTime?
-  createdBy             String?                   @db.VarChar(64)
-  createdAt             DateTime                  @default(now())
-  updatedBy             String?                   @db.VarChar(64)
-  updatedAt             DateTime                  @updatedAt
+  voidReason            String?                   @map("void_reason") @db.VarChar(500)
+  voidedBy              String?                   @map("voided_by") @db.VarChar(64)
+  voidedAt              DateTime?                 @map("voided_at")
+  createdBy             String?                   @map("created_by") @db.VarChar(64)
+  createdAt             DateTime                  @default(now()) @map("created_at")
+  updatedBy             String?                   @map("updated_by") @db.VarChar(64)
+  updatedAt             DateTime                  @updatedAt @map("updated_at")
   customer              Customer?                 @relation(fields: [customerId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   supplier              Supplier?                 @relation(fields: [supplierId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   managerPersonnel      Personnel?                @relation("RdProjectManager", fields: [managerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
@@ -967,23 +967,23 @@ model RdProject {
 
 model RdProjectMaterialLine {
   id                   Int       @id @default(autoincrement())
-  projectId            Int
-  lineNo               Int
-  materialId           Int
-  materialCodeSnapshot String    @db.VarChar(64)
-  materialNameSnapshot String    @db.VarChar(128)
-  materialSpecSnapshot String?   @db.VarChar(128)
-  unitCodeSnapshot     String    @db.VarChar(32)
+  projectId            Int       @map("project_id")
+  lineNo               Int       @map("line_no")
+  materialId           Int       @map("material_id")
+  materialCodeSnapshot String    @map("material_code_snapshot") @db.VarChar(64)
+  materialNameSnapshot String    @map("material_name_snapshot") @db.VarChar(128)
+  materialSpecSnapshot String?   @map("material_spec_snapshot") @db.VarChar(128)
+  unitCodeSnapshot     String    @map("unit_code_snapshot") @db.VarChar(32)
   quantity             Decimal   @db.Decimal(18, 6)
-  unitPrice            Decimal   @default(0) @db.Decimal(18, 2)
+  unitPrice            Decimal   @default(0) @map("unit_price") @db.Decimal(18, 2)
   amount               Decimal   @default(0) @db.Decimal(18, 2)
-  costUnitPrice        Decimal?  @db.Decimal(18, 2)
-  costAmount           Decimal?  @db.Decimal(18, 2)
+  costUnitPrice        Decimal?  @map("cost_unit_price") @db.Decimal(18, 2)
+  costAmount           Decimal?  @map("cost_amount") @db.Decimal(18, 2)
   remark               String?   @db.VarChar(500)
-  createdBy            String?   @db.VarChar(64)
-  createdAt            DateTime  @default(now())
-  updatedBy            String?   @db.VarChar(64)
-  updatedAt            DateTime  @updatedAt
+  createdBy            String?   @map("created_by") @db.VarChar(64)
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedBy            String?   @map("updated_by") @db.VarChar(64)
+  updatedAt            DateTime  @updatedAt @map("updated_at")
   rdProject            RdProject @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   material             Material  @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
@@ -994,21 +994,21 @@ model RdProjectMaterialLine {
 
 model RdProjectBomLine {
   id                   Int       @id @default(autoincrement())
-  projectId            Int
-  lineNo               Int
-  materialId           Int
-  materialCodeSnapshot String    @db.VarChar(64)
-  materialNameSnapshot String    @db.VarChar(128)
-  materialSpecSnapshot String?   @db.VarChar(128)
-  unitCodeSnapshot     String    @db.VarChar(32)
+  projectId            Int       @map("project_id")
+  lineNo               Int       @map("line_no")
+  materialId           Int       @map("material_id")
+  materialCodeSnapshot String    @map("material_code_snapshot") @db.VarChar(64)
+  materialNameSnapshot String    @map("material_name_snapshot") @db.VarChar(128)
+  materialSpecSnapshot String?   @map("material_spec_snapshot") @db.VarChar(128)
+  unitCodeSnapshot     String    @map("unit_code_snapshot") @db.VarChar(32)
   quantity             Decimal   @db.Decimal(18, 6)
-  unitPrice            Decimal   @default(0) @db.Decimal(18, 2)
+  unitPrice            Decimal   @default(0) @map("unit_price") @db.Decimal(18, 2)
   amount               Decimal   @default(0) @db.Decimal(18, 2)
   remark               String?   @db.VarChar(500)
-  createdBy            String?   @db.VarChar(64)
-  createdAt            DateTime  @default(now())
-  updatedBy            String?   @db.VarChar(64)
-  updatedAt            DateTime  @updatedAt
+  createdBy            String?   @map("created_by") @db.VarChar(64)
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedBy            String?   @map("updated_by") @db.VarChar(64)
+  updatedAt            DateTime  @updatedAt @map("updated_at")
   rdProject            RdProject @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   material             Material  @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
@@ -1019,24 +1019,24 @@ model RdProjectBomLine {
 
 model RdProjectMaterialAction {
   id                    Int                           @id @default(autoincrement())
-  documentNo            String                        @unique @db.VarChar(64)
-  projectId             Int
-  actionType            RdProjectMaterialActionType
-  bizDate               DateTime                      @db.Date
-  stockScopeId          Int?
-  workshopId            Int
-  lifecycleStatus       DocumentLifecycleStatus       @default(EFFECTIVE)
-  inventoryEffectStatus InventoryEffectStatus         @default(POSTED)
-  totalQty              Decimal                       @default(0) @db.Decimal(18, 6)
-  totalAmount           Decimal                       @default(0) @db.Decimal(18, 2)
+  documentNo            String                        @unique @map("document_no") @db.VarChar(64)
+  projectId             Int                           @map("project_id")
+  actionType            RdProjectMaterialActionType   @map("action_type")
+  bizDate               DateTime                      @map("biz_date") @db.Date
+  stockScopeId          Int?                          @map("stock_scope_id")
+  workshopId            Int                           @map("workshop_id")
+  lifecycleStatus       DocumentLifecycleStatus       @default(EFFECTIVE) @map("lifecycle_status")
+  inventoryEffectStatus InventoryEffectStatus         @default(POSTED) @map("inventory_effect_status")
+  totalQty              Decimal                       @default(0) @map("total_qty") @db.Decimal(18, 6)
+  totalAmount           Decimal                       @default(0) @map("total_amount") @db.Decimal(18, 2)
   remark                String?                       @db.VarChar(500)
-  voidReason            String?                       @db.VarChar(500)
-  voidedBy              String?                       @db.VarChar(64)
-  voidedAt              DateTime?
-  createdBy             String?                       @db.VarChar(64)
-  createdAt             DateTime                      @default(now())
-  updatedBy             String?                       @db.VarChar(64)
-  updatedAt             DateTime                      @updatedAt
+  voidReason            String?                       @map("void_reason") @db.VarChar(500)
+  voidedBy              String?                       @map("voided_by") @db.VarChar(64)
+  voidedAt              DateTime?                     @map("voided_at")
+  createdBy             String?                       @map("created_by") @db.VarChar(64)
+  createdAt             DateTime                      @default(now()) @map("created_at")
+  updatedBy             String?                       @map("updated_by") @db.VarChar(64)
+  updatedAt             DateTime                      @updatedAt @map("updated_at")
   rdProject             RdProject                     @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   stockScope            StockScope?                   @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   workshop              Workshop                      @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -1050,26 +1050,26 @@ model RdProjectMaterialAction {
 
 model RdProjectMaterialActionLine {
   id                   Int                     @id @default(autoincrement())
-  actionId             Int
-  lineNo               Int
-  materialId           Int
-  materialCodeSnapshot String                  @db.VarChar(64)
-  materialNameSnapshot String                  @db.VarChar(128)
-  materialSpecSnapshot String?                 @db.VarChar(128)
-  unitCodeSnapshot     String                  @db.VarChar(32)
+  actionId             Int                     @map("action_id")
+  lineNo               Int                     @map("line_no")
+  materialId           Int                     @map("material_id")
+  materialCodeSnapshot String                  @map("material_code_snapshot") @db.VarChar(64)
+  materialNameSnapshot String                  @map("material_name_snapshot") @db.VarChar(128)
+  materialSpecSnapshot String?                 @map("material_spec_snapshot") @db.VarChar(128)
+  unitCodeSnapshot     String                  @map("unit_code_snapshot") @db.VarChar(32)
   quantity             Decimal                 @db.Decimal(18, 6)
-  unitPrice            Decimal                 @default(0) @db.Decimal(18, 2)
+  unitPrice            Decimal                 @default(0) @map("unit_price") @db.Decimal(18, 2)
   amount               Decimal                 @default(0) @db.Decimal(18, 2)
-  costUnitPrice        Decimal?                @db.Decimal(18, 2)
-  costAmount           Decimal?                @db.Decimal(18, 2)
-  sourceDocumentType   String?                 @db.VarChar(64)
-  sourceDocumentId     Int?
-  sourceDocumentLineId Int?
+  costUnitPrice        Decimal?                @map("cost_unit_price") @db.Decimal(18, 2)
+  costAmount           Decimal?                @map("cost_amount") @db.Decimal(18, 2)
+  sourceDocumentType   String?                 @map("source_document_type") @db.VarChar(64)
+  sourceDocumentId     Int?                    @map("source_document_id")
+  sourceDocumentLineId Int?                    @map("source_document_line_id")
   remark               String?                 @db.VarChar(500)
-  createdBy            String?                 @db.VarChar(64)
-  createdAt            DateTime                @default(now())
-  updatedBy            String?                 @db.VarChar(64)
-  updatedAt            DateTime                @updatedAt
+  createdBy            String?                 @map("created_by") @db.VarChar(64)
+  createdAt            DateTime                @default(now()) @map("created_at")
+  updatedBy            String?                 @map("updated_by") @db.VarChar(64)
+  updatedAt            DateTime                @updatedAt @map("updated_at")
   action               RdProjectMaterialAction @relation(fields: [actionId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   material             Material                @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
@@ -1081,30 +1081,30 @@ model RdProjectMaterialActionLine {
 
 model RdHandoffOrder {
   id                         Int                     @id @default(autoincrement())
-  documentNo                 String                  @unique @db.VarChar(64)
-  bizDate                    DateTime                @db.Date
-  handlerPersonnelId         Int?
-  sourceStockScopeId         Int?
-  targetStockScopeId         Int?
-  sourceWorkshopId           Int?
-  targetWorkshopId           Int?
-  lifecycleStatus            DocumentLifecycleStatus @default(EFFECTIVE)
-  auditStatusSnapshot        AuditStatusSnapshot     @default(NOT_REQUIRED)
-  inventoryEffectStatus      InventoryEffectStatus   @default(POSTED)
-  revisionNo                 Int                     @default(1)
-  handlerNameSnapshot        String?                 @db.VarChar(128)
-  sourceWorkshopNameSnapshot String?                 @db.VarChar(128)
-  targetWorkshopNameSnapshot String?                 @db.VarChar(128)
-  totalQty                   Decimal                 @default(0) @db.Decimal(18, 6)
-  totalAmount                Decimal                 @default(0) @db.Decimal(18, 2)
+  documentNo                 String                  @unique @map("document_no") @db.VarChar(64)
+  bizDate                    DateTime                @map("biz_date") @db.Date
+  handlerPersonnelId         Int?                    @map("handler_personnel_id")
+  sourceStockScopeId         Int?                    @map("source_stock_scope_id")
+  targetStockScopeId         Int?                    @map("target_stock_scope_id")
+  sourceWorkshopId           Int?                    @map("source_workshop_id")
+  targetWorkshopId           Int?                    @map("target_workshop_id")
+  lifecycleStatus            DocumentLifecycleStatus @default(EFFECTIVE) @map("lifecycle_status")
+  auditStatusSnapshot        AuditStatusSnapshot     @default(NOT_REQUIRED) @map("audit_status_snapshot")
+  inventoryEffectStatus      InventoryEffectStatus   @default(POSTED) @map("inventory_effect_status")
+  revisionNo                 Int                     @default(1) @map("revision_no")
+  handlerNameSnapshot        String?                 @map("handler_name_snapshot") @db.VarChar(128)
+  sourceWorkshopNameSnapshot String?                 @map("source_workshop_name_snapshot") @db.VarChar(128)
+  targetWorkshopNameSnapshot String?                 @map("target_workshop_name_snapshot") @db.VarChar(128)
+  totalQty                   Decimal                 @default(0) @map("total_qty") @db.Decimal(18, 6)
+  totalAmount                Decimal                 @default(0) @map("total_amount") @db.Decimal(18, 2)
   remark                     String?                 @db.VarChar(500)
-  voidReason                 String?                 @db.VarChar(500)
-  voidedBy                   String?                 @db.VarChar(64)
-  voidedAt                   DateTime?
-  createdBy                  String?                 @db.VarChar(64)
-  createdAt                  DateTime                @default(now())
-  updatedBy                  String?                 @db.VarChar(64)
-  updatedAt                  DateTime                @updatedAt
+  voidReason                 String?                 @map("void_reason") @db.VarChar(500)
+  voidedBy                   String?                 @map("voided_by") @db.VarChar(64)
+  voidedAt                   DateTime?               @map("voided_at")
+  createdBy                  String?                 @map("created_by") @db.VarChar(64)
+  createdAt                  DateTime                @default(now()) @map("created_at")
+  updatedBy                  String?                 @map("updated_by") @db.VarChar(64)
+  updatedAt                  DateTime                @updatedAt @map("updated_at")
   handlerPersonnel           Personnel?              @relation("RdHandoffOrderHandler", fields: [handlerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   sourceStockScope           StockScope?             @relation("RdHandoffSourceStockScope", fields: [sourceStockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   targetStockScope           StockScope?             @relation("RdHandoffTargetStockScope", fields: [targetStockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -1121,33 +1121,33 @@ model RdHandoffOrder {
 }
 
 model RdHandoffOrderLine {
-  id                   Int            @id @default(autoincrement())
-  orderId              Int
-  lineNo               Int
-  materialId           Int
-  rdProjectId          Int?
-  materialCodeSnapshot String         @db.VarChar(64)
-  materialNameSnapshot String         @db.VarChar(128)
-  materialSpecSnapshot String?        @db.VarChar(128)
-  unitCodeSnapshot     String         @db.VarChar(32)
-  rdProjectCodeSnapshot String?       @db.VarChar(64)
-  rdProjectNameSnapshot String?       @db.VarChar(128)
-  quantity             Decimal        @db.Decimal(18, 6)
-  unitPrice            Decimal        @default(0) @db.Decimal(18, 2)
-  amount               Decimal        @default(0) @db.Decimal(18, 2)
-  costUnitPrice        Decimal?       @db.Decimal(18, 2)
-  costAmount           Decimal?       @db.Decimal(18, 2)
-  sourceDocumentType   String?        @db.VarChar(64)
-  sourceDocumentId     Int?
-  sourceDocumentLineId Int?
-  remark               String?        @db.VarChar(500)
-  createdBy            String?        @db.VarChar(64)
-  createdAt            DateTime       @default(now())
-  updatedBy            String?        @db.VarChar(64)
-  updatedAt            DateTime       @updatedAt
-  order                RdHandoffOrder @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  material             Material       @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  rdProject            RdProject?     @relation(fields: [rdProjectId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  id                    Int            @id @default(autoincrement())
+  orderId               Int            @map("order_id")
+  lineNo                Int            @map("line_no")
+  materialId            Int            @map("material_id")
+  rdProjectId           Int?           @map("rd_project_id")
+  materialCodeSnapshot  String         @map("material_code_snapshot") @db.VarChar(64)
+  materialNameSnapshot  String         @map("material_name_snapshot") @db.VarChar(128)
+  materialSpecSnapshot  String?        @map("material_spec_snapshot") @db.VarChar(128)
+  unitCodeSnapshot      String         @map("unit_code_snapshot") @db.VarChar(32)
+  rdProjectCodeSnapshot String?        @map("rd_project_code_snapshot") @db.VarChar(64)
+  rdProjectNameSnapshot String?        @map("rd_project_name_snapshot") @db.VarChar(128)
+  quantity              Decimal        @db.Decimal(18, 6)
+  unitPrice             Decimal        @default(0) @map("unit_price") @db.Decimal(18, 2)
+  amount                Decimal        @default(0) @db.Decimal(18, 2)
+  costUnitPrice         Decimal?       @map("cost_unit_price") @db.Decimal(18, 2)
+  costAmount            Decimal?       @map("cost_amount") @db.Decimal(18, 2)
+  sourceDocumentType    String?        @map("source_document_type") @db.VarChar(64)
+  sourceDocumentId      Int?           @map("source_document_id")
+  sourceDocumentLineId  Int?           @map("source_document_line_id")
+  remark                String?        @db.VarChar(500)
+  createdBy             String?        @map("created_by") @db.VarChar(64)
+  createdAt             DateTime       @default(now()) @map("created_at")
+  updatedBy             String?        @map("updated_by") @db.VarChar(64)
+  updatedAt             DateTime       @updatedAt @map("updated_at")
+  order                 RdHandoffOrder @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  material              Material       @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  rdProject             RdProject?     @relation(fields: [rdProjectId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@unique([orderId, lineNo])
   @@index([materialId])
@@ -1158,31 +1158,31 @@ model RdHandoffOrderLine {
 
 model RdProcurementRequest {
   id                   Int                        @id @default(autoincrement())
-  documentNo           String                     @unique @db.VarChar(64)
-  bizDate              DateTime                   @db.Date
-  projectCode          String                     @db.VarChar(64)
-  projectName          String                     @db.VarChar(128)
-  supplierId           Int?
-  handlerPersonnelId   Int?
-  stockScopeId         Int?
-  workshopId           Int
-  lifecycleStatus      DocumentLifecycleStatus    @default(EFFECTIVE)
-  auditStatusSnapshot  AuditStatusSnapshot        @default(NOT_REQUIRED)
-  revisionNo           Int                        @default(1)
-  supplierCodeSnapshot String?                    @db.VarChar(64)
-  supplierNameSnapshot String?                    @db.VarChar(128)
-  handlerNameSnapshot  String?                    @db.VarChar(128)
-  workshopNameSnapshot String                     @db.VarChar(128)
-  totalQty             Decimal                    @default(0) @db.Decimal(18, 6)
-  totalAmount          Decimal                    @default(0) @db.Decimal(18, 2)
+  documentNo           String                     @unique @map("document_no") @db.VarChar(64)
+  bizDate              DateTime                   @map("biz_date") @db.Date
+  projectCode          String                     @map("project_code") @db.VarChar(64)
+  projectName          String                     @map("project_name") @db.VarChar(128)
+  supplierId           Int?                       @map("supplier_id")
+  handlerPersonnelId   Int?                       @map("handler_personnel_id")
+  stockScopeId         Int?                       @map("stock_scope_id")
+  workshopId           Int                        @map("workshop_id")
+  lifecycleStatus      DocumentLifecycleStatus    @default(EFFECTIVE) @map("lifecycle_status")
+  auditStatusSnapshot  AuditStatusSnapshot        @default(NOT_REQUIRED) @map("audit_status_snapshot")
+  revisionNo           Int                        @default(1) @map("revision_no")
+  supplierCodeSnapshot String?                    @map("supplier_code_snapshot") @db.VarChar(64)
+  supplierNameSnapshot String?                    @map("supplier_name_snapshot") @db.VarChar(128)
+  handlerNameSnapshot  String?                    @map("handler_name_snapshot") @db.VarChar(128)
+  workshopNameSnapshot String                     @map("workshop_name_snapshot") @db.VarChar(128)
+  totalQty             Decimal                    @default(0) @map("total_qty") @db.Decimal(18, 6)
+  totalAmount          Decimal                    @default(0) @map("total_amount") @db.Decimal(18, 2)
   remark               String?                    @db.VarChar(500)
-  voidReason           String?                    @db.VarChar(500)
-  voidedBy             String?                    @db.VarChar(64)
-  voidedAt             DateTime?
-  createdBy            String?                    @db.VarChar(64)
-  createdAt            DateTime                   @default(now())
-  updatedBy            String?                    @db.VarChar(64)
-  updatedAt            DateTime                   @updatedAt
+  voidReason           String?                    @map("void_reason") @db.VarChar(500)
+  voidedBy             String?                    @map("voided_by") @db.VarChar(64)
+  voidedAt             DateTime?                  @map("voided_at")
+  createdBy            String?                    @map("created_by") @db.VarChar(64)
+  createdAt            DateTime                   @default(now()) @map("created_at")
+  updatedBy            String?                    @map("updated_by") @db.VarChar(64)
+  updatedAt            DateTime                   @updatedAt @map("updated_at")
   supplier             Supplier?                  @relation(fields: [supplierId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   handlerPersonnel     Personnel?                 @relation("RdProcurementRequestHandler", fields: [handlerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   stockScope           StockScope?                @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -1200,21 +1200,21 @@ model RdProcurementRequest {
 
 model RdProcurementRequestLine {
   id                   Int                       @id @default(autoincrement())
-  requestId            Int
-  lineNo               Int
-  materialId           Int
-  materialCodeSnapshot String                    @db.VarChar(64)
-  materialNameSnapshot String                    @db.VarChar(128)
-  materialSpecSnapshot String?                   @db.VarChar(128)
-  unitCodeSnapshot     String                    @db.VarChar(32)
+  requestId            Int                       @map("request_id")
+  lineNo               Int                       @map("line_no")
+  materialId           Int                       @map("material_id")
+  materialCodeSnapshot String                    @map("material_code_snapshot") @db.VarChar(64)
+  materialNameSnapshot String                    @map("material_name_snapshot") @db.VarChar(128)
+  materialSpecSnapshot String?                   @map("material_spec_snapshot") @db.VarChar(128)
+  unitCodeSnapshot     String                    @map("unit_code_snapshot") @db.VarChar(32)
   quantity             Decimal                   @db.Decimal(18, 6)
-  unitPrice            Decimal                   @default(0) @db.Decimal(18, 2)
+  unitPrice            Decimal                   @default(0) @map("unit_price") @db.Decimal(18, 2)
   amount               Decimal                   @default(0) @db.Decimal(18, 2)
   remark               String?                   @db.VarChar(500)
-  createdBy            String?                   @db.VarChar(64)
-  createdAt            DateTime                  @default(now())
-  updatedBy            String?                   @db.VarChar(64)
-  updatedAt            DateTime                  @updatedAt
+  createdBy            String?                   @map("created_by") @db.VarChar(64)
+  createdAt            DateTime                  @default(now()) @map("created_at")
+  updatedBy            String?                   @map("updated_by") @db.VarChar(64)
+  updatedAt            DateTime                  @updatedAt @map("updated_at")
   request              RdProcurementRequest      @relation(fields: [requestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   material             Material                  @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   acceptanceLines      StockInOrderLine[]
@@ -1228,19 +1228,19 @@ model RdProcurementRequestLine {
 
 model RdMaterialStatusLedger {
   id               Int                      @id @default(autoincrement())
-  requestLineId    Int                      @unique
-  pendingQty       Decimal                  @default(0) @db.Decimal(18, 6)
-  inProcurementQty Decimal                  @default(0) @db.Decimal(18, 6)
-  canceledQty      Decimal                  @default(0) @db.Decimal(18, 6)
-  acceptedQty      Decimal                  @default(0) @db.Decimal(18, 6)
-  handedOffQty     Decimal                  @default(0) @db.Decimal(18, 6)
-  scrappedQty      Decimal                  @default(0) @db.Decimal(18, 6)
-  returnedQty      Decimal                  @default(0) @db.Decimal(18, 6)
-  lastEventAt      DateTime?
-  createdBy        String?                  @db.VarChar(64)
-  createdAt        DateTime                 @default(now())
-  updatedBy        String?                  @db.VarChar(64)
-  updatedAt        DateTime                 @updatedAt
+  requestLineId    Int                      @unique @map("request_line_id")
+  pendingQty       Decimal                  @default(0) @map("pending_qty") @db.Decimal(18, 6)
+  inProcurementQty Decimal                  @default(0) @map("in_procurement_qty") @db.Decimal(18, 6)
+  canceledQty      Decimal                  @default(0) @map("canceled_qty") @db.Decimal(18, 6)
+  acceptedQty      Decimal                  @default(0) @map("accepted_qty") @db.Decimal(18, 6)
+  handedOffQty     Decimal                  @default(0) @map("handed_off_qty") @db.Decimal(18, 6)
+  scrappedQty      Decimal                  @default(0) @map("scrapped_qty") @db.Decimal(18, 6)
+  returnedQty      Decimal                  @default(0) @map("returned_qty") @db.Decimal(18, 6)
+  lastEventAt      DateTime?                @map("last_event_at")
+  createdBy        String?                  @map("created_by") @db.VarChar(64)
+  createdAt        DateTime                 @default(now()) @map("created_at")
+  updatedBy        String?                  @map("updated_by") @db.VarChar(64)
+  updatedAt        DateTime                 @updatedAt @map("updated_at")
   requestLine      RdProcurementRequestLine @relation(fields: [requestLineId], references: [id], onDelete: Cascade, onUpdate: Cascade)
 
   @@map("rd_material_status_ledger")
@@ -1248,25 +1248,25 @@ model RdMaterialStatusLedger {
 
 model RdMaterialStatusHistory {
   id                    Int                       @id @default(autoincrement())
-  requestLineId         Int
-  eventType             RdMaterialStatusEventType
-  fromStatus            RdMaterialStatus?
-  toStatus              RdMaterialStatus
+  requestLineId         Int                       @map("request_line_id")
+  eventType             RdMaterialStatusEventType @map("event_type")
+  fromStatus            RdMaterialStatus?         @map("from_status")
+  toStatus              RdMaterialStatus          @map("to_status")
   quantity              Decimal                   @db.Decimal(18, 6)
-  sourceDocumentType    String?                   @db.VarChar(64)
-  sourceDocumentId      Int?
-  sourceDocumentLineId  Int?
-  sourceDocumentNumber  String?                   @db.VarChar(64)
-  referenceNo           String?                   @db.VarChar(128)
+  sourceDocumentType    String?                   @map("source_document_type") @db.VarChar(64)
+  sourceDocumentId      Int?                      @map("source_document_id")
+  sourceDocumentLineId  Int?                      @map("source_document_line_id")
+  sourceDocumentNumber  String?                   @map("source_document_number") @db.VarChar(64)
+  referenceNo           String?                   @map("reference_no") @db.VarChar(128)
   reason                String?                   @db.VarChar(500)
   note                  String?                   @db.VarChar(500)
-  relatedInventoryLogId Int?
-  reversalOfHistoryId   Int?                      @unique
-  isReversed            Boolean                   @default(false)
-  reversedBy            String?                   @db.VarChar(64)
-  reversedAt            DateTime?
-  createdBy             String?                   @db.VarChar(64)
-  createdAt             DateTime                  @default(now())
+  relatedInventoryLogId Int?                      @map("related_inventory_log_id")
+  reversalOfHistoryId   Int?                      @unique @map("reversal_of_history_id")
+  isReversed            Boolean                   @default(false) @map("is_reversed")
+  reversedBy            String?                   @map("reversed_by") @db.VarChar(64)
+  reversedAt            DateTime?                 @map("reversed_at")
+  createdBy             String?                   @map("created_by") @db.VarChar(64)
+  createdAt             DateTime                  @default(now()) @map("created_at")
   requestLine           RdProcurementRequestLine  @relation(fields: [requestLineId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   relatedInventoryLog   InventoryLog?             @relation(fields: [relatedInventoryLogId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   reversalOfHistory     RdMaterialStatusHistory?  @relation("RdMaterialStatusHistoryReversal", fields: [reversalOfHistoryId], references: [id], onDelete: SetNull, onUpdate: Cascade)
@@ -1279,27 +1279,27 @@ model RdMaterialStatusHistory {
 
 model RdStocktakeOrder {
   id                    Int                     @id @default(autoincrement())
-  documentNo            String                  @unique @db.VarChar(64)
-  bizDate               DateTime                @db.Date
-  stockScopeId          Int?
-  workshopId            Int
-  lifecycleStatus       DocumentLifecycleStatus @default(EFFECTIVE)
-  inventoryEffectStatus InventoryEffectStatus   @default(POSTED)
-  auditStatusSnapshot   AuditStatusSnapshot     @default(NOT_REQUIRED)
-  revisionNo            Int                     @default(1)
-  countedBy             String?                 @db.VarChar(128)
-  approvedBy            String?                 @db.VarChar(128)
-  totalBookQty          Decimal                 @default(0) @db.Decimal(18, 6)
-  totalCountQty         Decimal                 @default(0) @db.Decimal(18, 6)
-  totalAdjustmentQty    Decimal                 @default(0) @db.Decimal(18, 6)
+  documentNo            String                  @unique @map("document_no") @db.VarChar(64)
+  bizDate               DateTime                @map("biz_date") @db.Date
+  stockScopeId          Int?                    @map("stock_scope_id")
+  workshopId            Int                     @map("workshop_id")
+  lifecycleStatus       DocumentLifecycleStatus @default(EFFECTIVE) @map("lifecycle_status")
+  inventoryEffectStatus InventoryEffectStatus   @default(POSTED) @map("inventory_effect_status")
+  auditStatusSnapshot   AuditStatusSnapshot     @default(NOT_REQUIRED) @map("audit_status_snapshot")
+  revisionNo            Int                     @default(1) @map("revision_no")
+  countedBy             String?                 @map("counted_by") @db.VarChar(128)
+  approvedBy            String?                 @map("approved_by") @db.VarChar(128)
+  totalBookQty          Decimal                 @default(0) @map("total_book_qty") @db.Decimal(18, 6)
+  totalCountQty         Decimal                 @default(0) @map("total_count_qty") @db.Decimal(18, 6)
+  totalAdjustmentQty    Decimal                 @default(0) @map("total_adjustment_qty") @db.Decimal(18, 6)
   remark                String?                 @db.VarChar(500)
-  voidReason            String?                 @db.VarChar(500)
-  voidedBy              String?                 @db.VarChar(64)
-  voidedAt              DateTime?
-  createdBy             String?                 @db.VarChar(64)
-  createdAt             DateTime                @default(now())
-  updatedBy             String?                 @db.VarChar(64)
-  updatedAt             DateTime                @updatedAt
+  voidReason            String?                 @map("void_reason") @db.VarChar(500)
+  voidedBy              String?                 @map("voided_by") @db.VarChar(64)
+  voidedAt              DateTime?               @map("voided_at")
+  createdBy             String?                 @map("created_by") @db.VarChar(64)
+  createdAt             DateTime                @default(now()) @map("created_at")
+  updatedBy             String?                 @map("updated_by") @db.VarChar(64)
+  updatedAt             DateTime                @updatedAt @map("updated_at")
   stockScope            StockScope?             @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   workshop              Workshop                @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   lines                 RdStocktakeOrderLine[]
@@ -1311,31 +1311,31 @@ model RdStocktakeOrder {
 }
 
 model RdStocktakeOrderLine {
-  id                   Int              @id @default(autoincrement())
-  orderId              Int
-  lineNo               Int
-  materialId           Int
-  rdProjectId          Int?
-  materialCodeSnapshot String           @db.VarChar(64)
-  materialNameSnapshot String           @db.VarChar(128)
-  materialSpecSnapshot String?          @db.VarChar(128)
-  unitCodeSnapshot     String           @db.VarChar(32)
-  rdProjectCodeSnapshot String?         @db.VarChar(64)
-  rdProjectNameSnapshot String?         @db.VarChar(128)
-  bookQty              Decimal          @db.Decimal(18, 6)
-  countedQty           Decimal          @db.Decimal(18, 6)
-  adjustmentQty        Decimal          @db.Decimal(18, 6)
-  inventoryLogId       Int?             @unique
-  reason               String?          @db.VarChar(500)
-  remark               String?          @db.VarChar(500)
-  createdBy            String?          @db.VarChar(64)
-  createdAt            DateTime         @default(now())
-  updatedBy            String?          @db.VarChar(64)
-  updatedAt            DateTime         @updatedAt
-  order                RdStocktakeOrder @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  material             Material         @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  rdProject            RdProject?       @relation(fields: [rdProjectId], references: [id], onDelete: SetNull, onUpdate: Cascade)
-  inventoryLog         InventoryLog?    @relation("RdStocktakeLineInventoryLog", fields: [inventoryLogId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  id                    Int              @id @default(autoincrement())
+  orderId               Int              @map("order_id")
+  lineNo                Int              @map("line_no")
+  materialId            Int              @map("material_id")
+  rdProjectId           Int?             @map("rd_project_id")
+  materialCodeSnapshot  String           @map("material_code_snapshot") @db.VarChar(64)
+  materialNameSnapshot  String           @map("material_name_snapshot") @db.VarChar(128)
+  materialSpecSnapshot  String?          @map("material_spec_snapshot") @db.VarChar(128)
+  unitCodeSnapshot      String           @map("unit_code_snapshot") @db.VarChar(32)
+  rdProjectCodeSnapshot String?          @map("rd_project_code_snapshot") @db.VarChar(64)
+  rdProjectNameSnapshot String?          @map("rd_project_name_snapshot") @db.VarChar(128)
+  bookQty               Decimal          @map("book_qty") @db.Decimal(18, 6)
+  countedQty            Decimal          @map("counted_qty") @db.Decimal(18, 6)
+  adjustmentQty         Decimal          @map("adjustment_qty") @db.Decimal(18, 6)
+  inventoryLogId        Int?             @unique @map("inventory_log_id")
+  reason                String?          @db.VarChar(500)
+  remark                String?          @db.VarChar(500)
+  createdBy             String?          @map("created_by") @db.VarChar(64)
+  createdAt             DateTime         @default(now()) @map("created_at")
+  updatedBy             String?          @map("updated_by") @db.VarChar(64)
+  updatedAt             DateTime         @updatedAt @map("updated_at")
+  order                 RdStocktakeOrder @relation(fields: [orderId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  material              Material         @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  rdProject             RdProject?       @relation(fields: [rdProjectId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  inventoryLog          InventoryLog?    @relation("RdStocktakeLineInventoryLog", fields: [inventoryLogId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@unique([orderId, lineNo])
   @@unique([orderId, materialId, rdProjectId])
@@ -1346,18 +1346,18 @@ model RdStocktakeOrderLine {
 
 model DocumentRelation {
   id                     Int                  @id @default(autoincrement())
-  relationType           DocumentRelationType
-  upstreamFamily         DocumentFamily
-  upstreamDocumentType   String               @db.VarChar(64)
-  upstreamDocumentId     Int
-  downstreamFamily       DocumentFamily
-  downstreamDocumentType String               @db.VarChar(64)
-  downstreamDocumentId   Int
-  isActive               Boolean              @default(true)
-  createdBy              String?              @db.VarChar(64)
-  createdAt              DateTime             @default(now())
-  updatedBy              String?              @db.VarChar(64)
-  updatedAt              DateTime             @updatedAt
+  relationType           DocumentRelationType @map("relation_type")
+  upstreamFamily         DocumentFamily       @map("upstream_family")
+  upstreamDocumentType   String               @map("upstream_document_type") @db.VarChar(64)
+  upstreamDocumentId     Int                  @map("upstream_document_id")
+  downstreamFamily       DocumentFamily       @map("downstream_family")
+  downstreamDocumentType String               @map("downstream_document_type") @db.VarChar(64)
+  downstreamDocumentId   Int                  @map("downstream_document_id")
+  isActive               Boolean              @default(true) @map("is_active")
+  createdBy              String?              @map("created_by") @db.VarChar(64)
+  createdAt              DateTime             @default(now()) @map("created_at")
+  updatedBy              String?              @map("updated_by") @db.VarChar(64)
+  updatedAt              DateTime             @updatedAt @map("updated_at")
 
   @@unique([relationType, upstreamFamily, upstreamDocumentId, downstreamFamily, downstreamDocumentId])
   @@index([upstreamFamily, upstreamDocumentId])
@@ -1367,20 +1367,20 @@ model DocumentRelation {
 
 model DocumentLineRelation {
   id                     Int                  @id @default(autoincrement())
-  relationType           DocumentRelationType
-  upstreamFamily         DocumentFamily
-  upstreamDocumentType   String               @db.VarChar(64)
-  upstreamDocumentId     Int
-  upstreamLineId         Int
-  downstreamFamily       DocumentFamily
-  downstreamDocumentType String               @db.VarChar(64)
-  downstreamDocumentId   Int
-  downstreamLineId       Int
-  linkedQty              Decimal              @db.Decimal(18, 6)
-  createdBy              String?              @db.VarChar(64)
-  createdAt              DateTime             @default(now())
-  updatedBy              String?              @db.VarChar(64)
-  updatedAt              DateTime             @updatedAt
+  relationType           DocumentRelationType @map("relation_type")
+  upstreamFamily         DocumentFamily       @map("upstream_family")
+  upstreamDocumentType   String               @map("upstream_document_type") @db.VarChar(64)
+  upstreamDocumentId     Int                  @map("upstream_document_id")
+  upstreamLineId         Int                  @map("upstream_line_id")
+  downstreamFamily       DocumentFamily       @map("downstream_family")
+  downstreamDocumentType String               @map("downstream_document_type") @db.VarChar(64)
+  downstreamDocumentId   Int                  @map("downstream_document_id")
+  downstreamLineId       Int                  @map("downstream_line_id")
+  linkedQty              Decimal              @map("linked_qty") @db.Decimal(18, 6)
+  createdBy              String?              @map("created_by") @db.VarChar(64)
+  createdAt              DateTime             @default(now()) @map("created_at")
+  updatedBy              String?              @map("updated_by") @db.VarChar(64)
+  updatedAt              DateTime             @updatedAt @map("updated_at")
 
   @@unique([relationType, upstreamFamily, upstreamLineId, downstreamFamily, downstreamLineId])
   @@index([upstreamFamily, upstreamDocumentId, upstreamLineId])
@@ -1392,13 +1392,13 @@ model LoginLog {
   id         Int            @id @default(autoincrement())
   action     LoginLogAction
   username   String         @db.VarChar(64)
-  userId     Int?
-  sessionId  String?        @db.VarChar(64)
+  userId     Int?           @map("user_id")
+  sessionId  String?        @map("session_id") @db.VarChar(64)
   ip         String?        @db.VarChar(64)
-  userAgent  String?        @db.VarChar(500)
+  userAgent  String?        @map("user_agent") @db.VarChar(500)
   result     LoginLogResult
   reason     String?        @db.VarChar(128)
-  occurredAt DateTime       @default(now())
+  occurredAt DateTime       @default(now()) @map("occurred_at")
 
   @@index([action, result, occurredAt])
   @@index([username])
@@ -1412,16 +1412,16 @@ model OperLog {
   action       String        @db.VarChar(64)
   method       String        @db.VarChar(16)
   path         String        @db.VarChar(255)
-  operatorId   Int?
-  operatorName String?       @db.VarChar(64)
+  operatorId   Int?          @map("operator_id")
+  operatorName String?       @map("operator_name") @db.VarChar(64)
   ip           String?       @db.VarChar(64)
-  userAgent    String?       @db.VarChar(500)
-  requestData  String?       @db.LongText
-  responseData String?       @db.LongText
-  errorMessage String?       @db.LongText
-  durationMs   Int
+  userAgent    String?       @map("user_agent") @db.VarChar(500)
+  requestData  String?       @map("request_data") @db.LongText
+  responseData String?       @map("response_data") @db.LongText
+  errorMessage String?       @map("error_message") @db.LongText
+  durationMs   Int           @map("duration_ms")
   status       OperLogStatus
-  occurredAt   DateTime      @default(now())
+  occurredAt   DateTime      @default(now()) @map("occurred_at")
 
   @@index([status, occurredAt])
   @@index([title, occurredAt])
@@ -1431,18 +1431,18 @@ model OperLog {
 
 model SchedulerJob {
   id                Int                        @id @default(autoincrement())
-  jobName           String                     @unique @db.VarChar(128)
-  invokeTarget      String                     @db.VarChar(128)
-  cronExpression    String                     @db.VarChar(64)
+  jobName           String                     @unique @map("job_name") @db.VarChar(128)
+  invokeTarget      String                     @map("invoke_target") @db.VarChar(128)
+  cronExpression    String                     @map("cron_expression") @db.VarChar(64)
   status            SchedulerJobStatus         @default(ACTIVE)
-  concurrencyPolicy SchedulerConcurrencyPolicy @default(FORBID)
-  misfirePolicy     SchedulerMisfirePolicy     @default(FIRE_AND_PROCEED)
+  concurrencyPolicy SchedulerConcurrencyPolicy @default(FORBID) @map("concurrency_policy")
+  misfirePolicy     SchedulerMisfirePolicy     @default(FIRE_AND_PROCEED) @map("misfire_policy")
   remark            String?                    @db.VarChar(500)
-  lastRunAt         DateTime?
-  createdBy         String?                    @db.VarChar(64)
-  createdAt         DateTime                   @default(now())
-  updatedBy         String?                    @db.VarChar(64)
-  updatedAt         DateTime                   @updatedAt
+  lastRunAt         DateTime?                  @map("last_run_at")
+  createdBy         String?                    @map("created_by") @db.VarChar(64)
+  createdAt         DateTime                   @default(now()) @map("created_at")
+  updatedBy         String?                    @map("updated_by") @db.VarChar(64)
+  updatedAt         DateTime                   @updatedAt @map("updated_at")
   logs              SchedulerJobLog[]
 
   @@index([status, updatedAt])
@@ -1452,16 +1452,16 @@ model SchedulerJob {
 
 model SchedulerJobLog {
   id           Int                   @id @default(autoincrement())
-  jobId        Int?
-  jobName      String                @db.VarChar(128)
-  invokeTarget String                @db.VarChar(128)
+  jobId        Int?                  @map("job_id")
+  jobName      String                @map("job_name") @db.VarChar(128)
+  invokeTarget String                @map("invoke_target") @db.VarChar(128)
   status       SchedulerJobLogStatus
   message      String?               @db.LongText
-  errorMessage String?               @db.LongText
-  durationMs   Int
-  startedAt    DateTime
-  finishedAt   DateTime
-  createdAt    DateTime              @default(now())
+  errorMessage String?               @map("error_message") @db.LongText
+  durationMs   Int                   @map("duration_ms")
+  startedAt    DateTime              @map("started_at")
+  finishedAt   DateTime              @map("finished_at")
+  createdAt    DateTime              @default(now()) @map("created_at")
   schedulerJob SchedulerJob?         @relation(fields: [jobId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
   @@index([jobId, startedAt])

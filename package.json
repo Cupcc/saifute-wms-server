@@ -42,6 +42,8 @@
     "migration:sales-return-finalize:execute": "bun --env-file .env.dev scripts/migration/sales-return-finalize/migrate.ts --execute",
     "migration:sales-return-finalize:validate": "bun --env-file .env.dev scripts/migration/sales-return-finalize/validate.ts",
     "migration:preflight": "bun --env-file .env.dev scripts/migration/preflight.ts",
+    "migration:snake-case-columns:dry-run": "bun --env-file .env.dev scripts/migration/snake-case-columns/rename-columns.ts",
+    "migration:snake-case-columns:execute": "bun --env-file .env.dev scripts/migration/snake-case-columns/rename-columns.ts --execute",
     "migration:rd-project:dry-run": "bun --env-file .env.dev scripts/migration/rd-project/migrate.ts",
     "migration:rd-project:execute": "bun --env-file .env.dev scripts/migration/rd-project/migrate.ts --execute",
     "migration:rd-project:validate": "bun --env-file .env.dev scripts/migration/rd-project/validate.ts",

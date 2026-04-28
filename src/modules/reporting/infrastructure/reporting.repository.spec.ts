@@ -17,7 +17,9 @@ describe("ReportingRepository", () => {
     const salesStockOrder = { findMany: jest.fn().mockResolvedValue([]) };
     const salesStockOrderLine = { findMany: jest.fn().mockResolvedValue([]) };
     const workshopMaterialOrder = { findMany: jest.fn().mockResolvedValue([]) };
-    const rdProjectMaterialAction = { findMany: jest.fn().mockResolvedValue([]) };
+    const rdProjectMaterialAction = {
+      findMany: jest.fn().mockResolvedValue([]),
+    };
     const rdHandoffOrder = { findMany: jest.fn().mockResolvedValue([]) };
     const rdStocktakeOrder = { findMany: jest.fn().mockResolvedValue([]) };
     const stockInPriceCorrectionOrder = {
@@ -72,9 +74,7 @@ describe("ReportingRepository", () => {
 
   function createInventoryReportingRepository() {
     const prisma = createMockPrisma();
-    const repository = new InventoryReportingRepository(
-      prisma as never,
-    );
+    const repository = new InventoryReportingRepository(prisma as never);
 
     return {
       ...prisma,
@@ -383,11 +383,14 @@ describe("ReportingRepository", () => {
   });
 
   it("marks abnormal flags with the configured business timezone", () => {
-    const flags = buildAbnormalFlags({
-      bizDate: new Date("2026-03-31T16:30:00.000Z"),
-      createdAt: new Date("2026-04-30T16:30:00.000Z"),
-      sourceBizDate: new Date("2026-03-31T15:30:00.000Z"),
-    }, "Asia/Shanghai");
+    const flags = buildAbnormalFlags(
+      {
+        bizDate: new Date("2026-03-31T16:30:00.000Z"),
+        createdAt: new Date("2026-04-30T16:30:00.000Z"),
+        sourceBizDate: new Date("2026-03-31T15:30:00.000Z"),
+      },
+      "Asia/Shanghai",
+    );
 
     expect(flags).toEqual(
       expect.arrayContaining([
@@ -408,14 +411,14 @@ describe("ReportingRepository", () => {
     expect($queryRaw).toHaveBeenCalledTimes(1);
     const [query] = $queryRaw.mock.calls[0] as [Prisma.Sql];
     expect(query.sql).toContain("usage_summary");
-    expect(query.sql).toContain("sourceLogId");
-    expect(query.sql).toContain("changeQty");
-    expect(query.sql).toContain("stockScopeId");
+    expect(query.sql).toContain("source_log_id");
+    expect(query.sql).toContain("change_qty");
+    expect(query.sql).toContain("stock_scope_id");
+    expect(query.sql).toContain("AS materialId");
+    expect(query.sql).toContain("AS stockScopeId");
+    expect(query.sql).toContain("AS netAllocatedQty");
     expect(query.sql).not.toContain(") usage ON");
     expect(query.sql).not.toContain("usage.net_allocated_qty");
     expect(query.sql).not.toContain("source.material_id");
-    expect(query.sql).not.toContain("source_log_id");
-    expect(query.sql).not.toContain("change_qty");
-    expect(query.sql).not.toContain("stock_scope_id");
   });
 });
