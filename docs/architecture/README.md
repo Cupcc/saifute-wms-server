@@ -12,7 +12,7 @@ This directory is the canonical home for all Saifute WMS NestJS repository archi
 | `20-wms-database-tables-and-schema.md`          | Frozen database-table and schema baseline for shared core plus transaction families, together with the related domain-flow and state semantics. Read this before implementing or migrating any document-flow, inventory, or approval surface.                                                                                                                 |
 | `21-database-field-dictionary.md`               | Complete field-level dictionary for every database table — column name, data type, nullability, default, and business meaning. Companion to `20-*` for implementation-time reference.                                                                                                                                                                         |
 | `30-java-to-nestjs-data-migration-reference.md` | Canonical legacy Java -> NestJS migration reference. Explains old table groups, target table groups, domain-by-domain mapping, replay-vs-copy rules, staging/archive handling, and cutover terminology.                                                                                                                                                       |
-| `40-code-quality-governance.md`                 | Code quality governance baseline: layer discipline, module boundary rules, single responsibility thresholds, domain modeling direction, complexity control, quality gates, and audit baseline snapshot. All agents and developers must comply.                                                                                                                |
+| `40-code-quality-governance.md`                 | Code quality governance rules: layer discipline, module boundary rules, single responsibility thresholds, domain modeling direction, complexity control, quality gates, and review criteria. All agents and developers must comply.                                                                                                                            |
 | `modules/`                                      | Per-module architecture references — one file per NestJS module. Each file describes the module's boundaries, responsibilities, data access rules, and cross-module constraints.                                                                                                                                                                              |
 
 
@@ -24,7 +24,7 @@ This directory is the canonical home for all Saifute WMS NestJS repository archi
 4. `docs/architecture/20-wms-database-tables-and-schema.md` — frozen database-table and schema baseline for shared core plus transaction families, together with the related domain-flow and state semantics
 5. `docs/architecture/21-database-field-dictionary.md` — complete field-level dictionary for every table; use alongside `20-*` when implementing or reviewing schema-level code
 6. `docs/architecture/30-java-to-nestjs-data-migration-reference.md` — old-to-new migration reference and cutover vocabulary; required only for migration, backfill, or legacy-data work
-7. `docs/architecture/40-code-quality-governance.md` — code quality rules, thresholds, and audit baseline; read before writing or reviewing any code
+7. `docs/architecture/40-code-quality-governance.md` — code quality rules, thresholds, quality gates, and review criteria; read before writing or reviewing any code
 8. Per-module file under `docs/architecture/modules/<module>.md` — module-specific boundaries, responsibilities, current implementation maturity, and cross-module constraints
 
 ## Notes
@@ -45,4 +45,3 @@ This directory is the canonical home for all Saifute WMS NestJS repository archi
 - Treat `20-wms-database-tables-and-schema.md` and any frozen constraints in `00-architecture-overview.md` as controlled baselines: changing them requires explicit user confirmation and a dedicated task doc.
 - Module files under `docs/architecture/modules/*.md` may be revised in place by the task that changes that module's boundaries or cross-module contract; do not open a separate archive track just to preserve superseded wording.
 - If architecture text becomes obsolete, update or remove the stale section in the current canonical file and keep provenance in the related task doc instead of leaving parallel outdated copies under `docs/architecture/**`.
-

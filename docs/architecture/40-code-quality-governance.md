@@ -1,376 +1,373 @@
-# 代码质量治理基线
+# 代码质量治理规则
 
-## 1. 文档目标与适用范围
+## 1. 目标与适用范围
 
-本文档定义 Saifute WMS NestJS 仓库的代码质量治理规则。所有 agent 会话、子代理执行和 code review 均以此为判定基准。
+本文档定义 Saifute WMS NestJS 仓库的代码质量治理规则。所有开发、agent 会话、子代理执行和 code review 均以本文档作为判定基准。
 
-适用范围：`src/modules/**`、`src/shared/**` 下所有 TypeScript 生产代码和测试代码（`generated/` 除外）。
+适用范围：
+
+- `src/modules/**` 下所有 TypeScript 生产代码和测试代码
+- `src/shared/**` 下所有 TypeScript 生产代码和测试代码
+- `generated/` 目录除外
+
+本文档只保留长期有效的治理规则。阶段性执行资料应放入 `docs/tasks/**` 或 `docs/workspace/**`，不得沉淀在本文件中。
 
 与其他文档的关系：
 
-- `00-architecture-overview.md` 定义模块清单、技术栈和依赖总图——是"系统长什么样"
-- 本文档定义"代码必须怎么写"——是质量执行标准
-- `docs/playbooks/domain-refactor/playbook.md` 记录具体重构经验——是"怎么改已有问题"
+| 文档 | 职责 |
+| --- | --- |
+| `00-architecture-overview.md` | 模块清单、技术栈、依赖总图和冻结语义约束 |
+| `modules/*.md` | 单个模块的边界、职责、数据访问规则和跨模块约束 |
+| `docs/playbooks/domain-refactor/playbook.md` | 重构操作经验和执行方法 |
+| 本文档 | 所有代码必须遵守的质量规则、门禁要求和审查口径 |
 
-优先级：若本文档与模块文档（`modules/*.md`）有冲突，以本文档为准；若与 `00-architecture-overview.md` 有冲突，需人工仲裁并更新两侧。
+优先级：
+
+1. 若本文档与模块文档冲突，以本文档为准，并同步修正模块文档。
+2. 若本文档与 `00-architecture-overview.md` 冲突，需要人工仲裁，并同时更新两侧。
+3. 若代码现状与本文档冲突，以本文档作为目标规则；变更不得扩大冲突面。
 
 ---
 
-## 1.5 治理方法总览（How Governance Is Enforced）
+## 2. 治理执行模型
 
-本仓库的代码质量治理不依赖"靠谱的人自觉遵守"，而是通过**四层防线**层层拦截。每层解决不同阶段的问题，缺一不可。
-
-### 1.5.1 四层防线全景
+本仓库的代码质量治理通过四层执行，不依赖单一人工记忆。
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│  第 1 层：知识约束（人/Agent 写代码前读什么）                     │
-│    - CLAUDE.md（项目根）                                       │
-│    - docs/architecture/*.md（本文档 + 架构总览 + 模块文档）       │
-│    - .agents/skills/nestjs-best-practices/SKILL.md             │
-└────────────────────────┬─────────────────────────────────────┘
-                         │ 指导
-                         ▼
-┌──────────────────────────────────────────────────────────────┐
-│  第 2 层：实时反馈（写代码过程中立即拦截）                         │
-│    - Claude Code PostToolUse hook                              │
-│    - Codex PostToolUse hook                                    │
-│    - scripts/check-quality-hooks.mjs                           │
-│    - 编辑器 LSP / Biome 即时提示                                │
-└────────────────────────┬─────────────────────────────────────┘
-                         │ 拦截
-                         ▼
-┌──────────────────────────────────────────────────────────────┐
-│  第 3 层：提交门禁（commit / push 前统一校验）                    │
-│    - pre-commit：lint-staged + biome                           │
-│    - commit-msg：commitlint                                    │
-│    - pre-push：prisma generate → typecheck → test              │
-└────────────────────────┬─────────────────────────────────────┘
-                         │ 阻断
-                         ▼
-┌──────────────────────────────────────────────────────────────┐
-│  第 4 层：审计与趋势（事后度量、Code Review）                      │
-│    - bun run lint:src-lines（文件行数扫描）                      │
-│    - 本文档 §8 审计基线快照                                      │
-│    - agent Code Review（§7.4）                                │
-└──────────────────────────────────────────────────────────────┘
+第 1 层：知识约束
+  CLAUDE.md / AGENTS.md
+  docs/architecture/*.md
+  .agents/skills/nestjs-best-practices/SKILL.md
+
+第 2 层：实时反馈
+  Claude Code PostToolUse hook
+  Codex PostToolUse hook
+  scripts/check-quality-hooks.mjs
+  编辑器 LSP / Biome 即时提示
+
+第 3 层：提交门禁
+  pre-commit：lint-staged + biome
+  commit-msg：commitlint
+  pre-push：prisma generate -> typecheck -> test
+
+第 4 层：审计与 Review
+  bun run lint:src-lines
+  agent / human code review
+  必要时执行专用扫描脚本
 ```
 
-### 1.5.2 每层的职责与手段
+### 2.1 各层职责
 
+| 层次 | 目标 | 载体 | 失败处理 |
+| --- | --- | --- | --- |
+| 知识约束 | 让开发者和 agent 在写代码前知道规则 | 根级指令、架构文档、技能文档 | review 时按本文档纠偏 |
+| 实时反馈 | 在写代码当下发现单文件违规 | PostToolUse hook、`check-quality-hooks.mjs`、LSP、Biome | 立即修复本次编辑引入的问题 |
+| 提交门禁 | 阻断不合格变更进入版本记录 | Husky、lint-staged、commitlint、verify 脚本 | 失败则不得提交或推送 |
+| 审计与 Review | 发现跨文件、趋势性和机器难判定问题 | 扫描脚本、review 清单 | 阻断 PR 或要求同 PR 修复 |
 
-| 层次    | 目标                        | 载体                                                                   | 触发时机                      | 失败后果                     |
-| ----- | ------------------------- | -------------------------------------------------------------------- | ------------------------- | ------------------------ |
-| 知识约束  | 让写代码的人/agent **事前知道规则**   | `.claude/CLAUDE.md`、`docs/architecture/`、`.agents/skills/`           | 开始任务前主动 Read              | 无直接阻断，依赖自觉与 review       |
-| 实时反馈  | 写代码**当下**就发现违规，不等到 commit | `.claude/settings.json` / `.codex/hooks.json` PostToolUse hook + `check-quality-hooks.mjs` | Claude 每次 Edit/Write `.ts` 文件；Codex 每次 apply_patch/Edit/Write 涉及目标 `.ts` 文件 | stderr 输出修复指引，agent 立即感知 |
-| 提交门禁  | 进入仓库历史前**自动化阻断**          | `lint-staged`、`commitlint`、`husky` pre-push 脚本                       | `git commit` / `git push` | 阻止 commit / push         |
-| 审计与趋势 | 度量存量问题、跟踪改善方向             | `bun run lint:src-lines`、本文档 §8 基线、Code Review                       | 手动 / 定期 / PR 阶段           | 生成违规清单，不直接阻断             |
+### 2.2 规则载体边界
 
+**NestJS Best Practices skill**
 
-### 1.5.3 各手段的职责边界
+- 位置：`.agents/skills/nestjs-best-practices/SKILL.md`。
+- 涉及新增、修改、重构或 review NestJS module / controller / service / provider / DTO / repository 时，agent 必须读取该 skill 的规则索引。
+- 该 skill 提供通用 NestJS rule id，例如 `arch-*`、`di-*`、`security-*`、`test-*`；本文档提供项目级约束。
+- 二者冲突时，以本文档为准。
+- Review 发现问题时，优先使用“本文档章节 + skill rule id”的形式标注。
 
-**NestJS Best Practices skill（知识约束）**
-
-- 技能位置：`.agents/skills/nestjs-best-practices/SKILL.md`。
-- 触发时机：当任务涉及新增、修改、重构或 review NestJS module / controller / service / provider / DTO / repository 时，agent 必须先读取该 skill 的规则索引，再结合本文档执行。
-- 使用方式：skill 提供通用 NestJS 规则分类和 rule id（如 `arch-*`、`di-*`、`security-*`、`test-*`）；本文档提供 Saifute WMS 的项目级约束。二者冲突时，以本文档为准。
-- Review 要求：agent review 发现问题时，优先用“本文档章节 + skill rule id”标注，例如“违反 §2.3 + `arch-use-repository-pattern`”。
-- 边界：skill 本身不阻断提交；它属于第 1 层知识约束，实际阻断仍由 hook、pre-commit / pre-push 和 review 执行。
-
-**PostToolUse hook（实时反馈）**
+**PostToolUse hook**
 
 - Claude 配置位置：`.claude/settings.json` 的 `hooks.PostToolUse`。
-- Codex 配置位置：`.codex/hooks.json` 的 `hooks.PostToolUse`；仓库脚本位于 `.codex/hooks/post_tool_use_quality_check.mjs`。
-- 执行脚本：统一复用 `scripts/check-quality-hooks.mjs`，避免 Claude / Codex 两套质量规则漂移。
-- 当前覆盖的检查（与本文档映射）：
-  - 文件行数 ≤ 500（对应 §4.1）
-  - 拆分残留检测：≤ 30 行且 ≥ 80% 为 re-export 的文件（对应 §4.4 反模式）
-  - `application/` 层禁止注入 PrismaService / 直接执行查询（对应 §2.3，类型引用按 §2.3.1 豁免）
-  - 跨模块 repository import 识别（对应 §3.1）
-- 触发时机：Claude 每次 `Edit` / `Write` 一个 `.ts` 文件后**立即运行**；Codex 每次 `apply_patch` / `Edit` / `Write` 后解析本次 patch 涉及的 `src/modules/**`、`src/shared/**` TypeScript 文件。
-- 失败处理：脚本以非零退出码 + stderr 给出**可操作的修复指引**（文件名、违规行、引用的文档章节）。Claude Code / Codex 会把 stderr 回显给 agent，促使其当场修复。
-- 与 pre-commit 的关系：hook 更早介入（写文件的瞬间），pre-commit 作为兜底；两者检查项有重叠但不完全一致，因为 hook 只看本次编辑涉及的文件，pre-commit 看整个暂存区。
+- Codex 配置位置：`.codex/hooks.json` 的 `hooks.PostToolUse`。
+- Codex 仓库脚本位置：`.codex/hooks/post_tool_use_quality_check.mjs`。
+- 统一执行脚本：`scripts/check-quality-hooks.mjs`。
+- hook 用于尽早发现单文件或本次 patch 可判定的问题，不替代 pre-push、全仓扫描和 review。
 
-**Husky 门禁（提交门禁）**
+hook 至少覆盖以下规则：
 
-- 配置位置：`package.json` 的 `scripts`、`.husky/` 目录、`lint-staged.config.`*。
-- 职责：保证进入仓库的代码**至少通过格式化、lint、类型检查、测试**。
-- 当前状态与目标状态的 gap 见 §7.2——核心差距是文件行数规则目前是 warn 级、未接入 verify 链路。
+| 检查 | 对应规则 |
+| --- | --- |
+| 文件行数不得超过 500 行 | §5.1 |
+| 拆分残留和纯 re-export 空壳检测 | §5.4 |
+| `application/` 层禁止注入 `PrismaService` 和直接查询 | §3.3 |
+| 跨模块 repository import / 注入识别 | §4 |
+| 构造函数依赖宽度提示 | §5.1 |
 
-**Code Review（审计与趋势）**
+**Husky 门禁**
 
-- Agent code review 时按 §7.4 的六个维度逐项核对。
-- 对于跨模块、分层、DI、事务、DTO 校验、安全边界等 NestJS 相关问题，review agent 必须同时参考 `.agents/skills/nestjs-best-practices/SKILL.md`。
-- Code review agent 不会自动运行；只有在用户明确要求 review、PR 阶段需要独立审查，或主 agent 判断变更高风险并获得授权时，才应作为独立 agent 调用。
-- §8 的基线数字用于对比：当次变更是否让违规总数**增加**——任何会让违规数增加的 PR 默认拒绝合并。
+- `pre-commit` 必须执行暂存文件格式化和 lint。
+- `commit-msg` 必须执行 commitlint。
+- `pre-push` 必须执行 Prisma Client 生成、TypeScript 类型检查和测试。
+- 门禁失败时不得绕过提交或推送，除非用户明确授权，并在交付说明中记录原因。
 
-### 1.5.4 为什么要分四层
+**Code Review**
 
-- **只靠文档**：规则会被忽略，尤其是多 agent 并行协作时。
-- **只靠 hook**：hook 只看单个文件写入瞬间，看不到跨文件的关系（如跨模块依赖全图）。
-- **只靠 pre-commit**：反馈太晚——agent 已经写了几百行才发现分层错误，返工成本高。
-- **只靠 Code Review**：避免AI只靠主观判断就下结论。
+- review 必须按 §9 的维度逐项核对。
+- 对于分层、DI、事务、DTO 校验、安全边界等 NestJS 问题，review 必须同时参考 `nestjs-best-practices` skill。
+- 独立 review agent 不会自动运行；只有用户明确要求 review、PR 阶段需要独立审查，或主 agent 判断变更高风险并获得授权时，才调用独立 review。
 
-四层组合的设计目标：**规则 1 份（本文档）、执行 4 处、违规在最早一层被拦住**。
+### 2.3 新增检查项落位原则
 
-### 1.5.5 新增治理手段的落位原则
+| 检查类型 | 落位 |
+| --- | --- |
+| 单文件写入时即可判定 | 加入 `scripts/check-quality-hooks.mjs` |
+| 需要跨文件、但提交或推送时可判定 | 加入 verify / pre-push 链路 |
+| 需要全仓扫描或趋势度量 | 增加 `scripts/` 下的独立扫描脚本 |
+| 难以机器判定的约定 | 写入本文档规则，并加入 code review 清单 |
 
-当需要补充新的检查项时，按以下顺序选择落位：
-
-1. **能在单文件写入时判定的** → 加进 `check-quality-hooks.mjs`（第 2 层）。
-2. **需要跨文件但在提交时能判定的** → 加进 pre-push 的 `verify` 链（第 3 层）。
-3. **需要全仓库扫描或趋势度量的** → 加进 `scripts/` 下的独立扫描脚本 + §8 基线（第 4 层）。
-4. **纯约定、难以机器判定的** → 写入本文档对应章节 + Code Review 清单（第 1 / 4 层）。
-
-新增检查项**同时**要更新本文档 §7.2 的"检查项覆盖表"，保持目标状态与实现一致。
+新增检查项必须同步更新 §8 的门禁覆盖表，保持规则和执行链一致。
 
 ---
 
-## 2. 分层纪律（Layer Discipline）
+## 3. 分层纪律
 
-### 2.1 层间依赖方向
+### 3.1 层间依赖方向
 
 ```text
-controllers/  →  application/  →  infrastructure/
-     ↓               ↓                  ↓
-    dto/            domain/          Prisma / Redis / 外部 API
+controllers/  ->  application/  ->  infrastructure/
+     |                 |                    |
+     v                 v                    v
+    dto/             domain/            Prisma / Redis / 外部 API
 ```
 
-**严格规则**：依赖方向只能向右和向下，不允许反向。
+依赖方向只能向右和向下，不允许反向依赖。
 
-### 2.2 各层允许的 import 范围
+### 3.2 各层允许的 import 范围
 
+| 层 | 允许 import | 禁止 import |
+| --- | --- | --- |
+| `controllers/` | dto、application service、shared decorators、shared guards | infrastructure、Prisma、其他模块内部实现 |
+| `application/` | domain、dto 类型、本模块 repository interface、其他模块 exported service、Prisma 类型引用 | `PrismaService` 运行时注入、直接 Prisma 查询、直接事务、其他模块 repository |
+| `domain/` | 标准库、本模块 domain 类型、shared domain 类型 | NestJS、Prisma、Express、Redis、外部 SDK |
+| `infrastructure/` | Prisma、Redis、外部 SDK、domain 类型 | controllers、其他模块 infrastructure |
+| `dto/` | class-validator、class-transformer、shared/domain | application、infrastructure |
 
-| 层                 | 允许 import                                                                                       | 禁止 import                                                   |
-| ----------------- | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| `controllers/`    | dto/, application/ service, shared/decorators, shared/guards                                    | infrastructure/, Prisma, 其他模块内部                             |
-| `application/`    | domain/, dto/(仅类型), 本模块 repository interface, 其他模块的 **exported service**, Prisma 类型引用（见 §2.3.1） | `PrismaService`（运行时注入）, 直接执行 Prisma 查询/事务, 其他模块的 repository |
-| `domain/`         | 仅标准库和本模块 domain/ 内类型                                                                            | 任何外部框架（NestJS, Prisma, Express）                             |
-| `infrastructure/` | Prisma, Redis, 外部 SDK, domain/                                                                  | controllers/, 其他模块 infrastructure                           |
-| `dto/`            | class-validator, class-transformer, shared/domain/                                              | application/, infrastructure/                               |
+### 3.3 关键禁令
 
+1. `application/` 层禁止注入 `PrismaService`。
+2. `application/` 层禁止直接调用 `this.prisma.*`、`prisma.*` 或 `tx.*` 执行查询。
+3. `application/` 层禁止直接开启事务；事务边界必须由 repository 或 Unit of Work 封装。
+4. `controllers/` 禁止业务逻辑，只能解析请求、调用 service、返回响应。
+5. `domain/` 禁止依赖框架、ORM、HTTP、Redis 或外部 SDK。
 
-### 2.3 关键禁令
+### 3.4 Prisma 类型引用豁免
 
-1. **application 层禁止注入 PrismaService / 直接执行查询** — 不允许在 constructor 中注入 `PrismaService`，不允许调用 `this.prisma.*` 或 `tx.*` 执行查询/事务。数据访问必须通过 repository 方法。
-2. **application 层禁止直接执行事务** — 事务边界由 repository 或 Unit of Work 模式封装，service 只调用 repository 方法。
-3. **controllers 禁止业务逻辑** — 不允许 if/else 业务分支、循环计算、数据聚合。只做：解析请求 → 调用 service → 返回响应。
+`application/` 层允许只读引用 Prisma 生成类型，不视为分层违规。
 
-#### 2.3.1 Prisma 类型引用豁免
+允许类型：
 
-application 层**允许**以下 Prisma 类型的只读引用，不视为分层违规：
+- 输入类型：如 `Prisma.XXXUncheckedUpdateInput`，用于构造传给 repository 的 payload。
+- 异常类型：如 `Prisma.PrismaClientKnownRequestError`，用于底层异常到业务异常的语义转换。
+- 枚举和常量：Prisma schema 生成的 enum，如 `AuditStatusSnapshot`、`DocumentFamily`。
+- 事务客户端类型：仅可作为 repository 方法签名或回调类型，不得在 application 层直接执行查询。
 
-- **输入类型**：`Prisma.XXXUncheckedUpdateInput` 等——用于构造传给 repository 的 payload，避免重复定义 1:1 映射的 interface
-- **异常类型**：`Prisma.PrismaClientKnownRequestError`——用于 catch 中做语义转换（§6.5 模式 #1），如唯一约束冲突 → 业务异常
-- **枚举/常量**：Prisma schema 生成的 enum（如 `AuditStatusSnapshot`、`DocumentFamily`）——这些是领域概念的类型表达
+判定标准：
 
-**判定标准**：`import { Prisma } from '...'` 或 `import { SomeEnum } from '...'` 本身不违规；**注入 `PrismaService` 或调用 `prisma.*` 方法**才违规。简单说：**type-only 引用 OK，runtime 依赖禁止**。
+- `import { Prisma } from '...'` 本身不违规。
+- `import { SomeEnum } from '...'` 本身不违规。
+- 注入 `PrismaService`、调用 `prisma.*`、调用 `tx.*` 才是违规。
 
-### 2.4 过渡期处理
+### 3.5 存量冲突处理
 
-当前 25 个 service 文件存在 Prisma import 和直接事务执行。这些属于历史存量，在重构前允许存在，但：
+代码现状若仍存在与本文档不一致的存量问题，按以下规则处理：
 
-- **新增代码不得引入新的分层违规**
-- 修改现有文件时，如果改动涉及 Prisma 调用，应在同一 PR 中将该调用下沉到 repository
+1. 新增代码不得引入同类违规。
+2. 修改已有文件时，不得扩大违规范围。
+3. 若改动触碰违规逻辑，应在同一 PR 中优先收敛到本文档规则。
+4. 若一次性修复风险过高，必须在 PR 说明中写明保留原因、影响边界和后续处理入口。
 
 ---
 
-## 3. 模块边界（Module Boundaries）
+## 4. 模块边界
 
-### 3.1 跨模块通信规则
+### 4.1 跨模块通信规则
 
+| 允许 | 禁止 |
+| --- | --- |
+| 注入其他模块 exported service | 注入其他模块 repository |
+| 使用 `shared/` 下公共类型 | import 其他模块 `infrastructure/` 文件 |
+| 通过事件发布跨模块变化 | 直接调用其他模块 private 方法 |
+| 通过对方 module exports 暴露的 service 能力访问数据 | 在本模块 providers 中注册其他模块 repository |
 
-| 允许                          | 禁止                               |
-| --------------------------- | -------------------------------- |
-| 注入其他模块 **exported service** | 注入其他模块 repository                |
-| 使用 shared/ 下的公共类型           | import 其他模块 infrastructure/ 下的文件 |
-| 通过 EventEmitter 发事件         | 直接调用其他模块的 private 方法             |
-
-
-### 3.2 模块依赖方向
+### 4.2 模块依赖方向
 
 ```text
-                ┌──────────┐
-                │  shared/ │
-                └─────┬────┘
-                      │ (所有模块可依赖)
-       ┌──────────────┼──────────────┐
-       ▼              ▼              ▼
-┌────────────┐ ┌───────────┐ ┌─────────────┐
-│ master-data│ │ approval  │ │ auth/rbac/  │
-│            │ │           │ │ session     │
-└─────┬──────┘ └─────┬─────┘ └─────────────┘
-      │               │
-      ▼               ▼
-┌─────────────────────────────┐
-│       inventory-core        │  (唯一库存写入口)
-└──────────────┬──────────────┘
-               │
-    ┌──────────┼──────────┬────────────┐
-    ▼          ▼          ▼            ▼
-┌───────┐ ┌───────┐ ┌──────────┐ ┌──────────┐
-│inbound│ │ sales │ │workshop- │ │rd-project│
-│       │ │       │ │material  │ │          │
-└───────┘ └───────┘ └──────────┘ └────┬─────┘
-                                      │ (仅通过 service)
-                                      ▼
-                                ┌──────────────┐
-                                │rd-subwarehouse│
-                                └──────────────┘
+                shared/
+                  |
+      +-----------+-----------+
+      v           v           v
+ master-data   approval   auth/rbac/session
+      |           |
+      v           v
+        inventory-core
+              |
+   +----------+-----------+------------+
+   v          v           v            v
+ inbound    sales   workshop-material  rd-project
+                                      |
+                                      v
+                               rd-subwarehouse
 
-┌───────────┐
-│ reporting │ ──→ inventory-core (只读), master-data (只读)
-└───────────┘
-
-┌──────────────┐
-│ ai-assistant │ ──→ reporting, master-data, inventory-core (只读)
-└──────────────┘
+ reporting -> inventory-core (只读), master-data (只读)
+ ai-assistant -> reporting, master-data, inventory-core (只读)
 ```
 
-**核心原则**：
+核心规则：
 
-- 箭头只能向下或同层，不能向上
-- 上层模块只通过 service 接口访问下层
-- `inventory-core` 是唯一库存写入口，任何模块不得绕过它直接写库存表
-- `reporting` 和 `ai-assistant` 是只读消费者，不得触发写操作
+1. 箭头只能向下或同层，不允许向上依赖。
+2. 上层模块只通过 service 接口访问下层模块。
+3. `inventory-core` 是唯一库存写入口，任何模块不得绕过它直接写库存表。
+4. `reporting` 和 `ai-assistant` 是只读消费者，不得触发库存、单据或主数据写操作。
 
-### 3.3 Module 导出规则
+### 4.3 Module 导出规则
 
-- `*.module.ts` 的 `exports` 只允许 service，**不允许导出 repository**
-- 如果其他模块需要某个查询能力，应在 service 上暴露查询方法
-
-### 3.4 已知违规（审计基线）
-
-- `rd-subwarehouse` 直接注入 `RdProjectRepository`（应改为通过 `RdProjectService`）— **待修复，存在 rd-project ↔ rd-subwarehouse 双向模块依赖，需先解耦后才能改为 service 注入**
-- ~~`approval.module.ts` 导出 `ApprovalRepository`~~ — **已修复**（2026-04-22，移除 exports 中的 ApprovalRepository）
+1. `*.module.ts` 的 `exports` 只允许导出 service。
+2. `*.module.ts` 不允许导出 repository。
+3. 如果其他模块需要查询能力，应在本模块 service 上暴露明确方法。
+4. 如果多个模块需要共享读能力，应优先创建 shared module 或 lookup service，仍然只导出 service。
 
 ---
 
-## 4. 单一职责与文件治理（Single Responsibility）
+## 5. 单一职责与文件治理
 
-### 4.1 量化阈值
+### 5.1 量化阈值
 
+| 指标 | 阈值 | 处置 |
+| --- | --- | --- |
+| 文件行数 | 500 行 | 超过即违规，必须拆分 |
+| 单个方法或函数 | 80 行 | 提取为独立方法、helper 或协作者 |
+| 普通 service 构造函数依赖数 | 5 个 | 超过表明职责过多，应拆分或收拢共享依赖 |
+| facade 构造函数依赖数 | 不限 | facade 注入子 service 是其职责，不计违规 |
+| 类的 public 方法数 | 15 个 | 超过应按职责域拆分 |
+| 方法参数数 | 5 个 | 超过应封装为 command / query object |
 
-| 指标                    | 阈值        | 处置                           |
-| --------------------- | --------- | ---------------------------- |
-| 文件行数                  | **500 行** | 超过即为违规，必须拆分                  |
-| 单个方法/函数               | **80 行**  | 超过应提取为独立方法或协作者               |
-| 构造函数依赖注入数（普通 service） | **5 个**   | 超过表明职责过多，应拆分 service         |
-| 构造函数依赖注入数（facade）     | **不限**    | facade 注入子 service 是其职责，不计违规 |
-| 类的 public 方法数         | **15 个**  | 超过应按职责域拆分为多个 service         |
-| 方法参数数                 | **5 个**   | 超过应封装为 command/query object  |
+facade 判定标准：
 
+- 文件少于 300 行。
+- public 方法均为委托方法。
+- 不包含 `if`、`for`、`while`、`switch` 等业务逻辑分支。
+- 不直接执行数据访问、事务、校验聚合或状态变更。
 
-**facade 的判定标准**：文件 < 300 行，class 内所有 public 方法均为单行委托（`return this.xxxService.xxx(...)`），不含 `if`/`for`/`switch` 等业务逻辑分支。满足此条件的 service 免于构造函数依赖数检查。Facade 可因 DTO import 和大量委托方法而达到 200–300 行，这是正常的——判定依据是"是否含业务逻辑"，而非行数本身。
+满足以上条件的 service 可豁免构造函数依赖数检查。Facade 的核心判定依据是“是否只做委托”，不是行数本身。
 
-### 4.2 God Object 识别标准
+### 5.2 God Object 判定
 
-满足以下**任一**条件即判定为 God Object（**facade 豁免**：满足 §4.1 facade 判定标准的文件不计入）：
+满足以下任一条件即判定为 God Object。满足 §5.1 facade 标准的文件豁免。
 
-1. 构造函数注入 ≥ 5 个依赖（facade 除外）
-2. 文件超过 800 行
-3. 同一个 class 处理 3 个以上互不相关的业务职责域
+1. 构造函数注入超过 5 个依赖。
+2. 文件超过 800 行。
+3. 同一个 class 处理 3 个以上互不相关的业务职责域。
+4. 单个 service 同时承担命令、查询、导入导出、状态机和跨模块协调等多类职责。
 
-### 4.3 拆分原则
+### 5.3 拆分原则
 
-- **application 层**：按 use case（用例）拆分。一个 service 文件承担一个业务用例族。
-  - 示例：`SalesService` → `SalesOutboundService` + `SalesReturnService`
-- **infrastructure 层**：按聚合根或读模型来源拆分。
-  - 示例：`ReportingRepository` → `MonthlyReportRepository` + `HomeMetricsRepository`
-- **spec 文件**：跟随生产代码拆分。当 service 被拆为多个文件时，spec 也应对应拆分。
+| 层 | 拆分依据 |
+| --- | --- |
+| `application/` | 按 use case 或业务动作族拆分 |
+| `infrastructure/` | 按聚合根、读模型来源或外部系统边界拆分 |
+| `domain/` | 按不变量、值对象、领域计算或状态机拆分 |
+| `dto/` | 按接口用途和请求/响应语义拆分 |
+| spec 文件 | 跟随生产代码拆分 |
 
-**拆分不得恶化其他指标**。拆分前后必须对比：
+拆分前后必须保证：
 
+1. 每个子文件不超过 500 行。
+2. 子 service 各自依赖数不超过 5 个；共享依赖应通过 shared service 或 repository 收拢。
+3. 不得因拆分新增 `PrismaService` 注入点。
+4. 不得因拆分新增跨模块 repository 依赖。
+5. 外部 API、controller 入参和 module exports 需要保持兼容，除非任务明确要求破坏性调整。
 
-| 指标       | 拆分前                  | 拆分后要求                                            |
-| -------- | -------------------- | ------------------------------------------------ |
-| 文件行数     | 超标                   | 每个子文件 ≤ 500                                      |
-| 构造函数依赖总数 | N                    | 子 service 各自 ≤ 5（共享依赖通过 shared service 收拢，不重复注入） |
-| 分层违规     | M 个 PrismaService 注入 | ≤ M（不允许因拆分而增加 PrismaService 注入数）                 |
+### 5.4 Facade 和拆分善后
 
+拆分后是否保留原文件，取决于外部消费者。
 
-**共享依赖收拢模式**：当多个子 service 都需要相同的外部依赖（如 `PrismaService`、`MasterDataService`、`InventoryService`），应由 shared service 统一持有事务协调，子 service 只注入 shared service。参照 `InboundSharedService` 的设计意图——但当前实现未贯彻此原则（子 service 仍各自注入 PrismaService）。
+| 拆分类型 | 原文件有外部消费者 | 处理方式 |
+| --- | --- | --- |
+| application service | 有 | 保留为 facade，只委托给子 service |
+| application service | 无 | 删除原文件，调用方直接引用新 service |
+| infrastructure repository | 一般不应有外部消费者 | 删除原文件，本模块 service 直接引用具体 repository |
+| domain helper / util | 视外部引用情况 | 有消费者则保留兼容出口；无消费者则删除 |
 
-### 4.4 Facade 模式与拆分善后
+拆分完成后必须检查消费者：
 
-拆分后，**是否保留原文件**取决于外部消费者：
+```bash
+rg "from .*<原文件名>" src/ -l
+```
 
+禁止反模式：
 
-| 拆分类型                      | 原文件是否有外部消费者                              | 处理方式                                      |
-| ------------------------- | ---------------------------------------- | ----------------------------------------- |
-| application service       | 是（controller、module exports、跨模块注入）       | 保留为 facade（薄代理，< 100 行），委托给子 service      |
-| infrastructure repository | 否（§3.3 禁止导出 repository，消费者只有本模块 service） | **删除原文件**，service 直接 import 具体 repository |
-| domain helper / util      | 视情况                                      | 如果原名被外部引用则保留 re-export，否则删除               |
+1. 只有 re-export 的空壳文件。
+2. 没有业务语义的 barrel 文件。
+3. facade 中继续保留业务逻辑。
+4. 子 service 各自重复注入同一组外部依赖。
 
+### 5.5 新增代码默认规则
 
-**判定标准**：拆分完成后，对原文件执行 `rg "from.*<原文件名>" src/ -l`。如果结果为空（零消费者），直接删除。不允许留下只有 re-export 的空壳文件。
-
-**禁止的反模式**：
-
-- 纯 re-export barrel 文件（只有 `export { ... } from "./xxx"`，无业务逻辑）——这不是 facade，是死代码
-- Facade 中包含业务逻辑——facade 只做委托，逻辑必须在子 service 中
-
-### 4.5 新增代码的默认行为
-
-- 新增功能不得追加到已超过 400 行的文件
-- 新增 use case 应创建独立 service 文件
-- 如果一个 PR 会让某文件超过 500 行，该 PR 必须同时包含拆分
-- **禁止创建无语义命名的"万能抽屉"文件**：`utils.ts` / `helpers.ts` / `common.ts` / `misc.ts` 等一律不予通过。工具函数必须归属到明确的领域子目录（如 `<module>/domain/`、`shared/domain/`、`shared/infrastructure/`），并以职责命名（例：`decimal-precision.util.ts`、`business-document-ref.factory.ts`）。
-- **Rule of Three（抽取阈值）**：同一段逻辑出现 **< 3 次** 时保持内联重复，不预先抽取。仅当出现 ≥ 3 次且语义一致、变更节奏同步时，才抽取为共享函数/VO。依据：Martin Fowler《Refactoring》——过早抽象的成本（错误的接口、虚假的耦合）高于重复的成本。
-
----
-
-## 5. 领域建模（Domain Modeling）
-
-### 5.1 数据团簇（Data Clump）识别与封装
-
-当 3 个以上字段总是一起出现在多个方法签名或接口定义中时，应提取为 Value Object。
-
-**已识别的数据团簇**：
-
-
-| 团簇                                          | 出现频次 | 建议封装                       |
-| ------------------------------------------- | ---- | -------------------------- |
-| businessDocumentType + Id + Number + LineId | 20+  | `BusinessDocumentRef`      |
-| materialCategoryId/Code/Name/PathSnapshot   | 10+  | `MaterialCategorySnapshot` |
-| stockScope + workshopId + stockScopeId      | 15+  | `StockScopeContext`        |
-
-
-**封装位置**：`src/shared/domain/` 或所属模块的 `domain/` 目录。
-
-### 5.2 Value Object 引入时机
-
-- 同一组字段在 **3 个以上方法** 间传递时
-- 同一组字段需要 **校验逻辑**（如 Decimal 精度、非空约束）时
-- 同一组字段在 **跨模块** 传递时（应放入 shared/domain/）
-
-### 5.3 贫血模型改善方向
-
-当前所有业务模块使用贫血模型（service 持有全部逻辑，entity 只是数据容器）。改善方向：
-
-1. **短期**：通过 Value Object 封装数据团簇，减少参数传递
-2. **中期**：对核心聚合（如 InventoryBalance、StockInOrder）引入 domain entity，将不变量校验移入 entity
-3. **长期**：将复杂状态机（如 RdMaterialStatus）封装为 domain service + entity 协作
-
-改善应渐进式，不做一次性大重写。每次触及相关代码时小步改进。
+1. 新增功能不得追加到已经超过 400 行的文件。
+2. 新增 use case 应创建独立 service 文件。
+3. 如果一个 PR 会让某文件超过 500 行，该 PR 必须同时完成拆分。
+4. 禁止创建无语义命名的万能文件，如 `utils.ts`、`helpers.ts`、`common.ts`、`misc.ts`。
+5. 工具函数必须归属到明确领域目录，并以职责命名，例如 `decimal-precision.util.ts`、`business-document-ref.factory.ts`。
+6. 同一段逻辑出现少于 3 次时保持内联重复；出现 3 次及以上且语义一致、变更节奏同步时，才抽取为共享函数、helper 或 Value Object。
 
 ---
 
-## 6. 复杂度控制（Complexity Control）
+## 6. 领域建模
 
-### 6.1 嵌套深度
+### 6.1 数据团簇识别
 
-- 条件/循环嵌套不超过 **3 层**
-- 超过 3 层时必须提取为独立方法、使用 guard clause（early return）或管道化处理
+当 3 个以上字段总是一起出现在多个方法签名、DTO、repository payload 或接口定义中时，应提取为 Value Object。
 
-### 6.2 Guard Clause 优先
+优先识别以下组合：
+
+| 字段组合 | 建议封装 |
+| --- | --- |
+| `businessDocumentType` + `businessDocumentId` + `businessDocumentNumber` + `businessDocumentLineId` | `BusinessDocumentRef` |
+| `materialCategoryId` + `materialCategoryCode` + `materialCategoryName` + `materialCategoryPathSnapshot` | `MaterialCategorySnapshot` |
+| `stockScope` + `workshopId` + `stockScopeId` | `StockScopeContext` |
+
+封装位置：
+
+- 跨模块使用：`src/shared/domain/`
+- 单模块内部使用：`src/modules/<module>/domain/`
+
+### 6.2 Value Object 引入时机
+
+满足以下任一条件时，应引入 Value Object：
+
+1. 同一组字段在 3 个以上方法间传递。
+2. 同一组字段需要共同校验。
+3. 同一组字段跨模块传递。
+4. 同一组字段参与日志、审计、追溯或幂等判定。
+
+Value Object 应提供明确构造和校验入口，避免在多个 service 中重复拼装相同结构。
+
+### 6.3 贫血模型改善方向
+
+本仓库允许渐进式从贫血模型向领域模型演进，但不得一次性大重写。
+
+1. 优先通过 Value Object 封装数据团簇。
+2. 对核心聚合引入 domain entity，将不变量校验移入 entity。
+3. 对复杂状态机引入 domain service 或状态转换对象。
+4. 每次触及相关代码时小步改进，并保持测试覆盖。
+
+---
+
+## 7. 复杂度控制
+
+### 7.1 嵌套深度
+
+- 条件或循环嵌套不得超过 3 层。
+- 超过 3 层时，必须使用 guard clause、提取方法、提取策略对象或拆分管道步骤。
+
+### 7.2 Guard Clause 优先
 
 ```typescript
 // 禁止
 async createOrder(dto: CreateOrderDto) {
   if (dto.lines.length > 0) {
-    if (dto.lines.every(l => l.quantity > 0)) {
-      // ...200 行业务逻辑
+    if (dto.lines.every((line) => line.quantity > 0)) {
+      // business logic
     } else {
       throw new BadRequestException("...");
     }
@@ -382,431 +379,144 @@ async createOrder(dto: CreateOrderDto) {
 // 推荐
 async createOrder(dto: CreateOrderDto) {
   if (dto.lines.length === 0) throw new BadRequestException("...");
-  if (!dto.lines.every(l => l.quantity > 0)) throw new BadRequestException("...");
-  // ...业务逻辑（无额外嵌套）
+  if (!dto.lines.every((line) => line.quantity > 0)) {
+    throw new BadRequestException("...");
+  }
+
+  // business logic
 }
 ```
 
-### 6.3 Switch/Map 替代长 if-else 链
+### 7.3 分支控制
 
-当条件分支超过 3 个时，应使用 Map/Record 查表或策略模式替代。
+- 条件分支超过 3 个时，应优先使用 `Record`、`Map`、策略模式或明确的状态转换表。
+- 不允许在 controller 中写业务分支。
+- 不允许在同一个 service 方法内混合多种单据类型的大型分支；应按 use case 拆分。
 
-### 6.4 Prisma 查询复杂度
+### 7.4 Prisma 查询复杂度
 
-- 嵌套 `include/select` 不超过 **3 层**
-- 超过时应拆分为多次查询或使用 raw SQL
-- `Promise.all` 并行查询不超过 **5 个**，超过时应评估是否存在 N+1 或数据模型问题
+1. 嵌套 `include` / `select` 不得超过 3 层。
+2. 超过 3 层时，应拆分为多次查询、创建读模型方法或使用明确的 raw SQL。
+3. `Promise.all` 并行查询不应超过 5 个；超过时必须评估是否存在 N+1 或数据模型问题。
+4. 查询组合逻辑属于 repository / infrastructure，不得放入 application service。
 
-### 6.5 异常处理边界
+### 7.5 异常处理边界
 
-**禁止"以防万一"的 try-catch**。`catch` 块只有在满足以下至少一个目的时才允许存在：
+禁止“以防万一”的 `try-catch`。`catch` 块只有满足以下至少一个目的时才允许存在：
 
-1. **语义转换**：将底层异常转为领域异常（如 `PrismaClientKnownRequestError` → `BusinessConflictException`）
-2. **有意义的降级**：catch 后返回可接受的 fallback 值，并记录 warn 级日志
-3. **资源清理**：配合 `finally` 释放连接、文件句柄等
-4. **边界捕获**：在消息消费者、定时任务入口等"顶层"防止进程崩溃，必须记录 error 级日志
+1. 语义转换：将底层异常转为领域异常。
+2. 有意义的降级：返回可接受 fallback，并记录 warn 级日志。
+3. 资源清理：配合 `finally` 释放连接、文件句柄或回滚上下文。
+4. 边界捕获：消息消费者、定时任务入口等顶层边界防止进程崩溃，并记录 error 级日志。
 
-**明确禁止的反模式**：
+禁止反模式：
 
 ```typescript
 // 禁止：吞掉异常
-try { await doSomething(); } catch (e) { /* ignore */ }
+try {
+  await doSomething();
+} catch (error) {
+  // ignore
+}
 
-// 禁止：log + rethrow（NestJS 全局过滤器已统一处理）
-try { await doSomething(); } catch (e) { this.logger.error(e); throw e; }
+// 禁止：log + rethrow，NestJS 全局过滤器会统一处理
+try {
+  await doSomething();
+} catch (error) {
+  this.logger.error(error);
+  throw error;
+}
 
-// 禁止：catch 后抛出相同异常（等同于没写）
-try { await doSomething(); } catch (e) { throw e; }
+// 禁止：catch 后抛出相同异常
+try {
+  await doSomething();
+} catch (error) {
+  throw error;
+}
 ```
 
-**默认行为**：让异常冒泡到 NestJS 全局 `ExceptionFilter`，由框架统一转换为 HTTP 响应。Controller / Service 默认不写 try-catch。
+默认行为：让异常冒泡到 NestJS 全局 `ExceptionFilter`，由框架统一转换为 HTTP 响应。Controller 和 Service 默认不写 `try-catch`。
 
 ---
 
-## 7. 质量门禁（Quality Gates）
+## 8. 质量门禁
 
-### 7.1 当前门禁链
+### 8.1 标准门禁链
 
 ```text
-pre-commit (lint-staged)
-  └── biome check --write（仅暂存文件，格式 + lint）
+pre-commit
+  lint-staged
+  biome check --write
 
 commit-msg
-  └── commitlint（提交信息格式）
+  commitlint
 
-pre-push (verify)
-  └── prisma generate → typecheck → test
+pre-push
+  prisma generate
+  typecheck
+  test
 ```
 
-### 7.2 门禁应覆盖的检查项
+### 8.2 门禁覆盖表
 
+| 检查项 | 执行位置 | 阻断要求 |
+| --- | --- | --- |
+| 代码格式 | pre-commit / Biome | 必须阻断 |
+| lint | pre-commit / Biome | 必须阻断 |
+| TypeScript 类型检查 | pre-push / verify | 必须阻断 |
+| 单元测试 | pre-push / verify | 必须阻断 |
+| 文件行数 | PostToolUse hook / `lint:src-lines` | 不得新增违规；全仓扫描发现违规时必须处理或说明 |
+| 拆分残留 | PostToolUse hook / review | 必须处理 |
+| application 层 Prisma 注入 | PostToolUse hook / review | 必须阻断 |
+| 跨模块 repository 依赖 | PostToolUse hook / review | 必须阻断 |
+| 构造函数依赖宽度 | PostToolUse hook / review | 超阈值必须拆分、收拢或说明豁免 |
+| 异常处理反模式 | review | 必须处理 |
 
-| 检查项                            | 当前状态                          | 目标状态                    |
-| ------------------------------ | ----------------------------- | ----------------------- |
-| 代码格式 (biome format)            | pre-commit ✓                  | 不变                      |
-| Lint 规则 (biome lint)           | pre-commit ✓                  | 不变                      |
-| 文件行数 (noExcessiveLinesPerFile) | **warn 级别，不阻断**               | error 级别，阻断             |
-| 拆分残留检测 (dead barrel)           | PostToolUse hook ✓            | 不变                      |
-| TypeScript 类型检查                | pre-push ✓                    | 不变                      |
-| 单元测试                           | pre-push ✓                    | 不变                      |
-| 文件行数扫描 (lint:src-lines)        | **--no-error，不阻断**            | 纳入 verify，移除 --no-error |
-| 跨模块 import 检查                  | PostToolUse hook ✓            | 不变                      |
-| 构造函数依赖数检查                      | PostToolUse hook ✓（⚠️ warn 级） | 待评估是否升级为 error          |
+### 8.3 Agent 提交前自检
 
-
-### 7.3 Agent 执行前自检清单
-
-Agent 在提交代码前必须通过以下检查：
+提交代码前应执行：
 
 ```bash
-bun run lint          # zero errors
-bun run typecheck     # zero errors
-bun run test          # all pass
-bun run lint:src-lines  # zero violations (500 line threshold)
+bun run lint
+bun run typecheck
+bun run test
+bun run lint:src-lines
 ```
 
-### 7.4 Code Review 检查维度
-
-agent review，必须覆盖：
-
-1. **分层合规** — 是否有新的 Prisma import 进入 application 层？
-2. **边界合规** — 是否有跨模块 repository 注入？
-3. **体积合规** — 文件是否超 500 行？方法是否超 80 行？
-4. **复杂度合规** — 是否存在 4 层以上嵌套？
-5. **测试覆盖** — 新增用例是否有对应测试？
-6. **命名一致性** — 是否符合模块命名约定？
+若任务范围很小且跳过部分检查，交付说明必须写明跳过的命令和原因。
 
 ---
 
-## 8. 审计基线（2026-04-24 快照，第八次更新）
+## 9. Code Review 检查维度
 
-记录当前已知违规的量化数据，用于跟踪改善趋势。本轮完成 P4：所有 `src/modules/*/application/*.service.ts` 生产 service 已清零 `PrismaService` 注入，事务入口和直接 Prisma 查询全部下沉到 repository / infrastructure 层；同时 sales 通过 `SalesSharedService` 收敛共享依赖，避免 P4 后继续触发构造函数宽度门禁。
+Review 必须覆盖以下维度：
 
-### 8.1 文件行数违规（> 500 行）
+1. 分层合规：是否新增 `PrismaService` 注入、直接 Prisma 查询或 application 层事务。
+2. 模块边界：是否跨模块 import / 注入 repository 或 infrastructure。
+3. 文件体积：文件是否超过 500 行，方法是否超过 80 行。
+4. 职责边界：service 是否承担过多 use case，是否形成 God Object。
+5. 复杂度：是否存在超过 3 层嵌套、长 if-else 链或过深 Prisma include。
+6. 事务边界：事务是否由 repository / Unit of Work 管理。
+7. DTO 和校验：请求 DTO 是否具备必要校验，响应结构是否稳定。
+8. 异常处理：是否存在吞异常、无意义 log + rethrow 或纯 rethrow。
+9. 测试覆盖：新增路径是否有单元测试，重构是否保持原有行为覆盖。
+10. 命名一致性：文件、类、方法和 DTO 是否符合模块命名约定。
 
-- **违规文件数**：0（较上次 6 减少 6，较初始 23 减少 23，↓100%）
-- **当前边界文件（非违规，但接近阈值）**：
-  - `reporting/infrastructure/monthly-report.repository.ts` — 500 行（刚好达阈值，禁止继续膨胀）
-  - `inbound/application/inbound-acceptance-update.service.ts` — 499 行（刚好贴近阈值，后续只允许拆分不允许增长）
-  - `sales/application/sales-outbound-update.service.ts` — 492 行
-  - `inventory-core/application/inventory-source-usage.service.spec.ts` — 484 行
-  - `master-data/infrastructure/master-data-suggestions.repository.ts` — 491 行
-  - `reporting/application/reporting.service.ts` — 490 行
-- **本轮新增消除（共 6 个）**：
-  - ~~`inventory-core/application/inventory.service.spec.ts` — 1724~~ → 拆为 focused specs（当前最大 `inventory-source-usage.service.spec.ts` 484 行）
-  - ~~`inventory-core/application/inventory.service.ts` — 1636~~ → 拆为 facade + query / mutation / source usage / settlement services（最大 455 行）
-  - ~~`rd-project/application/rd-project.service.ts` — 1502~~ → 拆为 master / view / material-action / lookup / persistence 等 focused services（最大 453 行）
-  - ~~`rd-subwarehouse/application/rd-material-status.helper.ts` — 1007~~ → 拆为 core / format / operations / order / request helpers（最大低于 500 行）
-  - ~~`inbound/application/inbound.service.spec.ts` — 908~~ → 拆为 create-primary / create-rd-and-scope / update / void-query specs（最大 451 行）
-  - ~~`rd-project/application/rd-project-material-action.service.ts` — 650~~ → 提取 helper / persistence / master 查询能力（当前 431 行）
-- **历史已消除（主要条目，前几轮 facade 与 repository 拆分）**：
-  - ~~`rbac/infrastructure/in-memory-rbac.repository.ts` — 2391~~ → 拆为 rbac-persistence / rbac-resource / rbac-user / rbac-dict-config / rbac-routes / rbac-seed-repair + rbac-state（最大 489 行）
-  - ~~`reporting/infrastructure/reporting.repository.ts` — 2165~~ → 拆为 monthly-report / monthly-material-category / monthly-report-adjustment / monthly-report-rd / home-metrics / inventory-reporting + reporting-repository.helpers（最大 500 行）
-  - ~~`sales/application/sales.service.ts` — 1738~~ → facade 58 + 6 子 service
-  - ~~`workshop-material/application/workshop-material.service.ts` — 1495~~ → facade 112 + 5 子 service
-  - ~~`workshop-material/application/workshop-material.service.spec.ts` — 1391~~ → 5 spec
-  - ~~`sales/application/sales.service.spec.ts` — 1125~~ → 4 spec
-  - ~~`inbound/application/inbound.service.ts` — 1106~~ → facade 63 + 4 子 service + shared + domain helper
-  - ~~`sales-project/application/sales-project.service.ts` — 745~~ → facade 70 + 4 子 service
-  - ~~`rbac/application/system-management.service.ts` — 721~~ → facade 91 + 3 子 service
-  - ~~`reporting/application/monthly-reporting.service.spec.ts` — 695~~ → 4 spec
-  - ~~`reporting/application/reporting.service.ts` — 620~~ → 提取 date/timezone 工具到 domain/reporting-date.util.ts（490 行）
-  - ~~`inventory-core/infrastructure/inventory.repository.ts` — 536~~ → 提取 FactoryNumberRepository（467 行）
-  - ~~`rd-subwarehouse/application/rd-handoff.service.ts` — 541~~ → 提取 rd-handoff-resolver.helper，并将事务入口下沉到 repository（service 456 行）
-  - ~~`rd-project/application/rd-project.service.spec.ts` — 760~~ → 拆为 rd-project-actions.spec + rd-project-master.spec + rd-project-material-action.spec + spec-helpers（最大 443 行）
-  - ~~`rd-subwarehouse/application/rd-stocktake-order.service.spec.ts` — 515~~ → 精简至 438 行
-  - ~~`reporting/application/monthly-reporting.service.ts` — 2106~~ → facade 121 + 7 子 service
+任何会增加违规数量的变更，默认不得合并。若必须暂时接受，必须在 PR 说明中记录原因、影响范围和后续处理入口。
 
-### 8.2 分层违规（application 层 PrismaService 注入）
+---
 
-- **违规文件数**：**0 个生产文件**（2026-04-24 精确扫描，排除 `*.spec.ts` 与 `*.test-support.ts`；扫描命令 `rg -l "PrismaService" src/modules/*/application -g '*.service.ts'`）
-- **完成方式**：保留 application 层对 `Prisma` 类型、enum、`Prisma.Decimal` 和 `Prisma.TransactionClient` 的合法引用；所有 `PrismaService` 注入、`this.prisma.runInTransaction(...)` 与 `this.prisma.*` 直接查询均下沉到 repository / infrastructure。
+## 10. 判定速查表
 
-**已清零模块**：
-
-| 模块 | P4 收拢方式 |
-| --- | --- |
-| inbound | `InboundRepository.runInTransaction`、`StockInPriceCorrectionRepository.runInTransaction` 与 `InboundRepository.findMaterialCategoryByCode` 承接事务和默认分类查询 |
-| sales | `SalesRepository.runInTransaction`、分类 / 追溯读模型方法承接 Prisma；`SalesSharedService` 收敛共享依赖 |
-| workshop-material | `WorkshopMaterialRepository.runInTransaction`、RD 报废来源查询与退料关系 upsert 下沉 |
-| rd-subwarehouse | `RdProcurementRequestRepository.runInTransaction` 承接采购需求事务 |
-| sales-project | `SalesProjectRepository.runInTransaction` 承接生命周期事务 |
-| rd-project / inventory-core / approval / reporting / master-data | 已保持 application 层零 `PrismaService` 注入 |
-
-- **治理结果**：P4 已完成；后续新增 application service 若注入 `PrismaService`，应由 hook / review 直接阻断。
-
-### 8.3 模块边界违规
-
-- **跨模块 Repository 注入（application 层）**：**0 处**
-- **模块级 Provider 交叉注册**：**0 处**
-- **已完成修复**：新增 `rd-project/rd-project-shared.module.ts`、`rd-project/application/rd-project-lookup.service.ts` 与 `rd-project/infrastructure/rd-project-persistence.service.ts`；shared module 只导出 service，不导出 repository，rd-subwarehouse 只注入 `RdProjectLookupService`。
-- **剩余注意**：`rd-project.module.ts` 仍 imports `RdSubwarehouseModule`，因为 `RdProjectService` 仍消费 `RdProcurementRequestService`；但 rd-subwarehouse 不再反向 import `RdProjectModule`，也不再重复注册 rd-project repository，P1 的 DI 正确性风险已解除。
-
-### 8.4 God Object
-
-- **当前违规数**：0
-- **已消除（共 7 个）**：SalesService、WorkshopMaterialService、MonthlyReportingService、InboundService、SalesProjectService、SystemManagementService、InventoryService
-- **最新结果**：`InventoryService` 已从 1636 行收敛为 209 行 facade；`rd-project` 也完成 master / view / material action / lookup / persistence 拆分，生产 service 均低于 500 行。
-- **治理重点迁移**：God Object 与 P4 分层违规均已清零，下一阶段主风险是 inbound 更新用例的文件尺寸 / 依赖宽度，以及 §8.10 的 Value Object 提取。
-
-### 8.5 趋势跟踪
-
-每次执行 `bun run lint:src-lines --json` 可获取最新数据。建议每月或每个大版本后更新本节基线数字。
-
-### 8.6 后续治理路线图
-
-以下任务按优先级排序，供后续 agent 开展：
-
-#### ~~P1：rd-project ↔ rd-subwarehouse 双向依赖解耦~~ ✅ 已完成 
-
-- **完成方式**：新增 `RdProjectSharedModule`、`RdProjectLookupService` 与 `RdProjectPersistenceService`，让 rd-project 与 rd-subwarehouse 共同依赖一个无反向 import 的 shared module，且 module exports 仍保持“只导出 service”。
-- **已消除**：rd-subwarehouse 不再跨模块注入 `RdProjectRepository`，也不再在自己的 providers 中重复注册 rd-project repository。
-- **同步治理**：`rd-handoff.service.ts` 从 541 行降至 456 行；`rd-handoff` / `rd-stocktake-order` 的 `PrismaService` 注入已下沉到各自 repository 的 `runInTransaction`。
-
-#### ~~P2：InventoryService 拆分~~ ✅ 已完成
-
-- **完成现状**：`InventoryService` 209 行，作为对外兼容 facade；子 service 最大 455 行，全部低于 500 行。
-- **风险**：被 sales、workshop-material、inbound、rd-project、rd-subwarehouse 等几乎所有模块依赖。拆分需要非常谨慎。
-- **建议方向**：按操作类型拆分（increaseStock / decreaseStock / reverseStock / getBalance 等），保留 facade。
-- **前置条件**：需要 Read 完整的 inventory.service.ts 和所有调用方，理解每个方法的消费者。
-- **已开始（2026-04-24）**：先提取 `InventoryQueryService` 承接余额 / 流水 / 来源用量 / 编号区间 / 价格层可用量查询，`InventoryService` 继续作为对外兼容 facade；同时将 `PrismaService.runInTransaction` 入口下沉到 repository，避免拆分过程中新增 application 层 Prisma 注入点。
-- **完成结果**：`InventoryService` 已收敛为兼容 facade；stock mutation、source usage、FIFO settlement、query/read、常量与命令类型已拆分到独立文件，相关 focused specs 已同步拆分且全部低于 500 行。
-
-#### ~~P3：Infrastructure 层大文件拆分~~ ✅ 已完成
-
-- ~~`in-memory-rbac.repository.ts`（2391 行）~~ → 已拆为 6+ 文件（最大 489 行）
-- ~~`reporting.repository.ts`（2165 行）~~ → 已拆为 6 文件（最大 500 行）
-- ~~`inventory.repository.ts`（536 行）~~ → 已提取 FactoryNumberRepository（431 行）
-
-#### ~~P4：application 层 PrismaService 下沉~~ ✅ 已完成
-
-- **完成结果**：application 层生产 service 的 `PrismaService` 注入点从 18 个清零。
-- **方法**：把 `this.prisma.runInTransaction`、默认分类查询、追溯读模型查询、关系 upsert 等直接 Prisma 操作下沉到对应 repository。
-- **保留豁免**：application 层仍可使用 `Prisma.Decimal`、生成 enum 与 `Prisma.TransactionClient` 类型，见 §2.3.1。
-
-#### ~~P5：Spec 文件拆分~~ ✅ 已完成
-
-- `inventory.service.spec.ts` 已拆分为 mutation / source usage / settlement / query-cost focused specs。
-- `inbound.service.spec.ts` 已拆分为 create / update / void-query focused specs。
-- 2026-04-24 `bun run lint:src-lines --json` 结果：`violations: []`。
-
-### 8.7 拆分善后审计（Split Aftermath Audit）
-
-历次 God Object 拆分后，是否真正收拢了共享 infra 依赖（主要是 `PrismaService` 与事务边界）决定了重构的实际收益。仅看文件行数会误判——行数达标但 Prisma 注入点反而增加的"拆分"是**负收益**，因为每个子 service 独立持有事务会放大一致性风险。
-
-**审计口径**：对每个已完成拆分的模块，统计子 service 中注入 `PrismaService` 或直接调用 `this.prisma.*` / `tx.*` 的文件数。对比拆分前 God Object 的注入状况。
-
-
-| 模块                         | 拆分前 Prisma 注入 | 拆分后 Prisma 注入 | 收拢方式                                                                                                                                                                                 | 评估                                       |
-| -------------------------- | ------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
-| **workshop-material**      | 1             | 0             | `WorkshopMaterialRepository.runInTransaction`、RD 报废来源查询与退料关系 upsert 承接原 shared/helper Prisma 操作                                                                                      | ✅ **完成收拢**                               |
-| **inbound**                | 1             | 0             | `InboundRepository` 与 `StockInPriceCorrectionRepository` 统一承接事务和默认分类查询，拆分扩散已修复                                                                                                      | ✅ **完成收拢**                               |
-| **sales**                  | 1             | 0             | `SalesRepository` 承接事务、默认分类和追溯读模型查询；`SalesSharedService` 收敛共享依赖                                                                                                                     | ✅ **完成收拢**                               |
-| **monthly-reporting**      | 0             | 0             | 拆分前后均无 Prisma 注入（走 repository）                                                                                                                                                       | ✅ **本就合规**                               |
-| **inventory-core**         | 1             | 0             | P2 后由 `InventoryRepository.runInTransaction(tx, handler)` 统一承接事务，facade 与子 service 均不注入 PrismaService                                                                                   | ✅ **完成收拢**                               |
-| **sales-project**          | 1             | 0             | `SalesProjectRepository.runInTransaction(handler)` 统一承接 create / update / void 事务                                                                                                   | ✅ **完成收拢**                               |
-| **rbac/system-management** | 0             | 0             | 子 service 均通过 repository                                                                                                                                                             | ✅ **本就合规**                               |
-
-
-**结论**：拆分不是目的，**消除分层违规**才是。P4 后所有已拆分模块均完成 Prisma 注入点收拢，后续重点转为构造函数依赖宽度和 Value Object 提取。
-
-**强制规则（新增）**：
-
-1. **任何 God Object 拆分 PR 必须在描述中声明"Prisma 注入点变化"**（拆分前 N 个 → 拆分后 M 个）。`M > N` 的 PR 默认拒绝合并，除非同 PR 内附 Follow-up issue 链接和时间点承诺。
-2. **拆分前需选定共享依赖收拢方式**：
-  - **方式 A（推荐）**：shared service 持 PrismaService + 事务，子 service 仅注入 shared service（workshop-material 模板）
-  - **方式 B**：子 service 直接调用 repository，不走事务（仅适用于只读/独立原子写入场景）
-  - **方式 C（禁止）**：每个子 service 各自注入 PrismaService——除非有明确的书面豁免理由（如 shared service 本身会触发 God Object）
-3. **P4 完成后禁止回退**：新增拆分若需要事务或直接查询，必须先在 repository 增加方法；不得在 application service 重新注入 `PrismaService`。
-
-### 8.8 构造函数依赖审计（§4.1）
-
-扫描方式：遍历 `src/modules/*/application/*.service.ts`，统计 constructor 中 `private` / `public` 依赖数；facade 豁免再人工复核。
-
-- **结果**：`>= 5` 依赖的生产 service 共 **9 个**（较上次 13 减少 4）
-- **facade 豁免**：`master-data/application/master-data.service.ts` 虽然有 9 个依赖，但 public 方法均为委托，不计普通 service 违规
-
-| 文件 | 依赖数 | 行数 | 备注 |
-| --- | --- | --- | --- |
-| `master-data/application/master-data.service.ts` | 9 | 261 | facade，豁免 |
-| `inbound/application/inbound-acceptance-update.service.ts` | 5 | 499 | 接近 500 行，下一步优先拆分 |
-| `rd-subwarehouse/application/rd-handoff.service.ts` | 5 | 456 | P1 后降至边界值，待观察 |
-| `ai-assistant/application/ai-assistant.service.ts` | 5 | 427 | 边界值，待观察 |
-| `reporting/application/monthly-report-export.service.ts` | 5 | 408 | 边界值，待观察 |
-| `inbound/application/inbound-production-receipt-update.service.ts` | 5 | 393 | inbound 更新逻辑仍偏重 |
-| `auth/application/auth.service.ts` | 5 | 262 | 边界值 |
-| `inbound/application/inbound-acceptance-creation.service.ts` | 5 | 225 | P4 后降至阈值 |
-| `inbound/application/inbound-production-receipt-creation.service.ts` | 5 | 185 | P4 后降至阈值 |
-
-**结论**：
-
-- 高依赖数问题已从 **sales + inbound** 收敛为主要集中在 **inbound update**；sales 通过 `SalesSharedService` 退出高依赖清单
-- `inbound-acceptance-update.service.ts` 同时具备 499 行和 5 依赖，是下一轮治理的最高优先级
-- 后续治理应优先拆分 inbound 更新用例内部的“行差异计算 / 库存重放 / RD 状态同步”三个协作者，而不是继续横向扩散 service
-
-### 8.9 try/catch 合规审计（§6.5）
-
-扫描方式：全仓检索 `catch (...)`，重点复核三类反模式：
-
-1. 空 catch
-2. `catch (error) { throw error; }` 纯 rethrow
-3. `logger.error(...); throw error;` 无语义转换的 log + rethrow
-
-- **结果**：未发现明确违规，当前基线记为 **0 处**
-
-**已复核的合法模式**：
-
-- `master-data/infrastructure/master-data-suggestions.repository.ts:442`：仅在“非可忽略错误”时 rethrow，其余分支记录 schema drift 并降级，属于 §6.5.1 合法语义分支
-- `scheduler/application/scheduler.service.ts:114/149/169/189`：catch 中执行补偿 / 回滚后再抛出，属于 §6.5.3 资源清理
-- `master-data/application/customer.service.ts:143`、`supplier.service.ts:148`、`stock-scope.service.ts:99`：先做 `P2002 -> ConflictException` 语义转换，未命中时才 `throw error`，属于 §6.5.1
-
-**结论**：§6.5 目前执行良好，暂不需要新增自动化门禁；保留在 Code Review 规则中即可。
-
-### 8.10 Value Object 采纳审计（§5.1）
-
-扫描方式：检索 `BusinessDocumentRef`、`MaterialCategorySnapshot`、`StockScopeContext` 及相邻实现。
-
-| 目标 VO | 当前状态 | 说明 |
+| 问题 | 判定标准 | 行动 |
 | --- | --- | --- |
-| `BusinessDocumentRef` | ❌ 未提取 | 仅存在 `src/shared/domain/business-document-type.ts` 中的 `BusinessDocumentType` enum；`type + id + number + lineId` 组合仍未形成独立 VO |
-| `MaterialCategorySnapshot` | ⚠️ 局部提取、位置错误 | 在 `src/modules/sales/application/sales-snapshots.service.ts:40` 里定义为 application 层本地类型；`inbound-shared.service.ts` 又有一套同语义构造逻辑，说明还没有形成跨模块共享 VO |
-| `StockScopeContext` | ⚠️ 仅存在特化版本 | `src/modules/session/domain/user-session.ts:21` 已有 `ResolvedStockScopeContext`，且 `stock-scope-compatibility.service.ts` / `workshop-scope.service.ts` 正在复用；但它是“鉴权解析结果”而不是 §5.1 所说的通用 `StockScopeContext` VO |
-
-- **总体判断**：§5.1 列出的 3 个目标 VO 中，**0 个完成正确提取**
-- **最接近完成的项**：`ResolvedStockScopeContext`，但仍属于场景化类型，不足以覆盖 inventory / inbound / rbac 的通用上下文传递
-- **治理优先级**：
-  1. `BusinessDocumentRef` 最高，跨模块最广，适合作为 `src/shared/domain/business-document-ref.ts`
-  2. `MaterialCategorySnapshot` 次之，应从 application 层迁出，避免未来跨模块从 application import type
-  3. `StockScopeContext` 可与 P2 `InventoryService` 拆分联动处理
-
----
-
-## 附录 A：正面案例
-
-### master-data 模块拆分
-
-`master-data` 模块已完成 service 拆分，是当前仓库的最佳实践参考：
-
-```text
-master-data/application/
-├── master-data.service.ts        (facade, 269 行, 注入 8 个子 service)
-├── customer.service.ts           (167 行, 注入 1 个 repository)
-├── material.service.ts           (170 行, 注入 1 个 repository)
-├── material-category.service.ts  (< 200 行)
-├── supplier.service.ts           (168 行)
-├── personnel.service.ts          (< 100 行)
-├── workshop.service.ts           (< 100 行)
-├── stock-scope.service.ts        (< 100 行)
-└── field-suggestions.service.ts  (< 100 行)
-```
-
-**关键模式**：
-
-- 原 MasterDataService 保留为 facade，只做委托
-- 每个子 service 只注入 1 个 repository，职责单一
-- Controller 和 DTO 保持不变，模块对外接口稳定
-- Spec 文件对应拆分为 `customer.service.spec.ts` 等
-
-### sales 模块拆分（2026-04-22）
-
-```text
-sales/application/
-├── sales.service.ts                  (facade, 58 行)
-├── sales-outbound.service.ts         (393 行)
-├── sales-outbound-update.service.ts  (495 行)
-├── sales-return.service.ts           (473 行)
-├── sales-return-source.service.ts    (141 行)
-├── sales-snapshots.service.ts        (227 行)
-└── sales-traceability.service.ts     (175 行)
-```
-
-**关键决策**：updateOrder 单独 419 行，无法与 create/void 合入同文件，故拆为独立 service。SnapshotsService 和 TraceabilityService 被 3 个消费者共享（Rule of Three），合理抽取。
-
-### workshop-material 模块拆分（2026-04-22）
-
-```text
-workshop-material/
-├── application/
-│   ├── workshop-material.service.ts              (facade, 112 行)
-│   ├── workshop-material-pick.service.ts         (411 行)
-│   ├── workshop-material-return.service.ts       (469 行)
-│   ├── workshop-material-scrap.service.ts        (468 行)
-│   ├── workshop-material-shared.service.ts       (408 行)
-│   └── workshop-material-return-helpers.service.ts (283 行)
-└── domain/
-    └── workshop-material-order-type.helper.ts    (42 行)
-```
-
-**关键决策**：按 OrderType（PICK/RETURN/SCRAP）拆分，每种类型独立 service。`toOperationType`/`toCreateDocumentPrefix` 纯函数移到 domain/ 层。
-
-### monthly-reporting 模块拆分（2026-04-22）
-
-```text
-reporting/application/
-├── monthly-reporting.service.ts                  (facade, 121 行)
-├── monthly-report-catalog.service.ts             (132 行)
-├── monthly-report-domain-aggregator.service.ts   (344 行)
-├── monthly-report-domain-summary.service.ts      (287 行)
-├── monthly-report-export.service.ts              (408 行)
-├── monthly-report-item-mapper.service.ts         (197 行)
-├── monthly-report-material-category.service.ts   (312 行)
-├── monthly-report-source.service.ts              (412 行)
-└── monthly-reporting.formatters.ts               (241 行, 共享格式化工具)
-```
-
-**关键决策**：按 topic/视图维度拆分。格式化工具集中到 formatters.ts 而非分散到各 service。
-
-### inbound 模块拆分（2026-04-22）
-
-```text
-inbound/
-├── application/
-│   ├── inbound.service.ts                             (facade, 63 行)
-│   ├── inbound-acceptance-creation.service.ts         (150 行)
-│   ├── inbound-acceptance-update.service.ts           (217 行)
-│   ├── inbound-production-receipt-creation.service.ts (90 行)
-│   ├── inbound-production-receipt-update.service.ts   (185 行)
-│   └── inbound-shared.service.ts                      (341 行)
-└── domain/
-    └── inbound-order-type.helper.ts                   (24 行)
-```
-
-**关键决策**：原 service 按 `StockInOrderType` × use case 双维度拆分：ACCEPTANCE 和 PRODUCTION_RECEIPT 各自分 creation + update 两个 service，因为 updateOrder 逻辑极重（400+ 行）。共享校验/快照构建/采购需求关联逻辑集中到 InboundSharedService。
-
-### sales-project 模块拆分（2026-04-22）
-
-```text
-sales-project/application/
-├── sales-project.service.ts                  (facade, 70 行)
-├── sales-project-lifecycle.service.ts        (362 行)
-├── sales-project-material-view.service.ts    (233 行)
-├── sales-project-outbound-draft.service.ts   (106 行)
-└── sales-project-reference.service.ts        (93 行)
-```
-
-**关键决策**：`SalesProjectBindingReference` type 从 facade 通过 `export { type ... }` re-export，保持外部 consumer（sales 模块）零改动。MaterialViewService 提供 `requireProject` + `buildProjectView`，被 Lifecycle 和 OutboundDraft 共用。
-
-### rbac/system-management 模块拆分（2026-04-22）
-
-```text
-rbac/application/
-├── system-management.service.ts    (facade, 91 行)
-├── system-user.service.ts          (91 行, 用户 CRUD + 密码/状态/授权)
-├── system-resource.service.ts      (79 行, 角色/菜单/部门/岗位)
-└── system-dict-config.service.ts   (71 行, 字典/参数/公告)
-```
-
-**关键决策**：原 service 是"宽而浅"的 God Object（60+ 个公开方法，但每个方法只有 1-5 行纯委托）。按 RBAC 领域域分 3 组：User（需要 SessionService 做 session 失效）、Resource（需要 SessionService 做角色 session 失效）、DictConfig（不需要 SessionService）。CSV 导出 helper 因 Rule of Three（3+ 子 service 各自需要）保持内联重复，未抽取到共享层。
-
----
-
-## 附录 B：判定速查表
-
-
-| 问题                                     | 判定标准                                             | 行动                        |
-| -------------------------------------- | ------------------------------------------------ | ------------------------- |
-| 新文件该放 application/ 还是 infrastructure/? | 是否 import Prisma/Redis/外部 SDK？是 → infrastructure | 按层归类                      |
-| 是否需要新建 service？                        | 现有 service 已有 5+ 依赖或 400+ 行？是 → 新建               | 按 use case 拆分             |
-| 跨模块需要数据怎么办？                            | 对方 module exports 里有合适的 service 方法吗？             | 有 → 注入 service；无 → 请求对方新增 |
-| 一组字段总是一起出现？                            | 出现 3+ 次？                                         | 封装为 Value Object          |
-| 方法太长？                                  | > 80 行                                           | 提取子方法或创建 helper           |
+| 新文件放 `application/` 还是 `infrastructure/` | 是否 import Prisma / Redis / 外部 SDK | 是则放 `infrastructure/` |
+| 是否需要新建 service | 现有 service 已有 5 个依赖或超过 400 行 | 新建 focused service |
+| 跨模块需要数据 | 对方 module 是否 exports 合适 service 方法 | 有则注入 service；无则让对方模块补 service 方法 |
+| 能否注入其他模块 repository | 任何场景都不允许 | 改为注入 exported service |
+| 一组字段总是一起出现 | 出现 3 次及以上 | 封装 Value Object |
+| 方法太长 | 超过 80 行 | 提取子方法、helper 或协作者 |
+| 文件太长 | 超过 500 行 | 拆分文件 |
+| 构造函数依赖太多 | 普通 service 超过 5 个 | 拆分职责或收拢共享依赖 |
+| 能否保留原 service 文件 | 外部仍有消费者，且可变成薄 facade | 保留 facade；否则删除 |
+| 是否可以创建 `utils.ts` | 无明确领域语义 | 不允许，按职责命名 |
