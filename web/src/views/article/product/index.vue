@@ -190,9 +190,14 @@
         <el-table-column label="单位" prop="unit" />
         <el-table-column label="数量" prop="quantity" />
         <el-table-column label="单价" prop="unitPrice" />
+        <el-table-column label="金额">
+          <template #default="scope">
+            {{ formatLineAmount(scope.row) }}
+          </template>
+        </el-table-column>
         <el-table-column label="含税价" prop="taxIncludedPrice" />
         <el-table-column label="供应商" prop="supplierName" />
-        <el-table-column label="说明" prop="instruction" />
+        <el-table-column label="计价说明" prop="instruction" />
         <el-table-column label="出厂编号" prop="interval" />
         <el-table-column label="备注" prop="remark" />
       </adaptive-table>
@@ -383,12 +388,12 @@
 			        </el-select>
 		        </template>
 	        </el-table-column>
-          <el-table-column label="说明" prop="instruction" width="150">
+          <el-table-column label="计价说明" prop="instruction" width="150">
             <template #default="scope">
               <el-input
                 v-model="scope.row.instruction"
                 type="textarea" :autosize="{ minRows: 1 }"
-                placeholder="请输入说明"
+                placeholder="请输入计价说明"
               />
             </template>
           </el-table-column>
@@ -561,6 +566,13 @@ function calculateTotalAmount() {
     });
   }
   form.value.totalAmount = total.toFixed(2);
+}
+
+function formatLineAmount(row) {
+  const amount = Number(
+    row?.amount ?? Number(row?.unitPrice || 0) * Number(row?.quantity || 0),
+  );
+  return Number.isFinite(amount) ? amount.toFixed(2) : "0.00";
 }
 
 /** 搜索供应商 */

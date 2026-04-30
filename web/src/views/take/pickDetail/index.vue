@@ -125,8 +125,8 @@
       <el-table-column sortable show-overflow-tooltip label="物料名称" align="center" prop="materialName" v-if="columns[3].visible" />
       <el-table-column sortable show-overflow-tooltip label="规格型号" align="center" prop="specification" v-if="columns[4].visible" />
       <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="quantity" v-if="columns[5].visible" />
-      <el-table-column sortable show-overflow-tooltip label="单价" align="center" prop="unitPrice" v-if="columns[6].visible" />
-      <el-table-column sortable show-overflow-tooltip label="说明" align="center" prop="instruction" v-if="columns[7].visible" />
+      <el-table-column sortable show-overflow-tooltip label="单价" align="center" prop="rawUnitPrice" v-if="columns[6].visible" />
+      <el-table-column sortable show-overflow-tooltip label="金额" align="center" prop="amount" v-if="columns[7].visible" />
       <el-table-column sortable show-overflow-tooltip label="备注" align="center" prop="remark" v-if="columns[8].visible" />
     </adaptive-table>
     <span style="font-size: 16px; font-weight: bold; color: #f56c6c;text-align: right;">合计金额：{{ totalMoney }}</span>
@@ -208,7 +208,7 @@ const data = reactive({
 });
 const totalMoney = computed(() => {
   const total = pickDetailList.value.reduce(
-    (sum, item) => sum + Number(item.unitPrice),
+    (sum, item) => sum + Number(item.amount),
     0,
   );
   // 浮点累加会产生 34249.2299999 等误差，按分取整再转回元并保留两位小数
@@ -234,7 +234,7 @@ const columns = ref([
   { key: 4, label: `规格型号`, visible: true },
   { key: 5, label: `数量`, visible: true },
   { key: 6, label: `单价`, visible: true },
-  { key: 7, label: `说明`, visible: true },
+  { key: 7, label: `金额`, visible: true },
   { key: 8, label: `备注`, visible: true },
 ]);
 
@@ -471,8 +471,8 @@ function getSummaries(param) {
       } else {
         sums[index] = "N/A";
       }
-    } else if (column.property === "unitPrice") {
-      const values = data.map((item) => Number(item.unitPrice));
+    } else if (column.property === "amount") {
+      const values = data.map((item) => Number(item.amount));
       if (!values.every((value) => Number.isNaN(value))) {
         sums[index] = values
           .reduce((prev, curr) => {

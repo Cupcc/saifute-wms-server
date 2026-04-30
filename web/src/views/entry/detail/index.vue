@@ -126,7 +126,7 @@
       <el-table-column sortable show-overflow-tooltip label="规格型号" align="center" prop="material.specification" v-if="columns[3].visible" />
       <el-table-column sortable show-overflow-tooltip label="单价" align="center" prop="unitPrice" v-if="columns[4].visible" />
       <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="quantity" v-if="columns[5].visible" />
-      <el-table-column sortable show-overflow-tooltip label="小计" align="center" prop="subtotal" v-if="columns[6].visible" />
+      <el-table-column sortable show-overflow-tooltip label="金额" align="center" prop="amount" v-if="columns[6].visible" />
       <el-table-column sortable show-overflow-tooltip label="含税价" align="center" prop="taxPrice" v-if="columns[7].visible" />
       <el-table-column sortable show-overflow-tooltip label="供应商" align="center" prop="supplierName" v-if="columns[8].visible" />
 	    <el-table-column sortable show-overflow-tooltip label="备注" align="center" prop="remark" v-if="columns[9].visible" />
@@ -237,7 +237,7 @@ const columns = ref([
   { key: 3, label: `规格型号`, visible: true },
   { key: 4, label: `数量`, visible: true },
   { key: 5, label: `单价`, visible: true },
-  { key: 6, label: `小计`, visible: true },
+  { key: 6, label: `金额`, visible: true },
   { key: 7, label: `含税价`, visible: true },
   { key: 8, label: `供应商`, visible: true },
   { key: 9, label: `备注`, visible: true },
@@ -325,8 +325,8 @@ function getSummaries(param) {
       } else {
         sums[index] = "N/A";
       }
-    } else if (column.property === "subtotal") {
-      const values = data.map((item) => Number(item.subtotal));
+    } else if (column.property === "amount") {
+      const values = data.map((item) => Number(item.amount));
       if (!values.every((value) => Number.isNaN(value))) {
         sums[index] = values
           .reduce((prev, curr) => {
@@ -395,14 +395,14 @@ function getList() {
     .then((response) => {
       if (response.data && Array.isArray(response.data)) {
         detailList.value = response.data.map((item) => {
-          // 计算小计 = 数量 * 单价
-          const subtotal =
-            item.quantity && item.unitPrice
-              ? (item.quantity * item.unitPrice).toFixed(2)
-              : "0.00";
+          const amount =
+            item.amount ??
+            (item.quantity && item.unitPrice
+              ? Number((item.quantity * item.unitPrice).toFixed(2))
+              : 0);
           return {
             ...item,
-            subtotal: subtotal,
+            amount,
           };
         });
       } else {

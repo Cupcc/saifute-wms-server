@@ -83,13 +83,10 @@ export class WorkshopMaterialPickService {
       );
 
     const linesWithSnapshots = await Promise.all(
-      dto.lines.map((line, idx) =>
-        this.shared.buildLineWriteData(line, idx + 1),
-      ),
+      dto.lines.map((line, idx) => this.buildPickLineWriteData(line, idx + 1)),
     );
 
-    const { totalQty, totalAmount } =
-      this.shared.computeTotals(linesWithSnapshots);
+    const { totalQty } = this.shared.computeTotals(linesWithSnapshots);
 
     return this.shared.createWithDocumentNo(
       this.orderType,
@@ -106,7 +103,7 @@ export class WorkshopMaterialPickService {
             handlerNameSnapshot,
             workshopNameSnapshot: workshop.workshopName,
             totalQty,
-            totalAmount,
+            totalAmount: new Prisma.Decimal(0),
             remark: dto.remark,
             auditStatusSnapshot: AuditStatusSnapshot.PENDING,
             createdBy,
@@ -128,7 +125,7 @@ export class WorkshopMaterialPickService {
           tx,
         );
 
-        await this.settleConsumerOutForLines({
+        const settledTotalAmount = await this.settleConsumerOutForLines({
           orderId: order.id,
           documentNo: order.documentNo,
           inventoryStockScope,
@@ -140,6 +137,15 @@ export class WorkshopMaterialPickService {
           tx,
         });
 
+        const settledOrder = await this.shared.repository.updateOrder(
+          order.id,
+          {
+            totalAmount: settledTotalAmount,
+            updatedBy: createdBy,
+          },
+          tx,
+        );
+
         await this.shared.requestApproval(
           order.id,
           order.documentNo,
@@ -147,7 +153,7 @@ export class WorkshopMaterialPickService {
           tx,
         );
 
-        return order;
+        return settledOrder;
       },
     );
   }
@@ -184,12 +190,11 @@ export class WorkshopMaterialPickService {
 
     const linesWithSnapshots = await Promise.all(
       effectiveDto.lines.map((line, idx) =>
-        this.shared.buildLineWriteData(line, idx + 1),
+        this.buildPickLineWriteData(line, idx + 1),
       ),
     );
 
-    const { totalQty, totalAmount } =
-      this.shared.computeTotals(linesWithSnapshots);
+    const { totalQty } = this.shared.computeTotals(linesWithSnapshots);
 
     return this.shared.runInTransaction(async (tx) => {
       const currentOrder = await this.shared.repository.findOrderById(id, tx);
@@ -235,7 +240,7 @@ export class WorkshopMaterialPickService {
         tx,
       );
 
-      await this.settleConsumerOutForLines({
+      const settledTotalAmount = await this.settleConsumerOutForLines({
         orderId: id,
         documentNo: currentOrder.documentNo,
         inventoryStockScope,
@@ -257,7 +262,7 @@ export class WorkshopMaterialPickService {
           handlerNameSnapshot,
           workshopNameSnapshot: workshop.workshopName,
           totalQty,
-          totalAmount,
+          totalAmount: settledTotalAmount,
           remark: effectiveDto.remark,
           auditStatusSnapshot: AuditStatusSnapshot.PENDING,
           revisionNo: { increment: 1 },
@@ -339,6 +344,19 @@ export class WorkshopMaterialPickService {
 
   // ─── Internals ────────────────────────────────────────────────────────────
 
+  private buildPickLineWriteData(
+    line: CreateWorkshopMaterialOrderLineDto,
+    lineNo: number,
+  ) {
+    return this.shared.buildLineWriteData(
+      {
+        ...line,
+        unitPrice: undefined,
+      },
+      lineNo,
+    );
+  }
+
   private async recreateLines(
     orderId: number,
     linesWithSnapshots: WorkshopMaterialLineWriteData[],
@@ -377,11 +395,12 @@ export class WorkshopMaterialPickService {
     idempotencyPrefix: string;
     operatorId?: string;
     tx: Prisma.TransactionClient;
-  }) {
+  }): Promise<Prisma.Decimal> {
     const operationType = toOperationType(this.orderType);
     const sourceTypes = FIFO_SOURCE_OPERATION_TYPES.filter(
       (t) => t !== "RD_HANDOFF_IN",
     );
+    let settledTotalAmount = new Prisma.Decimal(0);
 
     for (const line of params.lines) {
       const lineDto = params.inputLines[line.lineNo - 1];
@@ -403,6 +422,7 @@ export class WorkshopMaterialPickService {
           idempotencyKey: `${params.idempotencyPrefix}:line:${line.id}`,
           consumerLineId: line.id,
           sourceLogId: lineDto?.sourceLogId ?? undefined,
+          selectedUnitCost: lineDto?.selectedUnitCost ?? undefined,
           sourceOperationTypes: sourceTypes,
         },
         params.tx,
@@ -412,9 +432,13 @@ export class WorkshopMaterialPickService {
         {
           costUnitPrice: settlement.settledUnitCost,
           costAmount: settlement.settledCostAmount,
+          unitPrice: settlement.settledUnitCost,
+          amount: settlement.settledCostAmount,
         },
         params.tx,
       );
+      settledTotalAmount = settledTotalAmount.add(settlement.settledCostAmount);
     }
+    return settledTotalAmount;
   }
 }

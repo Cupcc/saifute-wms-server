@@ -705,7 +705,7 @@ function reset() {
       quantity: null,
       unitPrice: null,
       remark: "",
-      subtotal: "0.00",
+      amount: 0,
     },
   ];
   materialOptions.value = [];
@@ -734,7 +734,7 @@ function addDetailItem() {
     unitPrice: null,
     interval: null,
     remark: "",
-    subtotal: "0.00",
+    amount: 0,
   });
   calculateTotalAmount();
 }
@@ -765,15 +765,15 @@ function handleMaterialChange(val, index) {
   }
 }
 
-/** 计算小计和总金额 */
+/** 计算金额和总金额 */
 function calculateTotalAmount() {
   let total = 0;
   detailList.value.forEach((item) => {
     if (item.quantity && item.unitPrice) {
-      item.subtotal = (item.quantity * item.unitPrice).toFixed(2);
-      total += parseFloat(item.subtotal);
+      item.amount = Number((item.quantity * item.unitPrice).toFixed(2));
+      total += item.amount;
     } else {
-      item.subtotal = "0.00";
+      item.amount = 0;
     }
   });
   form.value.totalAmount = total.toFixed(2);
@@ -856,10 +856,7 @@ function handleUpdate(row) {
           quantity: detail.quantity,
           unitPrice: detail.unitPrice,
           interval: detail.interval,
-          subtotal:
-            detail.quantity && detail.unitPrice
-              ? (detail.quantity * detail.unitPrice).toFixed(2)
-              : "0.00",
+          amount: detail.amount ?? 0,
         }));
       }
     })
@@ -1151,7 +1148,7 @@ async function handleAiPrefill(formData) {
         unitPrice: item.unitPrice || null,
         interval: item.interval || null,
         remark: item.remark || "",
-        subtotal: "0.00",
+        amount: 0,
       };
       if (item.materialName) {
         try {

@@ -136,8 +136,16 @@ function toMaterialSnapshot(line) {
 
 function mapOrderLine(line, config, order, audit = null) {
   const quantity = toNumber(line.quantity);
-  const unitPrice = toNumber(line.unitPrice);
-  const amount = toNumber(line.amount ?? quantity * unitPrice);
+  const rawUnitPrice = toNumber(line.unitPrice);
+  const rawAmount = toNumber(line.amount ?? quantity * rawUnitPrice);
+  const unitPrice =
+    config.idKey === "pickId"
+      ? toNumber(line.costUnitPrice ?? line.unitPrice)
+      : rawUnitPrice;
+  const amount =
+    config.idKey === "pickId"
+      ? toNumber(line.costAmount ?? line.amount ?? quantity * unitPrice)
+      : rawAmount;
   const material = toMaterialSnapshot(line);
   const mapped = {
     detailId: line.id,
@@ -150,7 +158,9 @@ function mapOrderLine(line, config, order, audit = null) {
     specification: material.specification,
     quantity,
     unitPrice,
-    subtotal: amount.toFixed(2),
+    selectedUnitCost:
+      config.idKey === "pickId" ? toDecimalString(unitPrice) : undefined,
+    amount,
     remark: line.remark ?? "",
     sourceDocumentType: line.sourceDocumentType ?? null,
     sourceDocumentId: line.sourceDocumentId ?? null,
@@ -168,7 +178,7 @@ function mapOrderLine(line, config, order, audit = null) {
     return {
       ...mapped,
       returnQty: quantity,
-      sourceType: RETURN_SOURCE_TYPE,
+      sourceType: line.sourceDocumentId ? RETURN_SOURCE_TYPE : null,
     };
   }
 
@@ -185,10 +195,9 @@ function mapOrderLine(line, config, order, audit = null) {
 
   return {
     ...mapped,
-    unitPrice: amount,
+    unitPrice,
     rawUnitPrice: unitPrice,
     amount,
-    instruction: "",
   };
 }
 
@@ -196,19 +205,30 @@ function mapOrder(
   order,
   config,
   audit = null,
-  pickOrderNoMap = new Map(),
+  pickOrderSnapshotMap = new Map(),
 ) {
   const lines = Array.isArray(order.lines)
     ? order.lines.map((line) => mapOrderLine(line, config, order, audit))
     : [];
-  const firstLine = lines[0];
-  const sourceId = firstLine?.sourceDocumentId ?? null;
+  const sourceId =
+    lines.find((line) => line.sourceDocumentId)?.sourceDocumentId ?? null;
+  const sourceSnapshot = sourceId
+    ? pickOrderSnapshotMap.get(Number(sourceId))
+    : null;
+  const workshopId =
+    config.idKey === "returnId" && sourceSnapshot?.workshopId
+      ? sourceSnapshot.workshopId
+      : order.workshopId;
+  const workshopName =
+    config.idKey === "returnId" && sourceSnapshot?.workshopName
+      ? sourceSnapshot.workshopName
+      : (order.workshopNameSnapshot ?? "");
   const mappedOrder = {
     [config.idKey]: order.id,
     [config.noKey]: order.documentNo,
     [config.dateKey]: order.bizDate,
-    workshopId: order.workshopId,
-    workshopName: order.workshopNameSnapshot ?? "",
+    workshopId,
+    workshopName,
     [config.personKey]: order.handlerNameSnapshot ?? "",
     attn: order.handlerNameSnapshot ?? "",
     createBy: order.createdBy ?? "",
@@ -223,7 +243,8 @@ function mapOrder(
     remark: order.remark ?? "",
     voidDescription: order.voidReason ?? "",
     details: lines,
-    sourceType: config.idKey === "returnId" ? RETURN_SOURCE_TYPE : null,
+    sourceType:
+      config.idKey === "returnId" && sourceId ? RETURN_SOURCE_TYPE : null,
     sourceId,
     disposalMethod: config.idKey === "scrapId" ? order.disposalMethod ?? null : null,
   };
@@ -231,7 +252,7 @@ function mapOrder(
   if (config.idKey === "returnId") {
     mappedOrder.pickId = sourceId;
     mappedOrder.pickNo = sourceId
-      ? (pickOrderNoMap.get(sourceId) ?? String(sourceId))
+      ? (sourceSnapshot?.documentNo ?? String(sourceId))
       : "";
   }
 
@@ -265,7 +286,7 @@ async function resolveHandlerPersonnelId(name) {
   return exactMatch?.personnelId ?? response.rows?.[0]?.personnelId;
 }
 
-async function fetchPickOrderNoMap(sourceDocumentIds = []) {
+async function fetchPickOrderSnapshotMap(sourceDocumentIds = []) {
   const uniqueIds = [...new Set(sourceDocumentIds.filter(Boolean).map(Number))];
 
   if (!uniqueIds.length) {
@@ -278,7 +299,14 @@ async function fetchPickOrderNoMap(sourceDocumentIds = []) {
         url: `/api/workshop-material/pick-orders/${id}`,
         method: "get",
       });
-      return [id, response.data?.documentNo ?? String(id)];
+      return [
+        id,
+        {
+          documentNo: response.data?.documentNo ?? String(id),
+          workshopId: response.data?.workshopId ?? null,
+          workshopName: response.data?.workshopNameSnapshot ?? "",
+        },
+      ];
     }),
   );
 
@@ -295,10 +323,7 @@ function buildLinePayload(line, mode = "pickOrder", parentData = {}) {
   const numericQuantity = toNumber(quantity);
 
   let unitPrice;
-  if (mode === "pickOrder") {
-    unitPrice =
-      numericQuantity > 0 ? toNumber(line.unitPrice) / numericQuantity : 0;
-  } else if (mode === "scrapOrder") {
+  if (mode === "scrapOrder") {
     unitPrice =
       numericQuantity > 0
         ? toNumber(line.estimatedLoss ?? line.unitPrice) / numericQuantity
@@ -306,15 +331,19 @@ function buildLinePayload(line, mode = "pickOrder", parentData = {}) {
   } else {
     unitPrice = toNumber(line.unitPrice);
   }
-  unitPrice = normalizeMoneyValue(unitPrice);
 
   const payload = {
     ...(line.detailId ? { id: line.detailId } : {}),
     materialId: line.materialId,
     quantity: toDecimalString(quantity),
-    unitPrice: toDecimalString(unitPrice),
     remark: line.remark,
   };
+  if (mode === "pickOrder") {
+    payload.selectedUnitCost = toDecimalString(line.selectedUnitCost);
+  }
+  if (mode !== "pickOrder") {
+    payload.unitPrice = toDecimalString(normalizeMoneyValue(unitPrice));
+  }
 
   if (mode === "returnOrder") {
     const sourceDocumentId =
@@ -380,9 +409,9 @@ async function listOrdersInternal(query = {}, mode = "pickOrder") {
   });
 
   const items = Array.isArray(response.data?.items) ? response.data.items : [];
-  const pickOrderNoMap =
+  const pickOrderSnapshotMap =
     mode === "returnOrder"
-      ? await fetchPickOrderNoMap(
+      ? await fetchPickOrderSnapshotMap(
           items.flatMap((item) =>
             Array.isArray(item.lines)
               ? item.lines.map((line) => line.sourceDocumentId)
@@ -391,7 +420,7 @@ async function listOrdersInternal(query = {}, mode = "pickOrder") {
         ).catch(() => new Map())
       : new Map();
   const mappedRows = items.map((item) =>
-    mapOrder(item, config, null, pickOrderNoMap),
+    mapOrder(item, config, null, pickOrderSnapshotMap),
   );
 
   return {
@@ -413,9 +442,9 @@ export async function getWorkshopOrder(id, mode = "pickOrder") {
     }),
     fetchApprovalDocument(config, id).catch(() => null),
   ]);
-  const pickOrderNoMap =
+  const pickOrderSnapshotMap =
     mode === "returnOrder"
-      ? await fetchPickOrderNoMap(
+      ? await fetchPickOrderSnapshotMap(
           Array.isArray(response.data?.lines)
             ? response.data.lines.map((line) => line.sourceDocumentId)
             : [],
@@ -423,7 +452,7 @@ export async function getWorkshopOrder(id, mode = "pickOrder") {
       : new Map();
 
   return {
-    data: mapOrder(response.data, config, audit, pickOrderNoMap),
+    data: mapOrder(response.data, config, audit, pickOrderSnapshotMap),
   };
 }
 
@@ -485,9 +514,9 @@ export async function listWorkshopOrderDetails(query = {}, mode = "pickOrder") {
   });
 
   const items = Array.isArray(response.data?.items) ? response.data.items : [];
-  const pickOrderNoMap =
+  const pickOrderSnapshotMap =
     mode === "returnOrder"
-      ? await fetchPickOrderNoMap(
+      ? await fetchPickOrderSnapshotMap(
           items.map((item) => item.sourceDocumentId),
         ).catch(() => new Map())
       : new Map();
@@ -498,13 +527,19 @@ export async function listWorkshopOrderDetails(query = {}, mode = "pickOrder") {
       ...detail,
       [config.noKey]: order.documentNo,
       [config.dateKey]: order.bizDate,
-      workshopName: order.workshopNameSnapshot ?? "",
+      workshopName:
+        mode === "returnOrder" && detail.sourceDocumentId
+          ? (pickOrderSnapshotMap.get(detail.sourceDocumentId)?.workshopName ??
+            order.workshopNameSnapshot ??
+            "")
+          : (order.workshopNameSnapshot ?? ""),
       [config.personKey]: order.handlerNameSnapshot ?? "",
       createBy: order.createdBy ?? "",
       disposalMethod: mode === "scrapOrder" ? order.disposalMethod ?? null : null,
       pickNo:
         mode === "returnOrder" && detail.sourceDocumentId
-          ? (pickOrderNoMap.get(detail.sourceDocumentId) ?? String(detail.sourceDocumentId))
+          ? (pickOrderSnapshotMap.get(detail.sourceDocumentId)?.documentNo ??
+            String(detail.sourceDocumentId))
           : "",
       sourceId: detail.sourceDocumentId ?? null,
     };

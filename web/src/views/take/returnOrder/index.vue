@@ -313,6 +313,11 @@
 							<el-input-number v-model="scope.row.unitPrice" :min="0" placeholder="单价" controls-position="right" :disabled="isView" style="width: 100%" @change="calculateTotalAmount" />
 						</template>
 					</el-table-column>
+					<el-table-column label="金额" prop="amount">
+						<template #default="scope">
+							{{ formatLineAmount(scope.row) }}
+						</template>
+					</el-table-column>
 					<el-table-column label="备注" prop="remark">
 						<template #default="scope">
 							<el-input v-model="scope.row.remark"
@@ -388,6 +393,11 @@
 								<el-table-column label="规格型号" prop="material.specification" />
 								<el-table-column label="退料数量" prop="returnQty" />
 								<el-table-column label="单价" prop="unitPrice" />
+								<el-table-column label="金额" prop="amount">
+									<template #default="scope">
+										{{ formatLineAmount(scope.row) }}
+									</template>
+								</el-table-column>
 								<el-table-column label="备注" prop="remark" />
 							</el-table>
 						</div>
@@ -855,7 +865,7 @@ function reset() {
       unitPrice: null,
       returnReason: "",
       remark: "",
-      subtotal: "0.00",
+      amount: 0,
     },
   ];
   selectedPickOrderNo.value = "";
@@ -898,7 +908,7 @@ function addDetailItem() {
     unitPrice: null,
     returnReason: "",
     remark: "",
-    subtotal: "0.00",
+    amount: 0,
   });
   calculateTotalAmount();
 }
@@ -909,18 +919,30 @@ function removeDetailItem(index) {
   calculateTotalAmount();
 }
 
-/** 计算小计和总金额 */
+/** 计算金额和总金额 */
 function calculateTotalAmount() {
   let total = 0;
   detailList.value.forEach((item) => {
-    if (item.returnQty && item.unitPrice) {
-      item.subtotal = (item.returnQty * item.unitPrice).toFixed(2);
-      total += parseFloat(item.subtotal);
-    } else {
-      item.subtotal = "0.00";
-    }
+    item.amount = resolveLineAmount(item);
+    total += item.amount;
   });
   form.value.totalAmount = total.toFixed(2);
+}
+
+function resolveLineAmount(row) {
+  const quantity = Number(row?.returnQty);
+  const unitPrice = Number(row?.unitPrice);
+  if (Number.isFinite(quantity) && Number.isFinite(unitPrice)) {
+    return Number((quantity * unitPrice).toFixed(2));
+  }
+  const directAmount = Number(row?.amount);
+  if (Number.isFinite(directAmount)) return directAmount;
+  const calculated = Number(row?.returnQty ?? 0) * Number(row?.unitPrice ?? 0);
+  return Number.isFinite(calculated) ? Number(calculated.toFixed(2)) : 0;
+}
+
+function formatLineAmount(row) {
+  return resolveLineAmount(row).toFixed(2);
 }
 
 /** 查看详情 */
@@ -1053,10 +1075,7 @@ function handleUpdate(row) {
           sourceDocumentId: detail.sourceDocumentId,
           sourceDocumentLineId: detail.sourceDocumentLineId,
           remark: detail.remark,
-          subtotal:
-            detail.returnQty && detail.unitPrice
-              ? (detail.returnQty * detail.unitPrice).toFixed(2)
-              : "0.00",
+          amount: resolveLineAmount(detail),
         }));
         materialOptions.value = mergeMaterialOptions(
           materialOptions.value,
@@ -1243,7 +1262,24 @@ function handlePickOrderSelect(row) {
       // 在新增/修改表单中选择领料单
       form.value.sourceId = selectedPickOrder.value.pickId;
       form.value.sourceType = 1;
+      form.value.workshopId =
+        selectedPickOrder.value.workshopId ?? form.value.workshopId;
       selectedPickOrderNo.value = selectedPickOrder.value.pickNo;
+      if (
+        selectedPickOrder.value.workshopId &&
+        selectedPickOrder.value.workshopName &&
+        !workshopOptions.value.some(
+          (item) => item.workshopId === selectedPickOrder.value.workshopId,
+        )
+      ) {
+        workshopOptions.value = [
+          ...workshopOptions.value,
+          {
+            workshopId: selectedPickOrder.value.workshopId,
+            workshopName: selectedPickOrder.value.workshopName,
+          },
+        ];
+      }
 
       // 清空当前明细
       detailList.value = [];
@@ -1256,9 +1292,8 @@ function handlePickOrderSelect(row) {
         detailList.value = selectedPickOrder.value.details.map((pickDetail) => {
           const unitPrice =
             pickDetail.rawUnitPrice ??
-            (pickDetail.quantity
-              ? pickDetail.unitPrice / pickDetail.quantity
-              : pickDetail.unitPrice);
+            pickDetail.unitPrice ??
+            (pickDetail.quantity ? pickDetail.amount / pickDetail.quantity : 0);
           return {
             materialId: pickDetail.materialId,
             returnQty: pickDetail.quantity,
@@ -1271,10 +1306,11 @@ function handlePickOrderSelect(row) {
             sourceDocumentLineId:
               pickDetail.sourceDocumentLineId ?? pickDetail.detailId,
             remark: pickDetail.remark,
-            subtotal:
-              pickDetail.quantity && unitPrice
-                ? (pickDetail.quantity * unitPrice).toFixed(2)
-                : "0.00",
+            amount: resolveLineAmount({
+              amount: pickDetail.amount,
+              returnQty: pickDetail.quantity,
+              unitPrice,
+            }),
           };
         });
         materialOptions.value = mergeMaterialOptions(

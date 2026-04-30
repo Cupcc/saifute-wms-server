@@ -415,7 +415,12 @@ export class WorkshopMaterialRepository {
    */
   async updateOrderLineCost(
     id: number,
-    data: { costUnitPrice: Prisma.Decimal; costAmount: Prisma.Decimal },
+    data: {
+      costUnitPrice: Prisma.Decimal;
+      costAmount: Prisma.Decimal;
+      unitPrice?: Prisma.Decimal;
+      amount?: Prisma.Decimal;
+    },
     db?: DbClient,
   ) {
     return this.db(db).workshopMaterialOrderLine.update({
@@ -423,6 +428,10 @@ export class WorkshopMaterialRepository {
       data: {
         costUnitPrice: data.costUnitPrice,
         costAmount: data.costAmount,
+        ...(typeof data.unitPrice === "undefined"
+          ? {}
+          : { unitPrice: data.unitPrice }),
+        ...(typeof data.amount === "undefined" ? {} : { amount: data.amount }),
       },
     });
   }

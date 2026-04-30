@@ -263,7 +263,7 @@
               />
             </template>
           </el-table-column>
-          <el-table-column label="小计" min-width="140">
+          <el-table-column label="金额" min-width="140">
             <template #default="{ row }">
               {{ calculateLineAmount(row) }}
             </template>

@@ -156,7 +156,7 @@ async function loadPage() {
     const offset = (queryParams.value.pageNum - 1) * limit;
     const [dashboardResponse, inboundResponse, todayInboundResponse] =
       await Promise.all([
-        getReportingHome(),
+        getReportingHome({ stockScope: "RD_SUB" }),
         listRdInboundResults({ limit, offset }),
         listRdInboundResults({
           bizDateFrom: today,

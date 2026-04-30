@@ -1,5 +1,14 @@
 import request from "@/utils/request";
 
+const RD_STOCK_SCOPE = "RD_SUB";
+
+function withRdStockScope(params = {}) {
+  return {
+    ...params,
+    stockScope: RD_STOCK_SCOPE,
+  };
+}
+
 export function listRdMaterials(params = {}) {
   return request({
     url: "/api/master-data/materials",
@@ -12,7 +21,7 @@ export function listRdInventoryLogs(params = {}) {
   return request({
     url: "/api/inventory/logs",
     method: "get",
-    params,
+    params: withRdStockScope(params),
   });
 }
 
@@ -20,7 +29,7 @@ export function listRdInventoryBalances(params = {}) {
   return request({
     url: "/api/inventory/balances",
     method: "get",
-    params,
+    params: withRdStockScope(params),
   });
 }
 

@@ -101,9 +101,9 @@ export const FORM_SCHEMAS = {
     formName: "领料单",
     mainFields: {
       workshopName: {
-        label: "部门",
+        label: "车间",
         type: "string",
-        hint: "填写部门或车间名称，系统自动匹配",
+        hint: "填写车间名称，系统自动匹配",
       },
       picker: { label: "领料人", type: "string", hint: "填写领料人姓名" },
       remark: { label: "备注", type: "string" },
@@ -122,8 +122,14 @@ export const FORM_SCHEMAS = {
         required: true,
         example: "50",
       },
+      unitPrice: {
+        label: "单价",
+        type: "number",
+        required: true,
+        example: "10",
+      },
       remark: { label: "明细备注", type: "string" },
     },
-    hint: "主表字段放在 formData 顶层，明细行数据放在 formData.details 数组中，每个明细至少包含 materialName 和 quantity",
+    hint: "主表字段放在 formData 顶层，明细行数据放在 formData.details 数组中，每个明细至少包含 materialName、quantity 和 unitPrice，金额由系统按单价乘数量计算",
   },
 };

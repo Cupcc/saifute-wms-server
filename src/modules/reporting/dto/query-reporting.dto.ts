@@ -10,6 +10,7 @@ import {
   MaxLength,
   Min,
 } from "class-validator";
+import type { StockScopeCode } from "../../session/domain/user-session";
 import {
   MonthlyReportingDomainKey,
   MonthlyReportingTopicKey,
@@ -37,6 +38,13 @@ export enum ReportingStockScope {
   RD_SUB = "RD_SUB",
 }
 
+export class QueryReportingHomeDto {
+  /** 库存范围；RD 小仓入口应显式传 RD_SUB，默认后台可留空看全局视角 */
+  @IsOptional()
+  @IsEnum(ReportingStockScope)
+  stockScope?: StockScopeCode;
+}
+
 export class QueryInventorySummaryDto {
   /** 物料编码或名称关键字 */
   @IsOptional()
@@ -57,6 +65,11 @@ export class QueryInventorySummaryDto {
   @IsInt()
   @Min(1)
   workshopId?: number;
+
+  /** 库存范围；用于区分主仓与研发小仓 */
+  @IsOptional()
+  @IsEnum(ReportingStockScope)
+  stockScope?: StockScopeCode;
 
   /** 每页条数，默认 50 */
   @IsOptional()
@@ -87,6 +100,11 @@ export class QueryMaterialCategorySummaryDto {
   @Min(1)
   workshopId?: number;
 
+  /** 库存范围；用于区分主仓与研发小仓 */
+  @IsOptional()
+  @IsEnum(ReportingStockScope)
+  stockScope?: StockScopeCode;
+
   /** 每页条数，默认 50 */
   @IsOptional()
   @Type(() => Number)
@@ -114,6 +132,11 @@ export class QueryTrendSeriesDto {
   @IsInt()
   @Min(1)
   workshopId?: number;
+
+  /** 库存范围；用于区分主仓与研发小仓 */
+  @IsOptional()
+  @IsEnum(ReportingStockScope)
+  stockScope?: StockScopeCode;
 
   /** 开始日期，格式为 YYYY-MM-DD */
   @IsOptional()
@@ -151,6 +174,11 @@ export class ExportReportDto {
   @Min(1)
   workshopId?: number;
 
+  /** 库存范围；用于区分主仓与研发小仓 */
+  @IsOptional()
+  @IsEnum(ReportingStockScope)
+  stockScope?: StockScopeCode;
+
   /** 趋势图统计类型 */
   @IsOptional()
   @IsEnum(ReportingTrendType)
@@ -177,7 +205,7 @@ export class QueryMonthlyReportingDto {
 
   @IsOptional()
   @IsEnum(ReportingStockScope)
-  stockScope?: ReportingStockScope;
+  stockScope?: StockScopeCode;
 
   @IsOptional()
   @IsEnum(MonthlyReportingDomainKey)

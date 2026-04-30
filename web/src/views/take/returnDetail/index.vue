@@ -104,9 +104,9 @@
       <el-table-column sortable show-overflow-tooltip label="规格型号" align="center" prop="specification" v-if="columns[4].visible" />
       <el-table-column sortable show-overflow-tooltip label="单价" align="center" prop="unitPrice" v-if="columns[5].visible" />
       <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="returnQty" v-if="columns[6].visible" />
-      <el-table-column sortable show-overflow-tooltip label="小计" align="center" v-if="columns[7].visible" prop="subtotal">
+      <el-table-column sortable show-overflow-tooltip label="金额" align="center" v-if="columns[7].visible" prop="amount">
         <template #default="scope">
-          {{ (scope.row.unitPrice * scope.row.returnQty).toFixed(2) }}
+          {{ formatLineAmount(scope.row) }}
         </template>
       </el-table-column>
       <el-table-column sortable show-overflow-tooltip label="备注" align="center" prop="remark" v-if="columns[8].visible" />
@@ -213,7 +213,7 @@ const columns = ref([
   { key: 4, label: `规格型号`, visible: true },
   { key: 5, label: `单价`, visible: true },
   { key: 6, label: `数量`, visible: true },
-  { key: 7, label: `小计`, visible: true },
+  { key: 7, label: `金额`, visible: true },
   { key: 8, label: `备注`, visible: true },
 ]);
 
@@ -345,11 +345,8 @@ function getSummaries(param) {
     } else if (column.property === "unitPrice") {
       // 单价不计算合计
       sums[index] = "";
-    } else if (column.property === "subtotal") {
-      // 小计列合计
-      const values = data.map(
-        (item) => Number(item.unitPrice) * Number(item.returnQty),
-      );
+    } else if (column.property === "amount") {
+      const values = data.map((item) => resolveLineAmount(item));
       sums[index] = values
         .reduce((prev, curr) => {
           const value = Number(curr);
@@ -385,8 +382,25 @@ function reset() {
     unit: null,
     unitPrice: null,
     remark: null,
+    amount: null,
   };
   proxy.resetForm("returnDetailRef");
+}
+
+function resolveLineAmount(row) {
+  const quantity = Number(row?.returnQty);
+  const unitPrice = Number(row?.unitPrice);
+  if (Number.isFinite(quantity) && Number.isFinite(unitPrice)) {
+    return Number((quantity * unitPrice).toFixed(2));
+  }
+  const directAmount = Number(row?.amount);
+  if (Number.isFinite(directAmount)) return directAmount;
+  return Number(row?.unitPrice ?? 0) * Number(row?.returnQty ?? 0);
+}
+
+function formatLineAmount(row) {
+  const amount = resolveLineAmount(row);
+  return Number.isFinite(amount) ? amount.toFixed(2) : "0.00";
 }
 
 /** 搜索按钮操作 */

@@ -1,10 +1,11 @@
 import request from "@/utils/request";
 import { download } from "@/utils/request";
 
-export function getReportingHome() {
+export function getReportingHome(params = {}) {
   return request({
     url: "/api/reporting/home",
     method: "get",
+    params,
   });
 }
 

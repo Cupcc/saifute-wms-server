@@ -519,10 +519,13 @@ const detailTotal = ref(0);
 const summary = ref(createEmptySummary(DOMAIN_VIEW));
 const activeBusinessSummaryTab = ref("workshop");
 
+const isRdRoute = computed(() => route.path.startsWith("/rd/"));
 const fixedStockScope = computed(() =>
   userStore.stockScope?.mode === "FIXED"
     ? userStore.stockScope.stockScope
-    : undefined,
+    : isRdRoute.value
+      ? "RD_SUB"
+      : undefined,
 );
 const fixedWorkshopId = computed(() =>
   userStore.workshopScope?.mode === "FIXED"

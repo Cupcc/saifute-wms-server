@@ -23,6 +23,7 @@ import {
   QueryMaterialCategorySummaryDto,
   QueryMonthlyReportingDetailDto,
   QueryMonthlyReportingDto,
+  QueryReportingHomeDto,
   QueryTrendSeriesDto,
 } from "../dto/query-reporting.dto";
 
@@ -37,13 +38,20 @@ export class ReportingController {
   ) {}
 
   @Get("home")
-  async getHomeDashboard(@CurrentUser() user?: SessionUserSnapshot) {
+  async getHomeDashboard(
+    @Query() query: QueryReportingHomeDto,
+    @CurrentUser() user?: SessionUserSnapshot,
+  ) {
     this.assertReportingAccess(user, {
       permissions: ["reporting:home:view"],
       roles: [WAREHOUSE_MANAGER_ROLE],
     });
     const inventoryScope =
-      await this.workshopScopeService.getResolvedStockScope(user);
+      await this.workshopScopeService.resolveInventoryQueryScope(
+        user,
+        undefined,
+        query.stockScope,
+      );
     return this.reportingService.getHomeDashboard(inventoryScope?.stockScope);
   }
 
@@ -57,6 +65,7 @@ export class ReportingController {
       await this.workshopScopeService.resolveInventoryQueryScope(
         user,
         query.workshopId,
+        query.stockScope,
       );
     return this.reportingService.getInventorySummary({
       ...query,
@@ -77,6 +86,7 @@ export class ReportingController {
       await this.workshopScopeService.resolveInventoryQueryScope(
         user,
         query.workshopId,
+        query.stockScope,
       );
     return this.reportingService.getMaterialCategorySummary({
       ...query,
@@ -94,7 +104,11 @@ export class ReportingController {
       roles: [WAREHOUSE_MANAGER_ROLE],
     });
     const inventoryScope =
-      await this.workshopScopeService.getResolvedStockScope(user);
+      await this.workshopScopeService.resolveInventoryQueryScope(
+        user,
+        query.workshopId,
+        query.stockScope,
+      );
     return this.reportingService.getTrendSeries(
       query,
       inventoryScope?.stockScope,
@@ -193,6 +207,7 @@ export class ReportingController {
       await this.workshopScopeService.resolveInventoryQueryScope(
         user,
         query.workshopId,
+        query.stockScope,
       );
     const exportResult = await this.reportingService.exportReport(
       {

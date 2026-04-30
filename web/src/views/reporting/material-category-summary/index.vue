@@ -82,9 +82,11 @@
 </template>
 
 <script setup name="MaterialCategorySummaryPage">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
+import { useRoute } from "vue-router";
 import { getMaterialCategorySummary } from "@/api/reporting";
 
+const route = useRoute();
 const loading = ref(false);
 const rows = ref([]);
 const total = ref(0);
@@ -99,12 +101,16 @@ const summary = ref({
   lowStockCount: 0,
   totalInventoryValue: "0.00",
 });
+const routeStockScope = computed(() =>
+  route.path.startsWith("/rd/") ? "RD_SUB" : undefined,
+);
 
 async function loadRows() {
   loading.value = true;
   try {
     const response = await getMaterialCategorySummary({
       keyword: filters.value.keyword || undefined,
+      stockScope: routeStockScope.value,
       limit: pageSize.value,
       offset: (pageNum.value - 1) * pageSize.value,
     });

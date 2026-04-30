@@ -58,6 +58,9 @@ function toDecimalString(value) {
 }
 
 function mapOrderLine(line, order, audit = null) {
+  const quantity = toNumber(line.quantity);
+  const unitPrice = toNumber(line.unitPrice);
+  const amount = toNumber(line.amount ?? quantity * unitPrice);
   return {
     detailId: line.id,
     orderId: order.id,
@@ -74,9 +77,9 @@ function mapOrderLine(line, order, audit = null) {
     materialName: line.materialNameSnapshot ?? "",
     specification: line.materialSpecSnapshot ?? "",
     unitCode: line.unitCodeSnapshot ?? "",
-    quantity: toNumber(line.quantity),
-    unitPrice: toNumber(line.unitPrice),
-    amount: toNumber(line.amount),
+    quantity,
+    unitPrice,
+    amount,
     selectedUnitCost: toNumber(line.selectedUnitCost),
     costUnitPrice: toNumber(line.costUnitPrice),
     costAmount: toNumber(line.costAmount),
@@ -99,6 +102,12 @@ function mapOrderLine(line, order, audit = null) {
 
 function mapSalesOrder(order, audit = null) {
   const firstLine = order.lines?.[0];
+  const details = Array.isArray(order.lines)
+    ? order.lines.map((line) => mapOrderLine(line, order, audit))
+    : [];
+  const totalAmount =
+    order.totalAmount ??
+    details.reduce((sum, line) => sum + Number(line.amount || 0), 0);
   const projectSnapshots = [
     ...new Set(
       (order.lines ?? [])
@@ -121,7 +130,7 @@ function mapSalesOrder(order, audit = null) {
     handlerPersonnelId: order.handlerPersonnelId ?? null,
     handlerName: order.handlerNameSnapshot ?? "",
     totalQty: toNumber(order.totalQty),
-    totalAmount: toNumber(order.totalAmount),
+    totalAmount: toNumber(totalAmount),
     remark: order.remark ?? "",
     lifecycleStatus: order.lifecycleStatus ?? "",
     inventoryEffectStatus: order.inventoryEffectStatus ?? "",
@@ -135,9 +144,7 @@ function mapSalesOrder(order, audit = null) {
     voidReason: order.voidReason ?? "",
     sourceOutboundOrderId: firstLine?.sourceDocumentId ?? null,
     salesProjectSummary: projectSnapshots.join(" / "),
-    details: Array.isArray(order.lines)
-      ? order.lines.map((line) => mapOrderLine(line, order, audit))
-      : [],
+    details,
   };
 }
 

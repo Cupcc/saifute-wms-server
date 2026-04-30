@@ -76,11 +76,32 @@ describe("WorkshopMaterialPickService", () => {
 
   describe("createPickOrder", () => {
     it("should create pick order with settleConsumerOut and pending approval", async () => {
+      const settledPickOrder = {
+        ...mockPickOrder,
+        lines: [
+          {
+            ...mockPickOrder.lines[0],
+            costUnitPrice: new Prisma.Decimal(10),
+            costAmount: new Prisma.Decimal(500),
+          },
+        ],
+      };
       (mocks.repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(
         null,
       );
       (mocks.repository.createOrder as jest.Mock).mockResolvedValue(
         mockPickOrder,
+      );
+      (mocks.repository.updateOrder as jest.Mock).mockResolvedValue(
+        settledPickOrder,
+      );
+      (mocks.inventoryService.settleConsumerOut as jest.Mock).mockResolvedValue(
+        {
+          outLog: { id: 1 },
+          settledUnitCost: new Prisma.Decimal(10),
+          settledCostAmount: new Prisma.Decimal(500),
+          allocations: [],
+        },
       );
 
       const dto = {
@@ -89,20 +110,57 @@ describe("WorkshopMaterialPickService", () => {
         bizDate: "2025-03-14",
         handlerPersonnelId: 20,
         workshopId: 1,
-        lines: [{ materialId: 100, quantity: "50", unitPrice: "10" }],
+        lines: [
+          {
+            materialId: 100,
+            quantity: "50",
+            selectedUnitCost: "10",
+            unitPrice: "999",
+          },
+        ],
       };
 
       const result = await service.createPickOrder(dto, "1");
 
-      expect(result).toEqual(mockPickOrder);
+      expect(result).toEqual(settledPickOrder);
+      expect(mocks.repository.createOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          totalAmount: new Prisma.Decimal(0),
+        }),
+        expect.arrayContaining([
+          expect.objectContaining({
+            unitPrice: new Prisma.Decimal(0),
+            amount: new Prisma.Decimal(0),
+          }),
+        ]),
+        expect.anything(),
+      );
       expect(mocks.inventoryService.settleConsumerOut).toHaveBeenCalledWith(
         expect.objectContaining({
           materialId: 100,
           stockScope: "MAIN",
           operationType: "PICK_OUT",
+          selectedUnitCost: "10",
           businessDocumentType: "WorkshopMaterialOrder",
           businessDocumentId: 1,
           businessDocumentNumber: "WM-PICK-001",
+        }),
+        expect.anything(),
+      );
+      expect(mocks.repository.updateOrderLineCost).toHaveBeenCalledWith(
+        1,
+        {
+          costUnitPrice: new Prisma.Decimal(10),
+          costAmount: new Prisma.Decimal(500),
+          unitPrice: new Prisma.Decimal(10),
+          amount: new Prisma.Decimal(500),
+        },
+        expect.anything(),
+      );
+      expect(mocks.repository.updateOrder).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          totalAmount: new Prisma.Decimal(500),
         }),
         expect.anything(),
       );
@@ -175,6 +233,14 @@ describe("WorkshopMaterialPickService", () => {
       (
         mocks.inventoryService.getLogsForDocument as jest.Mock
       ).mockResolvedValue([{ id: 5, businessDocumentLineId: 1 }]);
+      (mocks.inventoryService.settleConsumerOut as jest.Mock).mockResolvedValue(
+        {
+          outLog: { id: 1 },
+          settledUnitCost: new Prisma.Decimal(10),
+          settledCostAmount: new Prisma.Decimal(400),
+          allocations: [],
+        },
+      );
 
       const result = await service.updatePickOrder(
         1,

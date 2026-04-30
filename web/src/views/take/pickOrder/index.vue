@@ -23,8 +23,8 @@
       <el-form-item label="领料人" prop="picker">
         <combo-input v-model="queryParams.picker" scope="personnel" field="personnelName" placeholder="请选择或输入领料人" width="240px" />
       </el-form-item>
-	    <el-form-item label="部门" prop="workshopId">
-		    <el-select v-model="queryParams.workshopId" filterable remote reserve-keyword placeholder="请输入部门名称搜索"
+	    <el-form-item label="车间" prop="workshopId">
+		    <el-select v-model="queryParams.workshopId" filterable remote reserve-keyword placeholder="请输入车间名称搜索"
 		               :remote-method="searchWorkshop" :loading="workshopLoading" style="width: 240px">
 			    <el-option
 				    v-for="item in workshopOptions"
@@ -161,7 +161,7 @@
 
     <!-- 添加或修改领料单对话框 -->
     <el-dialog :title="title" v-model="open" width="1200px" append-to-body draggable>
-      <el-form ref="pickOrderRef" :model="form" :rules="rules" label-width="80px" v-loading="dialogLoading">
+      <el-form ref="pickOrderRef" :model="form" :rules="rules" label-width="96px" v-loading="dialogLoading">
         <el-row>
           <el-col :span="12">
             <el-form-item label="领料单号" prop="pickNo">
@@ -189,13 +189,13 @@
         </el-row>
         <el-row>
           <el-col :span="12">
-	          <el-form-item label="部门" prop="workshopId">
+	          <el-form-item label="领料车间" prop="workshopId">
 		          <el-select
 			          v-model="form.workshopId"
 			          filterable
 			          remote
 			          reserve-keyword
-			          placeholder="请输入部门名称搜索"
+			          placeholder="请输入车间名称搜索"
 			          :remote-method="searchWorkshopForForm"
 			          :loading="workshopLoadingForForm"
 			          style="width: 100%"
@@ -209,11 +209,6 @@
 				          <span style="float: left">{{ item.workshopName }}</span>
 			          </el-option>
 		          </el-select>
-	          </el-form-item>
-          </el-col>
-          <el-col :span="12">
-	          <el-form-item label="总金额" prop="totalAmount">
-		          <el-input v-model="form.totalAmount" placeholder="自动计算" disabled/>
 	          </el-form-item>
           </el-col>
 	        <el-col :span="24">
@@ -250,7 +245,31 @@
                 </el-select>
               </template>
             </el-table-column>
-            <el-table-column label="领料数量" prop="quantity">
+            <el-table-column label="成本价层" prop="selectedUnitCost" width="170">
+              <template #default="scope">
+                <el-select
+                  v-model="scope.row.selectedUnitCost"
+                  filterable
+                  clearable
+                  placeholder="请选择"
+                  :loading="scope.row.priceLayerLoading"
+                  style="width: 100%"
+                  @change="() => handlePriceLayerChange(scope.row)">
+                  <el-option
+                    v-for="item in scope.row.priceLayerOptions || []"
+                    :key="item.unitCost"
+                    :label="`${item.unitCost} / 可用 ${item.availableQty}`"
+                    :value="item.unitCost"
+                  />
+                </el-select>
+              </template>
+            </el-table-column>
+            <el-table-column label="单价" prop="unitPrice" width="120" align="right">
+              <template #default="scope">
+                <span>{{ formatMoneyDisplay(scope.row.unitPrice) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="领料数量" prop="quantity" width="160">
               <template #default="scope">
                 <el-input-number
                   v-model="scope.row.quantity"
@@ -262,15 +281,9 @@
                   @change="(val) => handleMaterialOrQuantityChange(undefined, val, scope.$index)" />
               </template>
             </el-table-column>
-            <el-table-column label="小计" prop="unitPrice">
+            <el-table-column label="金额" prop="amount" width="140" align="right">
               <template #default="scope">
-                <el-input-number v-model="scope.row.unitPrice" :min="0" placeholder="小计" controls-position="right"
-                                 style="width: 100%" @change="(val) => handleUnitPriceChange(scope.row, val)" />
-              </template>
-            </el-table-column>
-            <el-table-column label="说明" prop="instruction">
-              <template #default="scope">
-                <div style="white-space: pre-line;">{{ scope.row.instruction }}</div>
+                <span>{{ formatMoneyDisplay(scope.row.amount) }}</span>
               </template>
             </el-table-column>
             <el-table-column label="备注" prop="remark">
@@ -288,9 +301,9 @@
         </div>
         <el-row>
           <el-col :span="24">
-	          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-right: 20px">
-	            <el-button type="primary" plain icon="Plus" @click="handleAddDetail">添加明细</el-button>
-              <span>合计金额: {{ form.totalAmount }}</span>
+		          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-right: 20px">
+		            <el-button type="primary" plain icon="Plus" @click="handleAddDetail">添加明细</el-button>
+              <span>合计金额: {{ formatMoneyDisplay(form.totalAmount) }}</span>
             </div>
           </el-col>
         </el-row>
@@ -317,7 +330,7 @@
               <el-descriptions-item label="领料单号">{{ detailData.pickNo }}</el-descriptions-item>
               <el-descriptions-item label="领料日期">{{ parseTime(detailData.pickDate, '{y}-{m}-{d}') }}</el-descriptions-item>
               <el-descriptions-item label="领料人">{{ detailData.picker }}</el-descriptions-item>
-              <el-descriptions-item label="部门">{{ detailData.workshopName }}</el-descriptions-item>
+              <el-descriptions-item label="车间">{{ detailData.workshopName }}</el-descriptions-item>
               <el-descriptions-item label="总金额">{{ detailData.totalAmount }}</el-descriptions-item>
               <el-descriptions-item label="创建人">{{ detailData.createBy }}</el-descriptions-item>
               <el-descriptions-item label="创建时间">{{ parseTime(detailData.createdAt, '{y}-{m}-{d} {h}:{i}:{s}') }}</el-descriptions-item>
@@ -349,12 +362,8 @@
                 <el-table-column label="物料名称" prop="materialName" />
                 <el-table-column label="规格型号" prop="specification" />
                 <el-table-column label="领料数量" prop="quantity" />
-                <el-table-column label="小计" prop="unitPrice" />
-                <el-table-column label="说明" prop="instruction">
-                  <template #default="scope">
-                    <div style="white-space: pre-line;">{{ scope.row.instruction }}</div>
-                  </template>
-                </el-table-column>
+                <el-table-column label="单价" prop="rawUnitPrice" />
+                <el-table-column label="金额" prop="amount" />
                 <el-table-column label="备注" prop="remark" />
               </el-table>
             </div>
@@ -407,7 +416,6 @@ import { listPersonnel } from "@/api/base/personnel";
 import { clearSuggestionsCache } from "@/api/base/suggestions";
 import { listByNameOrContact } from "@/api/base/workshop.js";
 import { selectSaifuteInventoryListGroupByMaterial } from "@/api/stock/inventory.js";
-import { getUsedByMaterialIdAndQuantity } from "@/api/stock/used.js";
 import {
   addPickOrder,
   getPickOrder,
@@ -422,6 +430,7 @@ import {
   mergeMaterialOptions,
 } from "@/utils/materialOptions";
 import { formatDateToYYYYMMDD, generateOrderNo } from "@/utils/orderNumber";
+import request from "@/utils/request";
 
 const { proxy } = getCurrentInstance();
 
@@ -593,7 +602,7 @@ function reset() {
     createdAt: null,
     updateBy: null,
     updatedAt: null,
-    totalAmount: null,
+    totalAmount: "0.00",
     details: [],
   };
   proxy.resetForm("pickOrderRef");
@@ -614,8 +623,12 @@ function handleAdd() {
         {
           detailId: null,
           materialId: null,
-          quantity: null,
+          selectedUnitCost: "",
+          priceLayerOptions: [],
+          priceLayerLoading: false,
           unitPrice: null,
+          quantity: null,
+          amount: null,
           remark: null,
         },
       ];
@@ -702,15 +715,21 @@ function handleUpdate(row) {
         form.value.details = orderData.details.map((detail) => ({
           detailId: detail.detailId,
           materialId: detail.materialId,
+          selectedUnitCost: detail.selectedUnitCost ?? detail.rawUnitPrice ?? "",
+          priceLayerOptions: [],
+          priceLayerLoading: false,
+          unitPrice: detail.rawUnitPrice,
           quantity: detail.quantity,
-          unitPrice: detail.unitPrice,
-          instruction: detail.instruction ?? "",
+          amount: detail.amount,
           remark: detail.remark,
         }));
         materialOptions.value = mergeMaterialOptions(
           materialOptions.value,
           materialOptionsFromDocumentSnapshots(orderData.details),
         );
+        form.value.details.forEach((detail) => {
+          loadPriceLayerOptions(detail);
+        });
         const materialIds = orderData.details
           .filter((detail) => detail.materialId)
           .map((detail) => detail.materialId);
@@ -758,12 +777,8 @@ function submitForm() {
             proxy.$modal.msgError("第" + (i + 1) + "行领料数量必须大于0");
             return;
           }
-          if (
-            detail.unitPrice === null ||
-            detail.unitPrice === undefined ||
-            detail.unitPrice < 0
-          ) {
-            proxy.$modal.msgError("第" + (i + 1) + "行小计不能小于0");
+          if (!detail.selectedUnitCost) {
+            proxy.$modal.msgError("第" + (i + 1) + "行成本价层不能为空");
             return;
           }
         }
@@ -788,12 +803,8 @@ function submitForm() {
             proxy.$modal.msgError("第" + (i + 1) + "行领料数量必须大于0");
             return;
           }
-          if (
-            detail.unitPrice === null ||
-            detail.unitPrice === undefined ||
-            detail.unitPrice < 0
-          ) {
-            proxy.$modal.msgError("第" + (i + 1) + "行小计不能小于0");
+          if (!detail.selectedUnitCost) {
+            proxy.$modal.msgError("第" + (i + 1) + "行成本价层不能为空");
             return;
           }
         }
@@ -845,17 +856,19 @@ function handleAddDetail() {
   form.value.details.push({
     detailId: null,
     materialId: null,
-    quantity: null,
+    selectedUnitCost: "",
+    priceLayerOptions: [],
+    priceLayerLoading: false,
     unitPrice: null,
+    quantity: null,
+    amount: null,
     remark: null,
   });
-  calculateTotalAmount();
 }
 
 /** 删除明细 */
 function handleDeleteDetail(index) {
   form.value.details.splice(index, 1);
-  calculateTotalAmount();
 }
 
 /** 作废按钮操作 */
@@ -959,7 +972,7 @@ function searchPersonnelForQuery(query) {
     });
 }
 
-/** 搜索部门（用于查询条件） */
+/** 搜索车间（用于查询条件） */
 function searchWorkshop(query) {
   workshopLoading.value = true;
   listByNameOrContact({ workshopName: query })
@@ -972,7 +985,7 @@ function searchWorkshop(query) {
     });
 }
 
-/** 搜索部门（用于表单） */
+/** 搜索车间（用于表单） */
 function searchWorkshopForForm(query) {
   workshopLoadingForForm.value = true;
   listByNameOrContact({ workshopName: query })
@@ -998,10 +1011,17 @@ function handleWorkshopChange(workshopId) {
 /**
  * 处理物料选择事件
  */
-function handleMaterialSelect(val, index) {
+async function handleMaterialSelect(val, index) {
   const material = materialOptions.value.find(
     (item) => item.materialId === val,
   );
+  const detail = form.value.details[index];
+  if (detail) {
+    detail.selectedUnitCost = "";
+    detail.priceLayerOptions = [];
+    detail.unitPrice = null;
+    detail.amount = null;
+  }
   if (material) {
     // 设置领料数量为当前库存量
     form.value.details[index].quantity = material.currentQty;
@@ -1012,6 +1032,7 @@ function handleMaterialSelect(val, index) {
     // 如果没有找到物料，仍然调用统一处理方法
     handleMaterialOrQuantityChange(val, undefined, index);
   }
+  await loadPriceLayerOptions(form.value.details[index]);
 }
 
 /**
@@ -1024,87 +1045,86 @@ function handleMaterialOrQuantityChange(materialId, quantity, index) {
   }
   if (quantity !== undefined) {
     form.value.details[index].quantity = quantity;
-    calculateTotalAmount();
+  }
+  updateLineAmount(form.value.details[index]);
+}
+
+function formatMoneyDisplay(value) {
+  if (value === null || value === undefined || value === "") {
+    return "-";
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed.toFixed(2) : "-";
+}
+
+function toInputString(value) {
+  if (value === null || value === undefined || value === "") {
+    return "";
+  }
+  return String(value);
+}
+
+function updateLineAmount(row) {
+  if (!row) {
+    return;
+  }
+  row.unitPrice = row.selectedUnitCost || null;
+  const quantity = Number(row.quantity ?? 0);
+  const unitPrice = Number(row.unitPrice ?? 0);
+  row.amount =
+    row.selectedUnitCost && quantity > 0 && Number.isFinite(unitPrice)
+      ? Number((quantity * unitPrice).toFixed(2))
+      : null;
+}
+
+function handlePriceLayerChange(row) {
+  updateLineAmount(row);
+}
+
+async function loadPriceLayerOptions(row) {
+  if (!row?.materialId) {
+    if (row) {
+      row.priceLayerOptions = [];
+      row.selectedUnitCost = "";
+      updateLineAmount(row);
+    }
+    return;
   }
 
-  // 如果物料ID和数量都存在，则调用批次API
-  const detail = form.value.details[index];
-  const actualMaterialId =
-    materialId !== undefined ? materialId : detail.materialId;
-  const actualQuantity = quantity !== undefined ? quantity : detail.quantity;
-
-  if (actualMaterialId && actualQuantity) {
-    getUsedByMaterialIdAndQuantity(actualMaterialId, actualQuantity)
-      .then((response) => {
-        // 处理返回的库存使用情况，计算小计
-        if (response.data && Array.isArray(response.data)) {
-          // 计算总的小计金额
-          let totalSubtotal = 0;
-          response.data.forEach((item) => {
-            totalSubtotal += Number((item.useQty * item.unitPrice).toFixed(2));
-          });
-          // 将计算出的小计赋值给对应行的unitPrice字段（表格中显示为"小计"）
-          form.value.details[index].unitPrice = totalSubtotal;
-
-          // 生成说明信息（包含库位编码、数量、价格），相同单价的合并显示
-          let instructionInfo = "";
-          // 按单价分组数据
-          const groupedByUnitPrice = {};
-          response.data.forEach((item) => {
-            const unitPrice = item.unitPrice != null ? item.unitPrice : "";
-            if (!groupedByUnitPrice[unitPrice]) {
-              groupedByUnitPrice[unitPrice] = [];
-            }
-            groupedByUnitPrice[unitPrice].push(item);
-          });
-
-          let itemIndex = 1;
-          for (const [unitPrice, items] of Object.entries(groupedByUnitPrice)) {
-            if (items.length === 1) {
-              // 只有一个项目时，显示单个项目信息
-              instructionInfo += `${itemIndex}. 数量: ${items[0].useQty}, 单价: ${unitPrice}\n`;
-              itemIndex++;
-            } else {
-              // 多个项目有相同单价时，合并显示
-              const totalQty = items.reduce(
-                (sum, item) => sum + item.useQty,
-                0,
-              );
-              instructionInfo += `${itemIndex}. 数量: ${totalQty}, 单价: ${unitPrice}\n`;
-              itemIndex++;
-            }
-          }
-          form.value.details[index].instruction = instructionInfo;
-          form.value.details[index].saifuteInventoryUsed = response.data;
-
-          // 重新计算总金额
-          calculateTotalAmount();
-        }
-      })
-      .catch((error) => {
-        console.error("获取库存使用情况失败:", error);
+  row.priceLayerLoading = true;
+  try {
+    const response = await request({
+      url: "/api/inventory/price-layers",
+      method: "get",
+      params: {
+        materialId: row.materialId,
+        stockScope: "MAIN",
+      },
+    });
+    const layers = Array.isArray(response.data) ? response.data : [];
+    row.priceLayerOptions = layers.map((item) => ({
+      unitCost: toInputString(item.unitCost),
+      availableQty: toInputString(item.availableQty),
+    }));
+    const selectedUnitCost = toInputString(row.selectedUnitCost);
+    const hasSelectedLayer =
+      selectedUnitCost &&
+      row.priceLayerOptions.some((item) => item.unitCost === selectedUnitCost);
+    if (selectedUnitCost && !hasSelectedLayer) {
+      row.priceLayerOptions.unshift({
+        unitCost: selectedUnitCost,
+        availableQty: "-",
       });
+    } else if (!selectedUnitCost && row.priceLayerOptions.length === 1) {
+      row.selectedUnitCost = row.priceLayerOptions[0].unitCost;
+    }
+    updateLineAmount(row);
+  } catch (error) {
+    row.priceLayerOptions = [];
+    console.error("加载成本价层失败:", error);
+  } finally {
+    row.priceLayerLoading = false;
   }
-}
-
-/**
- * 处理小计值更改事件
- * 根据项目规范，当用户手动修改小计（unitPrice）字段时，应自动清空该行的说明（instruction）字段内容
- */
-function handleUnitPriceChange(row, val) {
-  // 清空说明字段内容
-  row.instruction = null;
-  // 继续执行金额计算逻辑
-  calculateTotalAmount();
-}
-
-/** 计算总金额 */
-function calculateTotalAmount() {
-  let total = 0;
-  form.value.details.forEach((detail) => {
-    total += Number((detail.unitPrice || 0).toFixed(2));
-  });
-  form.value.totalAmount = total.toFixed(2);
 }
 
 /**
@@ -1173,7 +1193,7 @@ async function handleAiPrefill(formData) {
     }
   }
 
-  // 部门
+  // 车间
   if (formData.workshopName) {
     try {
       const res = await listByNameOrContact({
@@ -1219,8 +1239,12 @@ async function handleAiPrefill(formData) {
       const row = {
         detailId: null,
         materialId: null,
-        quantity,
+        selectedUnitCost: "",
+        priceLayerOptions: [],
+        priceLayerLoading: false,
         unitPrice: null,
+        quantity,
+        amount: null,
         remark: item.remark || null,
       };
       if (item.materialName) {
@@ -1241,8 +1265,11 @@ async function handleAiPrefill(formData) {
         }
       }
       form.value.details.push(row);
+      if (row.materialId) {
+        await loadPriceLayerOptions(row);
+      }
     }
-    // 触发单价自动计算
+    // 同步物料和数量
     for (let i = 0; i < form.value.details.length; i++) {
       const d = form.value.details[i];
       if (d.materialId && d.quantity) {

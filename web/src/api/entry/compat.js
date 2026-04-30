@@ -95,6 +95,7 @@ function mapInboundLine(line, config, order, audit = null) {
   const quantity = Number(line.quantity ?? 0);
   const unitPrice = Number(line.unitPrice ?? 0);
   const taxPrice = unitPrice;
+  const amount = Number(line.amount ?? quantity * unitPrice);
 
   return {
     [config.detailIdKey]: line.id,
@@ -106,7 +107,7 @@ function mapInboundLine(line, config, order, audit = null) {
     quantity,
     unitPrice,
     taxPrice,
-    subtotal: (quantity * unitPrice).toFixed(2),
+    amount,
     supplierId: order.supplierId,
     supplierName: order.supplierNameSnapshot ?? "",
     workshopId: order.workshopId,

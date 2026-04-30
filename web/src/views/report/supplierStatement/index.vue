@@ -36,8 +36,8 @@ const activeTab = ref("entry");
 const entryTotal = computed(() => {
   return entryDetailList.value
     .reduce((sum, item) => {
-      const subtotal = (item.quantity || 0) * (item.unitPrice || 0);
-      return sum + subtotal;
+      const amount = (item.quantity || 0) * (item.unitPrice || 0);
+      return sum + amount;
     }, 0)
     .toFixed(2);
 });
@@ -45,8 +45,8 @@ const entryTotal = computed(() => {
 const projectTotal = computed(() => {
   return projectMaterialList.value
     .reduce((sum, item) => {
-      const subtotal = (item.quantity || 0) * (item.unitPrice || 0);
-      return sum + subtotal;
+      const amount = (item.quantity || 0) * (item.unitPrice || 0);
+      return sum + amount;
     }, 0)
     .toFixed(2);
 });
@@ -111,7 +111,7 @@ async function fetchData() {
     if (entryRes.data && Array.isArray(entryRes.data)) {
       entryDetailList.value = entryRes.data.map((item) => ({
         ...item,
-        subtotal: ((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2),
+        amount: ((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2),
       }));
     } else {
       entryDetailList.value = [];
@@ -121,12 +121,12 @@ async function fetchData() {
     if (projectRes.rows && Array.isArray(projectRes.rows)) {
       projectMaterialList.value = projectRes.rows.map((item) => ({
         ...item,
-        subtotal: ((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2),
+        amount: ((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2),
       }));
     } else if (projectRes.data && Array.isArray(projectRes.data)) {
       projectMaterialList.value = projectRes.data.map((item) => ({
         ...item,
-        subtotal: ((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2),
+        amount: ((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2),
       }));
     } else {
       projectMaterialList.value = [];
@@ -167,7 +167,7 @@ function getEntrySummaries(param) {
         0,
       );
       sums[index] = total.toFixed(2);
-    } else if (column.property === "subtotal") {
+    } else if (column.property === "amount") {
       sums[index] = entryTotal.value;
     } else {
       sums[index] = "";
@@ -194,7 +194,7 @@ function getProjectSummaries(param) {
         0,
       );
       sums[index] = total.toFixed(2);
-    } else if (column.property === "subtotal") {
+    } else if (column.property === "amount") {
       sums[index] = projectTotal.value;
     } else {
       sums[index] = "";
@@ -336,7 +336,7 @@ function handleExport() {
           <el-table-column prop="quantity" label="数量" align="center" width="100" />
           <el-table-column prop="unitPrice" label="单价" align="center" width="100" />
           <el-table-column prop="taxPrice" label="含税价" align="center" width="100" />
-          <el-table-column prop="subtotal" label="小计" align="center" width="120" />
+          <el-table-column prop="amount" label="金额" align="center" width="120" />
           <el-table-column prop="remark" label="备注" align="center" show-overflow-tooltip />
         </adaptive-table>
         <el-empty v-if="!loading && entryDetailList.length === 0" description="暂无验收单数据" />
@@ -361,8 +361,8 @@ function handleExport() {
           <el-table-column prop="unit" label="单位" align="center" width="80" />
           <el-table-column prop="quantity" label="数量" align="center" width="100" />
           <el-table-column prop="unitPrice" label="单价" align="center" width="100" />
-          <el-table-column prop="subtotal" label="小计" align="center" width="120" />
-          <el-table-column prop="instruction" label="说明" align="center" show-overflow-tooltip />
+          <el-table-column prop="amount" label="金额" align="center" width="120" />
+          <el-table-column prop="instruction" label="计价说明" align="center" show-overflow-tooltip />
         </adaptive-table>
         <el-empty v-if="!loading && projectMaterialList.length === 0" description="暂无项目直入数据" />
       </el-tab-pane>
