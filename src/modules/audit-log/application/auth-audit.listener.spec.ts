@@ -15,7 +15,21 @@ import { AuditLogRepository } from "../infrastructure/audit-log.repository";
 import { AuditLogService } from "./audit-log.service";
 import { AuthAuditListener } from "./auth-audit.listener";
 
-async function flushAuditEvents(): Promise<void> {
+async function waitForLoginLogWrite(
+  createLoginLog: jest.Mock,
+  expectedCalls = 1,
+): Promise<void> {
+  const deadline = Date.now() + 1000;
+  while (createLoginLog.mock.calls.length < expectedCalls) {
+    if (Date.now() >= deadline) {
+      throw new Error(
+        `Timed out waiting for auth audit listener (${createLoginLog.mock.calls.length}/${expectedCalls} login log writes)`,
+      );
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
@@ -166,7 +180,7 @@ describe("AuthAuditListener", () => {
         createRequest(),
       );
 
-      await flushAuditEvents();
+      await waitForLoginLogWrite(harness.auditLogRepository.createLoginLog);
 
       expect(result).toMatchObject({
         accessToken: "access-token",
@@ -205,7 +219,7 @@ describe("AuthAuditListener", () => {
         ),
       ).rejects.toThrow(UnauthorizedException);
 
-      await flushAuditEvents();
+      await waitForLoginLogWrite(harness.auditLogRepository.createLoginLog);
 
       expect(harness.auditLogRepository.createLoginLog).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -229,7 +243,7 @@ describe("AuthAuditListener", () => {
         createRequest(),
       );
 
-      await flushAuditEvents();
+      await waitForLoginLogWrite(harness.auditLogRepository.createLoginLog);
 
       expect(result).toEqual({ loggedOut: true });
       expect(harness.auditLogRepository.createLoginLog).toHaveBeenCalledWith(
@@ -267,7 +281,7 @@ describe("AuthAuditListener", () => {
         sessionId: "session-1",
       });
 
-      await flushAuditEvents();
+      await waitForLoginLogWrite(harness.auditLogRepository.createLoginLog);
 
       expect(harness.auditLogRepository.createLoginLog).toHaveBeenCalledTimes(
         1,
