@@ -32,8 +32,8 @@
 - `releaseInventorySource()`
 - `checkInventoryWarning()`
 - `reserveFactoryNumberInterval()`
-- `queryPriceLayerAvailability()` — 按 `物料 + 单价` 聚合可用来源层，供销售出库价格层选择（计划中）
-- `allocateInventorySourceByPriceLayer()` — 在指定价格层内按 FIFO 分配来源（计划中）
+- `listPriceLayerAvailability()` — 按 `物料 + 库存范围 + unitCost` 聚合可用来源层，供销售出库价格层选择
+- `settleConsumerOut()` — 扣减库存并结算消费来源；传入 `selectedUnitCost` 时只在指定价格层内按 FIFO 分配来源
 
 ## Controller 接口草案
 
@@ -41,6 +41,7 @@
 - `GET /inventory/logs`
 - `GET /inventory/warnings`
 - `GET /inventory/source-usages`
+- `GET /inventory/price-layers`
 
 说明：
 
@@ -120,9 +121,9 @@
 - 真实 DB 并发扣减一致性集成测试
 - 预警生成测试
 
-## 计划新增操作类型
+## 已落地操作类型
 
-以下操作类型由入库调价单（`inbound` F8）引入，实现后需纳入 `InventoryOperationType`：
+以下操作类型由入库调价单（`inbound` F8）引入，已纳入 `InventoryOperationType` 和 FIFO 来源层口径：
 
 - `PRICE_CORRECTION_OUT` — 把原来源流水中尚未消费的剩余数量转出
 - `PRICE_CORRECTION_IN` — 按正确单价重新转入，形成新的 FIFO 来源流水；需纳入 `FIFO_SOURCE_OPERATION_TYPES`

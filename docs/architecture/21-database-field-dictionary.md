@@ -226,7 +226,7 @@
 | `changeQty`              | DECIMAL(18,6)     | 是   | —       | —   | 变动数量（始终为正值，方向由 `direction` 决定）     |
 | `beforeQty`              | DECIMAL(18,6)     | 是   | —       | —   | 变动前库存数量                            |
 | `afterQty`               | DECIMAL(18,6)     | 是   | —       | —   | 变动后库存数量                            |
-| `unitCost`               | DECIMAL(18,2)     | 否   | —       | —   | 单位成本                               |
+| `unitCost`               | DECIMAL(18,2)     | 否   | —       | —   | 单位成本；入库方向来源流水的价格层真源，价格层查询按该字段聚合可用来源 |
 | `costAmount`             | DECIMAL(18,2)     | 否   | —       | —   | 成本金额                               |
 | `operatorId`             | VARCHAR(64)       | 否   | —       | —   | 操作人标识                              |
 | `occurredAt`             | DATETIME          | 是   | `now()` | —   | 流水实际落库时间戳；当前实现通常等同写入时间 |
@@ -257,7 +257,7 @@
 | `REVERSAL_IN`             | IN  | 逆操作冲回入库 |
 | `REVERSAL_OUT`            | OUT | 逆操作冲回出库 |
 
-> 说明：`balanceId` / `stockScopeId` 承载真实库存轴；`workshopId` / `projectTargetId` 只承载归属或目标维度，不参与库存余额唯一键。`bizDate` 是业务归属日期，`occurredAt` 是流水实际落库时间戳，补录历史单据时两者可不同。`direction` 是增减方向真源，`changeQty` 始终记录正值。`businessDocumentType` + `businessDocumentId` + `businessDocumentLineId` 用于把流水回连到具体单据行，`businessDocumentNumber` 仅保留编号快照。`operationType` 表示库存动作语义，不等同 `businessDocumentType`；同一单据类型可对应多个动作，逆操作也会沿用原单据类型但把动作改为 `REVERSAL_IN` / `REVERSAL_OUT`。`idempotencyKey` 用于防重复写入，`reversalOfLogId` 用于逆操作闭环。
+> 说明：`balanceId` / `stockScopeId` 承载真实库存轴；`workshopId` / `projectTargetId` 只承载归属或目标维度，不参与库存余额唯一键。`bizDate` 是业务归属日期，`occurredAt` 是流水实际落库时间戳，补录历史单据时两者可不同。`direction` 是增减方向真源，`changeQty` 始终记录正值。`businessDocumentType` + `businessDocumentId` + `businessDocumentLineId` 用于把流水回连到具体单据行，`businessDocumentNumber` 仅保留编号快照。`operationType` 表示库存动作语义，不等同 `businessDocumentType`；同一单据类型可对应多个动作，逆操作也会沿用原单据类型但把动作改为 `REVERSAL_IN` / `REVERSAL_OUT`。`idempotencyKey` 用于防重复写入，`reversalOfLogId` 用于逆操作闭环。销售出库价格层不单独建余额表，而是查询当前可用的入库来源流水并按 `unitCost` 聚合。
 
 
 索引：`balanceId`、`stockScopeId`、`bizDate + direction`、`bizDate + operationType`、`stockScopeId + bizDate`、`workshopId + operationType + bizDate`、`businessDocumentType + businessDocumentId`、`businessDocumentType + businessDocumentId + businessDocumentLineId`、`occurredAt`
@@ -281,6 +281,8 @@
 唯一约束：`consumerDocumentType + consumerLineId + sourceLogId`
 
 索引：`materialId`、`consumerDocumentType + consumerDocumentId`
+
+> 成本追溯说明：本表只记录消费行与来源流水之间的数量分配 / 释放关系，不冗余分配单价和金额。出库成本通过 `sourceLogId -> inventory_log.unitCost` 追溯来源价格层，并在消费单据行上固化 `costUnitPrice` / `costAmount` 快照。
 
 ### 4.4 `factory_number_reservation` — 出厂编号区间占用
 
@@ -489,11 +491,11 @@
 | `lineNo`               | INT           | 是   | —   | 联合  | 行号，同一主表内唯一                                  |
 | `materialId`           | INT           | 是   | —   | —   | 物料 ID → `material.id`                       |
 | `quantity`             | DECIMAL(18,6) | 是   | —   | —   | 数量                                          |
-| `unitPrice`            | DECIMAL(18,2) | 是   | `0` | —   | 单价                                          |
+| `unitPrice`            | DECIMAL(18,2) | 是   | `0` | —   | 对客户的业务销售单价，不是库存成本价，不承载库存价格层语义                         |
 | `amount`               | DECIMAL(18,2) | 是   | `0` | —   | 金额                                          |
-| `selectedUnitCost`     | DECIMAL(18,2) | 否   | —   | —   | 用户选定的价格层单价（计划中；待确认是否复用 `unitPrice`）        |
-| `costUnitPrice`        | DECIMAL(18,2) | 否   | —   | —   | 成本单价（由来源分配计算填入）                             |
-| `costAmount`           | DECIMAL(18,2) | 否   | —   | —   | 成本金额                                        |
+| `selectedUnitCost`     | DECIMAL(18,2) | 是   | —   | —   | 用户选定的库存价格层单价，对应可用来源流水的 `inventory_log.unitCost` |
+| `costUnitPrice`        | DECIMAL(18,2) | 否   | —   | —   | 成本单价，由同价格层内 FIFO 来源分配汇总后固化                    |
+| `costAmount`           | DECIMAL(18,2) | 否   | —   | —   | 成本金额，由实际来源分配汇总后固化                            |
 | `startNumber`          | VARCHAR(64)   | 否   | —   | —   | 出厂编号区间起始号（出库单使用）                            |
 | `endNumber`            | VARCHAR(64)   | 否   | —   | —   | 出厂编号区间结束号                                   |
 | `sourceDocumentType`   | VARCHAR(64)   | 否   | —   | —   | 来源单据类型（退货时指向出库单类型）                          |
@@ -552,8 +554,8 @@
 | `lineNo`               | INT           | 是   | —   | 联合  | 行号，同一主表内唯一                                     |
 | `materialId`           | INT           | 是   | —   | —   | 物料 ID → `material.id`                          |
 | `quantity`             | DECIMAL(18,6) | 是   | —   | —   | 数量                                             |
-| `unitPrice`            | DECIMAL(18,2) | 是   | `0` | —   | 单价                                             |
-| `amount`               | DECIMAL(18,2) | 是   | `0` | —   | 金额                                             |
+| `unitPrice`            | DECIMAL(18,2) | 是   | `0` | —   | 内部成本核算单价，不是销售价；实际消耗成本仍需可追溯到来源层                                             |
+| `amount`               | DECIMAL(18,2) | 是   | `0` | —   | 成本核算金额                                             |
 | `costUnitPrice`        | DECIMAL(18,2) | 否   | —   | —   | 成本单价（由来源分配计算填入）                                |
 | `costAmount`           | DECIMAL(18,2) | 否   | —   | —   | 成本金额                                           |
 | `sourceDocumentType`   | VARCHAR(64)   | 否   | —   | —   | 来源单据类型；退料时通常指向领料单，报废也可选填上游单据用于追溯 |

@@ -64,6 +64,18 @@ function mapInventorySummaryItem(item) {
   };
 }
 
+function mapPriceLayerItem(item) {
+  const unitCost = String(item.unitCost ?? "");
+  const availableQty = String(item.availableQty ?? "");
+
+  return {
+    materialId: item.materialId,
+    unitCost,
+    availableQty,
+    sourceLogCount: Number(item.sourceLogCount ?? 0),
+  };
+}
+
 // 查询库存列表
 export function listInventory(query = {}) {
   const { limit, offset } = buildPageQuery(query);
@@ -107,4 +119,20 @@ export async function getInventory(inventoryId) {
   return {
     data: response.rows[0] ?? null,
   };
+}
+
+export function listInventoryPriceLayers(query = {}) {
+  return request({
+    url: "/api/inventory/price-layers",
+    method: "get",
+    params: {
+      materialId: query.materialId,
+      stockScope: query.stockScope,
+      workshopId: query.workshopId,
+    },
+  }).then((response) => ({
+    rows: Array.isArray(response.data)
+      ? response.data.map(mapPriceLayerItem)
+      : [],
+  }));
 }

@@ -31,8 +31,8 @@
 - 作废单据并执行逆操作
 - 校验退货与出库的上下游关系
 - 管理出厂编号区间
-- 价格层出库选择（计划中）— 用户按 `物料 + 价格层 + 数量` 录单，系统在同价内自动 FIFO 到具体来源
-- 出库成本追溯查询（计划中）— 追溯到具体来源层，支持展示调价关系链
+- 价格层出库选择 — 用户按 `物料 + 价格层 + 数量` 录单，系统在同价内自动 FIFO 到具体来源
+- 出库成本追溯查询 — 追溯到具体来源层，支持展示调价关系链
 
 ## Controller 接口草案
 
@@ -109,13 +109,15 @@
 - 出厂编号区间校验与释放测试
 - 作废前下游退货校验测试
 
-## 计划新增能力
+## 价格层与成本追溯
 
 以下由销售业务需求（F2/F3）引入：
 
-- 价格层可用库存查询接口：调用 `inventory-core.queryPriceLayerAvailability()` 按 `物料 + 单价` 聚合可用量
-- 出库按价格层录入：用户选价格层，系统在同价内 FIFO 分配来源
-- 出库成本追溯读模型：串联来源流水 → 调价单（如有）→ 原入库单
+- 价格层可用库存查询接口：调用 `inventory-core.listPriceLayerAvailability()` 按 `物料 + 库存范围 + unitCost` 聚合可用来源量
+- 出库按价格层录入：销售出库行使用 `selectedUnitCost` 记录用户选择的库存价格层，`unitPrice` 保持对客户的业务销售单价，不作为库存成本价
+- 出库过账：调用 `inventory-core.settleConsumerOut()`，在选定价格层内 FIFO 分配来源，并写入 `inventory_source_usage`
+- 成本快照：过账后把实际来源分配汇总为 `costUnitPrice` / `costAmount`，固化在出库明细行
+- 出库成本追溯读模型：串联出库行 → `inventory_source_usage` → 来源流水 → 调价单（如有）→ 原入库单
 
 详见需求：`docs/requirements/domain/sales-business-module.md`（F2/F3）。
 

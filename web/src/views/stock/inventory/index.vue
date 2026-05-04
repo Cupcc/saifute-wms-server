@@ -107,7 +107,7 @@
           <el-button
             link
             type="primary"
-            @click="handleViewDetail(scope.row.materialId)"
+            @click="handleViewDetail(scope.row)"
           >
             {{ scope.row.materialCode }}
           </el-button>
@@ -124,7 +124,7 @@
           <el-button
             link
             type="primary"
-            @click="handleViewDetail(scope.row.materialId)"
+            @click="handleViewDetail(scope.row)"
           >
             {{ scope.row.materialName }}
           </el-button>
@@ -142,7 +142,7 @@
           <el-button
             link
             type="primary"
-            @click="handleViewDetail(scope.row.materialId)"
+            @click="handleViewDetail(scope.row)"
           >
             {{ scope.row.specification }}
           </el-button>
@@ -189,10 +189,22 @@
           <el-button
             link
             type="primary"
-            @click="handleViewDetail(scope.row.materialId)"
+            @click="handleViewDetail(scope.row)"
             :style="{ color: scope.row.currentQty < 0 ? 'red' : '' }"
           >
-            {{ scope.row.currentQty }}
+            {{ formatQtyDisplay(scope.row.currentQty) }}
+          </el-button>
+        </template>
+      </el-table-column>
+      <el-table-column
+        label="价格库存"
+        align="center"
+        width="120"
+        v-if="columns[6].visible"
+      >
+        <template #default="scope">
+          <el-button link type="primary" @click="handleViewDetail(scope.row)">
+            查看明细
           </el-button>
         </template>
       </el-table-column>
@@ -206,7 +218,12 @@
       @pagination="getList"
     />
 
-    <el-dialog title="详情" v-model="materialViewOpen" width="500px" append-to-body>
+    <el-dialog
+      title="库存详情"
+      v-model="materialViewOpen"
+      width="720px"
+      append-to-body
+    >
       <el-row :gutter="10">
         <el-col :span="24">
           <el-card class="box-card">
@@ -231,7 +248,50 @@
               <el-descriptions-item label="单位">
                 {{ materialViewForm.unit }}
               </el-descriptions-item>
+              <el-descriptions-item label="仓库范围">
+                {{ materialViewForm.stockScopeName || "-" }}
+              </el-descriptions-item>
+              <el-descriptions-item label="库存数量">
+                {{ formatQtyDisplay(materialViewForm.currentQty) }}
+              </el-descriptions-item>
             </el-descriptions>
+          </el-card>
+        </el-col>
+        <el-col :span="24" class="price-layer-section">
+          <el-card class="box-card">
+            <template #header>
+              <div class="card-header">
+                <span>价格库存明细</span>
+              </div>
+            </template>
+            <el-table
+              border
+              stripe
+              v-loading="priceLayerLoading"
+              :data="priceLayerRows"
+              empty-text="暂无可用价格库存"
+            >
+              <el-table-column label="单价" prop="unitCost" align="right">
+                <template #default="{ row }">
+                  {{ formatMoneyDisplay(row.unitCost) }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="库存数量"
+                prop="availableQty"
+                align="right"
+              >
+                <template #default="{ row }">
+                  {{ formatQtyDisplay(row.availableQty) }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="来源流水数"
+                prop="sourceLogCount"
+                align="right"
+                width="110"
+              />
+            </el-table>
           </el-card>
         </el-col>
       </el-row>
@@ -247,7 +307,10 @@
 <script setup name="Inventory">
 import { getFieldSuggestions } from "@/api/base/suggestions";
 import { getMaterial, listMaterialByCodeOrName } from "@/api/base/material";
-import { listInventory } from "@/api/stock/inventory";
+import {
+  listInventory,
+  listInventoryPriceLayers,
+} from "@/api/stock/inventory";
 import { useDict } from "@/utils/dict";
 
 const { proxy } = getCurrentInstance();
@@ -259,6 +322,8 @@ const showSearch = ref(true);
 const total = ref(0);
 const materialViewOpen = ref(false);
 const materialViewForm = ref({});
+const priceLayerRows = ref([]);
+const priceLayerLoading = ref(false);
 const specSuggestionValues = ref([]);
 const specSuggestionsLoaded = ref(false);
 const materialSuggestionRequestId = ref(0);
@@ -285,6 +350,7 @@ const columns = ref([
   { key: 3, label: "物料分类", visible: true },
   { key: 4, label: "仓库范围", visible: true },
   { key: 5, label: "当前库存", visible: true },
+  { key: 6, label: "价格库存", visible: true },
 ]);
 
 function getList() {
@@ -445,11 +511,44 @@ function handleMaterialSuggestionSelect(item) {
   handleQuery();
 }
 
-function handleViewDetail(materialId) {
-  getMaterial(materialId).then((response) => {
-    materialViewForm.value = response.data;
-    materialViewOpen.value = true;
-  });
+function buildMaterialViewForm(row, material = {}) {
+  return {
+    ...material,
+    materialId: row.materialId ?? material.materialId,
+    materialCode: material.materialCode ?? row.materialCode,
+    materialName: material.materialName ?? row.materialName,
+    specification: material.specification ?? row.specification,
+    category: material.category ?? row.category,
+    currentQty: row.currentQty,
+    stockScope: row.stockScope,
+    stockScopeName: row.stockScopeName,
+  };
+}
+
+async function handleViewDetail(row) {
+  if (!row?.materialId) {
+    return;
+  }
+
+  materialViewForm.value = buildMaterialViewForm(row);
+  priceLayerRows.value = [];
+  priceLayerLoading.value = true;
+  materialViewOpen.value = true;
+
+  try {
+    const [materialResponse, priceLayerResponse] = await Promise.all([
+      getMaterial(row.materialId).catch(() => ({ data: {} })),
+      listInventoryPriceLayers({
+        materialId: row.materialId,
+        stockScope: row.stockScope || queryParams.value.stockScope,
+      }).catch(() => ({ rows: [] })),
+    ]);
+
+    materialViewForm.value = buildMaterialViewForm(row, materialResponse.data);
+    priceLayerRows.value = priceLayerResponse.rows || [];
+  } finally {
+    priceLayerLoading.value = false;
+  }
 }
 
 function getCategoryLabel(value) {
@@ -461,6 +560,29 @@ function getCategoryLabel(value) {
     (item) => item.value === value.toString(),
   );
   return category ? category.label : value;
+}
+
+function formatDecimalDisplay(value, maxFractionDigits) {
+  if (value === null || typeof value === "undefined" || value === "") {
+    return "-";
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return String(value);
+  }
+
+  return parsed.toLocaleString("zh-CN", {
+    maximumFractionDigits: maxFractionDigits,
+  });
+}
+
+function formatQtyDisplay(value) {
+  return formatDecimalDisplay(value, 6);
+}
+
+function formatMoneyDisplay(value) {
+  return formatDecimalDisplay(value, 6);
 }
 
 getList();
@@ -499,5 +621,9 @@ getList();
   color: #909399;
   font-size: 12px;
   white-space: nowrap;
+}
+
+.price-layer-section {
+  margin-top: 12px;
 }
 </style>

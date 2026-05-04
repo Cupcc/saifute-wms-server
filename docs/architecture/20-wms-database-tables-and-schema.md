@@ -204,7 +204,7 @@ NestJS `inbound` 模块映射补充：
 1. 出库时校验库存充足、客户主数据、编号区间
 2. 销售退货时校验来源出库关系和可退数量
 3. 写主表与明细
-4. 调用 `inventory-core.decreaseStock()` 或 `increaseStock()`
+4. 销售出库调用 `inventory-core.settleConsumerOut()`，销售退货调用 `increaseStock()`
 5. 对出库行维护 `factory_number_reservation`
 6. 通过 `document_relation`、`document_line_relation` 表达退货与出库上下游关系
 7. 作废时逆操作库存并释放编号区间
@@ -218,12 +218,14 @@ NestJS `sales` 模块映射补充：
 - 销售退货与出库的来源关系优先通过 `document_relation`、`document_line_relation` 表达，而不是继续拆独立关系表
 - 第一阶段销售出库与销售退货默认作用于主仓 `MAIN`
 
-价格层出库（计划中）：
+价格层出库：
 
 - 出库时用户按 `物料 + 价格层 + 数量` 录单，价格只能从当前有库存的价格层中选择
-- 价格层可用库存口径：按 `物料 + unitCost` 聚合现有可用来源流水得到，不新建独立价格库存余额主表
+- 价格层可用库存口径：按 `物料 + stockScope + unitCost` 聚合现有可用来源流水得到，不新建独立价格库存余额主表
+- 来源流水的成本层真源是 `inventory_log.unitCost`；入库类单据把入库明细 `unitPrice` 固化为来源流水成本快照
+- 销售出库行使用 `selectedUnitCost` 记录用户选定的库存价格层；`unitPrice` 保持对客户的业务销售单价口径，不是库存成本价，也不承载库存成本层语义
 - 系统在用户选定的价格层内部自动按 FIFO 分配到具体来源，写入 `inventory_source_usage`
-- 出库行明细新增 `selectedUnitCost` 字段记录用户选定的价格层（待确认是否复用现有 `unitPrice`）
+- 出库过账后将实际来源分配汇总为 `costUnitPrice` / `costAmount`，作为该出库行的历史成本快照
 
 历史数据兼容补充：
 
@@ -242,7 +244,7 @@ NestJS `sales` 模块映射补充：
 1. 领料、报废走对主仓 `MAIN` 的 `decreaseStock()`
 2. 退料走对主仓 `MAIN` 的 `increaseStock()`
 3. `workshopId` 只用于归属与成本核算，不建立车间库存余额
-4. 对消耗类动作维护 `inventory_source_usage`
+4. 车间领料 / 报废行的 `unitPrice / amount` 是内部成本核算口径，不是销售价；对消耗类动作维护 `inventory_source_usage`
 5. 通过单据关系表表达退料对领料的回冲关系
 6. 退料在线运行时应尽量绑定原领料行，以价格对齐和回补追溯为主；若无法可靠匹配，允许无源退料，但不得伪造关系
 7. 报废可选引用领料或其他上游关系，但该关系仅用于来源追溯与成本分析，不改变报废作为独立事务的统计口径
@@ -360,8 +362,8 @@ NestJS `rd-project` / `reporting` 模块映射补充：
 | 表名                           | 说明       | 关键字段                                                                                                                                                                          | 关键约束                                                     |
 | ---------------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
 | `inventory_balance`          | 物料库存现值   | `materialId`、`stockScopeId`、`quantityOnHand`、`rowVersion`                                                                                                                     | `materialId + stockScopeId` 唯一                           |
-| `inventory_log`              | 不可变库存流水  | `balanceId`、`stockScopeId`、`bizDate`、`direction`、`operationType`、`businessDocumentType`、`businessDocumentId`、`changeQty`、`beforeQty`、`afterQty`、`unitCost`、`totalCost`、`idempotencyKey` | `idempotencyKey` 唯一                                      |
-| `inventory_source_usage`     | 消耗来源追踪   | `materialId`、`sourceLogId`、`consumerDocumentType`、`consumerDocumentId`、`consumerLineId`、`allocatedQty`、`releasedQty`、`allocatedUnitCost`、`allocatedAmount`                    | `consumerDocumentType + consumerLineId + sourceLogId` 唯一 |
+| `inventory_log`              | 不可变库存流水  | `balanceId`、`stockScopeId`、`bizDate`、`direction`、`operationType`、`businessDocumentType`、`businessDocumentId`、`changeQty`、`beforeQty`、`afterQty`、`unitCost`、`costAmount`、`idempotencyKey` | `idempotencyKey` 唯一                                      |
+| `inventory_source_usage`     | 消耗来源追踪   | `materialId`、`sourceLogId`、`consumerDocumentType`、`consumerDocumentId`、`consumerLineId`、`allocatedQty`、`releasedQty`、`status`                    | `consumerDocumentType + consumerLineId + sourceLogId` 唯一 |
 | `factory_number_reservation` | 出厂编号区间占用 | `materialId`、`businessDocumentType`、`businessDocumentId`、`businessDocumentLineId`、`startNumber`、`endNumber`、`status`                                                          | 单据行与区间组合唯一                                               |
 
 补充说明：
@@ -372,7 +374,7 @@ NestJS `rd-project` / `reporting` 模块映射补充：
 - `inventory_log` 强制记录 `bizDate`（业务日期），月度出入库统计与跨模块时段分析必须以此为准
 - `projectId` 只用于研发项目逻辑模型，不直接等同库存池；当前仍映射 legacy `projectId` 物理列
 - 未来若落地销售项目，销售出库 / 退货侧应显式使用 `salesProjectId` 及对应项目快照字段，不与 `rd_project*` 复用同名字段
-- 同一物料不同来源批次允许不同成本层；入库类成本写入来源流水，出库类成本由 `inventory_source_usage` 分配
+- 同一物料不同来源批次允许不同成本层；入库类成本写入 `inventory_log.unitCost` / `costAmount`，出库类成本由 `inventory_source_usage.sourceLogId` 回连来源流水后汇总
 - `inventory_warning` 不落交易表，改为读模型视图 `vw_inventory_warning`
 
 ## 6.4 `approval` 表
@@ -422,12 +424,13 @@ NestJS `rd-project` / `reporting` 模块映射补充：
 | 表名                          | 说明          | 关键字段                                                                                      | 关键约束                  |
 | --------------------------- | ----------- | ----------------------------------------------------------------------------------------- | --------------------- |
 | `sales_stock_order`      | 出库单、销售退货单主表 | `documentNo`、`orderType`、`stockScopeId`、`customerId`、`handlerPersonnelId`、三轴状态            | `documentNo` 唯一       |
-| `sales_stock_order_line` | 销售业务明细      | `orderId`、`lineNo`、`materialId`、`quantity`、`unitPrice`、`amount`、`startNumber`、`endNumber` | `orderId + lineNo` 唯一 |
+| `sales_stock_order_line` | 销售业务明细      | `orderId`、`lineNo`、`materialId`、`quantity`、`unitPrice`、`amount`、`selectedUnitCost`、`costUnitPrice`、`costAmount`、`startNumber`、`endNumber` | `orderId + lineNo` 唯一 |
 
 补充说明：
 
 - `SalesStockOrderType.OUTBOUND` 与 `SalesStockOrderType.SALES_RETURN` 共用同一套主从表
 - 销售退货与出库的主关系优先通过关系表表达，不在主表持续堆砌特化字段
+- `unitPrice` / `amount` 是业务销售金额；`selectedUnitCost` 是用户选中的库存价格层；`costUnitPrice` / `costAmount` 是过账后固化的成本快照
 - 第一阶段销售出库与销售退货默认作用于主仓 `MAIN`
 - 对历史迁移数据，行级 `sourceDocument*` 可作为可空增强字段
 

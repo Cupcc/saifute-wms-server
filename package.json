@@ -69,6 +69,8 @@
     "migration:scrap:validate": "bun --env-file .env.dev scripts/migration/scrap/validate.ts",
     "migration:inventory-replay:dry-run": "bun --env-file .env.dev scripts/migration/inventory-replay/migrate.ts",
     "migration:inventory-replay:execute": "bun --env-file .env.dev scripts/migration/inventory-replay/migrate.ts --execute",
+    "migration:inventory-replay:return-source-links:dry-run": "bun --env-file .env.dev scripts/migration/inventory-replay/backfill-return-source-links.ts",
+    "migration:inventory-replay:return-source-links:execute": "bun --env-file .env.dev scripts/migration/inventory-replay/backfill-return-source-links.ts --execute",
     "migration:inventory-replay:validate": "bun --env-file .env.dev scripts/migration/inventory-replay/validate.ts",
     "migration:stock-scope-phase2:dry-run": "bun --env-file .env.dev scripts/migration/stock-scope-phase2/migrate.ts",
     "migration:stock-scope-phase2:execute": "bun --env-file .env.dev scripts/migration/stock-scope-phase2/migrate.ts --execute",
