@@ -12,7 +12,8 @@ import {
   WorkshopMaterialOrderType,
 } from "../../../../generated/prisma/client";
 import {
-  buildCompactDocumentNo,
+  buildDailyDocumentNoStem,
+  buildDailySequenceDocumentNo,
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
 import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
@@ -27,10 +28,12 @@ import type { CreateWorkshopMaterialOrderLineDto } from "../dto/create-workshop-
 import type { QueryWorkshopMaterialOrderDto } from "../dto/query-workshop-material-order.dto";
 import type { UpdateWorkshopMaterialOrderDto } from "../dto/update-workshop-material-order.dto";
 import { WorkshopMaterialRepository } from "../infrastructure/workshop-material.repository";
+import { WorkshopMaterialDocumentNumberRepository } from "../infrastructure/workshop-material-document-number.repository";
 
 export const WORKSHOP_MATERIAL_DOCUMENT_TYPE =
   BusinessDocumentType.WorkshopMaterialOrder;
 export const WORKSHOP_MATERIAL_BUSINESS_MODULE = "workshop-material";
+const DAILY_DOCUMENT_SEQUENCE_PATTERN = /^\d{3}$/;
 
 export type RdScrapRequestCache = Map<
   number,
@@ -73,6 +76,7 @@ export type WorkshopMaterialLineWriteData = {
 export class WorkshopMaterialSharedService {
   constructor(
     public readonly repository: WorkshopMaterialRepository,
+    private readonly documentNumberRepository: WorkshopMaterialDocumentNumberRepository,
     public readonly masterDataService: MasterDataService,
     public readonly inventoryService: InventoryService,
     public readonly approvalService: ApprovalService,
@@ -279,10 +283,40 @@ export class WorkshopMaterialSharedService {
     run: (documentNo: string, tx: Prisma.TransactionClient) => Promise<T>,
   ): Promise<T> {
     const prefix = toCreateDocumentPrefix(orderType);
-    return createWithGeneratedDocumentNo((attempt) => {
-      const documentNo = buildCompactDocumentNo(prefix, bizDate, attempt);
-      return this.repository.runInTransaction((tx) => run(documentNo, tx));
+    return createWithGeneratedDocumentNo(() => {
+      return this.repository.runInTransaction(async (tx) => {
+        const documentNo = await this.buildNextDailyDocumentNo(
+          orderType,
+          prefix,
+          bizDate,
+          tx,
+        );
+        return run(documentNo, tx);
+      });
     });
+  }
+
+  private async buildNextDailyDocumentNo(
+    orderType: WorkshopMaterialOrderType,
+    prefix: string,
+    bizDate: Date,
+    tx: Prisma.TransactionClient,
+  ) {
+    const documentNoStem = buildDailyDocumentNoStem(prefix, bizDate);
+    const documentNos =
+      await this.documentNumberRepository.findDocumentNosByOrderTypeAndStem(
+        orderType,
+        documentNoStem,
+        tx,
+      );
+    const maxSequence = documentNos.reduce((max, documentNo) => {
+      const suffix = documentNo.slice(documentNoStem.length);
+      if (!DAILY_DOCUMENT_SEQUENCE_PATTERN.test(suffix)) {
+        return max;
+      }
+      return Math.max(max, Number(suffix));
+    }, 0);
+    return buildDailySequenceDocumentNo(prefix, bizDate, maxSequence + 1);
   }
 
   runInTransaction<T>(

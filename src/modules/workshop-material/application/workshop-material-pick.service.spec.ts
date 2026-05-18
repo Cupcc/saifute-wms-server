@@ -176,6 +176,25 @@ describe("WorkshopMaterialPickService", () => {
         expect.anything(),
       );
     });
+
+    it("should reject pick order creation without a selected price layer", async () => {
+      await expect(
+        service.createPickOrder(
+          {
+            documentNo: "WM-PICK-001",
+            orderType: WorkshopMaterialOrderType.PICK,
+            bizDate: "2025-03-14",
+            handlerPersonnelId: 20,
+            workshopId: 1,
+            lines: [{ materialId: 100, quantity: "50" }],
+          },
+          "1",
+        ),
+      ).rejects.toThrow("第 1 行成本价层不能为空");
+
+      expect(mocks.repository.createOrder).not.toHaveBeenCalled();
+      expect(mocks.inventoryService.settleConsumerOut).not.toHaveBeenCalled();
+    });
   });
 
   describe("updatePickOrder", () => {
@@ -195,7 +214,9 @@ describe("WorkshopMaterialPickService", () => {
             orderType: WorkshopMaterialOrderType.PICK,
             bizDate: "2025-03-15",
             workshopId: 1,
-            lines: [{ materialId: 100, quantity: "40", unitPrice: "10" }],
+            lines: [
+              { materialId: 100, quantity: "40", selectedUnitCost: "10" },
+            ],
           },
           "1",
         ),
@@ -249,7 +270,7 @@ describe("WorkshopMaterialPickService", () => {
           orderType: WorkshopMaterialOrderType.PICK,
           bizDate: "2025-03-15",
           workshopId: 1,
-          lines: [{ materialId: 100, quantity: "40", unitPrice: "10" }],
+          lines: [{ materialId: 100, quantity: "40", selectedUnitCost: "10" }],
         },
         "1",
       );
@@ -309,6 +330,32 @@ describe("WorkshopMaterialPickService", () => {
         mocks.approvalService.markApprovalNotRequired,
       ).not.toHaveBeenCalled();
       expect(result).toEqual(revisedPickOrder);
+    });
+
+    it("should reject pick order revise without a selected price layer", async () => {
+      (mocks.repository.findOrderById as jest.Mock).mockResolvedValue(
+        mockPickOrder,
+      );
+
+      await expect(
+        service.updatePickOrder(
+          1,
+          {
+            documentNo: "WM-PICK-001",
+            orderType: WorkshopMaterialOrderType.PICK,
+            bizDate: "2025-03-15",
+            workshopId: 1,
+            lines: [{ materialId: 100, quantity: "40" }],
+          },
+          "1",
+        ),
+      ).rejects.toThrow("第 1 行成本价层不能为空");
+
+      expect(
+        mocks.inventoryService.releaseAllSourceUsagesForConsumer,
+      ).not.toHaveBeenCalled();
+      expect(mocks.inventoryService.reverseStock).not.toHaveBeenCalled();
+      expect(mocks.inventoryService.settleConsumerOut).not.toHaveBeenCalled();
     });
   });
 

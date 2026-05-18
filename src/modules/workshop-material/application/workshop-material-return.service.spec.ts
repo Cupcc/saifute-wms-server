@@ -61,6 +61,110 @@ describe("WorkshopMaterialReturnService / createReturnOrder", () => {
     );
   });
 
+  it("should write standalone return cost to inventory source log", async () => {
+    const mockReturnOrder = {
+      ...mockPickOrder,
+      id: 2,
+      documentNo: "WM-RETURN-001",
+      orderType: WorkshopMaterialOrderType.RETURN,
+      totalQty: new Prisma.Decimal(2),
+      totalAmount: new Prisma.Decimal("24.90"),
+      lines: [
+        {
+          ...mockPickOrder.lines[0],
+          id: 10,
+          orderId: 2,
+          quantity: new Prisma.Decimal(2),
+          unitPrice: new Prisma.Decimal("12.45"),
+          amount: new Prisma.Decimal("24.90"),
+          sourceDocumentType: null,
+          sourceDocumentId: null,
+          sourceDocumentLineId: null,
+        },
+      ],
+    };
+    (mocks.repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(
+      null,
+    );
+    (mocks.repository.createOrder as jest.Mock).mockResolvedValue(
+      mockReturnOrder,
+    );
+
+    const dto = {
+      documentNo: "WM-RETURN-001",
+      orderType: WorkshopMaterialOrderType.RETURN,
+      bizDate: "2025-03-14",
+      workshopId: 1,
+      lines: [{ materialId: 100, quantity: "2", unitPrice: "12.45" }],
+    };
+
+    await service.createReturnOrder(dto, "1");
+
+    expect(mocks.inventoryService.increaseStock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        materialId: 100,
+        operationType: "RETURN_IN",
+        quantity: new Prisma.Decimal(2),
+        unitCost: new Prisma.Decimal("12.45"),
+        costAmount: new Prisma.Decimal("24.90"),
+        note: expect.stringContaining(
+          "Accepted standalone workshop return source",
+        ),
+      }),
+      expect.anything(),
+    );
+  });
+
+  it("should keep linked return logs out of standalone source-layer notes", async () => {
+    (mocks.repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(
+      null,
+    );
+    (mocks.repository.createOrder as jest.Mock).mockResolvedValue(
+      mockReturnOrderWithSource,
+    );
+    (mocks.repository.findOrderById as jest.Mock).mockResolvedValue(
+      mockPickOrder,
+    );
+    (
+      mocks.inventoryService.listSourceUsagesForConsumerLine as jest.Mock
+    ).mockResolvedValue([
+      {
+        sourceLogId: 10,
+        consumerLineId: 1,
+        allocatedQty: new Prisma.Decimal(50),
+        releasedQty: new Prisma.Decimal(0),
+      },
+    ]);
+
+    const dto = {
+      documentNo: "WM-RETURN-002",
+      orderType: WorkshopMaterialOrderType.RETURN,
+      bizDate: "2025-03-14",
+      workshopId: 1,
+      lines: [
+        {
+          materialId: 100,
+          quantity: "20",
+          unitPrice: "10",
+          sourceDocumentType: "WorkshopMaterialOrder",
+          sourceDocumentId: 1,
+          sourceDocumentLineId: 1,
+        },
+      ],
+    };
+
+    await service.createReturnOrder(dto, "1");
+
+    expect(mocks.inventoryService.increaseStock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        unitCost: new Prisma.Decimal(10),
+        costAmount: new Prisma.Decimal(200),
+        note: undefined,
+      }),
+      expect.anything(),
+    );
+  });
+
   it("should reject when split lines in same request cumulatively exceed source pick line quantity", async () => {
     const returnOrderWithTwoLines = {
       ...mockReturnOrderWithSource,

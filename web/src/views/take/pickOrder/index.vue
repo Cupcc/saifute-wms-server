@@ -126,10 +126,10 @@
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="创建人" align="center" prop="createBy" v-if="columns[3].visible">
+      <el-table-column sortable show-overflow-tooltip label="经办人" align="center" prop="createBy" width="120" v-if="columns[3].visible">
         <template #default="scope">
           <el-button link type="primary" @click="handleDetail(scope.row)">
-            {{ scope.row.createBy }}
+            {{ scope.row.createBy || "-" }}
           </el-button>
         </template>
       </el-table-column>
@@ -332,7 +332,7 @@
               <el-descriptions-item label="领料人">{{ detailData.picker }}</el-descriptions-item>
               <el-descriptions-item label="车间">{{ detailData.workshopName }}</el-descriptions-item>
               <el-descriptions-item label="总金额">{{ detailData.totalAmount }}</el-descriptions-item>
-              <el-descriptions-item label="创建人">{{ detailData.createBy }}</el-descriptions-item>
+              <el-descriptions-item label="经办人">{{ detailData.createBy || "-" }}</el-descriptions-item>
               <el-descriptions-item label="创建时间">{{ parseTime(detailData.createdAt, '{y}-{m}-{d} {h}:{i}:{s}') }}</el-descriptions-item>
               <el-descriptions-item label="更新人">{{ detailData.updateBy }}</el-descriptions-item>
               <el-descriptions-item label="更新时间">{{ parseTime(detailData.updatedAt, '{y}-{m}-{d} {h}:{i}:{s}') }}</el-descriptions-item>
@@ -500,7 +500,7 @@ const columns = ref([
   { key: 0, label: `领料单号`, visible: true },
   { key: 1, label: `领料日期`, visible: true },
   { key: 2, label: `领料人`, visible: true },
-  { key: 3, label: `创建人`, visible: false },
+  { key: 3, label: `经办人`, visible: true },
   { key: 4, label: `审核结果`, visible: true },
 ]);
 

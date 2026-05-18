@@ -183,14 +183,14 @@ describe("MonthlyReportDomainSummaryService", () => {
     });
 
     expect(repository.findMonthlyReportEntries).toHaveBeenCalledWith({
-      start: new Date("2026-02-28T16:00:00.000Z"),
-      end: new Date("2026-03-31T15:59:59.999Z"),
+      start: new Date("2026-03-01T00:00:00.000Z"),
+      end: new Date("2026-03-31T00:00:00.000Z"),
       stockScope: "MAIN",
       workshopId: 10,
     });
     expect(repository.findMonthlySalesProjectEntries).toHaveBeenCalledWith({
-      start: new Date("2026-02-28T16:00:00.000Z"),
-      end: new Date("2026-03-31T15:59:59.999Z"),
+      start: new Date("2026-03-01T00:00:00.000Z"),
+      end: new Date("2026-03-31T00:00:00.000Z"),
       stockScope: "MAIN",
       workshopId: 10,
     });

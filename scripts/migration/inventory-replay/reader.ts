@@ -353,7 +353,11 @@ async function readWorkshopEvents(
       l.quantity,
       COALESCE(l.cost_unit_price, l.unit_price) AS unitCost,
       COALESCE(l.cost_amount, l.amount) AS costAmount,
-      NULL AS selectedUnitCost,
+      CASE
+        WHEN o.order_type IN ('PICK', 'SCRAP')
+        THEN COALESCE(l.cost_unit_price, l.unit_price)
+        ELSE NULL
+      END AS selectedUnitCost,
       l.source_document_type AS sourceDocumentType,
       l.source_document_id AS sourceDocumentId,
       l.source_document_line_id AS sourceDocumentLineId,
@@ -394,7 +398,7 @@ async function readWorkshopEvents(
       changeQty: String(row.quantity),
       unitCost: toNullableString(row.unitCost),
       costAmount: toNullableString(row.costAmount),
-      selectedUnitCost: null,
+      selectedUnitCost: toNullableString(row.selectedUnitCost),
       sourceDocumentType: toNullableString(row.sourceDocumentType),
       sourceDocumentId: row.sourceDocumentId,
       sourceDocumentLineId: row.sourceDocumentLineId,

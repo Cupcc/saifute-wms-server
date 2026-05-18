@@ -176,14 +176,14 @@ html.dark {
   /* 表格样式覆盖 */
   .el-table {
     --el-table-header-bg-color: var(--el-bg-color-overlay) !important;
-    --el-table-header-text-color: var(--el-text-color-regular) !important;
+    --el-table-header-text-color: var(--el-text-color-primary) !important;
     --el-table-border-color: var(--el-border-color-light) !important;
     --el-table-row-hover-bg-color: var(--el-bg-color-overlay) !important;
 
     .el-table__header-wrapper, .el-table__fixed-header-wrapper {
       th {
         background-color: var(--el-bg-color-overlay, #f8f8f9) !important;
-        color: var(--el-text-color-regular, #515a6e);
+        color: var(--el-table-header-text-color, #000000) !important;
       }
     }
   }
@@ -218,4 +218,3 @@ html.dark {
   }
 
 }
-

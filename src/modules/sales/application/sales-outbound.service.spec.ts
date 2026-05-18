@@ -83,6 +83,7 @@ describe("SalesOutboundService", () => {
           materialId: 100,
           stockScope: "MAIN",
           projectTargetId: 7001,
+          sourceProjectTargetId: 7001,
           selectedUnitCost: mockOutboundOrder.lines[0].selectedUnitCost,
           businessDocumentType: "SalesStockOrder",
           businessDocumentId: 1,
@@ -192,7 +193,10 @@ describe("SalesOutboundService", () => {
         expect.anything(),
       );
       expect(inventoryService.listPriceLayerAvailability).toHaveBeenCalledWith(
-        expect.objectContaining({ workshopId: undefined }),
+        expect.objectContaining({
+          workshopId: undefined,
+          projectTargetId: 7001,
+        }),
       );
     });
 

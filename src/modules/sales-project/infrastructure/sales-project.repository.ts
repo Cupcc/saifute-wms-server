@@ -4,6 +4,7 @@ import {
   Prisma,
   ProjectTargetType,
   SalesStockOrderType,
+  StockInOrderType,
 } from "../../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 
@@ -103,6 +104,66 @@ export class SalesProjectRepository {
       include: {
         stockScope: true,
       },
+    });
+  }
+
+  async findMaterialSnapshotsByIds(materialIds: number[], db?: DbClient) {
+    const distinctIds = [...new Set(materialIds.filter(Boolean))];
+    if (distinctIds.length === 0) {
+      return [];
+    }
+
+    return this.db(db).material.findMany({
+      where: { id: { in: distinctIds } },
+      select: {
+        id: true,
+        materialCode: true,
+        materialName: true,
+        specModel: true,
+        unitCode: true,
+      },
+    });
+  }
+
+  async findEffectiveAcceptanceLineLinksByProjectId(
+    projectId: number,
+    materialIds: number[],
+    db?: DbClient,
+  ) {
+    const distinctIds = [...new Set(materialIds.filter(Boolean))];
+    if (distinctIds.length === 0) {
+      return [];
+    }
+
+    return this.db(db).stockInOrderLine.findMany({
+      where: {
+        materialId: { in: distinctIds },
+        order: {
+          salesProjectId: projectId,
+          orderType: StockInOrderType.ACCEPTANCE,
+          lifecycleStatus: DocumentLifecycleStatus.EFFECTIVE,
+        },
+      },
+      select: {
+        id: true,
+        lineNo: true,
+        materialId: true,
+        unitPrice: true,
+        quantity: true,
+        order: {
+          select: {
+            id: true,
+            documentNo: true,
+            bizDate: true,
+            orderType: true,
+          },
+        },
+      },
+      orderBy: [
+        { order: { bizDate: "desc" } },
+        { order: { id: "desc" } },
+        { lineNo: "asc" },
+      ],
     });
   }
 

@@ -140,6 +140,16 @@ export class QueryInventoryPriceLayersDto {
   @IsInt()
   @Min(1)
   workshopId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  projectTargetId?: number;
+
+  @IsOptional()
+  @IsIn(["UNATTRIBUTED"])
+  projectTargetMode?: "UNATTRIBUTED";
 }
 
 export class QueryInventorySourceUsagesDto {

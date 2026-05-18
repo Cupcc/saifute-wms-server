@@ -106,6 +106,7 @@ describe("InventoryService", () => {
       unitCost: new Prisma.Decimal(10),
       costAmount: new Prisma.Decimal(1000),
       balanceId: 1,
+      projectTargetId: null,
     };
 
     const mockOutBalance = {
@@ -254,7 +255,7 @@ describe("InventoryService", () => {
     };
 
     it("should perform FIFO allocation and return settled cost", async () => {
-      const { service } = await buildServiceForFifo({
+      const { service, repositoryMock } = await buildServiceForFifo({
         fifoLogs: [
           {
             id: 50,
@@ -287,6 +288,42 @@ describe("InventoryService", () => {
       expect(result.allocations[0].sourceLogId).toBe(50);
       expect(Number(result.settledUnitCost)).toBe(10);
       expect(Number(result.settledCostAmount)).toBe(200);
+      expect(repositoryMock.findFifoSourceLogs).toHaveBeenCalledWith(
+        expect.objectContaining({ projectTargetId: null }),
+        expect.anything(),
+      );
+    });
+
+    it("should restrict project FIFO allocation to the selected project source layer", async () => {
+      const { service, repositoryMock } = await buildServiceForFifo({
+        sourceLog: {
+          ...mockSourceLog,
+          projectTargetId: 7001,
+        },
+      });
+
+      const result = await service.settleConsumerOut({
+        materialId: 10,
+        workshopId: 20,
+        bizDate: new Date("2026-04-09"),
+        quantity: 20,
+        operationType: InventoryOperationType.OUTBOUND_OUT,
+        businessModule: "sales",
+        businessDocumentType: "SalesStockOrder",
+        businessDocumentId: 1,
+        businessDocumentNumber: "OB-001",
+        businessDocumentLineId: 1,
+        consumerLineId: 1,
+        idempotencyKey: "fifo-project-source-1",
+        sourceProjectTargetId: 7001,
+        sourceOperationTypes: FIFO_SOURCE_OPERATION_TYPES,
+      });
+
+      expect(result.allocations).toHaveLength(1);
+      expect(repositoryMock.findFifoSourceLogs).toHaveBeenCalledWith(
+        expect.objectContaining({ projectTargetId: 7001 }),
+        expect.anything(),
+      );
     });
 
     it("should use manual source when sourceLogId is provided", async () => {
@@ -314,6 +351,34 @@ describe("InventoryService", () => {
       expect(result.allocations[0].sourceLogId).toBe(50);
     });
 
+    it("should reject a project-attributed manual source for ordinary consumption", async () => {
+      const { service } = await buildServiceForFifo({
+        sourceLog: {
+          ...mockSourceLog,
+          projectTargetId: 7001,
+        },
+      });
+
+      await expect(
+        service.settleConsumerOut({
+          materialId: 10,
+          workshopId: 20,
+          quantity: 20,
+          operationType: InventoryOperationType.PICK_OUT,
+          businessModule: "workshop",
+          businessDocumentType: "WorkshopMaterialOrder",
+          businessDocumentId: 5,
+          businessDocumentNumber: "WM-001",
+          businessDocumentLineId: 10,
+          consumerLineId: 10,
+          bizDate: new Date("2026-04-09"),
+          idempotencyKey: "manual-project-source-ordinary-1",
+          sourceLogId: 50,
+          sourceOperationTypes: FIFO_SOURCE_OPERATION_TYPES,
+        }),
+      ).rejects.toThrow("手动来源流水不属于当前项目归属");
+    });
+
     it("should restrict FIFO allocation to the selected unit-cost layer", async () => {
       const { service, repositoryMock } = await buildServiceForFifo();
 
@@ -338,6 +403,48 @@ describe("InventoryService", () => {
       expect(repositoryMock.findFifoSourceLogs).toHaveBeenCalled();
       const fifoParams = repositoryMock.findFifoSourceLogs.mock.calls[0]?.[0];
       expect(fifoParams.unitCost.toString()).toBe("10");
+    });
+
+    it("should allow FIFO allocation from an explicit zero-cost layer", async () => {
+      const zeroCostSourceLog = {
+        ...mockSourceLog,
+        unitCost: new Prisma.Decimal(0),
+        costAmount: new Prisma.Decimal(0),
+      };
+      const { service, repositoryMock } = await buildServiceForFifo({
+        sourceLog: zeroCostSourceLog,
+        fifoLogs: [
+          {
+            id: 50,
+            changeQty: new Prisma.Decimal(100),
+            occurredAt: new Date(),
+            unitCost: new Prisma.Decimal(0),
+            availableQty: new Prisma.Decimal(100),
+          },
+        ],
+      });
+
+      const result = await service.settleConsumerOut({
+        materialId: 10,
+        workshopId: 20,
+        quantity: 20,
+        selectedUnitCost: "0.00",
+        operationType: InventoryOperationType.OUTBOUND_OUT,
+        businessModule: "sales",
+        businessDocumentType: "SalesStockOrder",
+        businessDocumentId: 1,
+        businessDocumentNumber: "OB-001",
+        businessDocumentLineId: 1,
+        consumerLineId: 1,
+        bizDate: new Date("2026-04-09"),
+        idempotencyKey: "fifo-zero-price-layer-1",
+        sourceOperationTypes: FIFO_SOURCE_OPERATION_TYPES,
+      });
+
+      expect(result.allocations).toHaveLength(1);
+      expect(Number(result.settledUnitCost)).toBe(0);
+      const fifoParams = repositoryMock.findFifoSourceLogs.mock.calls[0]?.[0];
+      expect(fifoParams.unitCost.toString()).toBe("0");
     });
 
     it("should throw when FIFO candidates are insufficient", async () => {

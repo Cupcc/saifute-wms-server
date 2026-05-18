@@ -48,7 +48,7 @@ export interface SettleConsumerOutCommand extends DecreaseStockCommand {
   sourceLogId?: number;
   selectedUnitCost?: Prisma.Decimal | number | string;
   sourceOperationTypes?: InventoryOperationTypeEnum[];
-  sourceProjectTargetId?: number;
+  sourceProjectTargetId?: number | null;
 }
 
 export interface FifoAllocationPiece {

@@ -69,7 +69,6 @@ describe("MonthlyReportMaterialCategoryService", () => {
       [],
     );
   });
-
   function createMaterialCategoryPath(
     nodes: Array<Partial<MaterialCategorySnapshotNode>>,
   ): MaterialCategorySnapshotNode[] {
@@ -231,16 +230,16 @@ describe("MonthlyReportMaterialCategoryService", () => {
     expect(
       materialCategoryRepository.findMonthlyMaterialCategoryEntries,
     ).toHaveBeenCalledWith({
-      start: new Date("2026-02-28T16:00:00.000Z"),
-      end: new Date("2026-03-31T15:59:59.999Z"),
+      start: new Date("2026-03-01T00:00:00.000Z"),
+      end: new Date("2026-03-31T00:00:00.000Z"),
       stockScope: undefined,
       workshopId: undefined,
     });
     expect(
       materialCategoryBalanceRepository.findMonthlyMaterialCategoryBalanceSnapshots,
     ).toHaveBeenCalledWith({
-      start: new Date("2026-02-28T16:00:00.000Z"),
-      end: new Date("2026-03-31T15:59:59.999Z"),
+      start: new Date("2026-03-01T00:00:00.000Z"),
+      end: new Date("2026-03-31T00:00:00.000Z"),
       stockScope: undefined,
     });
     expect(result.viewMode).toBe("MATERIAL_CATEGORY");
@@ -256,6 +255,7 @@ describe("MonthlyReportMaterialCategoryService", () => {
       netAmount: "48.00",
       abnormalDocumentCount: 1,
     });
+    expect(result.summary).not.toHaveProperty("totalCost");
     expect(result.categories).toEqual([
       expect.objectContaining({
         nodeKey: "11:CHEM:化工",
@@ -291,7 +291,6 @@ describe("MonthlyReportMaterialCategoryService", () => {
         acceptanceInboundAmount: "30.00",
         productionReceiptAmount: "50.00",
         netAmount: "80.00",
-        totalCost: "80.00",
       }),
       expect.objectContaining({
         categoryNodeKey: "11:CHEM:化工",
@@ -310,9 +309,10 @@ describe("MonthlyReportMaterialCategoryService", () => {
         salesOutboundAmount: "40.00",
         salesReturnAmount: "8.00",
         netAmount: "-32.00",
-        totalCost: "34.00",
       }),
     ]);
+    for (const item of [result.categories[0], ...result.materials])
+      expect(item).not.toHaveProperty("totalCost");
   });
 
   it("should keep the category selector catalog stable when one category is filtered", async () => {

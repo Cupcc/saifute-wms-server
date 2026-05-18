@@ -17,6 +17,11 @@ export class CreateOutboundOrderLineDto {
   @Min(1)
   salesProjectId?: number;
 
+  @IsInt()
+  @IsOptional()
+  @Min(1)
+  sourceProjectTargetId?: number | null;
+
   @IsString()
   @Matches(/^(?!0+(\.0+)?$)\d+(\.\d{1,6})?$/, {
     message: "quantity must be a positive decimal string",
@@ -24,9 +29,9 @@ export class CreateOutboundOrderLineDto {
   quantity!: string;
 
   @IsString()
-  @Matches(/^(?!0+(\.0+)?$)\d+(\.\d{1,2})?$/, {
+  @Matches(/^\d+(\.\d{1,2})?$/, {
     message:
-      "selectedUnitCost must be a positive decimal string with up to 2 decimals",
+      "selectedUnitCost must be a non-negative decimal string with up to 2 decimals",
   })
   selectedUnitCost!: string;
 

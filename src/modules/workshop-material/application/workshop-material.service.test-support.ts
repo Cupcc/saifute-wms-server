@@ -4,6 +4,7 @@ import { ApprovalService } from "../../approval/application/approval.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { WorkshopMaterialRepository } from "../infrastructure/workshop-material.repository";
+import { WorkshopMaterialDocumentNumberRepository } from "../infrastructure/workshop-material-document-number.repository";
 import { WorkshopMaterialPickService } from "./workshop-material-pick.service";
 import { WorkshopMaterialReturnService } from "./workshop-material-return.service";
 import { WorkshopMaterialReturnHelpersService } from "./workshop-material-return-helpers.service";
@@ -62,6 +63,12 @@ export function createRepositoryMock() {
   } as unknown as jest.Mocked<WorkshopMaterialRepository>;
 }
 
+export function createDocumentNumberRepositoryMock() {
+  return {
+    findDocumentNosByOrderTypeAndStem: jest.fn().mockResolvedValue([]),
+  } as unknown as jest.Mocked<WorkshopMaterialDocumentNumberRepository>;
+}
+
 export function createMasterDataServiceMock() {
   return {
     getMaterialById: jest.fn(),
@@ -105,6 +112,7 @@ export function createApprovalServiceMock() {
 export type WorkshopMaterialMocks = {
   prisma: ReturnType<typeof createPrismaMock>;
   repository: jest.Mocked<WorkshopMaterialRepository>;
+  documentNumberRepository: jest.Mocked<WorkshopMaterialDocumentNumberRepository>;
   masterDataService: jest.Mocked<MasterDataService>;
   inventoryService: jest.Mocked<InventoryService>;
   approvalService: jest.Mocked<ApprovalService>;
@@ -114,6 +122,7 @@ export function createMocks(): WorkshopMaterialMocks {
   return {
     prisma: createPrismaMock(),
     repository: createRepositoryMock(),
+    documentNumberRepository: createDocumentNumberRepositoryMock(),
     masterDataService: createMasterDataServiceMock(),
     inventoryService: createInventoryServiceMock(),
     approvalService: createApprovalServiceMock(),
@@ -123,6 +132,7 @@ export function createMocks(): WorkshopMaterialMocks {
 export function createSharedService(mocks: WorkshopMaterialMocks) {
   return new WorkshopMaterialSharedService(
     mocks.repository,
+    mocks.documentNumberRepository,
     mocks.masterDataService,
     mocks.inventoryService,
     mocks.approvalService,

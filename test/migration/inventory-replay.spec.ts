@@ -202,6 +202,64 @@ describe("inventory replay planner", () => {
     ]);
   });
 
+  it("keeps workshop pick replay within the selected cost layer", () => {
+    const plan = buildInventoryReplayPlan([
+      event({
+        businessDocumentLineId: 1,
+        changeQty: "3.000000",
+        unitCost: "5.00",
+        idempotencyKey: "StockInOrder:1:line:1",
+      }),
+      event({
+        businessDocumentLineId: 2,
+        changeQty: "6.000000",
+        unitCost: "19.80",
+        idempotencyKey: "StockInOrder:1:line:2",
+      }),
+      event({
+        bizDate: "2026-05-10",
+        direction: "OUT",
+        operationType: "PICK_OUT",
+        businessModule: "workshop-material",
+        businessDocumentType: "WorkshopMaterialOrder",
+        businessDocumentId: 559,
+        businessDocumentNumber: "LL20260510004",
+        businessDocumentLineId: 1827,
+        changeQty: "6.000000",
+        unitCost: "19.80",
+        costAmount: "118.80",
+        selectedUnitCost: "19.80",
+        idempotencyKey: "WorkshopMaterialOrder:559:line:1827",
+        sortPriority: 1,
+      }),
+    ]);
+
+    expect(plan.blockers).toHaveLength(0);
+    expect(plan.plannedLogs[2]).toMatchObject({
+      idempotencyKey: "WorkshopMaterialOrder:559:line:1827",
+      unitCost: "19.80",
+      costAmount: "118.80",
+    });
+    expect(plan.plannedSourceUsages).toEqual([
+      expect.objectContaining({
+        sourceLogIdempotencyKey: "StockInOrder:1:line:2",
+        consumerDocumentType: "WorkshopMaterialOrder",
+        consumerDocumentId: 559,
+        consumerLineId: 1827,
+        allocatedQty: "6.000000",
+      }),
+    ]);
+    expect(plan.plannedPriceLayers).toEqual([
+      {
+        materialId: 100,
+        stockScopeId: 1,
+        unitCost: "5.00",
+        availableQty: "3.000000",
+        sourceLogCount: 1,
+      },
+    ]);
+  });
+
   it("replays supplier returns as source-bound outbound usage", () => {
     const plan = buildInventoryReplayPlan([
       event({

@@ -19,6 +19,7 @@ import {
   resolveMaterialCategoryLineAmount,
   resolveMaterialCategorySalesCostAmount,
 } from "./monthly-material-category.helpers";
+import { MonthlyMaterialCategoryWorkshopRepository } from "./monthly-material-category-workshop.repository";
 import {
   buildAbnormalFlags,
   buildMonthlyReportStockScopeWhere,
@@ -34,6 +35,7 @@ export class MonthlyMaterialCategoryRepository {
   constructor(
     private readonly prisma: PrismaService,
     private readonly appConfigService: AppConfigService,
+    private readonly workshopRepository?: MonthlyMaterialCategoryWorkshopRepository,
   ) {}
 
   async findMonthlyMaterialCategoryEntries(params: {
@@ -42,7 +44,7 @@ export class MonthlyMaterialCategoryRepository {
     stockScope?: StockScopeCode;
     workshopId?: number;
   }): Promise<MonthlyMaterialCategoryEntry[]> {
-    const [inboundLines, salesLines] = await Promise.all([
+    const [inboundLines, salesLines, workshopEntries] = await Promise.all([
       this.prisma.stockInOrderLine.findMany({
         where: {
           order: {
@@ -154,6 +156,9 @@ export class MonthlyMaterialCategoryRepository {
         },
         orderBy: [{ orderId: "asc" }, { lineNo: "asc" }],
       }),
+      this.canLoadWorkshopMaterialOrderLines() && this.workshopRepository
+        ? this.workshopRepository.findWorkshopMaterialCategoryEntries(params)
+        : Promise.resolve([]),
     ]);
 
     const sourceOrderIds = [
@@ -361,7 +366,7 @@ export class MonthlyMaterialCategoryRepository {
       } satisfies MonthlyMaterialCategoryEntry;
     });
 
-    return [...inboundEntries, ...salesEntries];
+    return [...inboundEntries, ...salesEntries, ...workshopEntries];
   }
 
   private resolveStockInTopicKey(orderType: StockInOrderType) {
@@ -384,6 +389,10 @@ export class MonthlyMaterialCategoryRepository {
       case StockInOrderType.SUPPLIER_RETURN:
         return "退厂单";
     }
+  }
+
+  private canLoadWorkshopMaterialOrderLines() {
+    return "workshopMaterialOrderLine" in this.prisma;
   }
 
   private async loadSalesCostAmountByLineId(lineIds: number[]) {

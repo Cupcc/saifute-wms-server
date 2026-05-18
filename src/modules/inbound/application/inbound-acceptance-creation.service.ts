@@ -17,10 +17,10 @@ import {
 import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import { ApprovalService } from "../../approval/application/approval.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
-import { MasterDataService } from "../../master-data/application/master-data.service";
 import { applyAcceptanceStatusesForOrder } from "../../rd-subwarehouse/application/rd-material-status.helper";
 import type { CreateInboundOrderDto } from "../dto/create-inbound-order.dto";
 import { InboundRepository } from "../infrastructure/inbound.repository";
+import { InboundAcceptanceLineSnapshotService } from "./inbound-acceptance-line-snapshot.service";
 import { InboundSharedService } from "./inbound-shared.service";
 
 const DOCUMENT_TYPE = BusinessDocumentType.StockInOrder;
@@ -36,9 +36,9 @@ type PendingSupplierInput = {
 export class InboundAcceptanceCreationService {
   constructor(
     private readonly repository: InboundRepository,
-    private readonly masterDataService: MasterDataService,
     private readonly inventoryService: InventoryService,
     private readonly approvalService: ApprovalService,
+    private readonly lineSnapshots: InboundAcceptanceLineSnapshotService,
     private readonly shared: InboundSharedService,
   ) {}
 
@@ -105,7 +105,7 @@ export class InboundAcceptanceCreationService {
     }
     const bizDate = new Date(dto.bizDate);
     const workshop = dto.workshopId
-      ? await this.masterDataService.getWorkshopById(dto.workshopId)
+      ? await this.shared.getWorkshopById(dto.workshopId)
       : null;
     const salesProjectReference =
       await this.shared.resolveSalesProjectReference(
@@ -126,45 +126,33 @@ export class InboundAcceptanceCreationService {
       dto.handlerPersonnelId ?? undefined,
       dto.handlerName,
     );
-    const stockScopeRecord =
-      await this.masterDataService.getStockScopeByCode("MAIN");
+    const stockScopeRecord = await this.shared.getMainStockScope();
 
-    const linesWithSnapshots: Array<{
-      lineNo: number;
-      materialId: number;
-      rdProcurementRequestLineId: number | null;
-      materialCategoryIdSnapshot: number;
-      materialCategoryCodeSnapshot: string;
-      materialCategoryNameSnapshot: string;
-      materialCategoryPathSnapshot: Prisma.JsonArray;
-      materialCodeSnapshot: string;
-      materialNameSnapshot: string;
-      materialSpecSnapshot: string;
-      unitCodeSnapshot: string;
-      quantity: Prisma.Decimal;
-      unitPrice: Prisma.Decimal;
-      amount: Prisma.Decimal;
-      remark?: string;
-    }> = [];
-    for (let index = 0; index < dto.lines.length; index++) {
-      linesWithSnapshots.push(
-        await this.shared.buildLineWriteData(dto.lines[index], index + 1),
-      );
-    }
-
-    const totalQty = linesWithSnapshots.reduce(
-      (sum, l) => sum.add(l.quantity),
-      new Prisma.Decimal(0),
-    );
-    const totalAmount = linesWithSnapshots.reduce(
-      (sum, l) => sum.add(l.amount),
-      new Prisma.Decimal(0),
-    );
     const prefix = "YS";
 
     return createWithGeneratedDocumentNo((attempt) => {
       const documentNo = buildCompactDocumentNo(prefix, bizDate, attempt);
       return this.repository.runInTransaction(async (tx) => {
+        const linesWithSnapshots = [];
+        for (let index = 0; index < dto.lines.length; index++) {
+          linesWithSnapshots.push(
+            await this.lineSnapshots.buildLineWriteData(
+              dto.lines[index],
+              index + 1,
+              { createdBy, tx },
+            ),
+          );
+        }
+
+        const totalQty = linesWithSnapshots.reduce(
+          (sum, l) => sum.add(l.quantity),
+          new Prisma.Decimal(0),
+        );
+        const totalAmount = linesWithSnapshots.reduce(
+          (sum, l) => sum.add(l.amount),
+          new Prisma.Decimal(0),
+        );
+
         let order = await this.repository.createOrder(
           {
             documentNo,
@@ -192,11 +180,22 @@ export class InboundAcceptanceCreationService {
             createdBy,
             updatedBy: createdBy,
           },
-          linesWithSnapshots.map((l) => ({
-            ...l,
-            createdBy,
-            updatedBy: createdBy,
-          })),
+          linesWithSnapshots.map(
+            ({ autoCreatedMaterialId: _ignored, ...l }) => ({
+              ...l,
+              createdBy,
+              updatedBy: createdBy,
+            }),
+          ),
+          tx,
+        );
+
+        await this.lineSnapshots.markAutoMaterialSourceDocument(
+          linesWithSnapshots
+            .map((line) => line.autoCreatedMaterialId)
+            .filter((id): id is number => typeof id === "number"),
+          order.id,
+          createdBy,
           tx,
         );
 

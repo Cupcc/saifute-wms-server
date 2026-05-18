@@ -23,6 +23,7 @@
 
 | Task 文档 | 状态 | 说明 |
 | --- | --- | --- |
+| `task-20260515-1626-sales-project-legacy-admission-split-repair.md` | `in-progress` | 历史销售项目物料验收 / 占用拆分修复：旧过度生成 `YS-PROJ-PRJ-LEGACY-*` 单据 `21` 张 / `675` 行已删除，accepted-only 项目验收入库现为 `148` 张 / `501` 行，最新 accepted-inbound dry-run 为 `blockers=[]`、`wouldCreateOrders=0`、`wouldCreateLines=0`，`inventory-replay:validate` 为 `validationIssues=[]`；后续继续 `255` 行未验收项目占用 / 出库候选模型、一键出库实时校验，以及 post-repair audit gate 刷新。 |
 | `task-20260513-1605-sales-project-live-forward-repair.md` | `planned` | 正式库在线前向修复任务：把 2026-05-11 误写入 `rd_project` 的 `21` 条 legacy 销售项目迁正到 `sales_project`，保留上线后新增的 `stock_in_order` / `sales_stock_order` 真源，先做 shadow rehearsal，再在维护窗口内只重建 `inventory_balance` / `inventory_log` / `inventory_source_usage`；禁止 full reset 或旧库覆盖 live target DB。 |
 | `task-20260509-full-legacy-import-reset-and-replay.md` | `replay-executed-validated` | 2026-05-11 已按当前 `.env.dev` 重新执行 `LEGACY_DATABASE_URL` -> `DATABASE_URL` 全量导入到目标库 snake_case schema：已 seed `stock_scope`、初始化 staging、导入主数据与业务单据、补齐月报物料分类快照，并完成 `inventory-replay:dry-run -> return-source-links:execute -> dry-run -> execute -> validate`；目标库名以 `DATABASE_URL` 为准；已补充并执行 4 个仓库管理员系统账号迁移入口；当前 replay blocker 为 0，validate 仅剩 `420` 个最终负库存盘点 warning。 |
 | `task-20260508-inbound-supplier-return.md` | `implemented` | 入库管理新增“退给厂家 / 供应商退货”切片：复用 `stock_in_order` 家族承载退货单，新增来源绑定的 `SUPPLIER_RETURN_OUT` 库存扣减与作废释放回滚；验收单页保留退厂发起和可退来源预览，入库管理二级页面新增 `退货单` / `退货单明细` 用于列表、明细和作废；报表已按入库域 OUT 纳入；自动化验证已通过，目标库 enum SQL 已应用，受控 live API / DB trace 已通过，待补新页面 browser acceptance。 |
@@ -31,6 +32,7 @@
 | `task-20260411-1105-monthly-reporting-domain-first-redesign.md` | `reviewing` | 在 accepted `monthly-reporting Phase 1` 基线上，已完成月度对账领域优先重切实现：先回答仓库总入 / 总出 / 净发生，再按入库、车间、销售、研发项目、RD小仓展开操作、销售项目与主仓到RD交接汇总，当前进入 review / acceptance 收口。 |
 | `task-20260414-1418-rd-sub-project-attribution-and-reporting-alignment.md` | `planned` | 围绕新确认规则收口 `RD_SUB` 项目化归属、主仓到小仓交接项目绑定、库存事实 project attribution、月报 viewpoint 重算，以及 local/test 冲突数据可受控清理重注的实施与 QA 计划。 |
 | `task-20260407-0929-workshop-material-f1-f3-autonomous-delivery.md` | `planned` | 车间物料 `F1/F2/F3` 端到端自治交付：沿用统一后端家族模型与三个既有前端页面，补齐改单补偿、主仓库存 / 来源追溯、前端 API 接通与 full acceptance；明确排除 `F4` 报表 / 净耗用 / 导出。 |
+| `analysis-20260517-workshop-selected-price-layer-drift-blocked-44.md` | `in-progress` | 车间领料 / 报废单据价格层漂移确认清单：初始 `44` 行未自动修复，`zjq113`、`zjq031`、`dz3` 已按业务事实单独修复；最新批量 dry-run 为 `blockedCount=41`、`dz3Blocked=0`，剩余行继续逐行确认单据价错误还是缺少同价来源。 |
 
 ## 已完成（`archive/retained-completed/`）
 

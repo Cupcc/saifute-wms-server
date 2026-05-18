@@ -99,70 +99,13 @@ export interface MonthlyReportMonthRange {
   end: Date;
 }
 
-function getTimeZoneOffsetMilliseconds(value: Date, timeZone: string): number {
-  const formatter = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    hour12: false,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-  const parts = formatter.formatToParts(value);
-  const year = Number(parts.find((part) => part.type === "year")?.value);
-  const month = Number(parts.find((part) => part.type === "month")?.value);
-  const day = Number(parts.find((part) => part.type === "day")?.value);
-  const hour = Number(parts.find((part) => part.type === "hour")?.value);
-  const minute = Number(parts.find((part) => part.type === "minute")?.value);
-  const second = Number(parts.find((part) => part.type === "second")?.value);
-  return (
-    Date.UTC(year, month - 1, day, hour, minute, second) -
-    value.getTime() +
-    value.getMilliseconds()
-  );
-}
-
-function createDateInBusinessTimezone(
-  year: number,
-  month: number,
-  day: number,
-  timeZone: string,
-  hour = 0,
-  minute = 0,
-  second = 0,
-  millisecond = 0,
-): Date {
-  const utcGuess = Date.UTC(
-    year,
-    month - 1,
-    day,
-    hour,
-    minute,
-    second,
-    millisecond,
-  );
-  const offset = getTimeZoneOffsetMilliseconds(new Date(utcGuess), timeZone);
-  return new Date(utcGuess - offset);
-}
-
 export function resolveMonthlyReportMonthRange(
   yearMonth: string,
-  timeZone: string,
+  _timeZone: string,
 ): MonthlyReportMonthRange {
   const [year, month] = yearMonth.split("-").map((item) => Number(item));
-  const start = createDateInBusinessTimezone(year, month, 1, timeZone);
-  const end = createDateInBusinessTimezone(
-    year,
-    month + 1,
-    0,
-    timeZone,
-    23,
-    59,
-    59,
-    999,
-  );
+  const start = new Date(Date.UTC(year, month - 1, 1));
+  const end = new Date(Date.UTC(year, month, 0));
   return { start, end };
 }
 
@@ -181,9 +124,24 @@ export function formatMonthlyReportDateOnly(
 
 export interface MonthlyReportExcelSheet {
   name: string;
+  title?: string;
+  columnWidths?: number[];
   columns: string[];
   rows: Array<Array<string | number>>;
 }
+
+const MONTHLY_REPORT_NUMERIC_COLUMN_SUFFIXES = [
+  "数量",
+  "金额",
+  "成本",
+  "单据数",
+  "异常单据数",
+  "单据行数",
+] as const;
+
+const MONTHLY_REPORT_EXACT_NUMERIC_COLUMNS = new Set(["值", "行号"]);
+
+const MONTHLY_REPORT_NUMBER_PATTERN = /^-?\d+(?:\.\d+)?$/;
 
 function escapeMonthlyReportXml(value: string | number): string {
   return String(value)
@@ -194,19 +152,80 @@ function escapeMonthlyReportXml(value: string | number): string {
     .replaceAll("'", "&apos;");
 }
 
+function isMonthlyReportNumericColumn(columnName: string): boolean {
+  const normalizedColumnName = columnName.trim();
+  if (MONTHLY_REPORT_EXACT_NUMERIC_COLUMNS.has(normalizedColumnName)) {
+    return true;
+  }
+
+  return MONTHLY_REPORT_NUMERIC_COLUMN_SUFFIXES.some((suffix) =>
+    normalizedColumnName.endsWith(suffix),
+  );
+}
+
+function isMonthlyReportNumberCellValue(value: string | number): boolean {
+  if (typeof value === "number") {
+    return Number.isFinite(value);
+  }
+
+  return MONTHLY_REPORT_NUMBER_PATTERN.test(value.trim());
+}
+
+function resolveMonthlyReportNumberStyleId(value: string | number): string {
+  const textValue = String(value);
+  const fractionLength = textValue.includes(".")
+    ? (textValue.split(".").at(1)?.length ?? 0)
+    : 0;
+
+  if (fractionLength >= 6) {
+    return "NumberDecimal6";
+  }
+
+  return fractionLength > 0 ? "NumberDecimal2" : "NumberInteger";
+}
+
 function buildMonthlyReportExcelRow(
   values: Array<string | number>,
+  columns: string[] = [],
   isHeader = false,
 ): string {
   return `<Row>${values
-    .map((value) => {
-      const dataType = typeof value === "number" ? "Number" : "String";
-      const styleId = isHeader ? ' ss:StyleID="Header"' : "";
+    .map((value, columnIndex) => {
+      const shouldWriteAsNumber =
+        !isHeader &&
+        isMonthlyReportNumericColumn(columns[columnIndex] ?? "") &&
+        isMonthlyReportNumberCellValue(value);
+      const dataType = shouldWriteAsNumber ? "Number" : "String";
+      const cellValue =
+        shouldWriteAsNumber && typeof value === "string" ? value.trim() : value;
+      const styleId = isHeader
+        ? ' ss:StyleID="Header"'
+        : shouldWriteAsNumber
+          ? ` ss:StyleID="${resolveMonthlyReportNumberStyleId(value)}"`
+          : "";
       return `<Cell${styleId}><Data ss:Type="${dataType}">${escapeMonthlyReportXml(
-        value,
+        cellValue,
       )}</Data></Cell>`;
     })
     .join("")}</Row>`;
+}
+
+function buildMonthlyReportExcelTitleRow(
+  title: string,
+  columnCount: number,
+): string {
+  const mergeAcross = Math.max(columnCount - 1, 0);
+  const mergeAcrossAttribute =
+    mergeAcross > 0 ? ` ss:MergeAcross="${mergeAcross}"` : "";
+  return `<Row><Cell${mergeAcrossAttribute} ss:StyleID="Title"><Data ss:Type="String">${escapeMonthlyReportXml(
+    title,
+  )}</Data></Cell></Row>`;
+}
+
+function buildMonthlyReportExcelColumns(widths?: number[]): string {
+  return (
+    widths?.map((width) => `<Column ss:Width="${width}" />`).join("") ?? ""
+  );
 }
 
 export function buildMonthlyReportExcelXmlWorkbook(
@@ -217,8 +236,12 @@ export function buildMonthlyReportExcelXmlWorkbook(
       (sheet) => `
     <Worksheet ss:Name="${escapeMonthlyReportXml(sheet.name)}">
       <Table>
-        ${buildMonthlyReportExcelRow(sheet.columns, true)}
-        ${sheet.rows.map((row) => buildMonthlyReportExcelRow(row)).join("")}
+        ${buildMonthlyReportExcelColumns(sheet.columnWidths)}
+        ${sheet.title ? buildMonthlyReportExcelTitleRow(sheet.title, sheet.columns.length) : ""}
+        ${buildMonthlyReportExcelRow(sheet.columns, [], true)}
+        ${sheet.rows
+          .map((row) => buildMonthlyReportExcelRow(row, sheet.columns))
+          .join("")}
       </Table>
     </Worksheet>`,
     )
@@ -232,8 +255,21 @@ export function buildMonthlyReportExcelXmlWorkbook(
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:html="http://www.w3.org/TR/REC-html40">
   <Styles>
+    <Style ss:ID="Title">
+      <Alignment ss:Horizontal="Center" />
+      <Font ss:Bold="1" ss:Size="14" />
+    </Style>
     <Style ss:ID="Header">
       <Font ss:Bold="1" />
+    </Style>
+    <Style ss:ID="NumberInteger">
+      <NumberFormat ss:Format="0" />
+    </Style>
+    <Style ss:ID="NumberDecimal2">
+      <NumberFormat ss:Format="0.00" />
+    </Style>
+    <Style ss:ID="NumberDecimal6">
+      <NumberFormat ss:Format="0.000000" />
     </Style>
   </Styles>
   ${worksheetXml}

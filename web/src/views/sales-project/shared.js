@@ -29,15 +29,11 @@ export function toInputString(value) {
 
 export function buildSalesProjectSummaryCards(summary = {}) {
   return [
-    { label: "目标数量", value: formatNumber(summary.totalTargetQty) },
     {
-      label: "目标金额",
-      value: formatAmount(summary.totalTargetAmount),
-    },
-    {
-      label: "当前库存",
+      label: "项目库存",
       value: formatNumber(summary.totalCurrentInventoryQty),
     },
+    { label: "物料种类", value: formatNumber(summary.materialKindCount) },
     { label: "累计出库", value: formatNumber(summary.totalOutboundQty) },
     { label: "累计退货", value: formatNumber(summary.totalReturnQty) },
     {
@@ -51,10 +47,6 @@ export function buildSalesProjectSummaryCards(summary = {}) {
     {
       label: "净发货成本",
       value: formatAmount(summary.totalNetShipmentCostAmount),
-    },
-    {
-      label: "待供货",
-      value: formatNumber(summary.totalPendingSupplyQty),
     },
   ];
 }

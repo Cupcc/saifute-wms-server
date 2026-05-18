@@ -88,6 +88,10 @@ export class InventoryController {
     return this.inventoryService.listPriceLayerAvailability({
       materialId: query.materialId,
       stockScope: inventoryScope?.stockScope,
+      projectTargetId:
+        query.projectTargetMode === "UNATTRIBUTED"
+          ? null
+          : query.projectTargetId,
     });
   }
 

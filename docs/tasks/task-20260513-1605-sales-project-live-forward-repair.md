@@ -70,37 +70,39 @@
 ## Progress Sync
 
 - Phase progress:
-  - `shadow rehearsal passed / live execute pending`
+  - `blocked: project acceptance backfill over-scoped`
 - Current state:
   - 当前 live 目标库是 `.env.dev` 的 `DATABASE_URL=saifute-wms`；它已经承接了上线后新增业务，不能再作为“可重置练习库”处理。
   - 当前 `LEGACY_DATABASE_URL` 只可作为历史证据来源，不能再作为覆盖当前 target DB 的运行真源。
-  - 只读核对显示：`migration_staging.map_project` 在 `2026-05-11 08:55:32` 将 `21` 条 `saifute_composite_product` 映射到了 `rd_project`，目标 ID 范围是 `1..21`。
-  - 只读核对显示：`sales_project=0`、`sales_project_material_line=0`、`rd_project=21`、`rd_project_material_line=675`。
-  - 只读核对显示：这 `21` 条误写项目目前没有新的 `rd_project_material_action`、`rd_handoff_order_line`、`rd_stocktake_order_line`、`document_relation` 下游；当前错误影响主要落在 `inventory_log`。
-  - 只读核对显示：`inventory_log` 中存在 `673` 条 `businessDocumentType=RdProject / operationType=RD_PROJECT_OUT` 的错误流水；它们是项目物料呈现负数的直接原因。
-  - 只读核对显示：以 `migration_staging.map_project.created_at=2026-05-11 08:55:32` 为误写批次边界，当前正式库在该时间点之后新增了 `12` 条 `stock_in_order`、`17` 条 `sales_stock_order`；这些单据必须完整保留。
-  - 只读核对显示：`stock_in_price_correction_order=0`、`stock_in_price_correction_order_line=0`；在当前时点，重建 `inventory_balance` / `inventory_log` / `inventory_source_usage` 仍具备可控性。
+  - `2026-05-15` 复查发现项目验收入库 backfill 口径错误：当前 live 库 `YS-PROJ-*` 已生成 `stock_in_order=21`、`stock_in_order_line=675`、`inventory_log(ACCEPTANCE_IN)=675`，合计 `42568` 件，覆盖了全部 `sales_project_material_line`。
+  - `2026-05-15` 旧库证据显示这 675 行并非全是项目采购验收入库：其中 `115` 条 legacy 项目物料行在 `saifute_inventory_used.after_order_type=8` 下已有来源链，`usageRowCount=130`、`useQty=7351.5000`、来源类型包含 `1/2/7`。这批不能继续当作项目新验收入库处理。
+  - `2026-05-15` 已把 `sales-project-acceptance-backfill` dry-run 增加 legacy 来源链 blocker：当前报告 `eligible=false`，阻断原因为 `legacy-project-lines-have-existing-source-usage`。
+  - `2026-05-15` live 核对显示：`sales_project=21`、`sales_project_material_line=675`、`project_target(SALES_PROJECT)=21`，`migration_staging.map_project` / `map_project_material_line` canonical mapping 均已迁正到 `sales_project*`。
+  - `2026-05-15` live 核对显示：有效 `rd_project=0`，错误 `businessDocumentType=RdProject / operationType=RD_PROJECT_OUT` 库存流水为 `0`。
+  - `2026-05-15` live 核对显示：`stock_in_order` 已具备 `sales_project_id`、`sales_project_code_snapshot`、`sales_project_name_snapshot` 三个项目字段。
+  - `2026-05-15` 新增项目验收入库 backfill 脚本：`bun run migration:sales-project-acceptance-backfill:dry-run` / `execute`，报告产物为 `scripts/migration/reports/sales-project-acceptance-backfill-dry-run-report.json` 与 `scripts/migration/reports/sales-project-acceptance-backfill-execute-report.json`。
+  - `2026-05-15` 正式执行前已备份 live 目标库到 `scripts/migration/backups/live-saifute-wms-before-sales-project-acceptance-backfill-20260515-094401.sql`，SHA-256 为 `fad699ca7dbf9a717db0e510118ef58ebdb437cb244b7a7bad0d9c198d662664`。
+  - `2026-05-15` 已执行项目验收入库 backfill：创建 `stock_in_order=21`、`stock_in_order_line=675`，均绑定对应 `sales_project_id`。
+  - `2026-05-15` 已重跑 `inventory-replay:dry-run -> execute -> validate`：dry-run `blockers=[]`，execute 删除旧派生层 `inventory_balance=863`、`inventory_log=4647`、`inventory_source_usage=3077` 并重建 `inventory_balance=1272`、`inventory_log=5322`、`inventory_source_usage=3105`，validate `validationIssues=[]`。
+  - `2026-05-15` 项目 `21 / PRJ-LEGACY-36` post-verify：`inventory_log.project_target_id=21` 有 `30` 条项目库存流水，项目库存合计 `187`；应用服务 `SalesProjectService.listMaterials(21)` 返回 `itemCount=30`、`totalPriceLayerCount=30`、`totalCurrentInventoryQty=187`。
   - `2026-05-13` 已新增 dry-run 入口：`bun run migration:sales-project-live-forward-repair:dry-run`，报告产物为 `scripts/migration/reports/sales-project-live-forward-repair-dry-run-report.{json,md}`。
   - `2026-05-14` 已新增 `execute / validate` 入口：`bun run migration:sales-project-live-forward-repair:execute` 与 `bun run migration:sales-project-live-forward-repair:validate`。`execute` 当前只迁正 `sales_project*` / `project_target` / canonical map 与错误 `rd_project` 退役状态，不直接改派生库存层；`validate` 以 execute report 为基线核对 remap 结果。
-  - 最新 dry-run 证据显示：DB 范围内 repair set 仍是 `21` 条，`sales_project=0`、`sales_project_material_line=0`，可预演创建 `sales_project=21`、`sales_project_material_line=675`、`project_target(SALES_PROJECT)=21`，当前 DB-scoped blocker 为 `0`。
-  - 最新 dry-run 证据显示：误写集合上的 `rd_project_material_action`、`rd_handoff_order_line`、`rd_stocktake_order_line`、`document_relation`、`document_line_relation` 当前均为 `0`；`stock_in_price_correction_order*` 仍为 `0`。
   - `2026-05-13` 已对 live target 执行受限回填：`migration:inventory-replay:return-source-links:execute` 将 `WorkshopMaterialOrder:587:line:1873 (TL20260507143530133)` 绑定到 `WorkshopMaterialOrder:529:line:1732 (LL20260430017)`；目标退料行当前 `source_document_*` 已落值，`updated_by=inventory-replay-best-candidate-backfill`。
   - `2026-05-13` 已收口 replay 输入事实与 planner 规则：新增 linked-return temporary-negative offset 处理与“后续普通入库先清 temporary negative debt”的保护逻辑，focused `test/migration/inventory-replay.spec.ts` 已补 2 条回归用例。
   - 最新 live 验证结果：`bun run migration:inventory-replay:dry-run` 已达 `blockers=[]`；`bun run migration:inventory-replay:return-source-links:dry-run` 已达 `totalMissingLinks=0 / selectedCount=0 / skippedCount=0`。
   - `2026-05-14` 在继续补 `stock_in_order -> sales_project` 合同并给 replay 增加 `projectTargetId` 载体后，曾出现 `1` 个 replay blocker：`price-layer-balance-mismatch materialId=185 stockScopeId=1 balanceQty=5 sourceAvailableQty=4 differenceQty=-1`。
   - `2026-05-14` 已单独收口 `materialId=185`：根因是 linked return 释放量在“原 outbound 已完整来源分配、temporary negative 来自更早未来入库预占”的场景下被错误吞掉，导致 `TH20260428001` 释放的 `1` 未回到 price layer。已调整 planner，仅当原 outbound 自身存在 `allocation.missingQty` 时才把释放量用于补源缺口；新增 focused 回归后，live `bun run migration:inventory-replay:dry-run` 已恢复 `blockers=[]`。
   - `2026-05-14` 代码侧已补 `stock_in_order.sales_project_id` 与项目快照字段、`InboundAcceptanceCreate/Update` 写侧项目归属传递、`inventory-replay` 的 `projectTargetId` 载体与 `stock_in_order.sales_project_id` 缺列兼容读取，以及对应 focused 自动化验证。
-  - `2026-05-14` 已创建本地 shadow 库 `saifute-wms-shadow`，来源为当前 live `saifute-wms` 快照；live 与 shadow 的业务真源表计数均为 `stock_in_order=1187`、`sales_stock_order=555`。live 仍未应用 `stock_in_order` 新列，shadow 已应用 `scripts/migration/sql/20260514-stock-in-order-add-sales-project.sql` 并验证 `sales_project_id`、`sales_project_code_snapshot`、`sales_project_name_snapshot`、索引和外键存在。
+  - `2026-05-14` 已创建本地 shadow 库 `saifute-wms-shadow`，来源为当时 live `saifute-wms` 快照；shadow 已应用 `scripts/migration/sql/20260514-stock-in-order-add-sales-project.sql` 并验证 `sales_project_id`、`sales_project_code_snapshot`、`sales_project_name_snapshot`、索引和外键存在。
   - `2026-05-14` shadow 已执行 `sales-project-live-forward-repair:execute -> validate`：`shadow-sales-project-live-forward-repair-execute-report.json` 显示创建 `sales_project=21`、`sales_project_material_line=675`、退役错误 `rd_project=21`、预计替换错误 `RdProject / RD_PROJECT_OUT=673`；`shadow-sales-project-live-forward-repair-validate-report.json` 显示 `valid=true`、`validationErrors=[]`、`wrongProjectCount=0`、`wrongInventoryLogCount=0`。
   - `2026-05-14` shadow 已执行 `inventory-replay:dry-run -> execute -> validate`：dry-run `blockers=[]`，`materialId=185` 的 price layer 由 `StockInOrder:1184:line:2138` 可用 `4` 与 `SalesStockOrder:535:line:684` 释放 `1` 组成，reconciliation 为 `balanceQty=5 / sourceAvailableQty=5 / differenceQty=0`；execute 插入 `inventory_log=4618`、`inventory_source_usage=3045`、`inventory_balance=863`；validate 实际与计划一致且 `validationIssues=[]`。
 - Acceptance state:
-  - `not-assessed`
+  - `blocked-after-live-overwrite-discovery`
 - Blockers:
-  - 正式 live execute 前仍需备份路径、维护窗口和最终 preflight 确认。
-  - live `stock_in_order` DDL 尚未执行；当前只在 shadow 应用。
-  - `/sales/project` 浏览器验收尚未执行。
+  - 当前 live 项目验收入库回填过度：必须先回滚或重建 `YS-PROJ-*` 业务单据及派生库存层，再按采购入项目、已有库存改归属 / 预留分别建模。
+  - 浏览器端带登录态的 `/sales/project/detail/21` 截图验收暂停；当前项目库存读模型建立在过度回填后的派生库存层上，不能签收。
 - Next step:
-  - 在正式维护窗口前重跑 live preflight，按顺序执行 live `stock_in_order` DDL、`sales-project-live-forward-repair:execute -> validate`、`inventory-replay:dry-run -> execute -> validate`，再做浏览器验收与 post-verify。
+  - 先基于 `live-saifute-wms-before-sales-project-acceptance-backfill-20260515-094401.sql` 或版本化逆向脚本制定恢复方案；恢复后重新按 legacy 来源链拆分项目采购验收与已有库存归属调整 / 预留，不再全量生成 `YS-PROJ-*`。
 
 ## Goal And Acceptance Criteria
 

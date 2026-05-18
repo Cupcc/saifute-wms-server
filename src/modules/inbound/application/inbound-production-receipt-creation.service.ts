@@ -122,8 +122,15 @@ export class InboundProductionReceiptCreationService {
       remark?: string;
     }> = [];
     for (let index = 0; index < dto.lines.length; index++) {
+      const line = dto.lines[index];
+      if (!line.materialId) {
+        throw new BadRequestException("生产入库单必须选择已有物料");
+      }
       linesWithSnapshots.push(
-        await this.shared.buildLineWriteData(dto.lines[index], index + 1),
+        await this.shared.buildLineWriteData(
+          { ...line, materialId: line.materialId },
+          index + 1,
+        ),
       );
     }
 

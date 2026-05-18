@@ -228,6 +228,10 @@ function buildCustomerPayload(data, mode, handlerPersonnelId, isUpdate) {
       materialId: line.materialId,
       quantity: toDecimalString(line.quantity),
       selectedUnitCost: toDecimalString(line.selectedUnitCost),
+      sourceProjectTargetId:
+        Object.hasOwn(line, "sourceProjectTargetId")
+          ? line.sourceProjectTargetId
+          : undefined,
       unitPrice: toDecimalString(line.unitPrice),
       salesProjectId: line.salesProjectId,
       startNumber: toOptionalString(line.factoryNumber ?? line.startNumber),

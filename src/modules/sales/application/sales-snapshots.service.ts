@@ -33,6 +33,7 @@ export type OutboundLineWriteData = {
   amount: Prisma.Decimal;
   selectedUnitCost: Prisma.Decimal;
   projectTargetId: number | null;
+  sourceProjectTargetId: number | null;
   startNumber: string | null;
   endNumber: string | null;
   remark?: string;
@@ -118,6 +119,7 @@ export class SalesSnapshotsService {
     line: {
       materialId: number;
       salesProjectId?: number;
+      sourceProjectTargetId?: number | null;
       quantity: string;
       selectedUnitCost: string;
       unitPrice?: string;
@@ -153,6 +155,9 @@ export class SalesSnapshotsService {
     const amount = quantity.mul(unitPrice);
     const selectedUnitCost = new Prisma.Decimal(line.selectedUnitCost);
     const factoryNumber = line.factoryNumber?.trim();
+    const sourceProjectTargetId = Object.hasOwn(line, "sourceProjectTargetId")
+      ? (line.sourceProjectTargetId ?? null)
+      : (salesProject?.projectTargetId ?? null);
 
     return {
       lineNo,
@@ -172,7 +177,8 @@ export class SalesSnapshotsService {
       unitPrice,
       amount,
       selectedUnitCost,
-      projectTargetId: salesProject?.projectTargetId ?? null,
+      projectTargetId: sourceProjectTargetId,
+      sourceProjectTargetId,
       startNumber:
         factoryNumber ||
         formatFactoryNumberExpression(line.startNumber, null) ||

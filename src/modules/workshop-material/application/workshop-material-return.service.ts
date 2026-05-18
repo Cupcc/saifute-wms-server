@@ -24,6 +24,9 @@ import {
   WorkshopMaterialSharedService,
 } from "./workshop-material-shared.service";
 
+const STANDALONE_WORKSHOP_RETURN_SOURCE_NOTE =
+  "Accepted standalone workshop return source: no reliable source link; return line cost is used as the source cost.";
+
 /**
  * Owns the lifecycle (create / update / void / list / read) for RETURN orders.
  * RETURN differs from PICK/SCRAP in two ways:
@@ -422,12 +425,18 @@ export class WorkshopMaterialReturnService {
   }) {
     const operationType = toOperationType(this.orderType);
     for (const line of params.lines) {
+      const hasLinkedPickSource =
+        Boolean(line.sourceDocumentType) &&
+        line.sourceDocumentId != null &&
+        line.sourceDocumentLineId != null;
       await this.shared.inventoryService.increaseStock(
         {
           materialId: line.materialId,
           stockScope: "MAIN",
           bizDate: params.bizDate,
           quantity: line.quantity,
+          unitCost: line.costUnitPrice ?? line.unitPrice,
+          costAmount: line.costAmount ?? line.amount,
           operationType,
           businessModule: WORKSHOP_MATERIAL_BUSINESS_MODULE,
           businessDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
@@ -436,6 +445,9 @@ export class WorkshopMaterialReturnService {
           businessDocumentLineId: line.id,
           operatorId: params.operatorId,
           idempotencyKey: `${params.idempotencyPrefix}:line:${line.id}`,
+          note: hasLinkedPickSource
+            ? undefined
+            : STANDALONE_WORKSHOP_RETURN_SOURCE_NOTE,
         },
         params.tx,
       );

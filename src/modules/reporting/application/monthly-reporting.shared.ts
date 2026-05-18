@@ -181,6 +181,8 @@ export const MONTHLY_REPORTING_MATERIAL_CATEGORY_TOPIC_OPTIONS: ReadonlyArray<Mo
     MonthlyReportingTopicKey.ACCEPTANCE_INBOUND,
     MonthlyReportingTopicKey.PRODUCTION_RECEIPT,
     MonthlyReportingTopicKey.SUPPLIER_RETURN,
+    MonthlyReportingTopicKey.WORKSHOP_PICK,
+    MonthlyReportingTopicKey.WORKSHOP_RETURN,
     MonthlyReportingTopicKey.SALES_OUTBOUND,
     MonthlyReportingTopicKey.SALES_RETURN,
   ];

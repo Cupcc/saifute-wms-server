@@ -18,10 +18,16 @@ const DEFAULT_CATEGORY_NAME = "未分类";
 const MIGRATION_ACTOR = "migration-code-normalization";
 const LEGACY_RD_AUTO_MATERIAL_PREFIX = "MAT-PROJECT-AUTO-L";
 const PREVIOUS_RD_AUTO_MATERIAL_CODE_PATTERN = "^xma[0-9]+$";
-const RD_AUTO_MATERIAL_SHORT_PREFIX = "xmbj";
+const EXISTING_RD_AUTO_MATERIAL_CODE_PATTERN = "^xmbj[0-9]+$";
+const DUPLICATE_RD_AUTO_MATERIAL_CODE_PATTERN = "^xm[0-9]+-DUP-[0-9]+$";
+const RD_AUTO_MATERIAL_SHORT_PREFIX = "xm";
+const MATERIAL_CODE_MAX_LENGTH = 64;
 const LEGACY_RD_AUTO_MATERIAL_PATTERN =
   /^MAT-PROJECT-AUTO-L(?<legacyLineId>\d+)-[0-9A-F]+$/u;
 const PREVIOUS_RD_AUTO_MATERIAL_PATTERN = /^xma(?<legacyLineId>\d+)$/u;
+const EXISTING_RD_AUTO_MATERIAL_PATTERN = /^xmbj(?<legacyLineId>\d+)$/u;
+const DUPLICATE_RD_AUTO_MATERIAL_PATTERN = /^xm(?<legacyLineId>\d+)-DUP-\d+$/u;
+const NUMERIC_RD_AUTO_MATERIAL_PATTERN = /^xm(?<sequence>\d+)$/u;
 
 const MATERIAL_CODE_SNAPSHOT_TABLES = [
   "stock_in_order_line",
@@ -132,10 +138,66 @@ function toMaterialCodeKey(value: string): string {
   return value.trim().toLocaleLowerCase("en-US");
 }
 
+function parseNumericAutoMaterialSequence(code: string): number | null {
+  const match = NUMERIC_RD_AUTO_MATERIAL_PATTERN.exec(code);
+  const sequence = Number(match?.groups?.sequence ?? Number.NaN);
+  return Number.isSafeInteger(sequence) && sequence > 0 ? sequence : null;
+}
+
+function resolveNextAutoMaterialSequence(
+  materialCodeKeys: ReadonlySet<string>,
+): number {
+  let maxSequence = 0;
+
+  for (const materialCodeKey of materialCodeKeys) {
+    const sequence = parseNumericAutoMaterialSequence(materialCodeKey);
+    if (sequence !== null && sequence > maxSequence) {
+      maxSequence = sequence;
+    }
+  }
+
+  return maxSequence + 1;
+}
+
+function allocateAutoMaterialCode(
+  seedCode: string,
+  reservedKeys: ReadonlySet<string>,
+  assignedKeys: Set<string>,
+  sequenceState: { nextSequence: number },
+): string {
+  const seedKey = toMaterialCodeKey(seedCode);
+  if (!reservedKeys.has(seedKey) && !assignedKeys.has(seedKey)) {
+    assignedKeys.add(seedKey);
+    const seedSequence = parseNumericAutoMaterialSequence(seedKey);
+    if (seedSequence !== null && seedSequence >= sequenceState.nextSequence) {
+      sequenceState.nextSequence = seedSequence + 1;
+    }
+    return seedCode;
+  }
+
+  while (true) {
+    const candidateCode = `${RD_AUTO_MATERIAL_SHORT_PREFIX}${sequenceState.nextSequence}`;
+    if (candidateCode.length > MATERIAL_CODE_MAX_LENGTH) {
+      throw new Error(
+        `Material code ${candidateCode} exceeds the column length.`,
+      );
+    }
+    const candidateKey = toMaterialCodeKey(candidateCode);
+    sequenceState.nextSequence += 1;
+
+    if (!reservedKeys.has(candidateKey) && !assignedKeys.has(candidateKey)) {
+      assignedKeys.add(candidateKey);
+      return candidateCode;
+    }
+  }
+}
+
 function buildShortAutoMaterialCode(materialCode: string): string | null {
   const match =
     LEGACY_RD_AUTO_MATERIAL_PATTERN.exec(materialCode) ??
-    PREVIOUS_RD_AUTO_MATERIAL_PATTERN.exec(materialCode);
+    PREVIOUS_RD_AUTO_MATERIAL_PATTERN.exec(materialCode) ??
+    EXISTING_RD_AUTO_MATERIAL_PATTERN.exec(materialCode) ??
+    DUPLICATE_RD_AUTO_MATERIAL_PATTERN.exec(materialCode);
   const legacyLineId = match?.groups?.legacyLineId;
   return legacyLineId
     ? `${RD_AUTO_MATERIAL_SHORT_PREFIX}${legacyLineId}`
@@ -359,25 +421,55 @@ async function loadMaterialRenames(
       FROM material
       WHERE material_code LIKE ?
         OR material_code REGEXP ?
+        OR material_code REGEXP ?
+        OR material_code REGEXP ?
       ORDER BY id
     `,
     [
       `${LEGACY_RD_AUTO_MATERIAL_PREFIX}%`,
       PREVIOUS_RD_AUTO_MATERIAL_CODE_PATTERN,
+      EXISTING_RD_AUTO_MATERIAL_CODE_PATTERN,
+      DUPLICATE_RD_AUTO_MATERIAL_CODE_PATTERN,
     ],
   );
   const renames: MaterialRename[] = [];
-  const targetKeys = new Map<string, MaterialRename[]>();
+  const sourceCodeKeys = new Set(
+    rows.map((row) => toMaterialCodeKey(row.materialCode)),
+  );
+  const materialCodeRows = await connection.query<DistinctCodeRow[]>(
+    `
+      SELECT material_code AS code
+      FROM material
+      ORDER BY material_code
+    `,
+  );
+  const reservedKeys = new Set(
+    materialCodeRows
+      .map((row) => toMaterialCodeKey(row.code))
+      .filter((codeKey) => !sourceCodeKeys.has(codeKey)),
+  );
+  const assignedKeys = new Set<string>();
+  const sequenceState = {
+    nextSequence: resolveNextAutoMaterialSequence(
+      new Set(materialCodeRows.map((row) => toMaterialCodeKey(row.code))),
+    ),
+  };
 
   for (const row of rows) {
-    const newCode = buildShortAutoMaterialCode(row.materialCode);
-    if (!newCode) {
+    const seedCode = buildShortAutoMaterialCode(row.materialCode);
+    if (!seedCode) {
       blockers.push(
         `无法解析自动物料编码：material#${row.id} ${row.materialCode}`,
       );
       continue;
     }
 
+    const newCode = allocateAutoMaterialCode(
+      seedCode,
+      reservedKeys,
+      assignedKeys,
+      sequenceState,
+    );
     const rename = {
       id: row.id,
       oldCode: row.materialCode,
@@ -387,47 +479,6 @@ async function loadMaterialRenames(
       unitCode: row.unitCode,
     };
     renames.push(rename);
-
-    const targetKey = toMaterialCodeKey(newCode);
-    targetKeys.set(targetKey, [...(targetKeys.get(targetKey) ?? []), rename]);
-  }
-
-  for (const [targetKey, duplicates] of targetKeys.entries()) {
-    if (duplicates.length > 1) {
-      blockers.push(
-        `自动物料短编码重复：${targetKey} <= ${duplicates
-          .map((item) => item.oldCode)
-          .join(", ")}`,
-      );
-    }
-  }
-
-  if (renames.length === 0) {
-    return renames;
-  }
-
-  const targetCodes = renames.map((rename) => rename.newCode);
-  const renameIds = renames.map((rename) => rename.id);
-  const existingConflicts = await connection.query<MaterialRow[]>(
-    `
-      SELECT
-        id,
-        material_code AS materialCode,
-        material_name AS materialName,
-        spec_model AS specModel,
-        unit_code AS unitCode
-      FROM material
-      WHERE material_code IN (${buildPlaceholders(targetCodes)})
-        AND id NOT IN (${buildPlaceholders(renameIds)})
-      ORDER BY id
-    `,
-    [...targetCodes, ...renameIds],
-  );
-
-  for (const conflict of existingConflicts) {
-    blockers.push(
-      `自动物料短编码已被占用：${conflict.materialCode} => material#${conflict.id} ${conflict.materialName}`,
-    );
   }
 
   return renames;
@@ -452,10 +503,14 @@ async function loadMaterialSnapshotPlan(
         FROM ${quotedTableName}
         WHERE material_code_snapshot LIKE ?
           OR material_code_snapshot REGEXP ?
+          OR material_code_snapshot REGEXP ?
+          OR material_code_snapshot REGEXP ?
       `,
       [
         `${LEGACY_RD_AUTO_MATERIAL_PREFIX}%`,
         PREVIOUS_RD_AUTO_MATERIAL_CODE_PATTERN,
+        EXISTING_RD_AUTO_MATERIAL_CODE_PATTERN,
+        DUPLICATE_RD_AUTO_MATERIAL_CODE_PATTERN,
       ],
     );
     const codeRows = await connection.query<DistinctCodeRow[]>(
@@ -464,11 +519,15 @@ async function loadMaterialSnapshotPlan(
         FROM ${quotedTableName}
         WHERE material_code_snapshot LIKE ?
           OR material_code_snapshot REGEXP ?
+          OR material_code_snapshot REGEXP ?
+          OR material_code_snapshot REGEXP ?
         ORDER BY material_code_snapshot
       `,
       [
         `${LEGACY_RD_AUTO_MATERIAL_PREFIX}%`,
         PREVIOUS_RD_AUTO_MATERIAL_CODE_PATTERN,
+        EXISTING_RD_AUTO_MATERIAL_CODE_PATTERN,
+        DUPLICATE_RD_AUTO_MATERIAL_CODE_PATTERN,
       ],
     );
     const unknownCodes = codeRows
@@ -693,6 +752,10 @@ async function main() {
             legacyRdAutoMaterialPrefix: LEGACY_RD_AUTO_MATERIAL_PREFIX,
             previousRdAutoMaterialPattern:
               PREVIOUS_RD_AUTO_MATERIAL_CODE_PATTERN,
+            existingRdAutoMaterialPattern:
+              EXISTING_RD_AUTO_MATERIAL_CODE_PATTERN,
+            duplicateRdAutoMaterialPattern:
+              DUPLICATE_RD_AUTO_MATERIAL_CODE_PATTERN,
             rdAutoMaterialShortPrefix: RD_AUTO_MATERIAL_SHORT_PREFIX,
           },
           blockers: plan.blockers,

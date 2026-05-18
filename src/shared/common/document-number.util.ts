@@ -25,6 +25,23 @@ function randomPart(attempt: number, length = 3) {
   return String((randomSeed + attempt) % upper).padStart(length, "0");
 }
 
+export function buildDailyDocumentNoStem(prefix: string, bizDate: Date) {
+  return `${prefix}${datePart(bizDate)}`;
+}
+
+export function buildDailySequenceDocumentNo(
+  prefix: string,
+  bizDate: Date,
+  sequence: number,
+) {
+  if (!Number.isInteger(sequence) || sequence < 1 || sequence > 999) {
+    throw new ConflictException("单据编号当日流水已满");
+  }
+  return `${buildDailyDocumentNoStem(prefix, bizDate)}${String(
+    sequence,
+  ).padStart(3, "0")}`;
+}
+
 export function buildCompactDocumentNo(
   prefix: string,
   bizDate: Date,

@@ -49,7 +49,9 @@ export class InboundSharedService {
       await this.masterDataService.getPersonnelById(dto.handlerPersonnelId);
     }
     for (const line of dto.lines) {
-      await this.masterDataService.getMaterialById(line.materialId);
+      if (line.materialId) {
+        await this.masterDataService.getMaterialById(line.materialId);
+      }
     }
   }
 
@@ -132,6 +134,14 @@ export class InboundSharedService {
       );
     }
     return project;
+  }
+
+  getWorkshopById(workshopId: number) {
+    return this.masterDataService.getWorkshopById(workshopId);
+  }
+
+  getMainStockScope() {
+    return this.masterDataService.getStockScopeByCode("MAIN");
   }
 
   toSalesProjectSnapshots(project: SalesProjectBindingReference | null) {

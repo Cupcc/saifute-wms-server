@@ -15,8 +15,10 @@ import { SupplierService } from "../../master-data/application/supplier.service"
 import { reverseAcceptanceStatusesForOrder } from "../../rd-subwarehouse/application/rd-material-status.helper";
 import { RdProcurementRequestService } from "../../rd-subwarehouse/application/rd-procurement-request.service";
 import { InboundRepository } from "../infrastructure/inbound.repository";
+import { InboundAutoMaterialRepository } from "../infrastructure/inbound-auto-material.repository";
 import { InboundService } from "./inbound.service";
 import { InboundAcceptanceCreationService } from "./inbound-acceptance-creation.service";
+import { InboundAcceptanceLineSnapshotService } from "./inbound-acceptance-line-snapshot.service";
 import { InboundAcceptanceUpdateService } from "./inbound-acceptance-update.service";
 import { InboundProductionReceiptCreationService } from "./inbound-production-receipt-creation.service";
 import { InboundProductionReceiptUpdateService } from "./inbound-production-receipt-update.service";
@@ -164,6 +166,7 @@ describe("InboundService", () => {
       providers: [
         InboundService,
         InboundAcceptanceCreationService,
+        InboundAcceptanceLineSnapshotService,
         InboundAcceptanceUpdateService,
         InboundProductionReceiptCreationService,
         InboundProductionReceiptUpdateService,
@@ -197,6 +200,15 @@ describe("InboundService", () => {
               .fn()
               .mockResolvedValue(new Map()),
             hasActiveDownstreamDependencies: jest.fn().mockResolvedValue(false),
+          },
+        },
+        {
+          provide: InboundAutoMaterialRepository,
+          useValue: {
+            findMaterialByCode: jest.fn(),
+            findMaxMaterialCodeSequence: jest.fn().mockResolvedValue(0),
+            createAutoMaterial: jest.fn().mockResolvedValue(mockMaterial),
+            updateMaterialSourceDocumentId: jest.fn(),
           },
         },
         {

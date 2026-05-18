@@ -19,6 +19,7 @@ import { SalesProjectReferenceService } from "./sales-project-reference.service"
 describe("SalesProjectService", () => {
   let service: SalesProjectService;
   let repository: jest.Mocked<SalesProjectRepository>;
+  let inventoryService: jest.Mocked<InventoryService>;
 
   const stockScope = {
     id: 1,
@@ -108,6 +109,18 @@ describe("SalesProjectService", () => {
             updateProjectTarget: jest.fn(),
             attachProjectTargetToProject: jest.fn(),
             findEffectiveShipmentLinesByProjectId: jest.fn(),
+            findEffectiveAcceptanceLineLinksByProjectId: jest
+              .fn()
+              .mockResolvedValue([]),
+            findMaterialSnapshotsByIds: jest.fn().mockResolvedValue([
+              {
+                id: 100,
+                materialCode: "MAT-100",
+                materialName: "Material 100",
+                specModel: "Spec",
+                unitCode: "PCS",
+              },
+            ]),
           },
         },
         {
@@ -139,9 +152,17 @@ describe("SalesProjectService", () => {
         {
           provide: InventoryService,
           useValue: {
-            getBalanceSnapshot: jest.fn().mockResolvedValue({
-              quantityOnHand: new Prisma.Decimal(25),
-            }),
+            listAttributedQuantitySnapshots: jest
+              .fn()
+              .mockResolvedValue(new Map([[100, new Prisma.Decimal(25)]])),
+            listPriceLayerAvailability: jest.fn().mockResolvedValue([
+              {
+                materialId: 100,
+                unitCost: new Prisma.Decimal(8),
+                availableQty: new Prisma.Decimal(25),
+                sourceLogCount: 1,
+              },
+            ]),
           },
         },
       ],
@@ -149,6 +170,7 @@ describe("SalesProjectService", () => {
 
     service = moduleRef.get(SalesProjectService);
     repository = moduleRef.get(SalesProjectRepository);
+    inventoryService = moduleRef.get(InventoryService);
   });
 
   it("creates a sales project master with material scope and project target", async () => {
@@ -175,6 +197,10 @@ describe("SalesProjectService", () => {
     repository.attachProjectTargetToProject.mockResolvedValue({} as never);
     repository.findProjectById.mockResolvedValue(baseProject as never);
     repository.findEffectiveShipmentLinesByProjectId.mockResolvedValue([]);
+    inventoryService.listAttributedQuantitySnapshots.mockResolvedValue(
+      new Map(),
+    );
+    inventoryService.listPriceLayerAvailability.mockResolvedValue([]);
 
     const result = await service.createProject(
       {
@@ -197,11 +223,12 @@ describe("SalesProjectService", () => {
 
     expect(repository.createProject).toHaveBeenCalled();
     expect(repository.createProjectTarget).toHaveBeenCalled();
-    expect(result.summary.totalTargetQty.toString()).toBe("100");
-    expect(result.summary.totalPendingSupplyQty.toString()).toBe("100");
+    expect(result.summary.materialLineCount).toBe(1);
+    expect(result.summary.materialKindCount).toBe(1);
+    expect(result.summary.totalCurrentInventoryQty.toString()).toBe("0");
   });
 
-  it("derives inventory, shipment and pending supply from material scope and sales facts", async () => {
+  it("derives project inventory, price layers and shipments from attributed facts", async () => {
     repository.findProjectById.mockResolvedValue(baseProject as never);
     repository.findEffectiveShipmentLinesByProjectId.mockResolvedValue([
       {
@@ -280,15 +307,19 @@ describe("SalesProjectService", () => {
     const firstItem = result.items[0];
 
     expect(firstItem.currentInventoryQty.toString()).toBe("25");
+    expect(firstItem.selectedUnitCost?.toString()).toBe("8");
+    expect(firstItem.priceLayerAvailableQty.toString()).toBe("25");
+    expect(firstItem.linkedDocuments).toEqual([]);
     expect(firstItem.outboundQty.toString()).toBe("40");
     expect(firstItem.returnQty.toString()).toBe("10");
     expect(firstItem.netShipmentQty.toString()).toBe("30");
-    expect(firstItem.pendingSupplyQty.toString()).toBe("70");
+    expect(firstItem.pendingSupplyQty.toString()).toBe("0");
+    expect(result.summary.totalCurrentInventoryQty.toString()).toBe("25");
     expect(result.summary.totalNetShipmentQty.toString()).toBe("30");
-    expect(result.summary.totalPendingSupplyQty.toString()).toBe("70");
+    expect(result.summary.totalPendingSupplyQty.toString()).toBe("0");
   });
 
-  it("generates a sales outbound draft from pending project supply", async () => {
+  it("generates a sales outbound draft from project price-layer inventory", async () => {
     repository.findProjectById.mockResolvedValue(baseProject as never);
     repository.findEffectiveShipmentLinesByProjectId.mockResolvedValue([
       {
@@ -335,10 +366,93 @@ describe("SalesProjectService", () => {
     expect(draft.lines).toHaveLength(1);
     expect(draft.lines[0]).toMatchObject({
       materialId: 100,
-      quantity: "80",
+      quantity: "25",
+      selectedUnitCost: "8",
       salesProjectCode: "SP-001",
       salesProjectName: "Sales Project A",
     });
+  });
+
+  it("keeps zero-cost project price layers draftable", async () => {
+    repository.findProjectById.mockResolvedValue(baseProject as never);
+    repository.findEffectiveShipmentLinesByProjectId.mockResolvedValue([]);
+    inventoryService.listAttributedQuantitySnapshots.mockResolvedValue(
+      new Map([[100, new Prisma.Decimal(5)]]),
+    );
+    inventoryService.listPriceLayerAvailability.mockResolvedValue([
+      {
+        materialId: 100,
+        unitCost: new Prisma.Decimal(0),
+        availableQty: new Prisma.Decimal(5),
+        sourceLogCount: 1,
+      },
+    ]);
+
+    const draft = await service.createSalesOutboundDraft(1, {});
+
+    expect(draft.lines).toHaveLength(1);
+    expect(draft.lines[0]).toMatchObject({
+      materialId: 100,
+      quantity: "5",
+      selectedUnitCost: "0",
+    });
+  });
+
+  it("counts only currently available project price layers in the summary card", async () => {
+    repository.findProjectById.mockResolvedValue(baseProject as never);
+    repository.findEffectiveShipmentLinesByProjectId.mockResolvedValue([
+      {
+        id: 202,
+        orderId: 302,
+        lineNo: 2,
+        materialId: 100,
+        materialCodeSnapshot: "MAT-100",
+        materialNameSnapshot: "Material 100",
+        materialSpecSnapshot: "Spec",
+        unitCodeSnapshot: "PCS",
+        quantity: new Prisma.Decimal(5),
+        unitPrice: new Prisma.Decimal(10),
+        amount: new Prisma.Decimal(50),
+        selectedUnitCost: new Prisma.Decimal(9),
+        costUnitPrice: new Prisma.Decimal(9),
+        costAmount: new Prisma.Decimal(45),
+        sourceDocumentType: null,
+        sourceDocumentId: null,
+        sourceDocumentLineId: null,
+        remark: null,
+        createdBy: "1",
+        createdAt: new Date(),
+        updatedBy: "1",
+        updatedAt: new Date(),
+        order: {
+          id: 302,
+          documentNo: "CK-002",
+          bizDate: new Date("2026-04-12"),
+          orderType: SalesStockOrderType.OUTBOUND,
+        },
+      },
+    ] as never);
+    inventoryService.listAttributedQuantitySnapshots.mockResolvedValue(
+      new Map([[100, new Prisma.Decimal(25)]]),
+    );
+    inventoryService.listPriceLayerAvailability.mockResolvedValue([
+      {
+        materialId: 100,
+        unitCost: new Prisma.Decimal(8),
+        availableQty: new Prisma.Decimal(25),
+        sourceLogCount: 1,
+      },
+    ]);
+
+    const result = await service.listMaterials(1);
+
+    expect(result.items).toHaveLength(2);
+    expect(result.summary.totalPriceLayerCount).toBe(1);
+    expect(
+      result.items
+        .find((item) => item.selectedUnitCost?.toString() === "9")
+        ?.priceLayerAvailableQty.toString(),
+    ).toBe("0");
   });
 
   it("rejects duplicate project codes", async () => {
