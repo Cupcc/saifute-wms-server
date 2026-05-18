@@ -93,7 +93,7 @@
             {{ formatAmount(scope.row.selectedUnitCost) }}
           </template>
         </el-table-column>
-        <el-table-column label="单价" prop="unitPrice" width="110" align="right">
+        <el-table-column label="销售单价" prop="unitPrice" width="110" align="right">
           <template #default="scope">
             {{ formatAmount(scope.row.unitPrice) }}
           </template>

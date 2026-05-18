@@ -506,10 +506,24 @@ describe("rd-project migration transformer — three-state model", () => {
     expect(plan.autoCreatedMaterials[0]?.representativeLineLegacyId).toBe(1006);
     expect(plan.autoCreatedMaterials[0]?.target.materialName).toBe("缺料");
     expect(plan.autoCreatedMaterials[0]?.target.unitCode).toBe("件");
-    expect(plan.autoCreatedMaterials[0]?.target.materialCode).toBe("xmbj1006");
+    expect(plan.autoCreatedMaterials[0]?.target.materialCode).toBe("xm1006");
     expect(migrated14?.lines[0]?.target.materialCodeSnapshot).toBe(
       plan.autoCreatedMaterials[0]?.target.materialCode,
     );
+  });
+
+  it("should allocate the next numeric xm code when the seed is occupied", () => {
+    const deps = buildDependencies();
+    deps.existingMaterialCodes.add("xm1006");
+
+    const plan = buildRdProjectMigrationPlan(buildSnapshot(), deps);
+    const migrated14 = plan.migratedProjects.find(
+      (project) => project.legacyId === 14,
+    );
+
+    expect(plan.autoCreatedMaterials).toHaveLength(1);
+    expect(plan.autoCreatedMaterials[0]?.target.materialCode).toBe("xm1007");
+    expect(migrated14?.lines[0]?.target.materialCodeSnapshot).toBe("xm1007");
   });
 
   it("should have zero excluded projects when all issues are material-resolution pending", () => {
@@ -1106,16 +1120,85 @@ describe("rd-project migration transformer — three-state model", () => {
     );
   });
 
+  it("should fill the confirmed legacy project 16 pin line unit override", () => {
+    const snapshot: LegacyRdProjectSnapshot = {
+      projects: [
+        {
+          legacyTable: "saifute_composite_product",
+          legacyId: 16,
+          projectName: "旋转支护 石煤机160-200",
+          customerLegacyId: null,
+          customerName: null,
+          classification: null,
+          salesman: null,
+          totalAmount: "60.00",
+          orderDate: "2026-02-01",
+          outBoundDate: null,
+          remark: null,
+          delFlag: 0,
+          createdBy: "admin",
+          createdAt: "2026-02-01 08:00:00",
+          updatedBy: null,
+          updatedAt: null,
+        },
+      ],
+      lines: [
+        {
+          legacyTable: "saifute_product_material",
+          legacyId: 157,
+          parentLegacyTable: "saifute_composite_product",
+          parentLegacyId: 16,
+          materialLegacyId: null,
+          materialName: "销轴",
+          materialSpec: "24*67",
+          quantity: "2",
+          unitPrice: "30.00",
+          instruction: null,
+          interval: null,
+          remark: null,
+          acceptanceDate: "2026-02-01",
+          supplierLegacyId: null,
+          unit: null,
+          taxIncludedPrice: null,
+        },
+      ],
+    };
+
+    const plan = buildRdProjectMigrationPlan(snapshot, buildDependencies());
+
+    expect(plan.excludedProjects).toHaveLength(0);
+    expect(plan.pendingProjects).toHaveLength(0);
+    expect(plan.migratedProjects).toHaveLength(1);
+    expect(plan.autoCreatedMaterials[0]?.target.unitCode).toBe("个");
+    expect(plan.migratedProjects[0]?.lines[0]?.target.unitCodeSnapshot).toBe(
+      "个",
+    );
+    expect(plan.warnings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          legacyTable: "saifute_product_material",
+          legacyId: 157,
+          reason: "Project material line unit filled by migration override.",
+          details: expect.objectContaining({
+            parentLegacyId: 16,
+            unitCode: "个",
+            confirmedAt: "2026-05-16",
+          }),
+        }),
+      ]),
+    );
+  });
+
   it("should reuse an existing auto-created project material on rerun", () => {
     const deps = buildDependencies();
     deps.autoCreatedMaterialByNormalizedKey.set("缺料||件", {
       targetId: 2701,
-      materialCode: "xmbj1006",
+      materialCode: "xm1006",
       materialName: "缺料",
       specModel: null,
       unitCode: "件",
     });
-    deps.existingMaterialCodes.add("xmbj1006");
+    deps.existingMaterialCodes.add("xm1006");
 
     const plan = buildRdProjectMigrationPlan(buildSnapshot(), deps);
     const migrated14 = plan.migratedProjects.find(
@@ -1123,9 +1206,9 @@ describe("rd-project migration transformer — three-state model", () => {
     );
 
     expect(plan.autoCreatedMaterials).toHaveLength(1);
-    expect(plan.autoCreatedMaterials[0]?.target.materialCode).toBe("xmbj1006");
+    expect(plan.autoCreatedMaterials[0]?.target.materialCode).toBe("xm1006");
     expect(migrated14?.lines[0]?.target.materialId).toBe(2701);
-    expect(migrated14?.lines[0]?.target.materialCodeSnapshot).toBe("xmbj1006");
+    expect(migrated14?.lines[0]?.target.materialCodeSnapshot).toBe("xm1006");
   });
 
   it("should group multiple no-candidate lines with the same normalized key into one auto-created material", () => {

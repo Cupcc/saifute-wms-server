@@ -308,11 +308,11 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="单价" width="130">
+          <el-table-column label="销售单价" width="130">
             <template #default="{ row }">
               <el-input
                 v-model="row.unitPrice"
-                placeholder="单价"
+                placeholder="销售单价"
                 @input="normalizeDecimalField(row, 'unitPrice', 2)"
               />
             </template>
@@ -492,6 +492,8 @@ function buildEmptyLine() {
     salesProjectId: undefined,
     salesProjectCode: "",
     salesProjectName: "",
+    projectTargetId: undefined,
+    sourceProjectTargetId: undefined,
     quantity: "",
     selectedUnitCost: "",
     unitPrice: "",
@@ -600,6 +602,8 @@ function mapOrderDetailToLine(detail) {
     salesProjectId: detail.salesProjectId ?? undefined,
     salesProjectCode: detail.salesProjectCode || "",
     salesProjectName: detail.salesProjectName || "",
+    projectTargetId: detail.projectTargetId ?? undefined,
+    sourceProjectTargetId: detail.sourceProjectTargetId ?? undefined,
     quantity: toInputString(detail.quantity),
     selectedUnitCost: toInputString(detail.selectedUnitCost),
     unitPrice: toInputString(detail.unitPrice),
@@ -715,6 +719,7 @@ function ensureSalesProjectOption(item) {
     projectId: item.salesProjectId,
     salesProjectCode: item.salesProjectCode || "",
     salesProjectName: item.salesProjectName || "",
+    projectTargetId: item.projectTargetId,
   });
 }
 
@@ -740,6 +745,12 @@ async function applyDraftPayload(draft) {
             line.salesProjectCode || draft.salesProjectCode || "",
           salesProjectName:
             line.salesProjectName || draft.salesProjectName || "",
+          projectTargetId:
+            line.projectTargetId ?? draft.projectTargetId ?? undefined,
+          sourceProjectTargetId:
+            Object.hasOwn(line, "sourceProjectTargetId")
+              ? line.sourceProjectTargetId
+              : (line.projectTargetId ?? draft.projectTargetId ?? undefined),
           quantity: toInputString(line.quantity),
           selectedUnitCost: toInputString(line.selectedUnitCost),
           unitPrice: toInputString(line.unitPrice),
@@ -845,6 +856,8 @@ async function handleSourceOrderChange(orderId) {
             salesProjectId: detail.salesProjectId ?? undefined,
             salesProjectCode: detail.salesProjectCode || "",
             salesProjectName: detail.salesProjectName || "",
+            projectTargetId: detail.projectTargetId ?? undefined,
+            sourceProjectTargetId: detail.sourceProjectTargetId ?? undefined,
             quantity: toInputString(detail.quantity),
             selectedUnitCost: toInputString(detail.selectedUnitCost),
             unitPrice: toInputString(detail.unitPrice),
@@ -877,6 +890,8 @@ function handleSourceLineChange(row) {
   row.salesProjectId = sourceLine.salesProjectId ?? undefined;
   row.salesProjectCode = sourceLine.salesProjectCode || "";
   row.salesProjectName = sourceLine.salesProjectName || "";
+  row.projectTargetId = sourceLine.projectTargetId ?? undefined;
+  row.sourceProjectTargetId = sourceLine.sourceProjectTargetId ?? undefined;
   row.selectedUnitCost = toInputString(sourceLine.selectedUnitCost);
   ensureSalesProjectOption(row);
   if (!row.quantity) {
@@ -1064,11 +1079,19 @@ function handleSalesProjectChange(row) {
   if (!project) {
     row.salesProjectCode = "";
     row.salesProjectName = "";
+    row.projectTargetId = undefined;
+    row.sourceProjectTargetId = undefined;
+    row.selectedUnitCost = "";
+    row.priceLayerOptions = [];
     return;
   }
 
   row.salesProjectCode = project.salesProjectCode || "";
   row.salesProjectName = project.salesProjectName || "";
+  row.projectTargetId = project.projectTargetId;
+  row.sourceProjectTargetId = project.projectTargetId;
+  row.selectedUnitCost = "";
+  void loadPriceLayerOptions(row);
 }
 
 async function loadPriceLayerOptions(row) {
@@ -1084,6 +1107,13 @@ async function loadPriceLayerOptions(row) {
     params: {
       materialId: row.materialId,
       stockScope: "MAIN",
+      ...(typeof row.sourceProjectTargetId === "number"
+        ? { projectTargetId: row.sourceProjectTargetId }
+        : row.sourceProjectTargetId === null
+          ? { projectTargetMode: "UNATTRIBUTED" }
+          : row.projectTargetId
+            ? { projectTargetId: row.projectTargetId }
+            : {}),
     },
   }).catch(() => ({ data: [] }));
 
@@ -1178,6 +1208,10 @@ function buildSubmitPayload() {
       materialId: line.materialId,
       quantity: line.quantity,
       selectedUnitCost: line.selectedUnitCost,
+      sourceProjectTargetId:
+        Object.hasOwn(line, "sourceProjectTargetId")
+          ? line.sourceProjectTargetId
+          : line.projectTargetId,
       unitPrice: line.unitPrice,
       salesProjectId: line.salesProjectId,
       factoryNumber: line.factoryNumber,

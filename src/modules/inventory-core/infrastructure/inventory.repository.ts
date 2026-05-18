@@ -354,7 +354,7 @@ export class InventoryRepository {
       stockScopeId: number;
       sourceOperationTypes: InventoryOperationType[];
       unitCost?: Prisma.Decimal;
-      projectTargetId?: number;
+      projectTargetId: number | null;
     },
     db: InventoryDbClient = this.prisma,
   ) {
@@ -367,9 +367,7 @@ export class InventoryRepository {
           { operationType: { in: params.sourceOperationTypes } },
           historicalReplayReturnSourceWhere(),
         ],
-        ...(typeof params.projectTargetId === "number"
-          ? { projectTargetId: params.projectTargetId }
-          : {}),
+        projectTargetId: params.projectTargetId,
         ...(params.unitCost ? { unitCost: params.unitCost } : {}),
         reversalOfLogId: null,
         reversedByLogs: { none: {} },

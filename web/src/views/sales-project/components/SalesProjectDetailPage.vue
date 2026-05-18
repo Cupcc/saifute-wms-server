@@ -39,6 +39,22 @@
             </el-button>
             <el-button
               v-if="detailProject"
+              icon="Plus"
+              v-hasPermi="['inbound:order:create']"
+              @click="handleCreateAcceptanceOrder"
+            >
+              新增验收单
+            </el-button>
+            <el-button
+              v-if="detailProject"
+              icon="Connection"
+              v-hasPermi="['sales:project:update']"
+              @click="openSelectMaterialDialog"
+            >
+              选择库存物料
+            </el-button>
+            <el-button
+              v-if="detailProject"
               type="primary"
               v-hasPermi="['sales:project:draft']"
               @click="handleGenerateDraft"
@@ -78,18 +94,16 @@
             </el-descriptions-item>
           </el-descriptions>
 
-          <el-row :gutter="12" class="summary-grid">
-            <el-col v-for="card in summaryCards" :key="card.label" :xs="12" :sm="8" :lg="4">
-              <div class="summary-card">
-                <div class="summary-label">{{ card.label }}</div>
-                <div class="summary-value">{{ card.value }}</div>
-              </div>
-            </el-col>
-          </el-row>
+          <div class="summary-grid">
+            <div v-for="card in summaryCards" :key="card.label" class="summary-card">
+              <div class="summary-label">{{ card.label }}</div>
+              <div class="summary-value">{{ card.value }}</div>
+            </div>
+          </div>
 
           <div class="detail-toolbar">
             <div class="detail-tip">
-              读模型字段复用主仓库存与销售出库/退货事实；生成草稿后仍需在销售出库编辑器中正式提交。
+              项目库存物料明细
             </div>
           </div>
 
@@ -100,19 +114,74 @@
             max-height="560"
             @selection-change="handleDetailSelectionChange"
           >
-            <el-table-column type="selection" width="48" align="center" />
+            <el-table-column
+              type="selection"
+              width="48"
+              align="center"
+              :selectable="isDraftableMaterialRow"
+            />
+            <el-table-column
+              type="index"
+              label="序号"
+              width="64"
+              align="center"
+            />
             <el-table-column label="物料编码" prop="materialCode" min-width="120" />
             <el-table-column label="物料名称" prop="materialName" min-width="160" />
             <el-table-column label="规格型号" prop="specification" min-width="140" />
             <el-table-column label="单位" prop="unitCode" width="90" />
-            <el-table-column label="目标数量" width="110" align="right">
+            <el-table-column label="来源" width="120">
               <template #default="{ row }">
-                {{ formatNumber(row.targetQty) }}
+                {{ row.materialSourceType === "SELECTED_STOCK" ? "已有库存候选" : "项目库存" }}
               </template>
             </el-table-column>
-            <el-table-column label="当前库存" width="110" align="right">
+            <el-table-column label="关联表单" min-width="170">
+              <template #default="{ row }">
+                <div v-if="hasLinkedDocuments(row)" class="linked-documents">
+                  <el-button
+                    link
+                    type="primary"
+                    @click="openLinkedAcceptanceOrder(row.linkedDocuments[0])"
+                  >
+                    {{ formatLinkedDocumentLabel(row.linkedDocuments[0]) }}
+                  </el-button>
+                  <el-dropdown
+                    v-if="row.linkedDocuments.length > 1"
+                    trigger="click"
+                    @command="handleLinkedDocumentCommand"
+                  >
+                    <el-button link type="primary">
+                      更多 {{ row.linkedDocuments.length - 1 }}
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item
+                          v-for="document in row.linkedDocuments.slice(1)"
+                          :key="document.lineId"
+                          :command="document"
+                        >
+                          {{ formatLinkedDocumentLabel(document) }}
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </div>
+                <span v-else>-</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="成本价层" width="120" align="right">
+              <template #default="{ row }">
+                {{ row.selectedUnitCost || "-" }}
+              </template>
+            </el-table-column>
+            <el-table-column label="项目库存" width="110" align="right">
               <template #default="{ row }">
                 {{ formatNumber(row.currentInventoryQty) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="价层可用" width="110" align="right">
+              <template #default="{ row }">
+                {{ formatNumber(row.priceLayerAvailableQty) }}
               </template>
             </el-table-column>
             <el-table-column label="累计出库" width="110" align="right">
@@ -130,23 +199,14 @@
                 {{ formatNumber(row.netShipmentQty) }}
               </template>
             </el-table-column>
-            <el-table-column label="待供货" width="110" align="right">
-              <template #default="{ row }">
-                {{ formatNumber(row.pendingSupplyQty) }}
-              </template>
-            </el-table-column>
             <el-table-column label="草稿数量" width="140">
               <template #default="{ row }">
                 <el-input
                   v-model="row.draftQty"
+                  :disabled="!isDraftableMaterialRow(row)"
                   placeholder="数量"
                   @input="normalizeDecimalField(row, 'draftQty', 6)"
                 />
-              </template>
-            </el-table-column>
-            <el-table-column label="参考单价" width="120" align="right">
-              <template #default="{ row }">
-                {{ formatAmount(row.targetUnitPrice) }}
               </template>
             </el-table-column>
             <el-table-column label="备注" prop="remark" min-width="160" show-overflow-tooltip />
@@ -171,25 +231,101 @@
       :draft-payload="draftPayload"
       @submitted="handleDraftSubmitted"
     />
+
+    <sales-project-acceptance-order-dialog
+      v-model="acceptanceDialogOpen"
+      :project="detailProject"
+      @submitted="handleAcceptanceSubmitted"
+    />
+
+    <sales-project-acceptance-order-detail-dialog
+      v-model="acceptanceDetailOpen"
+      :order="acceptanceDetail"
+      :loading="acceptanceDetailLoading"
+    />
+
+    <el-dialog
+      v-model="selectMaterialDialogOpen"
+      title="选择已有库存物料"
+      width="640px"
+      append-to-body
+      draggable
+    >
+      <el-form :model="selectMaterialForm" label-width="96px">
+        <el-form-item label="物料">
+          <el-select
+            v-model="selectMaterialForm.materialId"
+            filterable
+            remote
+            reserve-keyword
+            clearable
+            placeholder="请输入物料编码、名称或规格"
+            style="width: 100%"
+            :remote-method="searchMaterialOptions"
+            :loading="materialLoading"
+          >
+            <el-option
+              v-for="item in materialOptions"
+              :key="item.materialId"
+              :label="`${item.materialCode} / ${item.materialName}`"
+              :value="item.materialId"
+            >
+              <span style="float: left; color: #ff7171">{{ item.materialCode }}</span>
+              <span style="float: left; margin-left: 10px">{{ item.materialName }}</span>
+              <span style="float: right; color: #909399">{{ item.specification }}</span>
+            </el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="参考数量">
+          <el-input
+            v-model="selectMaterialForm.quantity"
+            placeholder="用于项目候选清单，不占用库存"
+            @input="normalizeDecimalField(selectMaterialForm, 'quantity', 6)"
+          />
+        </el-form-item>
+        <el-form-item label="参考单价">
+          <el-input
+            v-model="selectMaterialForm.unitPrice"
+            placeholder="0"
+            @input="normalizeDecimalField(selectMaterialForm, 'unitPrice', 2)"
+          />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="selectMaterialForm.remark" type="textarea" maxlength="500" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="selectMaterialDialogOpen = false">取 消</el-button>
+          <el-button type="primary" :loading="selectMaterialSubmitting" @click="submitSelectedMaterial">
+            确 定
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup name="SalesProjectDetailPage">
 import { computed, getCurrentInstance, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { listMaterialByCodeOrName } from "@/api/base/material";
+import { getOrder } from "@/api/entry/order";
 import {
   createSalesProjectOutboundDraft,
   getSalesProject,
   getSalesProjectMaterials,
+  updateSalesProject,
 } from "@/api/sales-project";
 import SalesOrderEditorDialog from "@/views/sales/components/SalesOrderEditorDialog.vue";
 import {
   buildSalesProjectSummaryCards,
-  formatAmount,
   formatDate,
   formatNumber,
   toInputString,
 } from "../shared";
+import SalesProjectAcceptanceOrderDetailDialog from "./SalesProjectAcceptanceOrderDetailDialog.vue";
+import SalesProjectAcceptanceOrderDialog from "./SalesProjectAcceptanceOrderDialog.vue";
 import SalesProjectFormDialog from "./SalesProjectFormDialog.vue";
 
 const route = useRoute();
@@ -204,6 +340,20 @@ const selectedDetailRows = ref([]);
 const editDialogOpen = ref(false);
 const draftEditorOpen = ref(false);
 const draftPayload = ref(null);
+const acceptanceDialogOpen = ref(false);
+const acceptanceDetailOpen = ref(false);
+const acceptanceDetailLoading = ref(false);
+const acceptanceDetail = ref(null);
+const selectMaterialDialogOpen = ref(false);
+const selectMaterialSubmitting = ref(false);
+const selectMaterialForm = ref({
+  materialId: undefined,
+  quantity: "1",
+  unitPrice: "0",
+  remark: "",
+});
+const materialOptions = ref([]);
+const materialLoading = ref(false);
 
 const currentProjectId = computed(() => {
   const parsed = Number(route.params.projectId);
@@ -220,7 +370,10 @@ const headerSubtitle = computed(() => {
 });
 
 const summaryCards = computed(() =>
-  buildSalesProjectSummaryCards(detailProject.value?.summary ?? {}),
+  buildSalesProjectSummaryCards({
+    ...(detailProject.value?.summary ?? {}),
+    materialKindCount: countMaterialKinds(detailMaterials.value),
+  }),
 );
 
 const lifecycleLabel = computed(() => {
@@ -251,6 +404,17 @@ function normalizeDecimalField(row, key, scale) {
     );
 }
 
+function countMaterialKinds(materials) {
+  return new Set(
+    materials
+      .map((item) => item.materialId)
+      .filter(
+        (materialId) =>
+          materialId !== null && typeof materialId !== "undefined",
+      ),
+  ).size;
+}
+
 async function loadDetail() {
   if (!currentProjectId.value) {
     detailProject.value = null;
@@ -275,7 +439,9 @@ async function loadDetail() {
     };
     detailMaterials.value = materials.map((item) => ({
       ...item,
-      draftQty: item.pendingSupplyQty > 0 ? toInputString(item.pendingSupplyQty) : "",
+      draftQty: isDraftableMaterialRow(item)
+        ? toInputString(item.currentInventoryQty)
+        : "",
     }));
     selectedDetailRows.value = [];
   } catch (_error) {
@@ -292,8 +458,122 @@ function handleBack() {
   router.replace("/sales/project");
 }
 
+function handleCreateAcceptanceOrder() {
+  if (!currentProjectId.value) {
+    return;
+  }
+  acceptanceDialogOpen.value = true;
+}
+
+function openSelectMaterialDialog() {
+  selectMaterialForm.value = {
+    materialId: undefined,
+    quantity: "1",
+    unitPrice: "0",
+    remark: "",
+  };
+  selectMaterialDialogOpen.value = true;
+}
+
+async function searchMaterialOptions(keyword) {
+  materialLoading.value = true;
+  try {
+    const response = await listMaterialByCodeOrName({
+      materialCode: keyword,
+      pageNum: 1,
+      pageSize: 100,
+    });
+    materialOptions.value = response.rows || [];
+  } finally {
+    materialLoading.value = false;
+  }
+}
+
+async function submitSelectedMaterial() {
+  if (!detailProject.value || !selectMaterialForm.value.materialId) {
+    proxy.$modal.msgWarning("请选择物料");
+    return;
+  }
+  if (Number(selectMaterialForm.value.quantity || 0) <= 0) {
+    proxy.$modal.msgWarning("参考数量必须大于 0");
+    return;
+  }
+  const materialId = selectMaterialForm.value.materialId;
+  const existingLines = detailProject.value.materialLines || [];
+  if (existingLines.some((line) => Number(line.materialId) === Number(materialId))) {
+    proxy.$modal.msgWarning("该物料已经在项目中");
+    return;
+  }
+
+  selectMaterialSubmitting.value = true;
+  try {
+    await updateSalesProject(detailProject.value.projectId, {
+      materialLines: [
+        ...existingLines.map((line) => ({
+          materialId: line.materialId,
+          quantity: toInputString(line.quantity || 0),
+          unitPrice: toInputString(line.unitPrice || 0),
+          remark: line.remark || "",
+        })),
+        {
+          materialId,
+          quantity: selectMaterialForm.value.quantity,
+          unitPrice: selectMaterialForm.value.unitPrice || "0",
+          remark: selectMaterialForm.value.remark || "",
+        },
+      ],
+    });
+    proxy.$modal.msgSuccess("已加入项目候选物料");
+    selectMaterialDialogOpen.value = false;
+    await loadDetail();
+  } finally {
+    selectMaterialSubmitting.value = false;
+  }
+}
+
 function handleDetailSelectionChange(selection) {
-  selectedDetailRows.value = selection;
+  selectedDetailRows.value = selection.filter((item) => isDraftableMaterialRow(item));
+}
+
+function hasSelectedUnitCost(row) {
+  if (row?.selectedUnitCost === null || typeof row?.selectedUnitCost === "undefined") {
+    return false;
+  }
+  return String(row.selectedUnitCost).trim() !== "";
+}
+
+function isDraftableMaterialRow(row) {
+  return hasSelectedUnitCost(row) && Number(row?.currentInventoryQty || 0) > 0;
+}
+
+function hasLinkedDocuments(row) {
+  return Array.isArray(row?.linkedDocuments) && row.linkedDocuments.length > 0;
+}
+
+function formatLinkedDocumentLabel(document) {
+  return document?.documentNo || document?.documentLabel || "关联表单";
+}
+
+function handleLinkedDocumentCommand(document) {
+  void openLinkedAcceptanceOrder(document);
+}
+
+async function openLinkedAcceptanceOrder(document) {
+  if (!document?.documentId) {
+    return;
+  }
+
+  acceptanceDetailOpen.value = true;
+  acceptanceDetailLoading.value = true;
+  try {
+    const response = await getOrder(document.documentId);
+    acceptanceDetail.value = response.data ?? null;
+  } catch (_error) {
+    acceptanceDetail.value = null;
+    proxy.$modal.msgError("加载关联验收单失败");
+  } finally {
+    acceptanceDetailLoading.value = false;
+  }
 }
 
 function normalizeDraftPayload(draft, project, lines) {
@@ -306,7 +586,9 @@ function normalizeDraftPayload(draft, project, lines) {
           materialName: line.materialName ?? sourceLine.materialName ?? "",
           specification: line.specification ?? sourceLine.specification ?? "",
           quantity: line.quantity ?? sourceLine.quantity,
-          selectedUnitCost: line.selectedUnitCost,
+          selectedUnitCost: line.selectedUnitCost ?? sourceLine.selectedUnitCost,
+          sourceProjectTargetId:
+            line.sourceProjectTargetId ?? sourceLine.sourceProjectTargetId ?? null,
           unitPrice: line.unitPrice ?? sourceLine.unitPrice,
           salesProjectId:
             line.salesProjectId ?? draft.salesProjectId ?? project.projectId,
@@ -318,6 +600,8 @@ function normalizeDraftPayload(draft, project, lines) {
             line.salesProjectName ??
             draft.salesProjectName ??
             project.salesProjectName,
+          projectTargetId:
+            line.projectTargetId ?? draft.projectTargetId ?? project.projectTargetId,
           remark: line.remark ?? sourceLine.remark ?? "",
         };
       })
@@ -327,10 +611,13 @@ function normalizeDraftPayload(draft, project, lines) {
         materialName: line.materialName,
         specification: line.specification,
         quantity: line.quantity,
+        selectedUnitCost: line.selectedUnitCost,
+        sourceProjectTargetId: line.sourceProjectTargetId ?? null,
         unitPrice: line.unitPrice,
         salesProjectId: project.projectId,
         salesProjectCode: project.salesProjectCode,
         salesProjectName: project.salesProjectName,
+        projectTargetId: project.projectTargetId,
         remark: line.remark || "",
       }));
 
@@ -348,6 +635,7 @@ function normalizeDraftPayload(draft, project, lines) {
       draft?.salesProjectCode ?? project.salesProjectCode ?? "",
     salesProjectName:
       draft?.salesProjectName ?? project.salesProjectName ?? "",
+    projectTargetId: draft?.projectTargetId ?? project.projectTargetId,
     remark: draft?.remark ?? project.remark ?? "",
     lines: normalizedLines,
   };
@@ -360,8 +648,11 @@ async function handleGenerateDraft() {
 
   const selectedRows =
     selectedDetailRows.value.length > 0
-      ? selectedDetailRows.value
-      : detailMaterials.value.filter((item) => Number(item.draftQty || 0) > 0);
+      ? selectedDetailRows.value.filter((item) => isDraftableMaterialRow(item))
+      : detailMaterials.value.filter(
+          (item) =>
+            isDraftableMaterialRow(item) && Number(item.draftQty || 0) > 0,
+        );
 
   if (selectedRows.length === 0) {
     proxy.$modal.msgWarning("请先选择至少一条待生成草稿的物料");
@@ -374,8 +665,10 @@ async function handleGenerateDraft() {
       materialCode: row.materialCode,
       materialName: row.materialName,
       specification: row.specification,
-      quantity: row.draftQty || row.pendingSupplyQty,
-      unitPrice: row.targetUnitPrice,
+      quantity: row.draftQty || row.currentInventoryQty,
+      selectedUnitCost: row.selectedUnitCost,
+      sourceProjectTargetId: row.sourceProjectTargetId ?? null,
+      unitPrice: "0",
       remark: row.remark,
     }))
     .filter((item) => Number(item.quantity || 0) > 0);
@@ -391,6 +684,8 @@ async function handleGenerateDraft() {
       lines: lines.map((line) => ({
         materialId: line.materialId,
         quantity: toInputString(line.quantity),
+        selectedUnitCost: toInputString(line.selectedUnitCost),
+        sourceProjectTargetId: line.sourceProjectTargetId ?? null,
         unitPrice: toInputString(line.unitPrice),
         remark: line.remark,
       })),
@@ -408,6 +703,11 @@ async function handleGenerateDraft() {
 function handleDraftSubmitted() {
   draftEditorOpen.value = false;
   draftPayload.value = null;
+  void loadDetail();
+}
+
+function handleAcceptanceSubmitted() {
+  acceptanceDialogOpen.value = false;
   void loadDetail();
 }
 
@@ -455,14 +755,20 @@ watch(
   }
 
   .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(112px, 1fr));
+    gap: 12px;
     margin: 16px 0;
+    overflow-x: auto;
+    padding-bottom: 2px;
   }
 
   .summary-card {
+    min-width: 0;
     height: 100%;
-    padding: 14px 16px;
+    padding: 12px 14px;
     border: 1px solid #ebeef5;
-    border-radius: 10px;
+    border-radius: 8px;
     background: linear-gradient(180deg, #ffffff 0%, #f7f9fc 100%);
   }
 
@@ -473,9 +779,11 @@ watch(
 
   .summary-value {
     margin-top: 8px;
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 600;
+    line-height: 1.2;
     color: #303133;
+    word-break: break-all;
   }
 
   .detail-toolbar {
@@ -489,6 +797,13 @@ watch(
   .detail-tip {
     color: #909399;
     font-size: 13px;
+  }
+
+  .linked-documents {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 24px;
   }
 
   @media (max-width: 768px) {

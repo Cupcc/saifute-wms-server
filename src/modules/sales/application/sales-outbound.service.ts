@@ -167,11 +167,17 @@ export class SalesOutboundService {
             createdBy,
             updatedBy: createdBy,
           },
-          linesWithSnapshots.map(({ projectTargetId, ...line }) => ({
-            ...line,
-            createdBy,
-            updatedBy: createdBy,
-          })),
+          linesWithSnapshots.map(
+            ({
+              projectTargetId: _projectTargetId,
+              sourceProjectTargetId: _sourceProjectTargetId,
+              ...line
+            }) => ({
+              ...line,
+              createdBy,
+              updatedBy: createdBy,
+            }),
+          ),
           tx,
         );
 
@@ -191,6 +197,8 @@ export class SalesOutboundService {
                 businessDocumentNumber: order.documentNo,
                 businessDocumentLineId: line.id,
                 projectTargetId:
+                  projectTargetByLineNo.get(line.lineNo) ?? undefined,
+                sourceProjectTargetId:
                   projectTargetByLineNo.get(line.lineNo) ?? undefined,
                 operatorId: createdBy,
                 idempotencyKey: `SalesStockOrder:${order.id}:line:${line.id}`,
@@ -363,22 +371,34 @@ export class SalesOutboundService {
     lines: OutboundLineWriteData[],
     workshopId?: number | null,
   ) {
-    const materialIds = [...new Set(lines.map((line) => line.materialId))];
-    const availabilityByMaterial = new Map<
-      number,
+    const availabilityByMaterialAndProject = new Map<
+      string,
       Map<string, Prisma.Decimal>
     >();
 
-    for (const materialId of materialIds) {
+    const queryKeys = [
+      ...new Map(
+        lines.map((line) => [
+          this.buildAvailabilityKey(line.materialId, line.projectTargetId),
+          {
+            materialId: line.materialId,
+            projectTargetId: line.projectTargetId,
+          },
+        ]),
+      ).values(),
+    ];
+
+    for (const query of queryKeys) {
       const priceLayers =
         await this.shared.inventoryService.listPriceLayerAvailability({
-          materialId,
+          materialId: query.materialId,
           stockScope: "MAIN",
           workshopId: workshopId ?? undefined,
+          projectTargetId: query.projectTargetId ?? undefined,
           sourceOperationTypes: OUTBOUND_SOURCE_OPERATION_TYPES,
         });
-      availabilityByMaterial.set(
-        materialId,
+      availabilityByMaterialAndProject.set(
+        this.buildAvailabilityKey(query.materialId, query.projectTargetId),
         new Map(
           priceLayers.map((layer) => [
             layer.unitCost.toString(),
@@ -389,7 +409,9 @@ export class SalesOutboundService {
     }
 
     for (const line of lines) {
-      const materialLayers = availabilityByMaterial.get(line.materialId);
+      const materialLayers = availabilityByMaterialAndProject.get(
+        this.buildAvailabilityKey(line.materialId, line.projectTargetId),
+      );
       const availableQty = materialLayers?.get(
         line.selectedUnitCost.toString(),
       );
@@ -399,5 +421,12 @@ export class SalesOutboundService {
         );
       }
     }
+  }
+
+  private buildAvailabilityKey(
+    materialId: number,
+    projectTargetId: number | null,
+  ) {
+    return `${materialId}:${projectTargetId ?? "none"}`;
   }
 }

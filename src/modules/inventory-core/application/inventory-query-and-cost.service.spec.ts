@@ -160,6 +160,9 @@ describe("InventoryService", () => {
     expect(result[0].sourceLogCount).toBe(2);
     expect(result[1].unitCost.toString()).toBe("12");
     expect(result[1].availableQty.toString()).toBe("8");
+    expect(repositoryMock.findFifoSourceLogs).toHaveBeenCalledWith(
+      expect.objectContaining({ projectTargetId: null }),
+    );
   });
 
   // ─── increaseStock with cost fields ─────────────────────────────────────

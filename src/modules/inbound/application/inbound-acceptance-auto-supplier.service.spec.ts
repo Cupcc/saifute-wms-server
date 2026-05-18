@@ -14,6 +14,7 @@ import type { SupplierService } from "../../master-data/application/supplier.ser
 import type { RdProcurementRequestService } from "../../rd-subwarehouse/application/rd-procurement-request.service";
 import type { InboundRepository } from "../infrastructure/inbound.repository";
 import { InboundAcceptanceCreationService } from "./inbound-acceptance-creation.service";
+import type { InboundAcceptanceLineSnapshotService } from "./inbound-acceptance-line-snapshot.service";
 import { InboundSharedService } from "./inbound-shared.service";
 
 jest.mock(
@@ -132,6 +133,28 @@ describe("InboundAcceptanceCreationService supplier auto-create", () => {
     const approvalService = {
       createOrRefreshApprovalDocument: jest.fn().mockResolvedValue({}),
     } as unknown as jest.Mocked<ApprovalService>;
+    const lineSnapshots = {
+      buildLineWriteData: jest.fn().mockResolvedValue({
+        lineNo: 1,
+        materialId: 100,
+        rdProcurementRequestLineId: null,
+        materialCategoryIdSnapshot: 99,
+        materialCategoryCodeSnapshot: "RESISTOR",
+        materialCategoryNameSnapshot: "电阻",
+        materialCategoryPathSnapshot: [
+          { id: 99, categoryCode: "RESISTOR", categoryName: "电阻" },
+        ],
+        materialCodeSnapshot: "MAT001",
+        materialNameSnapshot: "Material A",
+        materialSpecSnapshot: "Spec",
+        unitCodeSnapshot: "PCS",
+        quantity: new Prisma.Decimal(100),
+        unitPrice: new Prisma.Decimal(10),
+        amount: new Prisma.Decimal(1000),
+        remark: undefined,
+      }),
+      markAutoMaterialSourceDocument: jest.fn().mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<InboundAcceptanceLineSnapshotService>;
     const shared = new InboundSharedService(
       masterDataService,
       { getRequestById: jest.fn() } as unknown as RdProcurementRequestService,
@@ -140,9 +163,9 @@ describe("InboundAcceptanceCreationService supplier auto-create", () => {
     );
     const service = new InboundAcceptanceCreationService(
       repository,
-      masterDataService,
       inventoryService,
       approvalService,
+      lineSnapshots,
       shared,
     );
 

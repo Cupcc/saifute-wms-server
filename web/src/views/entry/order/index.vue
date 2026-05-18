@@ -94,7 +94,7 @@
 
     <adaptive-table border stripe v-loading="loading" :data="orderList">
       <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="验收单号" align="center" prop="inboundNo" v-if="columns[0].visible">
+      <el-table-column sortable show-overflow-tooltip label="验收单号" align="center" min-width="120" prop="inboundNo" v-if="columns[0].visible">
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
             {{ scope.row.inboundNo }}
@@ -122,28 +122,28 @@
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="总金额" align="center" prop="totalAmount" v-if="columns[2].visible" >
+      <el-table-column sortable show-overflow-tooltip label="总金额" align="center" min-width="100" prop="totalAmount" v-if="columns[2].visible" >
 	      <template #default="scope">
 		      <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
 			      {{ scope.row.totalAmount }}
 		      </el-button>
 	      </template>
       </el-table-column>
-	    <el-table-column sortable show-overflow-tooltip label="供应商" align="center" prop="supplierName" v-if="columns[3].visible">
+	    <el-table-column sortable show-overflow-tooltip label="供应商" align="center" min-width="120" prop="supplierName" v-if="columns[3].visible">
 		    <template #default="scope">
 			    <el-button link type="primary" :underline="false" @click="handleViewSupplier(scope.row.supplierId)">
 				    {{ scope.row.supplierName }}
 			    </el-button>
 		    </template>
 	    </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="经办人" align="center" prop="attn" v-if="columns[4].visible">
+      <el-table-column sortable show-overflow-tooltip label="经办人" align="center" min-width="100" prop="attn" v-if="columns[4].visible">
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
             {{ scope.row.attn }}
           </el-button>
         </template>
       </el-table-column>
-	    <el-table-column sortable show-overflow-tooltip label="关联部门" align="center" prop="workshopName" v-if="columns[5].visible">
+	    <el-table-column sortable show-overflow-tooltip label="关联部门" align="center" width="120" prop="workshopName" v-if="columns[5].visible">
 		    <template #default="scope">
 			    <el-button link type="primary" :underline="false" @click="handleDetail(scope.row)">
 				    {{ scope.row.workshopName }}
@@ -157,7 +157,7 @@
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="审核结果" align="center" prop="auditStatus" v-if="columns[7].visible">
+      <el-table-column sortable show-overflow-tooltip label="审核结果" align="center" width="120" prop="auditStatus" v-if="columns[7].visible">
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
             <span v-if="scope.row.auditStatus === '0' || scope.row.auditStatus === 0" style="color: #E6A23C;">未审核</span>
@@ -238,6 +238,30 @@
 		          </el-select>
 	          </el-form-item>
           </el-col>
+          <el-col :span="12">
+            <el-form-item label="销售项目" prop="salesProjectId">
+              <el-select
+                v-model="form.salesProjectId"
+                filterable
+                remote
+                reserve-keyword
+                clearable
+                placeholder="请输入项目编码或名称搜索"
+                :remote-method="searchSalesProjectForForm"
+                :loading="salesProjectLoadingForForm"
+                style="width: 100%"
+                :disabled="form.inboundId != null"
+                @change="handleSalesProjectChange"
+              >
+                <el-option
+                  v-for="item in salesProjectOptionsForForm"
+                  :key="item.projectId"
+                  :label="`${item.salesProjectCode} / ${item.salesProjectName}`"
+                  :value="item.projectId"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
         </el-row>
 	      <el-row>
           <el-col :span="12">
@@ -290,6 +314,8 @@
                 filterable
                 remote
                 reserve-keyword
+                allow-create
+                default-first-option
                 placeholder="请输入物料名称或规格型号搜索"
                 :remote-method="searchMaterialForDetail"
                 :loading="materialLoading"
@@ -306,6 +332,33 @@
 	                <span style="float: right; color: #37a62c; font-size: 13px; margin-left: 20px;">{{ item.specification }}</span>
                 </el-option>
               </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="物料名称" prop="materialName" min-width="150">
+            <template #default="scope">
+              <el-input
+                v-model="scope.row.materialName"
+                placeholder="新物料名称"
+                :disabled="form.inboundId != null || isExistingMaterialRow(scope.row)"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column label="规格型号" prop="specModel" min-width="130">
+            <template #default="scope">
+              <el-input
+                v-model="scope.row.specModel"
+                placeholder="规格型号"
+                :disabled="form.inboundId != null || isExistingMaterialRow(scope.row)"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column label="单位" prop="unitCode" width="110">
+            <template #default="scope">
+              <el-input
+                v-model="scope.row.unitCode"
+                placeholder="单位"
+                :disabled="form.inboundId != null || isExistingMaterialRow(scope.row)"
+              />
             </template>
           </el-table-column>
           <el-table-column label="验收数量" prop="quantity">
@@ -467,26 +520,25 @@
 
       <el-table :data="supplierReturnLines" border stripe v-loading="supplierReturnLoading">
         <el-table-column type="index" width="50" align="center" />
-        <el-table-column label="物料编码" prop="materialCode" min-width="120" show-overflow-tooltip />
+        <el-table-column label="物料编码" prop="materialCode" min-width="80" show-overflow-tooltip />
         <el-table-column label="物料名称" prop="materialName" min-width="150" show-overflow-tooltip />
-        <el-table-column label="规格型号" prop="specification" min-width="130" show-overflow-tooltip />
-        <el-table-column label="验收数量" prop="sourceQuantity" width="110" align="right">
+        <el-table-column label="规格型号" prop="specification" min-width="120" show-overflow-tooltip />
+        <el-table-column label="验收数量" prop="sourceQuantity" width="80" align="right">
           <template #default="scope">
             {{ formatQuantity(scope.row.sourceQuantity) }}
           </template>
         </el-table-column>
-        <el-table-column label="已退数量" prop="activeReturnedQty" width="110" align="right" />
-        <el-table-column label="来源可用" prop="sourceAvailableQty" width="110" align="right" />
-        <el-table-column label="可退数量" prop="availableQty" width="110" align="right" />
-        <el-table-column label="当前来源单价" prop="unitPrice" width="120" align="right" />
-        <el-table-column label="来源流水" prop="sourceLogId" width="100" align="right" />
-        <el-table-column label="本次退货" prop="quantity" width="160">
+        <el-table-column label="已退数量" prop="activeReturnedQty" width="80" align="right" />
+        <el-table-column label="来源可用" prop="sourceAvailableQty" width="80" align="right" />
+        <el-table-column label="可退数量" prop="availableQty" width="80" align="right" />
+        <el-table-column label="进货单价" prop="unitPrice" width="80" align="right" />
+        <el-table-column label="本次退货数量" prop="quantity" width="140">
           <template #default="scope">
             <el-input-number
               v-model="scope.row.quantity"
               :min="0"
               :max="Number(scope.row.availableQty || 0)"
-              :precision="6"
+              :precision="2"
               controls-position="right"
               style="width: 100%"
             />
@@ -561,6 +613,7 @@ import {
   returnOrderToSupplier,
   updateOrder,
 } from "@/api/entry/order";
+import { getSalesProject, listSalesProjects } from "@/api/sales-project";
 import useAiActionStore from "@/store/modules/aiAction";
 import useUserStore from "@/store/modules/user";
 import {
@@ -623,6 +676,9 @@ const workshopOptions = ref([]);
 const workshopOptionsForForm = ref([]);
 const workshopLoading = ref(false);
 const workshopLoadingForForm = ref(false);
+const salesProjectOptionsForForm = ref([]);
+const salesProjectLoadingForForm = ref(false);
+const lastRouteProjectPrefillKey = ref("");
 
 const data = reactive({
   form: {},
@@ -801,6 +857,22 @@ function isPositiveIntegerValue(value) {
   return Number.isInteger(number) && number > 0;
 }
 
+function isExistingMaterialRow(row) {
+  return typeof row?.materialId === "number";
+}
+
+function rememberSalesProjectOption(project) {
+  if (!project?.projectId) {
+    return;
+  }
+  const exists = salesProjectOptionsForForm.value.some(
+    (item) => String(item.projectId) === String(project.projectId),
+  );
+  if (!exists) {
+    salesProjectOptionsForForm.value = [project, ...salesProjectOptionsForForm.value];
+  }
+}
+
 /** 查询验收单列表 */
 function getList() {
   loading.value = true;
@@ -868,6 +940,38 @@ function searchWorkshopForForm(query) {
     .catch(() => {
       workshopLoadingForForm.value = false;
     });
+}
+
+function searchSalesProjectForForm(query) {
+  salesProjectLoadingForForm.value = true;
+  listSalesProjects({
+    salesProjectCode: query,
+    salesProjectName: query,
+    pageNum: 1,
+    pageSize: 100,
+  })
+    .then((response) => {
+      salesProjectOptionsForForm.value = response.rows || [];
+      salesProjectLoadingForForm.value = false;
+    })
+    .catch(() => {
+      salesProjectLoadingForForm.value = false;
+    });
+}
+
+function handleSalesProjectChange(projectId) {
+  const project = salesProjectOptionsForForm.value.find(
+    (item) => String(item.projectId) === String(projectId),
+  );
+  form.value.salesProjectCode = project?.salesProjectCode || null;
+  form.value.salesProjectName = project?.salesProjectName || null;
+  if (project?.workshopId && !form.value.workshopId) {
+    form.value.workshopId = project.workshopId;
+    mergeWorkshopOption({
+      workshopId: project.workshopId,
+      workshopName: project.workshopName || String(project.workshopId),
+    });
+  }
 }
 
 /** 搜索人员信息 */
@@ -939,6 +1043,9 @@ function reset() {
     inboundDate: null,
     supplierId: null,
     supplierName: null,
+    salesProjectId: null,
+    salesProjectCode: null,
+    salesProjectName: null,
     workshopId: null,
     attn: null,
     totalAmount: null,
@@ -948,6 +1055,9 @@ function reset() {
   detailList.value = [
     {
       materialId: null,
+      materialName: "",
+      specModel: "",
+      unitCode: "",
       quantity: null,
       unitPrice: null,
       taxPrice: null,
@@ -990,6 +1100,9 @@ function handleQuery() {
 function addDetailItem() {
   detailList.value.push({
     materialId: null,
+    materialName: "",
+    specModel: "",
+    unitCode: "",
     quantity: null,
     unitPrice: null,
     taxPrice: null,
@@ -1007,7 +1120,22 @@ function removeDetailItem(index) {
 
 /** 处理物料变更 */
 function handleMaterialChange(val, index) {
+  if (typeof val === "string") {
+    detailList.value[index].materialName = val;
+    detailList.value[index].specModel = detailList.value[index].specModel || "";
+    detailList.value[index].unitCode = detailList.value[index].unitCode || "";
+    calculateTotalAmount();
+    return;
+  }
   if (val) {
+    const selectedMaterial = materialOptions.value.find(
+      (item) => Number(item.materialId) === Number(val),
+    );
+    if (selectedMaterial) {
+      detailList.value[index].materialName = selectedMaterial.materialName || "";
+      detailList.value[index].specModel = selectedMaterial.specification || "";
+      detailList.value[index].unitCode = selectedMaterial.unit || "";
+    }
     // 调用后端接口获取最新的验收单明细数据
     getLatestDetailByMaterialId(val)
       .then((response) => {
@@ -1111,6 +1239,9 @@ function handleUpdate(row) {
         inboundDate: orderData.inboundDate,
         supplierId: orderData.supplierId,
         supplierName: orderData.supplierName,
+        salesProjectId: orderData.salesProjectId,
+        salesProjectCode: orderData.salesProjectCode,
+        salesProjectName: orderData.salesProjectName,
         workshopId: orderData.workshopId,
         attn: orderData.attn,
         totalAmount: orderData.totalAmount,
@@ -1118,6 +1249,13 @@ function handleUpdate(row) {
       };
       rememberOrderSupplier(orderData);
       rememberOrderWorkshop(orderData);
+      rememberSalesProjectOption({
+        projectId: orderData.salesProjectId,
+        salesProjectCode: orderData.salesProjectCode || "",
+        salesProjectName: orderData.salesProjectName || "",
+        workshopId: orderData.workshopId,
+        workshopName: orderData.workshopName || "",
+      });
       if (orderData.details && orderData.details.length > 0) {
         materialOptions.value = mergeMaterialOptions(
           materialOptions.value,
@@ -1126,6 +1264,9 @@ function handleUpdate(row) {
         detailList.value = orderData.details.map((detail) => ({
           detailId: detail.detailId,
           materialId: detail.materialId,
+          materialName: detail.material?.materialName || detail.materialName || "",
+          specModel: detail.material?.specification || detail.specModel || "",
+          unitCode: detail.unitCode || detail.material?.unitCode || "",
           quantity: detail.quantity,
           unitPrice: detail.unitPrice,
           taxPrice: detail.taxPrice,
@@ -1164,7 +1305,6 @@ function handleSupplierReturn(row) {
         sourceAvailableQty: Number(line.sourceAvailableQty || 0),
         availableQty: Number(line.availableQty || 0),
         unitPrice: line.currentUnitCost,
-        sourceLogId: line.sourceLogId,
         quantity: 0,
         remark: "",
       }));
@@ -1228,8 +1368,13 @@ function submitForm() {
       // 验证每条明细的必填字段
       for (let i = 0; i < detailList.value.length; i++) {
         const item = detailList.value[i];
-        if (!item.materialId) {
-          proxy.$modal.msgError(`第${i + 1}行物料编码不能为空`);
+        const isNewMaterial = typeof item.materialId === "string";
+        if (!item.materialId && !item.materialName) {
+          proxy.$modal.msgError(`第${i + 1}行物料不能为空`);
+          return;
+        }
+        if (isNewMaterial && !item.unitCode) {
+          proxy.$modal.msgError(`第${i + 1}行新物料单位不能为空`);
           return;
         }
         if (!item.quantity) {
@@ -1440,6 +1585,9 @@ async function handleAiPrefill(formData) {
       }
       const row = {
         materialId: null,
+        materialName: item.materialName || "",
+        specModel: item.specModel || item.specification || "",
+        unitCode: item.unitCode || "",
         quantity,
         unitPrice: item.unitPrice || null,
         taxPrice: item.taxPrice || null,
@@ -1456,7 +1604,11 @@ async function handleAiPrefill(formData) {
             materialOptions.value,
           );
           if (matRes.rows?.length > 0) {
-            row.materialId = matRes.rows[0].materialId;
+            const material = matRes.rows[0];
+            row.materialId = material.materialId;
+            row.materialName = material.materialName || row.materialName;
+            row.specModel = material.specification || row.specModel;
+            row.unitCode = material.unit || row.unitCode;
             if (!row.unitPrice) {
               try {
                 const priceRes = await getLatestDetailByMaterialId(
@@ -1481,6 +1633,42 @@ async function handleAiPrefill(formData) {
   }
 }
 
+async function applySalesProjectPrefill(projectId) {
+  if (!projectId) {
+    return;
+  }
+  const response = await getSalesProject(projectId);
+  const project = response.data || {};
+  rememberSalesProjectOption(project);
+  form.value.salesProjectId = project.projectId;
+  form.value.salesProjectCode = project.salesProjectCode || null;
+  form.value.salesProjectName = project.salesProjectName || null;
+  if (project.workshopId) {
+    form.value.workshopId = project.workshopId;
+    mergeWorkshopOption({
+      workshopId: project.workshopId,
+      workshopName: project.workshopName || String(project.workshopId),
+    });
+  }
+  if (project.managerName && !form.value.attn) {
+    form.value.attn = project.managerName;
+  }
+}
+
+async function checkRouteSalesProjectPrefill() {
+  if (route.query.action !== "create" || !route.query.salesProjectId) {
+    return;
+  }
+  const prefillKey = `${route.path}:${route.query.salesProjectId}`;
+  if (lastRouteProjectPrefillKey.value === prefillKey) {
+    return;
+  }
+  lastRouteProjectPrefillKey.value = prefillKey;
+  await handleAdd();
+  await nextTick();
+  await applySalesProjectPrefill(Number(route.query.salesProjectId));
+}
+
 // 检查并执行 AI 预填充
 function checkAiAction() {
   const action = aiActionStore.pendingAction;
@@ -1490,10 +1678,22 @@ function checkAiAction() {
   if (consumed?.formData) handleAiPrefill(consumed.formData);
 }
 // 首次访问（onMounted）和缓存后再次访问（onActivated）都需要检查
-onMounted(() => checkAiAction());
-onActivated(() => checkAiAction());
+onMounted(() => {
+  checkAiAction();
+  void checkRouteSalesProjectPrefill();
+});
+onActivated(() => {
+  checkAiAction();
+  void checkRouteSalesProjectPrefill();
+});
 watch(
   () => aiActionStore.pendingAction,
   () => checkAiAction(),
+);
+watch(
+  () => route.query.salesProjectId,
+  () => {
+    void checkRouteSalesProjectPrefill();
+  },
 );
 </script>

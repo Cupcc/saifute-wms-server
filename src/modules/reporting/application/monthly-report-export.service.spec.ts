@@ -235,15 +235,32 @@ describe("MonthlyReportExportService", () => {
     expect(exportResult.content).toContain('<Worksheet ss:Name="分类汇总">');
     expect(exportResult.content).toContain('<Worksheet ss:Name="物料汇总">');
     expect(exportResult.content).toContain('<Worksheet ss:Name="单据行明细">');
+    expect(exportResult.content).toContain("2026-03 物料分类月报 - 分类汇总");
+    expect(exportResult.content).toContain("2026-03 物料分类月报 - 物料汇总");
+    expect(exportResult.content).toContain(
+      "2026-03 物料分类月报 - 车间使用汇总",
+    );
+    expect(exportResult.content).toContain("2026-03 物料分类月报 - 单据行明细");
+    expect(exportResult.content).toContain('<Style ss:ID="Title">');
+    expect(exportResult.content).toContain(
+      'ss:MergeAcross="17" ss:StyleID="Title"><Data ss:Type="String">2026-03 物料分类月报 - 单据行明细',
+    );
+    expect(exportResult.content).toContain(
+      '<Column ss:Width="160" /><Column ss:Width="100" />',
+    );
     expect(exportResult.content).toContain("化工");
     expect(exportResult.content).toContain("原料 A");
     expect(exportResult.content).toContain("月初库存金额");
     expect(exportResult.content).toContain("月末金额");
+    expect(exportResult.content).toContain("销售退货数量");
+    expect(exportResult.content).toContain("销售退货金额");
     expect(exportResult.content).toContain("净发生数量");
+    expect(exportResult.content).toContain("净发生金额");
     expect(exportResult.content).toContain("100.00");
     expect(exportResult.content).toContain("108.00");
     expect(exportResult.content).toContain("3.00");
     expect(exportResult.content).not.toContain("3.000000");
+    expect(exportResult.content).not.toContain("总成本");
     expect(exportResult.content).not.toContain("分类路径");
     expect(exportResult.content).not.toContain("层级");
     expect(exportResult.content).not.toContain("来源月份");
@@ -291,8 +308,19 @@ describe("MonthlyReportExportService", () => {
     expect(result.fileName).toBe("monthly-reporting-2026-03.xls");
     expect(result.contentType).toContain("application/vnd.ms-excel");
     expect(result.content).toContain('<Worksheet ss:Name="单据类型汇总">');
+    expect(result.content).toContain("2026-03 月度对账报表 - 总览");
+    expect(result.content).toContain("2026-03 月度对账报表 - 单据类型汇总");
+    expect(result.content).toContain("2026-03 月度对账报表 - 单据头明细");
+    expect(result.content).toContain(
+      'ss:MergeAcross="18" ss:StyleID="Title"><Data ss:Type="String">2026-03 月度对账报表 - 单据头明细',
+    );
+    expect(result.content).toContain(
+      '<Column ss:Width="160" /><Column ss:Width="100" />',
+    );
     expect(result.content).toContain("RD 交接单");
     expect(result.content).toContain("RDH-002");
+    expect(result.content).toContain("项目交接入数量");
+    expect(result.content).toContain("项目交接入金额");
     expect(result.content).not.toContain("交接金额");
     expect(result.content).not.toContain("主仓到RD交接汇总");
     expect(result.content).not.toContain("SO-001");

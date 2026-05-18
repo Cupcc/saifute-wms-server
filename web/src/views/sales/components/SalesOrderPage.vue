@@ -151,7 +151,7 @@
         v-if="columns[0].visible"
         label="单号"
         prop="documentNo"
-        min-width="180"
+        min-width="200"
         show-overflow-tooltip
       >
         <template #default="{ row }">
@@ -188,14 +188,14 @@
         v-if="columns[3].visible"
         label="车间"
         prop="workshopName"
-        min-width="140"
+        min-width="120"
         show-overflow-tooltip
       />
       <el-table-column
         v-if="columns[4].visible"
         label="经手人"
         prop="handlerName"
-        min-width="120"
+        min-width="80"
         show-overflow-tooltip
       />
       <el-table-column
@@ -209,7 +209,7 @@
         v-if="columns[quantityColumnIndex].visible"
         label="总数量"
         prop="totalQty"
-        width="100"
+        width="70"
         align="right"
       >
         <template #default="{ row }">
@@ -220,7 +220,7 @@
         v-if="columns[amountColumnIndex].visible"
         label="总金额"
         prop="totalAmount"
-        width="110"
+        width="100"
         align="right"
       >
         <template #default="{ row }">

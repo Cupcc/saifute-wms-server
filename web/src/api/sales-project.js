@@ -42,10 +42,11 @@ function mapProject(project = {}) {
     workshopName: project.workshopNameSnapshot ?? "",
     stockScopeId: project.stockScopeId ?? undefined,
     stockScopeName: project.stockScope?.scopeName ?? "",
+    projectTargetId: project.projectTargetId ?? undefined,
     remark: project.remark ?? "",
     lifecycleStatus: project.lifecycleStatus ?? "",
     materialLines,
-    summary: project.summary ?? null,
+    summary: project.summary ? mapMaterialSummary(project.summary) : null,
   };
 }
 
@@ -56,10 +57,15 @@ function toNumber(value) {
 
 function mapMaterialSummary(summary = {}) {
   return {
+    materialLineCount: toNumber(summary.materialLineCount),
+    materialKindCount: toNumber(
+      summary.materialKindCount ?? summary.materialLineCount,
+    ),
     totalTargetQty: toNumber(summary.totalTargetQty ?? summary.totalPlannedQty),
     totalTargetAmount: toNumber(
       summary.totalTargetAmount ?? summary.totalPlannedAmount,
     ),
+    totalPriceLayerCount: toNumber(summary.totalPriceLayerCount),
     totalCurrentInventoryQty: toNumber(
       summary.totalCurrentInventoryQty ?? summary.totalAvailableQty,
     ),
@@ -87,6 +93,14 @@ function mapMaterialSummary(summary = {}) {
 function mapMaterialLedgerRow(item = {}) {
   return {
     materialId: item.materialId,
+    materialSourceType: item.materialSourceType ?? "PROJECT_STOCK",
+    sourceProjectTargetId: item.sourceProjectTargetId ?? null,
+    selectedUnitCost:
+      item.selectedUnitCost === null || typeof item.selectedUnitCost === "undefined"
+        ? ""
+        : String(item.selectedUnitCost),
+    priceLayerAvailableQty: toNumber(item.priceLayerAvailableQty),
+    priceLayerSourceLogCount: toNumber(item.priceLayerSourceLogCount),
     materialCode: item.materialCode ?? item.materialCodeSnapshot ?? "",
     materialName: item.materialName ?? item.materialNameSnapshot ?? "",
     specification:
@@ -117,6 +131,19 @@ function mapMaterialLedgerRow(item = {}) {
     ),
     pendingSupplyQty: toNumber(item.pendingSupplyQty ?? item.pendingQty),
     remark: item.remark ?? "",
+    linkedDocuments: Array.isArray(item.linkedDocuments)
+      ? item.linkedDocuments.map((document) => ({
+          documentType: document.documentType ?? "",
+          documentId: document.documentId,
+          documentNo: document.documentNo ?? "",
+          documentDate: document.documentDate ?? "",
+          documentLabel: document.documentLabel ?? "关联表单",
+          lineId: document.lineId,
+          lineNo: document.lineNo,
+          quantity: toNumber(document.quantity),
+          unitPrice: toNumber(document.unitPrice),
+        }))
+      : [],
   };
 }
 

@@ -78,6 +78,31 @@ type LineClassification =
   | { kind: "structural"; reason: string };
 
 const MATERIAL_CODE_MAX_LENGTH = 64;
+const RD_PROJECT_AUTO_CREATED_MATERIAL_CODE_PATTERN = /^xm(?<sequence>\d+)$/u;
+
+type ProjectLineUnitOverride = {
+  unitCode: string;
+  evidence: string;
+  referenceLegacyLineIds: number[];
+  confirmedAt: string;
+};
+
+const LEGACY_PROJECT_16_PIN_UNIT_OVERRIDE: ProjectLineUnitOverride = {
+  unitCode: "\u4e2a",
+  evidence:
+    "User confirmed legacy project 16 pin material lines 157-162 use unit \u4e2a.",
+  referenceLegacyLineIds: [152, 153, 154, 155, 156],
+  confirmedAt: "2026-05-16",
+};
+
+const PROJECT_LINE_UNIT_OVERRIDES_BY_LEGACY_ID = new Map<
+  number,
+  ProjectLineUnitOverride
+>(
+  [157, 158, 159, 160, 161, 162].map(
+    (legacyId) => [legacyId, LEGACY_PROJECT_16_PIN_UNIT_OVERRIDE] as const,
+  ),
+);
 
 function buildLegacyKey(legacyTable: string, legacyId: number): string {
   return `${legacyTable}::${legacyId}`;
@@ -326,6 +351,8 @@ function buildLineArchivedPayload(
   line: LegacyRdProjectLineRow,
   targetCode: string,
 ): ArchivedFieldPayloadRecord {
+  const unitOverride = getProjectLineUnitOverride(line);
+
   return {
     legacyTable: line.legacyTable,
     legacyId: line.legacyId,
@@ -338,6 +365,14 @@ function buildLineArchivedPayload(
       instruction: normalizeOptionalText(line.instruction),
       interval: normalizeOptionalText(line.interval),
       supplierLegacyId: normalizePositiveLegacyId(line.supplierLegacyId),
+      ...(unitOverride
+        ? {
+            projectLineUnitOverride: buildProjectLineUnitOverridePayload(
+              line,
+              unitOverride,
+            ),
+          }
+        : {}),
       taxIncludedPrice: normalizeDecimalToScale(line.taxIncludedPrice, 2),
     },
   };
@@ -382,7 +417,8 @@ function buildExcludedRdProjectPlan(
           normalizeDecimalToScale(line.unitPrice, 2) ??
           formatScaledInteger(0n, 2),
         remark: normalizeOptionalText(line.remark),
-        unit: normalizeOptionalText(line.unit),
+        unit: resolveProjectLineUnitCode(line),
+        ...buildProjectLineUnitOverrideObject(line),
         acceptanceDate: normalizeDate(line.acceptanceDate),
         supplierLegacyId: normalizePositiveLegacyId(line.supplierLegacyId),
         taxIncludedPrice: normalizeDecimalToScale(line.taxIncludedPrice, 2),
@@ -403,7 +439,8 @@ function buildPendingLineSourcePayload(
     quantity: normalizeDecimalToScale(line.quantity, 6),
     unitPrice:
       normalizeDecimalToScale(line.unitPrice, 2) ?? formatScaledInteger(0n, 2),
-    unit: normalizeOptionalText(line.unit),
+    unit: resolveProjectLineUnitCode(line),
+    ...buildProjectLineUnitOverrideObject(line),
     supplierLegacyId: normalizePositiveLegacyId(line.supplierLegacyId),
     acceptanceDate: normalizeDate(line.acceptanceDate),
     instruction: normalizeOptionalText(line.instruction),
@@ -454,6 +491,58 @@ function buildNormalizedNameSpecUnitKey(
   return `${normalizedName}|${normalizedSpec}|${normalizedUnit}`;
 }
 
+function getProjectLineUnitOverride(
+  line: LegacyRdProjectLineRow,
+): ProjectLineUnitOverride | null {
+  if (
+    line.legacyTable !== "saifute_product_material" ||
+    normalizeOptionalText(line.unit) !== null
+  ) {
+    return null;
+  }
+
+  return PROJECT_LINE_UNIT_OVERRIDES_BY_LEGACY_ID.get(line.legacyId) ?? null;
+}
+
+function resolveProjectLineUnitCode(
+  line: LegacyRdProjectLineRow,
+): string | null {
+  return (
+    normalizeOptionalText(line.unit) ??
+    getProjectLineUnitOverride(line)?.unitCode ??
+    null
+  );
+}
+
+function buildProjectLineUnitOverridePayload(
+  line: LegacyRdProjectLineRow,
+  override: ProjectLineUnitOverride,
+): Record<string, unknown> {
+  return {
+    unitCode: override.unitCode,
+    evidence: override.evidence,
+    referenceLegacyLineIds: override.referenceLegacyLineIds,
+    confirmedAt: override.confirmedAt,
+    legacyUnitWasNull: line.unit === null,
+  };
+}
+
+function buildProjectLineUnitOverridePayloadFromLine(
+  line: LegacyRdProjectLineRow,
+): Record<string, unknown> | null {
+  const override = getProjectLineUnitOverride(line);
+  return override ? buildProjectLineUnitOverridePayload(line, override) : null;
+}
+
+function buildProjectLineUnitOverrideObject(
+  line: LegacyRdProjectLineRow,
+):
+  | { projectLineUnitOverride: Record<string, unknown> }
+  | Record<string, never> {
+  const payload = buildProjectLineUnitOverridePayloadFromLine(line);
+  return payload ? { projectLineUnitOverride: payload } : {};
+}
+
 /**
  * Build an inverse index from the batch1 material map keyed by
  * normalized name+spec+unit. Used only for the deterministic fallback
@@ -493,7 +582,7 @@ function buildStructuredLine(
     };
   }
 
-  const unitCodeSnapshot = normalizeOptionalText(line.unit);
+  const unitCodeSnapshot = resolveProjectLineUnitCode(line);
   if (!unitCodeSnapshot) {
     return {
       kind: "structural",
@@ -526,45 +615,73 @@ function normalizeMaterialCodeKey(code: string): string {
   return (normalizeOptionalText(code) ?? "").toLocaleLowerCase("en-US");
 }
 
-function trimMaterialCodeWithSuffix(baseCode: string, suffix: string): string {
-  const maxBaseLength = MATERIAL_CODE_MAX_LENGTH - suffix.length;
+function parseNumericRdProjectAutoCreatedMaterialSequence(
+  code: string,
+): number | null {
+  const match = RD_PROJECT_AUTO_CREATED_MATERIAL_CODE_PATTERN.exec(
+    normalizeMaterialCodeKey(code),
+  );
+  const sequence = Number(match?.groups?.sequence ?? Number.NaN);
+  return Number.isSafeInteger(sequence) && sequence > 0 ? sequence : null;
+}
 
-  if (maxBaseLength <= 0) {
-    throw new Error(
-      `Material code suffix ${suffix} exceeds the column length.`,
-    );
+function resolveNextRdProjectAutoCreatedMaterialSequence(
+  materialCodeKeys: ReadonlySet<string>,
+): number {
+  let maxSequence = 0;
+
+  for (const materialCodeKey of materialCodeKeys) {
+    const sequence =
+      parseNumericRdProjectAutoCreatedMaterialSequence(materialCodeKey);
+    if (sequence !== null && sequence > maxSequence) {
+      maxSequence = sequence;
+    }
   }
 
-  return `${baseCode.slice(0, maxBaseLength)}${suffix}`;
+  return maxSequence + 1;
 }
 
 function allocateRdProjectAutoCreatedMaterialCode(
   seedCode: string,
   reservedKeys: ReadonlySet<string>,
   assignedKeys: Set<string>,
+  sequenceState: { nextSequence: number },
 ): string {
-  let attempt = 0;
+  if (seedCode.length > MATERIAL_CODE_MAX_LENGTH) {
+    throw new Error(`Material code ${seedCode} exceeds the column length.`);
+  }
+
+  const seedKey = normalizeMaterialCodeKey(seedCode);
+  if (!reservedKeys.has(seedKey) && !assignedKeys.has(seedKey)) {
+    assignedKeys.add(seedKey);
+    const seedSequence =
+      parseNumericRdProjectAutoCreatedMaterialSequence(seedKey);
+    if (seedSequence !== null && seedSequence >= sequenceState.nextSequence) {
+      sequenceState.nextSequence = seedSequence + 1;
+    }
+    return seedCode;
+  }
 
   while (true) {
-    const candidateCode =
-      attempt === 0
-        ? trimMaterialCodeWithSuffix(seedCode, "")
-        : trimMaterialCodeWithSuffix(seedCode, `-DUP-${attempt}`);
+    const candidateCode = `xm${sequenceState.nextSequence}`;
+    if (candidateCode.length > MATERIAL_CODE_MAX_LENGTH) {
+      throw new Error(
+        `Material code ${candidateCode} exceeds the column length.`,
+      );
+    }
     const candidateKey = normalizeMaterialCodeKey(candidateCode);
-
+    sequenceState.nextSequence += 1;
     if (!reservedKeys.has(candidateKey) && !assignedKeys.has(candidateKey)) {
       assignedKeys.add(candidateKey);
       return candidateCode;
     }
-
-    attempt += 1;
   }
 }
 
 function buildRdProjectAutoCreatedMaterialCodeSeed(
   representativeLine: LegacyRdProjectLineRow,
 ): string {
-  return `xmbj${representativeLine.legacyId}`;
+  return `xm${representativeLine.legacyId}`;
 }
 
 function buildRdProjectAutoCreatedMaterialArchivedPayload(
@@ -675,6 +792,9 @@ function buildRdProjectAutoCreatedMaterialPlans(
     ),
   );
   const assignedKeys = new Set<string>();
+  const sequenceState = {
+    nextSequence: resolveNextRdProjectAutoCreatedMaterialSequence(reservedKeys),
+  };
   const autoCreatedMaterialByNormalizedKey = new Map(
     dependencies.autoCreatedMaterialByNormalizedKey,
   );
@@ -685,7 +805,7 @@ function buildRdProjectAutoCreatedMaterialPlans(
         group.normalizedKey,
       ) ?? null;
     const materialName = normalizeOptionalText(representativeLine.materialName);
-    const unitCode = normalizeOptionalText(representativeLine.unit);
+    const unitCode = resolveProjectLineUnitCode(representativeLine);
 
     if (!materialName || !unitCode) {
       throw new Error(
@@ -699,6 +819,7 @@ function buildRdProjectAutoCreatedMaterialPlans(
         buildRdProjectAutoCreatedMaterialCodeSeed(representativeLine),
         reservedKeys,
         assignedKeys,
+        sequenceState,
       );
     const record: RdProjectAutoCreatedMaterialPlanRecord = {
       normalizedKey: group.normalizedKey,
@@ -1016,6 +1137,35 @@ function pushDependencyWarnings(
   }
 }
 
+function pushProjectLineUnitOverrideWarnings(
+  warnings: RdProjectWarning[],
+  lines: readonly LegacyRdProjectLineRow[],
+): void {
+  for (const line of [...lines].sort(
+    (left, right) => left.legacyId - right.legacyId,
+  )) {
+    const override = getProjectLineUnitOverride(line);
+
+    if (!override) {
+      continue;
+    }
+
+    warnings.push({
+      legacyTable: line.legacyTable,
+      legacyId: line.legacyId,
+      reason: "Project material line unit filled by migration override.",
+      details: {
+        parentLegacyId: line.parentLegacyId,
+        unitCode: override.unitCode,
+        evidence: override.evidence,
+        referenceLegacyLineIds: override.referenceLegacyLineIds,
+        confirmedAt: override.confirmedAt,
+        legacyUnitWasNull: line.unit === null,
+      },
+    });
+  }
+}
+
 function resolveHeaderDependencies(
   project: LegacyRdProjectRow,
   dependencies: RdProjectDependencySnapshot,
@@ -1182,6 +1332,7 @@ export function buildRdProjectMigrationPlan(
 
   pushGlobalBlockers(globalBlockers, dependencies);
   pushDependencyWarnings(warnings, dependencies);
+  pushProjectLineUnitOverrideWarnings(warnings, snapshot.lines);
 
   for (const project of [...snapshot.projects].sort(
     (left, right) =>

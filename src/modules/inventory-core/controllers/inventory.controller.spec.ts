@@ -126,6 +126,24 @@ describe("InventoryController", () => {
     expect(inventoryService.listPriceLayerAvailability).toHaveBeenCalledWith({
       materialId: 7,
       stockScope: "MAIN",
+      projectTargetId: undefined,
+    });
+  });
+
+  it("passes project target filter when listing price layers", async () => {
+    await controller.listPriceLayers(
+      {
+        materialId: 7,
+        stockScope: "MAIN",
+        projectTargetId: 7001,
+      },
+      undefined,
+    );
+
+    expect(inventoryService.listPriceLayerAvailability).toHaveBeenCalledWith({
+      materialId: 7,
+      stockScope: "MAIN",
+      projectTargetId: 7001,
     });
   });
 

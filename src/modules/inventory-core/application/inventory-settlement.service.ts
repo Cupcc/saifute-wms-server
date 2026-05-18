@@ -48,8 +48,9 @@ export class InventorySettlementService {
     const sourceTypes = cmd.sourceOperationTypes ?? FIFO_SOURCE_OPERATION_TYPES;
     const selectedUnitCost =
       cmd.selectedUnitCost != null
-        ? this.toPositiveDecimal(cmd.selectedUnitCost, "价格层单价")
+        ? this.toNonNegativeDecimal(cmd.selectedUnitCost, "价格层单价")
         : null;
+    const sourceProjectTargetId = cmd.sourceProjectTargetId ?? null;
     const scope = await this.stockScopeCompatibilityService.resolveRequired({
       stockScope: cmd.stockScope,
       workshopId: cmd.workshopId,
@@ -66,7 +67,7 @@ export class InventorySettlementService {
             scope.stockScopeId,
             sourceTypes,
             selectedUnitCost,
-            cmd.sourceProjectTargetId,
+            sourceProjectTargetId,
             cmd.businessDocumentType,
             cmd.businessDocumentId,
             cmd.consumerLineId,
@@ -80,7 +81,7 @@ export class InventorySettlementService {
             changeQty,
             sourceTypes,
             selectedUnitCost,
-            cmd.sourceProjectTargetId,
+            sourceProjectTargetId,
             cmd.businessDocumentType,
             cmd.businessDocumentId,
             cmd.consumerLineId,
@@ -226,7 +227,7 @@ export class InventorySettlementService {
     stockScopeId: number,
     allowedOperationTypes: InventoryOperationTypeEnum[],
     selectedUnitCost: Prisma.Decimal | null,
-    sourceProjectTargetId: number | undefined,
+    sourceProjectTargetId: number | null,
     consumerDocumentType: string,
     consumerDocumentId: number,
     consumerLineId: number,
@@ -255,10 +256,7 @@ export class InventorySettlementService {
         `手动来源流水库存范围不匹配: 流水范围=${sourceLog.stockScopeId ?? "null"}, 当前范围=${stockScopeId}`,
       );
     }
-    if (
-      typeof sourceProjectTargetId === "number" &&
-      sourceLog.projectTargetId !== sourceProjectTargetId
-    ) {
+    if ((sourceLog.projectTargetId ?? null) !== sourceProjectTargetId) {
       throw new BadRequestException("手动来源流水不属于当前项目归属");
     }
     if (
@@ -309,7 +307,7 @@ export class InventorySettlementService {
     qty: Prisma.Decimal,
     sourceTypes: InventoryOperationTypeEnum[],
     selectedUnitCost: Prisma.Decimal | null,
-    sourceProjectTargetId: number | undefined,
+    sourceProjectTargetId: number | null,
     consumerDocumentType: string,
     consumerDocumentId: number,
     consumerLineId: number,
@@ -383,13 +381,13 @@ export class InventorySettlementService {
     }
     return parsedQuantity;
   }
-  private toPositiveDecimal(
+  private toNonNegativeDecimal(
     value: Prisma.Decimal | number | string,
     fieldLabel: string,
   ): Prisma.Decimal {
     const parsedValue = this.toDecimal(value, `${fieldLabel}格式无效`);
-    if (parsedValue.lte(0)) {
-      throw new BadRequestException(`${fieldLabel}必须大于 0`);
+    if (parsedValue.lt(0)) {
+      throw new BadRequestException(`${fieldLabel}不能小于 0`);
     }
     return parsedValue;
   }

@@ -202,6 +202,8 @@ export class SalesOutboundUpdateService {
           const inventoryNeedsRepost =
             currentLine.materialId !== lineData.materialId ||
             (currentLine.salesProjectId ?? null) !== lineData.salesProjectId ||
+            (logByLineId.get(currentLine.id)?.projectTargetId ?? null) !==
+              lineData.projectTargetId ||
             !new Prisma.Decimal(currentLine.quantity).eq(lineData.quantity) ||
             !new Prisma.Decimal(currentLine.selectedUnitCost).eq(
               lineData.selectedUnitCost,
@@ -289,6 +291,8 @@ export class SalesOutboundUpdateService {
           );
 
           if (inventoryNeedsRepost) {
+            const lineProjectTargetId =
+              projectTargetByLineNo.get(lineData.lineNo) ?? undefined;
             const repostSettlement =
               await this.shared.inventoryService.settleConsumerOut(
                 {
@@ -303,8 +307,8 @@ export class SalesOutboundUpdateService {
                   businessDocumentId: id,
                   businessDocumentNumber: existing.documentNo,
                   businessDocumentLineId: updatedLine.id,
-                  projectTargetId:
-                    projectTargetByLineNo.get(lineData.lineNo) ?? undefined,
+                  projectTargetId: lineProjectTargetId,
+                  sourceProjectTargetId: lineProjectTargetId,
                   operatorId: updatedBy,
                   idempotencyKey: `SalesStockOrder:${id}:rev:${nextRevision}:line:${updatedLine.id}`,
                   consumerLineId: updatedLine.id,
@@ -340,11 +344,9 @@ export class SalesOutboundUpdateService {
               );
             }
           }
-
           finalLines.push(updatedLine);
           continue;
         }
-
         const createdLine = await this.repository.createOrderLine(
           {
             orderId: id,
@@ -373,7 +375,8 @@ export class SalesOutboundUpdateService {
           },
           tx,
         );
-
+        const lineProjectTargetId =
+          projectTargetByLineNo.get(lineData.lineNo) ?? undefined;
         const newLineSettlement =
           await this.shared.inventoryService.settleConsumerOut(
             {
@@ -388,8 +391,8 @@ export class SalesOutboundUpdateService {
               businessDocumentId: id,
               businessDocumentNumber: existing.documentNo,
               businessDocumentLineId: createdLine.id,
-              projectTargetId:
-                projectTargetByLineNo.get(lineData.lineNo) ?? undefined,
+              projectTargetId: lineProjectTargetId,
+              sourceProjectTargetId: lineProjectTargetId,
               operatorId: updatedBy,
               idempotencyKey: `SalesStockOrder:${id}:rev:${nextRevision}:line:${createdLine.id}`,
               consumerLineId: createdLine.id,

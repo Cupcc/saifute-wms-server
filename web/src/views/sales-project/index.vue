@@ -170,32 +170,32 @@
       />
       <el-table-column
         v-if="columns[6].visible"
-        label="目标数量"
+        label="项目库存"
         width="110"
         align="right"
       >
         <template #default="{ row }">
-          {{ formatNumber(row.summary?.totalTargetQty) }}
+          {{ formatNumber(row.summary?.totalCurrentInventoryQty) }}
         </template>
       </el-table-column>
       <el-table-column
         v-if="columns[7].visible"
+        label="物料种类"
+        width="110"
+        align="right"
+      >
+        <template #default="{ row }">
+          {{ formatNumber(row.summary?.materialKindCount) }}
+        </template>
+      </el-table-column>
+      <el-table-column
+        v-if="columns[8].visible"
         label="净发货"
         width="110"
         align="right"
       >
         <template #default="{ row }">
           {{ formatNumber(row.summary?.totalNetShipmentQty) }}
-        </template>
-      </el-table-column>
-      <el-table-column
-        v-if="columns[8].visible"
-        label="待供货"
-        width="110"
-        align="right"
-      >
-        <template #default="{ row }">
-          {{ formatNumber(row.summary?.totalPendingSupplyQty) }}
         </template>
       </el-table-column>
       <el-table-column
@@ -301,9 +301,9 @@ const columns = ref([
   { key: 3, label: "客户", visible: true },
   { key: 4, label: "负责人", visible: true },
   { key: 5, label: "车间", visible: true },
-  { key: 6, label: "目标数量", visible: true },
-  { key: 7, label: "净发货", visible: true },
-  { key: 8, label: "待供货", visible: true },
+  { key: 6, label: "项目库存", visible: true },
+  { key: 7, label: "物料种类", visible: true },
+  { key: 8, label: "净发货", visible: true },
   { key: 9, label: "备注", visible: true },
 ]);
 

@@ -7,6 +7,7 @@ import { RdSubwarehouseModule } from "../rd-subwarehouse/rd-subwarehouse.module"
 import { SalesProjectModule } from "../sales-project/sales-project.module";
 import { InboundService } from "./application/inbound.service";
 import { InboundAcceptanceCreationService } from "./application/inbound-acceptance-creation.service";
+import { InboundAcceptanceLineSnapshotService } from "./application/inbound-acceptance-line-snapshot.service";
 import { InboundAcceptanceUpdateService } from "./application/inbound-acceptance-update.service";
 import { InboundProductionReceiptCreationService } from "./application/inbound-production-receipt-creation.service";
 import { InboundProductionReceiptUpdateService } from "./application/inbound-production-receipt-update.service";
@@ -15,6 +16,7 @@ import { InboundSupplierReturnService } from "./application/inbound-supplier-ret
 import { StockInPriceCorrectionService } from "./application/stock-in-price-correction.service";
 import { InboundController } from "./controllers/inbound.controller";
 import { InboundRepository } from "./infrastructure/inbound.repository";
+import { InboundAutoMaterialRepository } from "./infrastructure/inbound-auto-material.repository";
 import { StockInPriceCorrectionRepository } from "./infrastructure/stock-in-price-correction.repository";
 
 @Module({
@@ -30,11 +32,13 @@ import { StockInPriceCorrectionRepository } from "./infrastructure/stock-in-pric
   providers: [
     InboundService,
     InboundAcceptanceCreationService,
+    InboundAcceptanceLineSnapshotService,
     InboundAcceptanceUpdateService,
     InboundProductionReceiptCreationService,
     InboundProductionReceiptUpdateService,
     InboundSharedService,
     InboundSupplierReturnService,
+    InboundAutoMaterialRepository,
     InboundRepository,
     StockInPriceCorrectionService,
     StockInPriceCorrectionRepository,

@@ -153,6 +153,15 @@ export class InventoryService {
     return this.queries.summarizeAttributedQuantities(params, tx);
   }
 
+  listAttributedQuantitySnapshots(
+    params: Parameters<
+      InventoryQueryService["listAttributedQuantitySnapshots"]
+    >[0],
+    tx?: Prisma.TransactionClient,
+  ) {
+    return this.queries.listAttributedQuantitySnapshots(params, tx);
+  }
+
   getAttributedQuantitySnapshot(
     params: Parameters<
       InventoryQueryService["getAttributedQuantitySnapshot"]

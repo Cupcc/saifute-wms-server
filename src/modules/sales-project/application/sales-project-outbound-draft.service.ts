@@ -23,22 +23,46 @@ export class SalesProjectOutboundDraftService {
     }
 
     const view = await this.materialView.buildProjectView(project);
-    const rowByMaterialId = new Map(
-      view.items.map((row: ProjectMaterialViewRow) => [row.materialId, row]),
+    const rowsByMaterialId = new Map<number, ProjectMaterialViewRow[]>();
+    for (const row of view.items as ProjectMaterialViewRow[]) {
+      const rows = rowsByMaterialId.get(row.materialId) ?? [];
+      rows.push(row);
+      rowsByMaterialId.set(row.materialId, rows);
+    }
+    const rowByMaterialAndCost = new Map(
+      (view.items as ProjectMaterialViewRow[]).flatMap((row) =>
+        row.selectedUnitCost === null
+          ? []
+          : ([
+              [
+                this.buildRowKey(
+                  row.materialId,
+                  row.selectedUnitCost,
+                  row.sourceProjectTargetId,
+                ),
+                row,
+              ],
+            ] as const),
+      ),
     );
     const requestedLines = dto.lines?.length
       ? dto.lines
       : view.items
-          .filter((row: ProjectMaterialViewRow) => row.pendingSupplyQty.gt(0))
+          .filter(
+            (row: ProjectMaterialViewRow) =>
+              row.selectedUnitCost !== null && row.currentInventoryQty.gt(0),
+          )
           .map((row: ProjectMaterialViewRow) => ({
             materialId: row.materialId,
-            quantity: row.pendingSupplyQty.toString(),
+            sourceProjectTargetId: row.sourceProjectTargetId,
+            selectedUnitCost: row.selectedUnitCost?.toString(),
+            quantity: row.currentInventoryQty.toString(),
             unitPrice: row.targetUnitPrice.toString(),
             remark: row.remark ?? undefined,
           }));
 
     if (requestedLines.length === 0) {
-      throw new BadRequestException("当前项目没有可生成出库草稿的待供货物料");
+      throw new BadRequestException("当前项目没有可生成出库草稿的项目库存");
     }
 
     const bizDate = dto.bizDate ?? new Date().toISOString().slice(0, 10);
@@ -48,21 +72,48 @@ export class SalesProjectOutboundDraftService {
     const workshopId = dto.workshopId ?? project.workshopId;
 
     const lines = requestedLines.map((line) => {
-      const row = rowByMaterialId.get(line.materialId);
+      const requestedUnitCost =
+        line.selectedUnitCost != null
+          ? new Prisma.Decimal(line.selectedUnitCost)
+          : null;
+      const row =
+        requestedUnitCost !== null
+          ? Object.hasOwn(line, "sourceProjectTargetId")
+            ? rowByMaterialAndCost.get(
+                this.buildRowKey(
+                  line.materialId,
+                  requestedUnitCost,
+                  line.sourceProjectTargetId ?? null,
+                ),
+              )
+            : this.resolveSingleMaterialCostRow(
+                line.materialId,
+                requestedUnitCost,
+                rowsByMaterialId,
+              )
+          : this.resolveSingleMaterialRow(line.materialId, rowsByMaterialId);
       if (!row) {
         throw new BadRequestException(
-          `销售项目不存在对应物料上下文: materialId=${line.materialId}`,
+          `销售项目不存在对应项目库存价层: materialId=${line.materialId}`,
+        );
+      }
+      if (row.selectedUnitCost === null) {
+        throw new BadRequestException(
+          `销售项目物料缺少可出库价格层: materialId=${line.materialId}`,
         );
       }
 
       const quantity = line.quantity
         ? new Prisma.Decimal(line.quantity)
-        : row.pendingSupplyQty.gt(0)
-          ? row.pendingSupplyQty
-          : row.targetQty;
+        : row.currentInventoryQty;
       if (quantity.lte(0)) {
         throw new BadRequestException(
           `销售项目物料出库数量必须大于 0: materialId=${line.materialId}`,
+        );
+      }
+      if (quantity.gt(row.currentInventoryQty)) {
+        throw new BadRequestException(
+          `销售项目物料项目库存不足: materialId=${line.materialId}, selectedUnitCost=${row.selectedUnitCost.toString()}, requiredQty=${quantity.toString()}, availableQty=${row.currentInventoryQty.toString()}`,
         );
       }
 
@@ -76,11 +127,13 @@ export class SalesProjectOutboundDraftService {
         materialName: row.materialNameSnapshot,
         specification: row.materialSpecSnapshot ?? "",
         quantity: quantity.toString(),
-        selectedUnitCost: "",
+        selectedUnitCost: row.selectedUnitCost.toString(),
+        sourceProjectTargetId: row.sourceProjectTargetId,
         unitPrice: unitPrice.toString(),
         salesProjectId: project.id,
         salesProjectCode: project.salesProjectCode,
         salesProjectName: project.salesProjectName,
+        projectTargetId: project.projectTargetId,
         remark: line.remark ?? row.remark ?? "",
       };
     });
@@ -100,7 +153,48 @@ export class SalesProjectOutboundDraftService {
       salesProjectId: project.id,
       salesProjectCode: project.salesProjectCode,
       salesProjectName: project.salesProjectName,
+      projectTargetId: project.projectTargetId,
       lines,
     };
+  }
+
+  private buildRowKey(
+    materialId: number,
+    selectedUnitCost: Prisma.Decimal,
+    sourceProjectTargetId?: number | null,
+  ) {
+    return `${materialId}:${sourceProjectTargetId ?? "unattributed"}:${selectedUnitCost.toString()}`;
+  }
+
+  private resolveSingleMaterialRow(
+    materialId: number,
+    rowsByMaterialId: Map<number, ProjectMaterialViewRow[]>,
+  ) {
+    const rows = rowsByMaterialId.get(materialId) ?? [];
+    const outboundRows = rows.filter((row) => row.selectedUnitCost !== null);
+    if (outboundRows.length > 1) {
+      throw new BadRequestException(
+        `销售项目物料存在多个项目价格层，请指定 selectedUnitCost: materialId=${materialId}`,
+      );
+    }
+    return outboundRows[0] ?? rows[0];
+  }
+
+  private resolveSingleMaterialCostRow(
+    materialId: number,
+    selectedUnitCost: Prisma.Decimal,
+    rowsByMaterialId: Map<number, ProjectMaterialViewRow[]>,
+  ) {
+    const rows = (rowsByMaterialId.get(materialId) ?? []).filter(
+      (row) =>
+        row.selectedUnitCost !== null &&
+        row.selectedUnitCost.eq(selectedUnitCost),
+    );
+    if (rows.length > 1) {
+      throw new BadRequestException(
+        `销售项目物料存在多个相同价格层来源，请指定 sourceProjectTargetId: materialId=${materialId}, selectedUnitCost=${selectedUnitCost.toString()}`,
+      );
+    }
+    return rows[0];
   }
 }

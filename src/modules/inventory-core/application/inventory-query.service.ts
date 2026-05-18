@@ -119,6 +119,39 @@ export class InventoryQueryService {
     return summary;
   }
 
+  async listAttributedQuantitySnapshots(
+    params: {
+      stockScope?: StockScopeCode;
+      workshopId?: number;
+      projectTargetId: number;
+    },
+    tx?: Prisma.TransactionClient,
+  ) {
+    const scope = await this.stockScopeCompatibilityService.resolveRequired({
+      stockScope: params.stockScope,
+      workshopId: params.workshopId,
+    });
+    const logs = await this.repository.findEffectiveLogsByProjectTarget(
+      {
+        stockScopeId: scope.stockScopeId,
+        projectTargetId: params.projectTargetId,
+      },
+      tx,
+    );
+
+    const summary = new Map<number, Prisma.Decimal>();
+    for (const log of logs) {
+      const current = summary.get(log.materialId) ?? new Prisma.Decimal(0);
+      const delta =
+        log.direction === StockDirection.IN
+          ? new Prisma.Decimal(log.changeQty)
+          : new Prisma.Decimal(log.changeQty).neg();
+      summary.set(log.materialId, current.add(delta));
+    }
+
+    return summary;
+  }
+
   async getAttributedQuantitySnapshot(
     params: {
       materialId: number;
@@ -319,7 +352,7 @@ export class InventoryQueryService {
     stockScope?: StockScopeCode;
     workshopId?: number;
     sourceOperationTypes?: InventoryOperationTypeEnum[];
-    projectTargetId?: number;
+    projectTargetId?: number | null;
   }): Promise<PriceLayerAvailabilityItem[]> {
     const scope = await this.stockScopeCompatibilityService.resolveRequired({
       stockScope: params.stockScope,
@@ -332,7 +365,7 @@ export class InventoryQueryService {
       stockScopeId: scope.stockScopeId,
       sourceOperationTypes:
         params.sourceOperationTypes ?? FIFO_SOURCE_OPERATION_TYPES,
-      projectTargetId: params.projectTargetId,
+      projectTargetId: params.projectTargetId ?? null,
     });
 
     const grouped = new Map<

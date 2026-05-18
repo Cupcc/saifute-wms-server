@@ -62,6 +62,7 @@ export class WorkshopMaterialPickService {
     if (dto.orderType !== this.orderType) {
       throw new BadRequestException("orderType 必须为 PICK");
     }
+    this.assertPriceLayersSelected(dto.lines);
 
     const bizDate = new Date(dto.bizDate);
     const workshopId = this.shared.requireWorkshopId(dto.workshopId);
@@ -170,6 +171,7 @@ export class WorkshopMaterialPickService {
     this.shared.assertUpdateHeaderCompatibility(existing, dto);
 
     const effectiveDto = this.shared.toEffectiveUpdateDto(existing, dto);
+    this.assertPriceLayersSelected(effectiveDto.lines);
     await this.shared.validateMasterData(effectiveDto);
 
     const bizDate = new Date(effectiveDto.bizDate);
@@ -343,6 +345,17 @@ export class WorkshopMaterialPickService {
   }
 
   // ─── Internals ────────────────────────────────────────────────────────────
+
+  private assertPriceLayersSelected(
+    lines: readonly CreateWorkshopMaterialOrderLineDto[],
+  ) {
+    for (let index = 0; index < lines.length; index++) {
+      const selectedUnitCost = lines[index]?.selectedUnitCost?.trim();
+      if (!selectedUnitCost) {
+        throw new BadRequestException(`第 ${index + 1} 行成本价层不能为空`);
+      }
+    }
+  }
 
   private buildPickLineWriteData(
     line: CreateWorkshopMaterialOrderLineDto,

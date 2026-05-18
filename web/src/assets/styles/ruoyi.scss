@@ -74,11 +74,13 @@
 }
 
 .el-table {
+  --el-table-header-text-color: var(--el-text-color-primary, #000000) !important;
+
   .el-table__header-wrapper, .el-table__fixed-header-wrapper {
     th {
       word-break: break-word;
       background-color: #f8f8f9 !important;
-      color: #515a6e;
+      color: var(--el-table-header-text-color, #000000) !important;
       height: 40px !important;
       font-size: 13px;
     }
