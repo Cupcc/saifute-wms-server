@@ -8,6 +8,7 @@ import {
   MaxLength,
   Min,
 } from "class-validator";
+import { normalizeMaterialCode } from "../../../shared/domain/material-code";
 
 function trimOptionalString(value: unknown): string | undefined {
   if (typeof value !== "string") {
@@ -58,7 +59,10 @@ export class QueryMasterDataDto {
 }
 
 export class QueryMaterialDto extends QueryMasterDataDto {
-  @Transform(({ value }) => trimOptionalString(value))
+  @Transform(({ value }) => {
+    const normalized = trimOptionalString(value);
+    return normalized ? normalizeMaterialCode(normalized) : undefined;
+  })
   @IsString()
   @IsOptional()
   @MaxLength(64)

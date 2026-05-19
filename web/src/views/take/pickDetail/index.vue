@@ -69,13 +69,13 @@
           @keyup.enter="handleQuery"
         />
       </el-form-item>
-      <el-form-item label="部门" prop="workshopId">
+      <el-form-item label="车间" prop="workshopId">
         <el-select
           v-model="queryParams.workshopId"
           filterable
           remote
           reserve-keyword
-          placeholder="请输入部门名称搜索"
+          placeholder="请输入车间名称搜索"
           :remote-method="searchWorkshop"
           :loading="workshopLoading"
           clearable
@@ -101,7 +101,7 @@
 
     <adaptive-table border stripe v-loading="loading" :data="pickDetailList">
       <el-table-column type="index" width="60" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="领料单号" align="center" prop="pickNo" v-if="columns[0].visible" />
+      <el-table-column sortable show-overflow-tooltip label="领料单号" align="center" prop="pickNo" min-width="140" v-if="columns[0].visible" />
       <el-table-column
         sortable
         show-overflow-tooltip
@@ -121,11 +121,15 @@
           </span>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="部门" align="center" prop="workshopName" v-if="columns[2].visible" />
+      <el-table-column sortable show-overflow-tooltip label="车间" align="center" prop="workshopName" v-if="columns[2].visible" />
       <el-table-column sortable show-overflow-tooltip label="物料名称" align="center" prop="materialName" v-if="columns[3].visible" />
       <el-table-column sortable show-overflow-tooltip label="规格型号" align="center" prop="specification" v-if="columns[4].visible" />
-      <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="quantity" v-if="columns[5].visible" />
-      <el-table-column sortable show-overflow-tooltip label="单价" align="center" prop="rawUnitPrice" v-if="columns[6].visible" />
+      <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="quantity" v-if="columns[5].visible">
+        <template #default="scope">
+          {{ formatQuantityDisplay(scope.row.quantity) }}
+        </template>
+      </el-table-column>
+      <el-table-column sortable show-overflow-tooltip label="成本价层" align="center" prop="rawUnitPrice" v-if="columns[6].visible" />
       <el-table-column sortable show-overflow-tooltip label="金额" align="center" prop="amount" v-if="columns[7].visible" />
       <el-table-column sortable show-overflow-tooltip label="备注" align="center" prop="remark" v-if="columns[8].visible" />
     </adaptive-table>
@@ -137,64 +141,24 @@
       v-model:limit="queryParams.pageSize"
       @pagination="getList"
     />
-    <!-- 添加或修改领料单明细对话框 -->
-    <el-dialog :title="title" v-model="open" width="500px" append-to-body draggable v-loading="dialogLoading">
-      <el-form ref="pickDetailRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="关联领料单号" prop="pickId">
-          <el-input v-model="form.pickId" placeholder="请输入关联领料单号" />
-        </el-form-item>
-        <el-form-item label="关联物料编码" prop="materialId">
-          <el-input v-model="form.materialId" placeholder="请输入关联物料编码" />
-        </el-form-item>
-        <el-form-item label="领料数量" prop="quantity">
-          <el-input v-model="form.quantity" placeholder="请输入领料数量" />
-        </el-form-item>
-        <el-form-item label="领料库位" prop="locationId">
-          <el-input v-model="form.locationId" placeholder="请输入领料库位" />
-        </el-form-item>
-        <el-form-item label="明细备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <div class="dialog-footer">
-          <el-button type="primary" @click="submitForm">确 定</el-button>
-          <el-button @click="cancel">取 消</el-button>
-        </div>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup name="PickDetail">
 import { listByNameOrContact } from "@/api/base/workshop.js";
 import { selectSaifuteInventoryListGroupByMaterial } from "@/api/stock/inventory.js";
-import {
-  addPickDetail,
-  delPickDetail,
-  getPickDetail,
-  listNoPage,
-  listPickDetail,
-  updatePickDetail,
-} from "@/api/take/pickDetail";
+import { listNoPage } from "@/api/take/pickDetail";
 import { useDict } from "@/utils/dict";
 
 const { proxy } = getCurrentInstance();
 // 获取物料分类字典数据
 const { saifute_material_category } = useDict("saifute_material_category");
 const pickDetailList = ref([]);
-const open = ref(false);
 const loading = ref(true);
 const showSearch = ref(true);
-const ids = ref([]);
-const single = ref(true);
-const multiple = ref(true);
-const title = ref("");
-const dialogLoading = ref(false);
 const total = ref(0);
 
 const data = reactive({
-  form: {},
   queryParams: {
     pageNum: 1,
     pageSize: 30,
@@ -204,7 +168,6 @@ const data = reactive({
     specification: null,
     workshopId: null,
   },
-  rules: {},
 });
 const totalMoney = computed(() => {
   const total = pickDetailList.value.reduce(
@@ -214,11 +177,11 @@ const totalMoney = computed(() => {
   // 浮点累加会产生 34249.2299999 等误差，按分取整再转回元并保留两位小数
   return (Math.round(total * 100) / 100).toFixed(2);
 });
-const { queryParams, form, rules } = toRefs(data);
+const { queryParams } = toRefs(data);
 
 // 设置默认日期为当天
 const today = new Date().toISOString().slice(0, 10);
-// 添加日期范围和部门相关变量
+// 添加日期范围和车间相关变量
 const daterangePickDate = ref([today, today]);
 const materialLoading = ref(false);
 const materialOptions = ref([]);
@@ -229,7 +192,7 @@ const workshopLoading = ref(false);
 const columns = ref([
   { key: 0, label: `领料单号`, visible: false },
   { key: 1, label: `领料日期`, visible: true },
-  { key: 2, label: `部门`, visible: true },
+  { key: 2, label: `车间`, visible: true },
   { key: 3, label: `物料名称`, visible: true },
   { key: 4, label: `规格型号`, visible: true },
   { key: 5, label: `数量`, visible: true },
@@ -266,26 +229,6 @@ function getList() {
   });
 }
 
-// 取消按钮
-function cancel() {
-  open.value = false;
-  reset();
-}
-
-// 表单重置
-function reset() {
-  form.value = {
-    detailId: null,
-    pickId: null,
-    materialId: null,
-    quantity: null,
-    locationId: null,
-    remark: null,
-    category: null,
-  };
-  proxy.resetForm("pickDetailRef");
-}
-
 /** 搜索按钮操作 */
 function handleQuery() {
   queryParams.value.pageNum = 1;
@@ -299,83 +242,8 @@ function resetQuery() {
   handleQuery();
 }
 
-// 多选框选中数据
-function handleSelectionChange(selection) {
-  ids.value = selection.map((item) => item.detailId);
-  single.value = selection.length !== 1;
-  multiple.value = !selection.length;
-}
-
-/** 新增按钮操作 */
-function handleAdd() {
-  reset();
-  open.value = true;
-  title.value = "添加领料单明细";
-}
-
-/** 修改按钮操作 */
-function handleUpdate(row) {
-  reset();
-  const _detailId = row.detailId || ids.value;
-  open.value = true;
-  title.value = "修改领料单明细";
-  dialogLoading.value = true;
-  getPickDetail(_detailId)
-    .then((response) => {
-      form.value = response.data;
-    })
-    .finally(() => {
-      dialogLoading.value = false;
-    });
-}
-
-/** 提交按钮 */
-function submitForm() {
-  proxy.$refs["pickDetailRef"].validate((valid) => {
-    if (valid) {
-      if (form.value.detailId != null) {
-        updatePickDetail(form.value).then((response) => {
-          proxy.$modal.msgSuccess("修改成功");
-          open.value = false;
-          getList();
-        });
-      } else {
-        addPickDetail(form.value).then((response) => {
-          proxy.$modal.msgSuccess("新增成功");
-          open.value = false;
-          getList();
-        });
-      }
-    }
-  });
-}
-
-/** 作废按钮操作 */
-function handleDelete(row) {
-  const _detailIds = row.detailId || ids.value;
-  proxy.$modal
-    .confirm("是否确认作废领料单明细？")
-    .then(() => delPickDetail(_detailIds))
-    .then(() => {
-      getList();
-      proxy.$modal.msgSuccess("作废成功");
-    })
-    .catch(() => {});
-}
-
-/** 导出按钮操作 */
-function handleExport() {
-  proxy.download(
-    "take/pickDetail/export",
-    {
-      ...queryParams.value,
-    },
-    `pickDetail_${new Date().getTime()}.xlsx`,
-  );
-}
-
 /**
- * 搜索部门
+ * 搜索车间
  */
 function searchWorkshop(query) {
   workshopLoading.value = true;
@@ -444,6 +312,14 @@ function comparePickDateRows(left, right) {
   }
 
   return Number(left?.detailId ?? 0) - Number(right?.detailId ?? 0);
+}
+
+function formatQuantityDisplay(value) {
+  const quantity = Number(value);
+  if (!Number.isFinite(quantity)) {
+    return "-";
+  }
+  return quantity.toFixed(2);
 }
 
 /** 合计计算 */

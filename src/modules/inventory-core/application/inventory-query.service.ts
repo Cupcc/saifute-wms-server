@@ -15,6 +15,7 @@ import type {
   ReleaseFactoryNumberReservationsCommand,
   ReserveFactoryNumberCommand,
 } from "./inventory.types";
+import { withPriceLayerSnapshotFields } from "./inventory-log-layer-snapshot";
 import { StockScopeCompatibilityService } from "./stock-scope-compatibility.service";
 
 @Injectable()
@@ -207,9 +208,14 @@ export class InventoryQueryService {
       offset,
     });
 
+    const items = await withPriceLayerSnapshotFields(
+      result.items,
+      this.repository,
+    );
+
     return {
       total: result.total,
-      items: result.items.map((item) => this.withStockScope(item)),
+      items: items.map((item) => this.withStockScope(item)),
     };
   }
 

@@ -212,7 +212,7 @@ export class InboundSupplierReturnService {
     );
 
     return createWithGeneratedDocumentNo((attempt) => {
-      const documentNo = buildCompactDocumentNo("TGC", bizDate, attempt);
+      const documentNo = buildCompactDocumentNo("TG", bizDate, attempt);
       return this.repository.runInTransaction(async (tx) => {
         const order = await this.repository.createOrder(
           {

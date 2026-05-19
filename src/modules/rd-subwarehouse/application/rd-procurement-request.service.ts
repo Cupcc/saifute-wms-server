@@ -116,11 +116,7 @@ export class RdProcurementRequestService {
     );
 
     return createWithGeneratedDocumentNo((attempt) => {
-      const documentNo = buildDashedTimestampDocumentNo(
-        "RDPUR",
-        bizDate,
-        attempt,
-      );
+      const documentNo = buildDashedTimestampDocumentNo("RQ", bizDate, attempt);
       return this.repository.runInTransaction(async (tx) => {
         const request = await this.repository.createRequest(
           {

@@ -244,7 +244,7 @@ export class SalesReturnService {
     );
 
     return createWithGeneratedDocumentNo((attempt) => {
-      const documentNo = buildCompactDocumentNo("XSTH", bizDate, attempt);
+      const documentNo = buildCompactDocumentNo("XT", bizDate, attempt);
       return this.repository.runInTransaction(async (tx) => {
         const order = await this.repository.createOrder(
           {

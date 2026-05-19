@@ -390,13 +390,14 @@ describe("master-data migration transformer", () => {
     expect(
       plan.records.material.map((record) => [
         record.legacyId,
+        record.target.materialCode,
         record.target.unitCode,
       ]),
     ).toEqual([
-      [35, "\u53f0"],
-      [156, "\u4e2a"],
-      [159, "\u652f"],
-      [234, "\u4e2a"],
+      [35, "cp013", "\u53f0"],
+      [156, "zjq045", "\u4e2a"],
+      [159, "zh", "\u652f"],
+      [234, "zjq60", "\u4e2a"],
     ]);
     expect(
       plan.warnings.filter(
@@ -410,5 +411,75 @@ describe("master-data migration transformer", () => {
           record.archivedPayload?.payload.materialUnitOverride !== undefined,
       ),
     ).toBe(true);
+  });
+
+  it("removes whitespace from material codes without stealing existing clean codes", () => {
+    const snapshot = buildSnapshot();
+    snapshot.materials = [
+      {
+        materialId: 238,
+        materialCode: "yf 05",
+        materialName: "接头座",
+        specification: "KT10-3/4",
+        category: 1,
+        isAttachment: null,
+        unit: "个",
+        isHidden: 0,
+        stockMin: null,
+        delFlag: 0,
+        voidDescription: null,
+        createBy: "admin",
+        createTime: "2026-03-15 00:00:00",
+        updateBy: null,
+        updateTime: null,
+      },
+      {
+        materialId: 293,
+        materialCode: "yf05",
+        materialName: "进气管",
+        specification: "M6",
+        category: 1,
+        isAttachment: null,
+        unit: "根",
+        isHidden: 0,
+        stockMin: null,
+        delFlag: 0,
+        voidDescription: null,
+        createBy: "admin",
+        createTime: "2026-03-15 00:00:00",
+        updateBy: null,
+        updateTime: null,
+      },
+      {
+        materialId: 1092,
+        materialCode: "yf80",
+        materialName: "不锈钢对丝",
+        specification: "304  φ15",
+        category: 1,
+        isAttachment: null,
+        unit: "个",
+        isHidden: 0,
+        stockMin: null,
+        delFlag: 0,
+        voidDescription: null,
+        createBy: "admin",
+        createTime: "2026-03-15 00:00:00",
+        updateBy: null,
+        updateTime: null,
+      },
+    ];
+
+    const plan = buildMasterDataMigrationPlan(snapshot);
+
+    expect(
+      plan.records.material.map((record) => [
+        record.legacyId,
+        record.target.materialCode,
+      ]),
+    ).toEqual([
+      [238, "yf81"],
+      [293, "yf05"],
+      [1092, "yf80"],
+    ]);
   });
 });

@@ -83,14 +83,14 @@
             }}
           </template>
         </el-table-column>
-        <el-table-column label="数量" prop="quantity" width="100" align="right">
-          <template #default="scope">
-            {{ formatNumber(scope.row.quantity) }}
-          </template>
-        </el-table-column>
         <el-table-column label="成本价层" prop="selectedUnitCost" width="110" align="right">
           <template #default="scope">
             {{ formatAmount(scope.row.selectedUnitCost) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="数量" prop="quantity" width="100" align="right">
+          <template #default="scope">
+            {{ formatNumber(scope.row.quantity) }}
           </template>
         </el-table-column>
         <el-table-column label="销售单价" prop="unitPrice" width="110" align="right">
@@ -207,7 +207,7 @@ function formatDateTime(value) {
 
 function formatNumber(value) {
   const parsed = Number(value ?? 0);
-  return Number.isFinite(parsed) ? parsed : 0;
+  return Number.isFinite(parsed) ? parsed.toFixed(2) : "0.00";
 }
 
 function formatAmount(value) {

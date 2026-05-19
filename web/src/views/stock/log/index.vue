@@ -116,8 +116,6 @@
         stripe
         v-loading="loading"
         table-layout="auto"
-        :row-class-name="getLogRowClassName"
-        @row-click="handleOpenDocumentDetail"
       >
 
         <el-table-column prop="bizDate" label="业务日期" width="105" align="center">
@@ -144,15 +142,28 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="beforeQty" label="变动前" align="center" />
-        <el-table-column prop="changeQty" label="变动数量" align="center">
+        <el-table-column prop="totalQty" label="总库存" align="center">
+          <template #default="{ row }">
+            {{ formatQuantity(row.totalQty ?? row.beforeQty) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="priceLayerBeforeQty" label="变动前" align="center">
+          <template #default="{ row }">
+            {{ formatOptionalQuantity(row.priceLayerBeforeQty) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="priceLayerChangeQty" label="变动数量" align="center">
           <template #default="{ row }">
             <span :class="row.direction === 'IN' ? 'qty-in' : 'qty-out'">
-              {{ formatChangeQty(row) }}
+              {{ formatPriceLayerChangeQty(row) }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="afterQty" label="变动后" align="center" />
+        <el-table-column prop="priceLayerAfterQty" label="变动后" align="center">
+          <template #default="{ row }">
+            {{ formatOptionalQuantity(row.priceLayerAfterQty) }}
+          </template>
+        </el-table-column>
         <el-table-column label="成本单价" prop="unitCost" align="right" header-align="center">
           <template #default="{ row }">
             {{ formatMoney(row.unitCost) }}
@@ -164,7 +175,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="operatorId" label="操作人" width="80" align="center" />
-        <el-table-column label="单据编号" min-width="150" align="center" show-overflow-tooltip>
+        <el-table-column label="单据编号" min-width="140" align="center" show-overflow-tooltip>
           <template #default="{ row }">
             <el-button
               v-if="canOpenDocumentDetail(row)"
@@ -272,7 +283,13 @@
               {{ formatMoney(row.unitPrice) }}
             </template>
           </el-table-column>
-          <el-table-column label="成本单价" prop="costUnitPrice" width="110" align="right">
+          <el-table-column
+            v-if="showDocumentCostUnitPriceColumn"
+            label="成本单价"
+            prop="costUnitPrice"
+            width="110"
+            align="right"
+          >
             <template #default="{ row }">
               {{ formatMoney(row.costUnitPrice) }}
             </template>
@@ -390,6 +407,12 @@ const documentSummaryFields = computed(() =>
 );
 const documentDetailLines = computed(() =>
   normalizeDocumentLines(documentDetail.value),
+);
+const showDocumentCostUnitPriceColumn = computed(
+  () =>
+    !["StockInOrder", "WorkshopMaterialOrder"].includes(
+      selectedLog.value?.businessDocumentType,
+    ),
 );
 
 function formatMaterialOption(item) {
@@ -558,10 +581,6 @@ function canOpenDocumentDetail(row) {
   return Boolean(getDocumentDetailResolver(row));
 }
 
-function getLogRowClassName({ row }) {
-  return canOpenDocumentDetail(row) ? "is-clickable-log-row" : "";
-}
-
 async function fetchRawDocument(url) {
   const response = await request({
     url,
@@ -615,6 +634,7 @@ function buildDocumentSummaryFields(detail, log) {
       value: resolveCurrentDocumentNumber(detail, log),
     },
     { label: "单据类型", value: getDocumentTypeLabel(log) },
+    ...buildDocumentRelationSummaryFields(detail, log),
     {
       label: "业务日期",
       value: formatDate(
@@ -676,6 +696,49 @@ function buildDocumentSummaryFields(detail, log) {
   return fields.filter((field) => hasDisplayValue(field.value));
 }
 
+function buildDocumentRelationSummaryFields(detail, log) {
+  if (
+    log?.businessDocumentType === "WorkshopMaterialOrder" &&
+    log?.operationType === "RETURN_IN"
+  ) {
+    return [
+      {
+        label: "关联领料单号",
+        value: resolveLinkedPickOrderNumber(detail, log),
+      },
+    ];
+  }
+
+  return [];
+}
+
+function resolveLinkedPickOrderNumber(detail, log) {
+  const directPickNo = firstValue(detail, [
+    "pickNo",
+    "sourceDocumentNo",
+    "sourceDocumentNumber",
+  ]);
+  if (directPickNo) {
+    return directPickNo;
+  }
+
+  const lines = getDocumentRawLines(detail);
+  const selectedLine = lines.find((line) =>
+    isSameNumber(
+      firstValue(line, ["detailId", "id"]),
+      log?.businessDocumentLineId,
+    ),
+  );
+  const sourceDocumentId =
+    firstValue(selectedLine, ["sourceDocumentId"]) ??
+    firstValue(lines.find((line) => firstValue(line, ["sourceDocumentId"])), [
+      "sourceDocumentId",
+    ]) ??
+    firstValue(detail, ["sourceId", "pickId"]);
+
+  return sourceDocumentId ? String(sourceDocumentId) : undefined;
+}
+
 function resolveCurrentDocumentNumber(detail, log) {
   if (log?.businessDocumentNumber) {
     return log.businessDocumentNumber;
@@ -707,17 +770,18 @@ function resolveCurrentDocumentNumber(detail, log) {
 }
 
 function normalizeDocumentLines(detail) {
-  const lines = Array.isArray(detail?.details)
-    ? detail.details
-    : Array.isArray(detail?.lines)
-      ? detail.lines
-      : [];
+  const lines = getDocumentRawLines(detail);
 
   return lines.map((line, index) => {
     const lineId = firstValue(line, ["detailId", "id"]);
     return {
       rowKey: lineId ?? index,
       lineId,
+      materialId: firstValue(line, [
+        "materialId",
+        "material.materialId",
+        "material.id",
+      ]),
       materialCode: firstValue(line, [
         "materialCode",
         "material.materialCode",
@@ -762,11 +826,93 @@ function normalizeDocumentLines(detail) {
   });
 }
 
+function getDocumentRawLines(detail) {
+  return Array.isArray(detail?.details)
+    ? detail.details
+    : Array.isArray(detail?.lines)
+      ? detail.lines
+      : [];
+}
+
 function getDocumentLineRowClassName({ row }) {
-  return Number(row.lineId) ===
-    Number(selectedLog.value?.businessDocumentLineId)
-    ? "is-related-document-line"
-    : "";
+  return getDocumentLineMatchType(row) ? "is-related-document-line" : "";
+}
+
+function getDocumentLineMatchType(row) {
+  const log = selectedLog.value;
+  if (!log) {
+    return "";
+  }
+
+  if (isSameNumber(row.lineId, log.businessDocumentLineId)) {
+    return "exact";
+  }
+
+  if (hasExactDocumentLineMatch(log)) {
+    return "";
+  }
+
+  const fallbackMatches = documentDetailLines.value.filter((line) =>
+    isBusinessEquivalentDocumentLine(line, log),
+  );
+  if (fallbackMatches.length !== 1) {
+    return "";
+  }
+
+  return fallbackMatches[0].rowKey === row.rowKey ? "fallback" : "";
+}
+
+function hasExactDocumentLineMatch(log) {
+  return documentDetailLines.value.some((line) =>
+    isSameNumber(line.lineId, log.businessDocumentLineId),
+  );
+}
+
+function isBusinessEquivalentDocumentLine(line, log) {
+  return (
+    isSameMaterial(line, log) &&
+    isSameDecimal(line.quantity, log.changeQty) &&
+    isSameOptionalMoney(
+      firstValue(line, ["costUnitPrice", "unitPrice"]),
+      log.unitCost,
+    )
+  );
+}
+
+function isSameMaterial(line, log) {
+  if (hasDisplayValue(line.materialId) && hasDisplayValue(log.materialId)) {
+    return isSameNumber(line.materialId, log.materialId);
+  }
+  const lineMaterialCode = String(line.materialCode ?? "").trim();
+  const logMaterialCode = String(log.material?.materialCode ?? "").trim();
+  return Boolean(lineMaterialCode && logMaterialCode) &&
+    lineMaterialCode === logMaterialCode;
+}
+
+function isSameNumber(left, right) {
+  if (!hasDisplayValue(left) || !hasDisplayValue(right)) {
+    return false;
+  }
+  return Number(left) === Number(right);
+}
+
+function isSameDecimal(left, right) {
+  if (!hasDisplayValue(left) || !hasDisplayValue(right)) {
+    return false;
+  }
+  const leftNumber = Number(left);
+  const rightNumber = Number(right);
+  if (!Number.isFinite(leftNumber) || !Number.isFinite(rightNumber)) {
+    return String(left) === String(right);
+  }
+  return Math.abs(leftNumber - rightNumber) < 0.000001;
+}
+
+function isSameOptionalMoney(left, right) {
+  if (!hasDisplayValue(right)) {
+    return true;
+  }
+  return isSameDecimal(left, right);
 }
 
 function getDocumentWorkshop(detail) {
@@ -860,9 +1006,16 @@ function formatInventoryEffectStatus(value) {
   return value || "-";
 }
 
-function formatChangeQty(row) {
-  const quantity = String(row.changeQty ?? "0");
-  return row.direction === "OUT" && !quantity.startsWith("-")
+function formatPriceLayerChangeQty(row) {
+  return formatSignedQuantity(row.priceLayerChangeQty, row.direction);
+}
+
+function formatSignedQuantity(value, direction) {
+  if (!hasDisplayValue(value)) {
+    return "-";
+  }
+  const quantity = formatQuantity(value);
+  return direction === "OUT" && !quantity.startsWith("-")
     ? `-${quantity}`
     : quantity;
 }
@@ -1045,17 +1198,19 @@ onMounted(() => {
   white-space: nowrap;
 }
 
-:deep(.stock-log-table .is-clickable-log-row) {
-  cursor: pointer;
-}
-
 .document-number-button {
   max-width: 100%;
   padding: 0;
   vertical-align: baseline;
 }
 
-:deep(.document-detail-table .is-related-document-line > td.el-table__cell) {
+:deep(.document-detail-table .is-related-document-line > td.el-table__cell),
+:deep(
+  .document-detail-table.el-table--striped
+    .el-table__body
+    tr.is-related-document-line.el-table__row--striped
+    > td.el-table__cell
+) {
   background-color: var(--el-color-primary-light-9);
 }
 

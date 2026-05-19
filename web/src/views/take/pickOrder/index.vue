@@ -91,7 +91,7 @@
     <adaptive-table border stripe v-loading="loading" :data="pickOrderList" @selection-change="handleSelectionChange" @row-click="handleRowClick">
       <el-table-column type="selection" width="50" align="center" />
       <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="领料单号" align="center" prop="pickNo" v-if="columns[0].visible">
+      <el-table-column sortable show-overflow-tooltip label="领料单号" align="center" prop="pickNo" min-width="140" v-if="columns[0].visible">
         <template #default="scope">
           <el-button link type="primary" @click="handleDetail(scope.row)">
             {{ scope.row.pickNo }}
@@ -245,28 +245,23 @@
                 </el-select>
               </template>
             </el-table-column>
-            <el-table-column label="成本价层" prop="selectedUnitCost" width="170">
+            <el-table-column label="成本价层" prop="selectedUnitCost" width="200">
               <template #default="scope">
                 <el-select
                   v-model="scope.row.selectedUnitCost"
                   filterable
                   clearable
-                  placeholder="请选择"
+                  placeholder="请选择成本价层"
                   :loading="scope.row.priceLayerLoading"
                   style="width: 100%"
                   @change="() => handlePriceLayerChange(scope.row)">
                   <el-option
                     v-for="item in scope.row.priceLayerOptions || []"
                     :key="item.unitCost"
-                    :label="`${item.unitCost} / 可用 ${item.availableQty}`"
+                    :label="formatPriceLayerLabel(item)"
                     :value="item.unitCost"
                   />
                 </el-select>
-              </template>
-            </el-table-column>
-            <el-table-column label="单价" prop="unitPrice" width="120" align="right">
-              <template #default="scope">
-                <span>{{ formatMoneyDisplay(scope.row.unitPrice) }}</span>
               </template>
             </el-table-column>
             <el-table-column label="领料数量" prop="quantity" width="160">
@@ -274,8 +269,9 @@
                 <el-input-number
                   v-model="scope.row.quantity"
                   placeholder="领料数量"
-                  :min="0"
-                  :max="form.pickId ? undefined : getMaxQuantity(scope.row)"
+                  :min="0.01"
+                  :max="getMaxQuantity(scope.row)"
+                  :precision="2"
                   controls-position="right"
                   style="width: 100%"
                   @change="(val) => handleMaterialOrQuantityChange(undefined, val, scope.$index)" />
@@ -361,8 +357,16 @@
                 <el-table-column label="物料编码" prop="materialCode" />
                 <el-table-column label="物料名称" prop="materialName" />
                 <el-table-column label="规格型号" prop="specification" />
-                <el-table-column label="领料数量" prop="quantity" />
-                <el-table-column label="单价" prop="rawUnitPrice" />
+                <el-table-column label="成本价层" prop="rawUnitPrice">
+                  <template #default="scope">
+                    {{ formatMoneyDisplay(scope.row.rawUnitPrice) }}
+                  </template>
+                </el-table-column>
+                <el-table-column label="领料数量" prop="quantity">
+                  <template #default="scope">
+                    {{ formatQuantityDisplay(scope.row.quantity) }}
+                  </template>
+                </el-table-column>
                 <el-table-column label="金额" prop="amount" />
                 <el-table-column label="备注" prop="remark" />
               </el-table>
@@ -715,11 +719,14 @@ function handleUpdate(row) {
         form.value.details = orderData.details.map((detail) => ({
           detailId: detail.detailId,
           materialId: detail.materialId,
+          originalMaterialId: detail.materialId,
           selectedUnitCost: detail.selectedUnitCost ?? detail.rawUnitPrice ?? "",
+          originalSelectedUnitCost: detail.selectedUnitCost ?? detail.rawUnitPrice ?? "",
           priceLayerOptions: [],
           priceLayerLoading: false,
           unitPrice: detail.rawUnitPrice,
           quantity: detail.quantity,
+          originalQuantity: detail.quantity,
           amount: detail.amount,
           remark: detail.remark,
         }));
@@ -765,51 +772,19 @@ function submitForm() {
         return;
       }
       // 如果存在pickId，则为修改操作
+      if (!validatePickDetails()) {
+        return;
+      }
       if (form.value.pickId != null) {
-        // 修改操作需要验证所有字段
-        for (let i = 0; i < form.value.details.length; i++) {
-          const detail = form.value.details[i];
-          if (!detail.materialId) {
-            proxy.$modal.msgError("第" + (i + 1) + "行物料不能为空");
-            return;
-          }
-          if (!detail.quantity || detail.quantity <= 0) {
-            proxy.$modal.msgError("第" + (i + 1) + "行领料数量必须大于0");
-            return;
-          }
-          if (!detail.selectedUnitCost) {
-            proxy.$modal.msgError("第" + (i + 1) + "行成本价层不能为空");
-            return;
-          }
-        }
-
         // 调用修改接口（包含明细数据）
-        updatePickOrder(form.value).then((response) => {
+        updatePickOrder(form.value).then(() => {
           clearSuggestionsCache();
           proxy.$modal.msgSuccess("修改成功");
           open.value = false;
           getList();
         });
       } else {
-        // 新增操作
-        // 验证明细必填项
-        for (let i = 0; i < form.value.details.length; i++) {
-          const detail = form.value.details[i];
-          if (!detail.materialId) {
-            proxy.$modal.msgError("第" + (i + 1) + "行物料不能为空");
-            return;
-          }
-          if (!detail.quantity || detail.quantity <= 0) {
-            proxy.$modal.msgError("第" + (i + 1) + "行领料数量必须大于0");
-            return;
-          }
-          if (!detail.selectedUnitCost) {
-            proxy.$modal.msgError("第" + (i + 1) + "行成本价层不能为空");
-            return;
-          }
-        }
-
-        addPickOrder(form.value).then((response) => {
+        addPickOrder(form.value).then(() => {
           clearSuggestionsCache();
           proxy.$modal.msgSuccess("新增成功");
           open.value = false;
@@ -818,6 +793,33 @@ function submitForm() {
       }
     }
   });
+}
+
+function validatePickDetails() {
+  for (let i = 0; i < form.value.details.length; i++) {
+    const detail = form.value.details[i];
+    if (!detail.materialId) {
+      proxy.$modal.msgError("第" + (i + 1) + "行物料不能为空");
+      return false;
+    }
+    const quantity = Number(detail.quantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      proxy.$modal.msgError("第" + (i + 1) + "行领料数量必须大于0");
+      return false;
+    }
+    if (!detail.selectedUnitCost) {
+      proxy.$modal.msgError("第" + (i + 1) + "行成本价层不能为空");
+      return false;
+    }
+    const availableQty = getSelectedPriceLayerAvailableQty(detail);
+    if (availableQty !== null && quantity > availableQty) {
+      proxy.$modal.msgError(
+        `第${i + 1}行所选成本价层可用数量不足：可用${formatQuantityDisplay(availableQty)}，输入${formatQuantityDisplay(quantity)}`,
+      );
+      return false;
+    }
+  }
+  return true;
 }
 
 /** 取消按钮 */
@@ -1081,6 +1083,59 @@ function handlePriceLayerChange(row) {
   updateLineAmount(row);
 }
 
+function getSelectedPriceLayer(row) {
+  const selectedUnitCost = toInputString(row?.selectedUnitCost);
+  if (!selectedUnitCost) {
+    return null;
+  }
+  return (
+    row?.priceLayerOptions?.find((item) => item.unitCost === selectedUnitCost) ??
+    null
+  );
+}
+
+function getOriginalSelectedPriceLayerQuantity(row) {
+  if (!row?.detailId) {
+    return 0;
+  }
+  const sameMaterial = row.originalMaterialId === row.materialId;
+  const samePriceLayer =
+    toInputString(row.originalSelectedUnitCost) ===
+    toInputString(row.selectedUnitCost);
+  const originalQuantity = Number(row.originalQuantity);
+  if (!sameMaterial || !samePriceLayer || !Number.isFinite(originalQuantity)) {
+    return 0;
+  }
+  return originalQuantity > 0 ? originalQuantity : 0;
+}
+
+function getSelectedPriceLayerAvailableQty(row) {
+  const selectedLayer = getSelectedPriceLayer(row);
+  if (!selectedLayer) {
+    return null;
+  }
+  const originalQuantity = getOriginalSelectedPriceLayerQuantity(row);
+  const layerAvailableQty = Number(selectedLayer.availableQty);
+  if (Number.isFinite(layerAvailableQty)) {
+    return layerAvailableQty + originalQuantity;
+  }
+  return originalQuantity > 0 ? originalQuantity : null;
+}
+
+function formatQuantityDisplay(value) {
+  const quantity = Number(value);
+  if (!Number.isFinite(quantity)) {
+    return "-";
+  }
+  return quantity.toFixed(2);
+}
+
+function formatPriceLayerLabel(item) {
+  const unitCost = formatMoneyDisplay(item?.unitCost);
+  const availableQty = formatQuantityDisplay(item?.availableQty);
+  return `${unitCost} / 可用 ${availableQty}`;
+}
+
 async function loadPriceLayerOptions(row) {
   if (!row?.materialId) {
     if (row) {
@@ -1128,23 +1183,13 @@ async function loadPriceLayerOptions(row) {
 }
 
 /**
- * 获取物料最大可领料数量
+ * 获取所选成本价层最大可领料数量
  */
 function getMaxQuantity(row) {
-  // 如果没有选择物料，返回默认最大值
-  if (!row.materialId) {
+  if (!row?.materialId) {
     return 0;
   }
-
-  // 查找所选物料的当前库存
-  const selectedMaterial = materialOptions.value.find(
-    (item) => item.materialId === row.materialId,
-  );
-
-  // 如果找到物料且有库存信息，返回库存量，否则返回默认最大值
-  return selectedMaterial && selectedMaterial.currentQty !== undefined
-    ? selectedMaterial.currentQty
-    : 0;
+  return getSelectedPriceLayerAvailableQty(row) ?? undefined;
 }
 
 /**

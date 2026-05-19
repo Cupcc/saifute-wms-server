@@ -172,7 +172,7 @@ describe("RdStocktakeOrderService", () => {
 
     expect(result).toEqual(finalOrder);
     const [header, lines] = repository.createOrder.mock.calls[0];
-    expect(header.documentNo).toMatch(/^RDST-\d{14}-\d{3}$/);
+    expect(header.documentNo).toBe("RP20260330001");
     expect(header.totalBookQty?.toString()).toBe("15");
     expect(header.totalCountQty?.toString()).toBe("14");
     expect(header.totalAdjustmentQty?.toString()).toBe("-1");

@@ -5,6 +5,7 @@ import Layout from "@/layout/index";
 import auth from "@/plugins/auth";
 import router, { constantRoutes, dynamicRoutes } from "@/router";
 import useUserStore from "@/store/modules/user";
+import { defineComponent, h } from "vue";
 
 // 匹配views里面所有的.vue文件
 const modules = import.meta.glob("./../../views/**/*.vue");
@@ -755,7 +756,7 @@ function filterAsyncRouter(asyncRouterMap, _lastRouter = false, type = false) {
       } else if (route.component === "InnerLink") {
         route.component = InnerLink;
       } else {
-        route.component = loadView(route.component);
+        route.component = loadView(route.component, route.name);
       }
     }
     if (route.children?.length) {
@@ -798,12 +799,28 @@ export function filterDynamicRoutes(routes) {
   return res;
 }
 
-export const loadView = (view) => {
+function createNamedRouteComponent(routeName, component) {
+  return defineComponent({
+    name: routeName,
+    setup(_props, { attrs, slots }) {
+      return () => h(component, attrs, slots);
+    },
+  });
+}
+
+export const loadView = (view, routeName) => {
   let res;
   for (const path in modules) {
     const dir = path.split("views/")[1].split(".vue")[0];
     if (dir === view) {
-      res = () => modules[path]();
+      res = () =>
+        modules[path]().then((module) => {
+          const component = module.default || module;
+          if (!routeName) {
+            return component;
+          }
+          return createNamedRouteComponent(routeName, component);
+        });
     }
   }
   return res;

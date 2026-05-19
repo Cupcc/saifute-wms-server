@@ -102,7 +102,7 @@
 
     <adaptive-table border stripe v-loading="loading" :data="intoDetailList">
       <el-table-column type="index" width="60" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="入库单号" align="center" prop="intoNo" key="intoNo" v-if="columns[0].visible"/>
+      <el-table-column sortable show-overflow-tooltip label="入库单号" align="center" prop="intoNo" key="intoNo" min-width="140" v-if="columns[0].visible"/>
       <el-table-column
         sortable
         show-overflow-tooltip

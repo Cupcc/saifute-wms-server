@@ -16,6 +16,7 @@ import { BusinessDocumentType } from "../../../shared/domain/business-document-t
 import type { UpdateOutboundOrderDto } from "../dto/update-outbound-order.dto";
 import { SalesRepository } from "../infrastructure/sales.repository";
 import {
+  assertFactoryNumberQuantityMatches,
   hasFactoryNumberExpression,
   resolveFactoryNumberRangesOrThrow,
 } from "./factory-number-ranges";
@@ -25,7 +26,6 @@ import { SalesSharedService } from "./sales-shared.service";
 import { SalesTraceabilityService } from "./sales-traceability.service";
 
 const DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
-const BUSINESS_MODULE = "sales";
 
 @Injectable()
 export class SalesOutboundUpdateService {
@@ -41,10 +41,7 @@ export class SalesOutboundUpdateService {
     updatedBy?: string,
   ) {
     const existing = await this.repository.findOrderById(id);
-    if (!existing) {
-      throw new NotFoundException(`出库单不存在: ${id}`);
-    }
-    if (existing.orderType !== SalesStockOrderType.OUTBOUND) {
+    if (!existing || existing.orderType !== SalesStockOrderType.OUTBOUND) {
       throw new NotFoundException(`出库单不存在: ${id}`);
     }
     if (existing.lifecycleStatus === DocumentLifecycleStatus.VOIDED) {
@@ -101,6 +98,7 @@ export class SalesOutboundUpdateService {
       plannedLines.map((line) => [line.lineNo, line.projectTargetId]),
     );
     assertNoDuplicateOutboundPriceLayers(plannedLines);
+    plannedLines.forEach(assertFactoryNumberQuantityMatches);
     const updatedOrder = await this.repository.runInTransaction(async (tx) => {
       const currentOrder = await this.repository.findOrderById(id, tx);
       if (!currentOrder) {
@@ -302,7 +300,7 @@ export class SalesOutboundUpdateService {
                   quantity: updatedLine.quantity,
                   selectedUnitCost: updatedLine.selectedUnitCost,
                   operationType: InventoryOperationType.OUTBOUND_OUT,
-                  businessModule: BUSINESS_MODULE,
+                  businessModule: "sales",
                   businessDocumentType: DOCUMENT_TYPE,
                   businessDocumentId: id,
                   businessDocumentNumber: existing.documentNo,
@@ -386,7 +384,7 @@ export class SalesOutboundUpdateService {
               quantity: createdLine.quantity,
               selectedUnitCost: createdLine.selectedUnitCost,
               operationType: InventoryOperationType.OUTBOUND_OUT,
-              businessModule: BUSINESS_MODULE,
+              businessModule: "sales",
               businessDocumentType: DOCUMENT_TYPE,
               businessDocumentId: id,
               businessDocumentNumber: existing.documentNo,

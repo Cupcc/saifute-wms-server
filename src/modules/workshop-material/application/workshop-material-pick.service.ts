@@ -352,7 +352,7 @@ export class WorkshopMaterialPickService {
     for (let index = 0; index < lines.length; index++) {
       const selectedUnitCost = lines[index]?.selectedUnitCost?.trim();
       if (!selectedUnitCost) {
-        throw new BadRequestException(`第 ${index + 1} 行成本价层不能为空`);
+        throw new BadRequestException(`第 ${index + 1} 行单价不能为空`);
       }
     }
   }

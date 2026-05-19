@@ -105,6 +105,43 @@ describe("sales factory number ranges", () => {
     );
   });
 
+  it("rejects create when factory-number count differs from quantity", async () => {
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        SalesOutboundService,
+        SalesSnapshotsService,
+        SalesTraceabilityService,
+        ...buildSalesProviders(),
+      ],
+    }).compile();
+    const service = moduleRef.get(SalesOutboundService);
+    const repository = moduleRef.get(SalesRepository);
+
+    await expect(
+      service.createOrder(
+        {
+          documentNo: "OB-MISMATCH",
+          bizDate: "2025-03-14",
+          customerId: 10,
+          handlerPersonnelId: 20,
+          workshopId: 1,
+          lines: [
+            {
+              materialId: 100,
+              salesProjectId: 300,
+              quantity: "2",
+              selectedUnitCost: "10",
+              unitPrice: "10",
+              factoryNumber: "24000-24002",
+            },
+          ],
+        },
+        "1",
+      ),
+    ).rejects.toThrow("编号数量与出库数量不一致");
+    expect(repository.createOrder).not.toHaveBeenCalled();
+  });
+
   it("releases and recreates reservations for single-field changes", async () => {
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -184,5 +221,39 @@ describe("sales factory number ranges", () => {
       }),
       expect.anything(),
     );
+  });
+
+  it("rejects update when factory-number count differs from quantity", async () => {
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        SalesOutboundUpdateService,
+        SalesSnapshotsService,
+        SalesTraceabilityService,
+        ...buildSalesProviders(),
+      ],
+    }).compile();
+    const service = moduleRef.get(SalesOutboundUpdateService);
+    const repository = moduleRef.get(SalesRepository);
+
+    await expect(
+      service.updateOrder(
+        1,
+        {
+          lines: [
+            {
+              id: 1,
+              materialId: 100,
+              salesProjectId: 300,
+              quantity: "2",
+              selectedUnitCost: "10",
+              unitPrice: "10",
+              factoryNumber: "24000-24002",
+            },
+          ],
+        },
+        "1",
+      ),
+    ).rejects.toThrow("编号数量与出库数量不一致");
+    expect(repository.updateOrder).not.toHaveBeenCalled();
   });
 });

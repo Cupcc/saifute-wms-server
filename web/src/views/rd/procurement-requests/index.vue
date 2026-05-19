@@ -54,7 +54,7 @@
       </div>
 
       <el-table :data="rows" stripe v-loading="loading">
-        <el-table-column prop="documentNo" label="需求单号" min-width="180">
+        <el-table-column prop="documentNo" label="需求单号" min-width="140">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetail(row.id)">
               {{ row.documentNo }}
@@ -404,7 +404,7 @@
           <el-table-column prop="quantity" label="数量" min-width="100" />
           <el-table-column prop="referenceNo" label="Reference" min-width="140" />
           <el-table-column prop="reason" label="原因" min-width="180" />
-          <el-table-column prop="sourceDocumentNumber" label="来源单号" min-width="160" />
+          <el-table-column prop="sourceDocumentNumber" label="来源单号" min-width="140" />
           <el-table-column label="发生时间" min-width="180">
             <template #default="{ row }">
               {{ formatDateTime(row.createdAt) }}

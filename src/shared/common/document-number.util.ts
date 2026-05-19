@@ -1,7 +1,19 @@
 import { ConflictException } from "@nestjs/common";
 import { Prisma } from "../../../generated/prisma/client";
 
-const DEFAULT_MAX_ATTEMPTS = 8;
+const DEFAULT_MAX_ATTEMPTS = 999;
+const DAILY_SEQUENCE_MAX = 999;
+
+const FIXED_PREFIX_BY_LEGACY_PREFIX: Record<string, string> = {
+  TGC: "TG",
+  XSTH: "XT",
+  RDPUR: "RQ",
+  RDH: "RH",
+  RDST: "RP",
+  RAP: "RL",
+  RAR: "RR",
+  RAS: "RS",
+};
 
 function padTwo(value: number) {
   return String(value).padStart(2, "0");
@@ -13,20 +25,15 @@ function datePart(date: Date) {
   )}`;
 }
 
-function timePart(date: Date) {
-  return `${padTwo(date.getHours())}${padTwo(date.getMinutes())}${padTwo(
-    date.getSeconds(),
-  )}`;
-}
-
-function randomPart(attempt: number, length = 3) {
-  const upper = 10 ** length;
-  const randomSeed = Math.floor(Math.random() * upper);
-  return String((randomSeed + attempt) % upper).padStart(length, "0");
+function normalizeDocumentPrefix(prefix: string) {
+  const normalizedPrefix = prefix.trim().toUpperCase();
+  const fixedPrefix =
+    FIXED_PREFIX_BY_LEGACY_PREFIX[normalizedPrefix] ?? normalizedPrefix;
+  return fixedPrefix.slice(0, 2).padEnd(2, "X");
 }
 
 export function buildDailyDocumentNoStem(prefix: string, bizDate: Date) {
-  return `${prefix}${datePart(bizDate)}`;
+  return `${normalizeDocumentPrefix(prefix)}${datePart(bizDate)}`;
 }
 
 export function buildDailySequenceDocumentNo(
@@ -34,7 +41,11 @@ export function buildDailySequenceDocumentNo(
   bizDate: Date,
   sequence: number,
 ) {
-  if (!Number.isInteger(sequence) || sequence < 1 || sequence > 999) {
+  if (
+    !Number.isInteger(sequence) ||
+    sequence < 1 ||
+    sequence > DAILY_SEQUENCE_MAX
+  ) {
     throw new ConflictException("单据编号当日流水已满");
   }
   return `${buildDailyDocumentNoStem(prefix, bizDate)}${String(
@@ -47,7 +58,7 @@ export function buildCompactDocumentNo(
   bizDate: Date,
   attempt = 0,
 ) {
-  return `${prefix}${datePart(bizDate)}${timePart(new Date())}${randomPart(attempt)}`;
+  return buildDailySequenceDocumentNo(prefix, bizDate, attempt + 1);
 }
 
 export function buildDashedTimestampDocumentNo(
@@ -55,7 +66,7 @@ export function buildDashedTimestampDocumentNo(
   bizDate: Date,
   attempt = 0,
 ) {
-  return `${prefix}-${datePart(bizDate)}${timePart(new Date())}-${randomPart(attempt)}`;
+  return buildDailySequenceDocumentNo(prefix, bizDate, attempt + 1);
 }
 
 function includesDocumentNoTarget(target: string) {

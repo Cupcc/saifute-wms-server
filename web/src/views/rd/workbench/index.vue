@@ -58,7 +58,7 @@
       </template>
 
       <el-table :data="recentInboundRows" stripe v-loading="loading">
-        <el-table-column prop="documentNo" label="单据编号" min-width="160" />
+        <el-table-column prop="documentNo" label="单据编号" min-width="140" />
         <el-table-column label="业务日期" min-width="120">
           <template #default="{ row }">
             {{ formatDate(row.bizDate) }}

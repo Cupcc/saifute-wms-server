@@ -21,14 +21,14 @@ export function toOperationType(
 
 export function toCreateDocumentPrefix(
   orderType: StockInOrderType,
-): "YS" | "RK" | "TGC" {
+): "YS" | "RK" | "TG" {
   switch (orderType) {
     case StockInOrderType.ACCEPTANCE:
       return "YS";
     case StockInOrderType.PRODUCTION_RECEIPT:
       return "RK";
     case StockInOrderType.SUPPLIER_RETURN:
-      return "TGC";
+      return "TG";
     default:
       throw new BadRequestException(`Unsupported orderType: ${orderType}`);
   }

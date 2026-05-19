@@ -63,7 +63,7 @@
 
     <adaptive-table border stripe v-loading="loading" :data="returnDetailList">
       <el-table-column type="index" width="60" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="退货单号" align="center" prop="inboundNo" min-width="160" v-if="columns[0].visible" />
+      <el-table-column sortable show-overflow-tooltip label="退货单号" align="center" prop="inboundNo" min-width="140" v-if="columns[0].visible" />
       <el-table-column sortable show-overflow-tooltip label="退货日期" align="center" prop="inboundDate" width="140" v-if="columns[1].visible">
         <template #default="scope">
           {{ formatDocumentDate(scope.row.inboundDate) }}

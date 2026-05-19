@@ -91,7 +91,7 @@
 
     <adaptive-table border stripe v-loading="loading" :data="intoOrderList" @row-click="handleRowClick">
       <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="入库单号" align="center" prop="intoNo" v-if="columns[0].visible">
+      <el-table-column sortable show-overflow-tooltip label="入库单号" align="center" prop="intoNo" min-width="140" v-if="columns[0].visible">
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
             {{ scope.row.intoNo }}

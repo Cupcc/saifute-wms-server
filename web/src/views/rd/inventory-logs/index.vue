@@ -66,7 +66,7 @@
         <el-table-column prop="changeQty" label="变动数量" min-width="120" />
         <el-table-column prop="beforeQty" label="变动前" min-width="120" />
         <el-table-column prop="afterQty" label="变动后" min-width="120" />
-        <el-table-column prop="businessDocumentNumber" label="单据编号" min-width="160" />
+        <el-table-column prop="businessDocumentNumber" label="单据编号" min-width="140" />
         <el-table-column prop="businessDocumentType" label="单据类型" min-width="140" />
         <el-table-column prop="note" label="备注" min-width="180" />
       </el-table>

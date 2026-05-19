@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from "@nestjs/common";
 import { Prisma } from "../../../../generated/prisma/client";
 import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
+import { normalizeOptionalMaterialCode } from "../../../shared/domain/material-code";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import { InboundRepository } from "../infrastructure/inbound.repository";
 import { InboundAutoMaterialRepository } from "../infrastructure/inbound-auto-material.repository";
@@ -97,7 +98,7 @@ export class InboundAcceptanceLineSnapshotService {
 
     this.ensureAutoMaterialInput(line);
     const materialCode =
-      this.normalizeOptionalText(line.materialCode) ??
+      normalizeOptionalMaterialCode(line.materialCode) ??
       (await this.generateAutoMaterialCode(options?.tx));
     const existing = await this.autoMaterialRepository.findMaterialByCode(
       materialCode,

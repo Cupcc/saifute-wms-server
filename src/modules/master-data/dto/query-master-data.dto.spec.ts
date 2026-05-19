@@ -11,7 +11,7 @@ describe("QueryMaterialDto", () => {
   it("accepts structured material list filters", async () => {
     const result = (await pipe.transform(
       {
-        materialCode: " MAT ",
+        materialCode: " yf 05 ",
         materialName: " 轴承 ",
         specModel: "6205",
         categoryId: "3",
@@ -28,7 +28,7 @@ describe("QueryMaterialDto", () => {
 
     expect(result).toEqual(
       expect.objectContaining({
-        materialCode: "MAT",
+        materialCode: "yf05",
         materialName: "轴承",
         specModel: "6205",
         categoryId: 3,

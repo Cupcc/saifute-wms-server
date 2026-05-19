@@ -202,6 +202,32 @@ describe("MaterialService", () => {
     );
   });
 
+  it("removes whitespace from material codes before create", async () => {
+    const { repository, service } = createService();
+    repository.findMaterialByCode.mockResolvedValue(null);
+    repository.createMaterial.mockResolvedValue({
+      id: 1,
+      materialCode: "yf05",
+      materialName: "接头座",
+      categoryId: 99,
+      status: "ACTIVE",
+    });
+
+    await service.create({
+      materialCode: "yf 05",
+      materialName: "接头座",
+      unitCode: "个",
+    });
+
+    expect(repository.findMaterialByCode).toHaveBeenCalledWith("yf05");
+    expect(repository.createMaterial).toHaveBeenCalledWith(
+      expect.objectContaining({
+        materialCode: "yf05",
+      }),
+      undefined,
+    );
+  });
+
   it("assigns the default uncategorized category when material update clears category", async () => {
     const { repository, service } = createService();
     repository.findMaterialById.mockResolvedValue({
@@ -262,6 +288,38 @@ describe("MaterialService", () => {
     );
     expect(result).toEqual(
       expect.objectContaining({ creationMode: "AUTO_CREATED" }),
+    );
+  });
+
+  it("removes whitespace from AUTO_CREATED material codes", async () => {
+    const { repository, service } = createService();
+    repository.findMaterialByCode.mockResolvedValue(null);
+    repository.createAutoMaterial.mockResolvedValue({
+      id: 9,
+      materialCode: "yf05",
+      status: "ACTIVE",
+      creationMode: "AUTO_CREATED",
+      sourceDocumentType: "StockInOrder",
+      sourceDocumentId: 5,
+    });
+
+    await service.ensure(
+      {
+        materialCode: "yf 05",
+        materialName: "自动补建物料",
+        unitCode: "个",
+        sourceDocumentType: "StockInOrder",
+        sourceDocumentId: 5,
+      },
+      "1",
+    );
+
+    expect(repository.findMaterialByCode).toHaveBeenCalledWith("yf05");
+    expect(repository.createAutoMaterial).toHaveBeenCalledWith(
+      expect.objectContaining({
+        materialCode: "yf05",
+      }),
+      "1",
     );
   });
 

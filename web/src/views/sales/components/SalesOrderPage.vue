@@ -151,7 +151,7 @@
         v-if="columns[0].visible"
         label="单号"
         prop="documentNo"
-        min-width="200"
+        min-width="140"
         show-overflow-tooltip
       >
         <template #default="{ row }">
