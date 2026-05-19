@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { Prisma } from "../../../../generated/prisma/client";
 import type { CreatePersonnelDto } from "../dto/create-personnel.dto";
 import type { QueryMasterDataDto } from "../dto/query-master-data.dto";
@@ -30,34 +35,64 @@ export class PersonnelService {
   }
 
   async create(dto: CreatePersonnelDto, createdBy?: string) {
-    if (dto.workshopId) {
-      await this.requireWorkshop(dto.workshopId);
+    const personnelName = this.normalizeRequiredText(
+      dto.personnelName,
+      "姓名不能为空",
+    );
+    const contactPhone = this.normalizeOptionalText(dto.contactPhone);
+    const workshopId = dto.workshopId ?? null;
+
+    if (workshopId) {
+      await this.requireWorkshop(workshopId);
     }
+    await this.requireUniqueActiveIdentity({
+      personnelName,
+      contactPhone,
+      workshopId,
+    });
 
     return this.repository.createPersonnel(
       {
-        personnelName: dto.personnelName,
-        contactPhone: this.normalizeOptionalText(dto.contactPhone),
-        workshopId: dto.workshopId ?? null,
+        personnelName,
+        contactPhone,
+        workshopId,
       },
       createdBy,
     );
   }
 
   async update(id: number, dto: UpdatePersonnelDto, updatedBy?: string) {
-    await this.getById(id);
+    const existing = await this.getById(id);
 
-    const payload: Prisma.PersonnelUncheckedUpdateInput = {
-      personnelName: dto.personnelName,
-    };
+    const payload: Prisma.PersonnelUncheckedUpdateInput = {};
+    const personnelName = Object.hasOwn(dto, "personnelName")
+      ? this.normalizeRequiredText(dto.personnelName, "姓名不能为空")
+      : existing.personnelName;
     if (Object.hasOwn(dto, "contactPhone")) {
       payload.contactPhone = this.normalizeOptionalText(dto.contactPhone);
     }
+    const contactPhone = Object.hasOwn(dto, "contactPhone")
+      ? (payload.contactPhone as string | null)
+      : (existing.contactPhone ?? null);
     if (Object.hasOwn(dto, "workshopId")) {
       if (dto.workshopId) {
         await this.requireWorkshop(dto.workshopId);
       }
       payload.workshopId = dto.workshopId ?? null;
+    }
+    const workshopId = Object.hasOwn(dto, "workshopId")
+      ? (payload.workshopId as number | null)
+      : (existing.workshopId ?? null);
+
+    await this.requireUniqueActiveIdentity({
+      personnelName,
+      contactPhone,
+      workshopId,
+      excludeId: id,
+    });
+
+    if (Object.hasOwn(dto, "personnelName")) {
+      payload.personnelName = personnelName;
     }
 
     return this.repository.updatePersonnel(id, payload, updatedBy);
@@ -76,6 +111,19 @@ export class PersonnelService {
     );
   }
 
+  private normalizeRequiredText(value: string | undefined, message: string) {
+    if (typeof value !== "string") {
+      throw new BadRequestException(message);
+    }
+
+    const normalized = value.trim();
+    if (normalized.length === 0) {
+      throw new BadRequestException(message);
+    }
+
+    return normalized;
+  }
+
   private normalizeOptionalText(value?: string | null): string | null {
     if (typeof value !== "string") {
       return null;
@@ -91,5 +139,18 @@ export class PersonnelService {
       throw new NotFoundException(`车间不存在: ${id}`);
     }
     return workshop;
+  }
+
+  private async requireUniqueActiveIdentity(params: {
+    contactPhone: string | null;
+    excludeId?: number;
+    personnelName: string;
+    workshopId: number | null;
+  }) {
+    const existing =
+      await this.repository.findActivePersonnelByIdentity(params);
+    if (existing) {
+      throw new ConflictException(`人员已存在: ${params.personnelName}`);
+    }
   }
 }

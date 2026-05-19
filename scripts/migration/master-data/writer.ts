@@ -199,6 +199,49 @@ async function upsertPersonnel(
   connection: MigrationConnectionLike,
   record: PersonnelPlanRecord,
 ): Promise<number> {
+  const existingRows = await connection.query<Array<{ id: number }>>(
+    `
+      SELECT id
+      FROM personnel
+      WHERE TRIM(personnel_name) = ?
+        AND COALESCE(NULLIF(TRIM(contact_phone), ''), '') = COALESCE(NULLIF(TRIM(?), ''), '')
+      ORDER BY status = 'ACTIVE' DESC, id ASC
+      LIMIT 1
+    `,
+    [record.target.personnelName, record.target.contactPhone],
+  );
+  const existingId = Number(existingRows[0]?.id ?? 0);
+
+  if (Number.isFinite(existingId) && existingId > 0) {
+    await connection.query(
+      `
+        UPDATE personnel
+        SET
+          personnel_name = ?,
+          contact_phone = ?,
+          status = IF(status = 'ACTIVE' OR ? = 'ACTIVE', 'ACTIVE', ?),
+          created_by = ?,
+          created_at = COALESCE(?, created_at),
+          updated_by = ?,
+          updated_at = COALESCE(?, CURRENT_TIMESTAMP)
+        WHERE id = ?
+      `,
+      [
+        record.target.personnelName,
+        record.target.contactPhone,
+        record.target.status,
+        record.target.status,
+        record.target.createdBy,
+        record.target.createdAt,
+        record.target.updatedBy,
+        record.target.updatedAt,
+        existingId,
+      ],
+    );
+
+    return existingId;
+  }
+
   return runUpsert(
     connection,
     `

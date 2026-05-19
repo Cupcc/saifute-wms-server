@@ -198,6 +198,34 @@ describe("MonthlyReportExportService", () => {
     };
   }
 
+  function extractWorksheet(content: string, sheetName: string): string {
+    const startIndex = content.indexOf(`<Worksheet ss:Name="${sheetName}">`);
+    expect(startIndex).toBeGreaterThanOrEqual(0);
+
+    const worksheetContent = content.slice(startIndex);
+    const nextWorksheetIndex = worksheetContent.indexOf(
+      '<Worksheet ss:Name="',
+      1,
+    );
+
+    return nextWorksheetIndex === -1
+      ? worksheetContent
+      : worksheetContent.slice(0, nextWorksheetIndex);
+  }
+
+  function expectLabelsInOrder(content: string, labels: string[]) {
+    let previousIndex = -1;
+
+    for (const label of labels) {
+      const currentIndex = content.indexOf(
+        `<Data ss:Type="String">${label}</Data>`,
+        previousIndex + 1,
+      );
+      expect(currentIndex).toBeGreaterThan(previousIndex);
+      previousIndex = currentIndex;
+    }
+  }
+
   it("should export the material-category workbook", async () => {
     materialCategoryRepository.findMonthlyMaterialCategoryEntries.mockResolvedValue(
       [
@@ -214,7 +242,6 @@ describe("MonthlyReportExportService", () => {
           salesProjectId: 701,
           salesProjectCode: "SP-701",
           salesProjectName: "销售项目 A",
-          abnormalFlags: [MonthlyReportingAbnormalFlag.CROSS_MONTH_REFERENCE],
           sourceBizDate: new Date("2026-02-27T02:00:00.000Z"),
           sourceDocumentNo: "CK-0009",
         }),
@@ -243,7 +270,7 @@ describe("MonthlyReportExportService", () => {
     expect(exportResult.content).toContain("2026-03 物料分类月报 - 单据行明细");
     expect(exportResult.content).toContain('<Style ss:ID="Title">');
     expect(exportResult.content).toContain(
-      'ss:MergeAcross="17" ss:StyleID="Title"><Data ss:Type="String">2026-03 物料分类月报 - 单据行明细',
+      'ss:MergeAcross="16" ss:StyleID="Title"><Data ss:Type="String">2026-03 物料分类月报 - 单据行明细',
     );
     expect(exportResult.content).toContain(
       '<Column ss:Width="160" /><Column ss:Width="100" />',
@@ -253,9 +280,12 @@ describe("MonthlyReportExportService", () => {
     expect(exportResult.content).toContain("月初库存金额");
     expect(exportResult.content).toContain("月末金额");
     expect(exportResult.content).toContain("销售退货数量");
-    expect(exportResult.content).toContain("销售退货金额");
-    expect(exportResult.content).toContain("净发生数量");
-    expect(exportResult.content).toContain("净发生金额");
+    expect(exportResult.content).toContain("销售出库销售价金额");
+    expect(exportResult.content).toContain("销售出库成本价金额");
+    expect(exportResult.content).toContain("销售退货销售价金额");
+    expect(exportResult.content).toContain("销售退货成本价金额");
+    expect(exportResult.content).toContain("库存净发生数量");
+    expect(exportResult.content).toContain("库存净发生金额");
     expect(exportResult.content).toContain("100.00");
     expect(exportResult.content).toContain("108.00");
     expect(exportResult.content).toContain("3.00");
@@ -265,7 +295,30 @@ describe("MonthlyReportExportService", () => {
     expect(exportResult.content).not.toContain("层级");
     expect(exportResult.content).not.toContain("来源月份");
     expect(exportResult.content).not.toContain("来源单据");
+    expect(exportResult.content).not.toContain("异常单据数");
+    expect(exportResult.content).not.toContain("异常标识");
     expect(exportResult.content).toContain("XSTH-001");
+
+    expectLabelsInOrder(extractWorksheet(exportResult.content, "分类汇总"), [
+      "单据数",
+      "月初库存数量",
+      "月初库存金额",
+      "库存净发生数量",
+      "库存净发生金额",
+      "月末库存数量",
+      "月末库存金额",
+      "验收入库数量",
+    ]);
+    expectLabelsInOrder(extractWorksheet(exportResult.content, "物料汇总"), [
+      "单据数",
+      "月初数量",
+      "月初金额",
+      "库存净发生数量",
+      "库存净发生金额",
+      "月末数量",
+      "月末金额",
+      "入库数量",
+    ]);
   });
 
   it("should export excel content using the same filtered contract", async () => {

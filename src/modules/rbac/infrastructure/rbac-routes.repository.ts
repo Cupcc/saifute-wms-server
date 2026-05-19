@@ -64,14 +64,6 @@ export class RbacRoutesRepository {
           component: "system/notice/index",
           permissions: ["system:notice:list"],
         },
-      ],
-    },
-    {
-      name: "System",
-      path: "/system",
-      component: "layout/index",
-      permissions: [],
-      children: [
         {
           name: "OnlineUsers",
           path: "/system/online",
@@ -91,40 +83,56 @@ export class RbacRoutesRepository {
           permissions: ["audit:oper-log:list"],
         },
         {
+          name: "AiAssistant",
+          path: "/system/ai-assistant",
+          component: "ai/assistant/index",
+          permissions: ["ai:chat"],
+        },
+      ],
+    },
+    {
+      name: "Reporting",
+      path: "/reporting",
+      component: "layout/index",
+      permissions: [],
+      children: [
+        {
           name: "ReportingHome",
-          path: "/system/reporting/home",
+          path: "/reporting/home",
           component: "reporting/home/index",
           permissions: ["reporting:home:view"],
         },
         {
           name: "MonthlyReporting",
-          path: "/system/reporting/monthly-reporting",
+          path: "/reporting/monthly-reporting",
           component: "reporting/monthly-reporting/index",
           permissions: ["reporting:monthly-reporting:view"],
         },
         {
           name: "MonthlyReportingMaterialCategory",
-          path: "/system/reporting/monthly-reporting-material-category",
+          path: "/reporting/monthly-reporting-material-category",
           component: "reporting/monthly-reporting/index",
           permissions: ["reporting:monthly-reporting:view"],
         },
+      ],
+    },
+    {
+      name: "Monitor",
+      path: "/monitor",
+      component: "layout/index",
+      permissions: [],
+      children: [
         {
           name: "SchedulerJobs",
-          path: "/system/scheduler/jobs",
+          path: "/monitor/job",
           component: "scheduler/jobs/index",
           permissions: ["scheduler:job:list"],
         },
         {
           name: "SchedulerLogs",
-          path: "/system/scheduler/job-logs",
+          path: "/monitor/job-log",
           component: "scheduler/job-logs/index",
           permissions: ["scheduler:job:log:list"],
-        },
-        {
-          name: "AiAssistant",
-          path: "/system/ai-assistant",
-          component: "ai/assistant/index",
-          permissions: ["ai:chat"],
         },
       ],
     },
@@ -176,12 +184,6 @@ export class RbacRoutesRepository {
           component: "base/stock-scope/index",
           permissions: ["master:stock-scope:list"],
         },
-        {
-          name: "StockInventory",
-          path: "/stock/inventory",
-          component: "stock/inventory/index",
-          permissions: ["inventory:balance:list"],
-        },
       ],
     },
     {
@@ -213,6 +215,18 @@ export class RbacRoutesRepository {
           path: "/entry/intoDetail",
           component: "entry/intoDetail/index",
           permissions: ["inbound:into-order:list"],
+        },
+        {
+          name: "EntryReturnOrder",
+          path: "/entry/returnOrder",
+          component: "entry/returnOrder/index",
+          permissions: ["inbound:order:list"],
+        },
+        {
+          name: "EntryReturnDetail",
+          path: "/entry/returnDetail",
+          component: "entry/returnDetail/index",
+          permissions: ["inbound:order:list"],
         },
       ],
     },
@@ -246,6 +260,18 @@ export class RbacRoutesRepository {
           component: "take/returnDetail/index",
           permissions: ["workshop-material:return-order:list"],
         },
+        {
+          name: "StockScrapOrder",
+          path: "/take/scrapOrder",
+          component: "stock/scrapOrder/index",
+          permissions: ["workshop-material:scrap-order:list"],
+        },
+        {
+          name: "StockScrapDetail",
+          path: "/take/scrapDetail",
+          component: "stock/scrapDetail/index",
+          permissions: ["workshop-material:scrap-order:list"],
+        },
       ],
     },
     {
@@ -254,6 +280,12 @@ export class RbacRoutesRepository {
       component: "layout/index",
       permissions: [],
       children: [
+        {
+          name: "StockInventory",
+          path: "/stock/inventory",
+          component: "stock/inventory/index",
+          permissions: ["inventory:balance:list"],
+        },
         {
           name: "StockLog",
           path: "/stock/log",
@@ -265,18 +297,6 @@ export class RbacRoutesRepository {
           path: "/stock/used",
           component: "stock/used/index",
           permissions: ["inventory:source-usage:list"],
-        },
-        {
-          name: "StockScrapOrder",
-          path: "/stock/scrapOrder",
-          component: "stock/scrapOrder/index",
-          permissions: ["workshop-material:scrap-order:list"],
-        },
-        {
-          name: "StockScrapDetail",
-          path: "/stock/scrapDetail",
-          component: "stock/scrapDetail/index",
-          permissions: ["workshop-material:scrap-order:list"],
         },
         {
           name: "StockInterval",

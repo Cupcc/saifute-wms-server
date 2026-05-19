@@ -73,6 +73,44 @@
   padding: 10px 20px 0;
 }
 
+.el-dialog.document-dialog:not(.is-fullscreen) {
+  margin-top: 2vh !important;
+  height: calc(100vh - 12vh);
+  display: flex;
+  flex-direction: column;
+}
+
+.el-dialog.document-dialog .el-dialog__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overflow-x: hidden;
+  padding: 10px 20px 0;
+}
+
+.document-form-shell,
+.document-dialog-form {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.document-lines-section {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.document-lines-table {
+  width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
 .el-table {
   --el-table-header-text-color: var(--el-text-color-primary, #000000) !important;
 

@@ -101,4 +101,39 @@ describe("MasterDataPartyRepository", () => {
       },
     });
   });
+
+  it("finds active personnel by identity and treats empty phone as null", async () => {
+    const findFirst = jest.fn().mockResolvedValue({ id: 1 });
+    const repository = new MasterDataRepository({
+      personnel: {
+        findFirst,
+      },
+    } as unknown as PrismaService);
+
+    await repository.findActivePersonnelByIdentity({
+      personnelName: "张三",
+      contactPhone: null,
+      workshopId: null,
+      excludeId: 9,
+    });
+
+    expect(findFirst).toHaveBeenCalledWith({
+      where: {
+        personnelName: "张三",
+        status: "ACTIVE",
+        workshopId: null,
+        OR: [{ contactPhone: null }, { contactPhone: "" }],
+        id: { not: 9 },
+      },
+      include: {
+        workshop: {
+          select: {
+            id: true,
+            workshopName: true,
+          },
+        },
+      },
+      orderBy: { id: "asc" },
+    });
+  });
 });

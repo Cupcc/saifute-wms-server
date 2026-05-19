@@ -79,6 +79,7 @@ if (changedFiles.size === 0) {
 }
 
 const failures = [];
+const warnings = [];
 for (const file of [...changedFiles].sort()) {
   const result = spawnSync("bun", [qualityScript, path.join(repoRoot, file)], {
     cwd: repoRoot,
@@ -91,10 +92,20 @@ for (const file of [...changedFiles].sort()) {
         .filter(Boolean)
         .join("\n"),
     );
+  } else if (result.stderr || result.stdout) {
+    warnings.push(
+      [`[codex-quality-hook] ${file}`, result.stderr, result.stdout]
+        .filter(Boolean)
+        .join("\n"),
+    );
   }
 }
 
 if (failures.length > 0) {
   console.error(failures.join("\n"));
   process.exit(2);
+}
+
+if (warnings.length > 0) {
+  console.warn(warnings.join("\n"));
 }

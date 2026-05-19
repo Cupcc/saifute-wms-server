@@ -5,6 +5,7 @@
     width="1180px"
     append-to-body
     draggable
+    class="document-dialog"
     @update:model-value="handleVisibleChange"
   >
     <div v-loading="loading">
@@ -68,6 +69,8 @@
         style="margin-top: 16px"
         border
         stripe
+        max-height="360"
+        class="document-lines-table"
         :data="Array.isArray(detailData.details) ? detailData.details : []"
       >
         <el-table-column type="index" width="50" align="center" />

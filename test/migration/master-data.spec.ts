@@ -1,5 +1,10 @@
+import type { MigrationConnectionLike } from "../../scripts/migration/db";
 import { buildMasterDataMigrationPlan } from "../../scripts/migration/master-data/transformer";
-import type { LegacyMasterDataSnapshot } from "../../scripts/migration/master-data/types";
+import type {
+  LegacyMasterDataSnapshot,
+  MasterDataMigrationPlan,
+} from "../../scripts/migration/master-data/types";
+import { executeMasterDataPlan } from "../../scripts/migration/master-data/writer";
 
 function buildSnapshot(): LegacyMasterDataSnapshot {
   return {
@@ -481,5 +486,98 @@ describe("master-data migration transformer", () => {
       [293, "yf05"],
       [1092, "yf80"],
     ]);
+  });
+});
+
+describe("master-data migration writer", () => {
+  it("reuses an existing personnel identity instead of inserting duplicates", async () => {
+    const query = jest.fn().mockImplementation(async (sql: string) => {
+      if (sql.includes("SELECT id") && sql.includes("FROM personnel")) {
+        return query.mock.calls.filter(([callSql]) =>
+          String(callSql).includes("SELECT id"),
+        ).length === 1
+          ? []
+          : [{ id: 10 }];
+      }
+
+      if (sql.includes("INSERT INTO personnel")) {
+        return { insertId: 10 };
+      }
+
+      return { affectedRows: 1 };
+    });
+    const connection = {
+      beginTransaction: jest.fn().mockResolvedValue(undefined),
+      commit: jest.fn().mockResolvedValue(undefined),
+      rollback: jest.fn().mockResolvedValue(undefined),
+      query,
+    } satisfies MigrationConnectionLike;
+    const plan = {
+      migrationBatch: "batch1-master-data",
+      entityOrder: ["personnel"],
+      records: {
+        customer: [],
+        personnel: [
+          {
+            entity: "personnel",
+            legacyTable: "saifute_personnel",
+            legacyId: 1,
+            targetTable: "personnel",
+            targetCode: "PERS-LEGACY-1",
+            target: {
+              personnelName: "张三",
+              contactPhone: null,
+              status: "ACTIVE",
+              createdBy: "admin",
+              createdAt: null,
+              updatedBy: "admin",
+              updatedAt: null,
+            },
+            archivedPayload: null,
+            blockers: [],
+          },
+          {
+            entity: "personnel",
+            legacyTable: "saifute_personnel",
+            legacyId: 2,
+            targetTable: "personnel",
+            targetCode: "PERS-LEGACY-2",
+            target: {
+              personnelName: "张三",
+              contactPhone: null,
+              status: "ACTIVE",
+              createdBy: "admin",
+              createdAt: null,
+              updatedBy: "admin",
+              updatedAt: null,
+            },
+            archivedPayload: null,
+            blockers: [],
+          },
+        ],
+      },
+    } as unknown as MasterDataMigrationPlan;
+
+    await executeMasterDataPlan(connection, plan, {
+      allowBlockers: false,
+    });
+
+    expect(
+      query.mock.calls.filter(([sql]) =>
+        String(sql).includes("INSERT INTO personnel"),
+      ),
+    ).toHaveLength(1);
+    expect(
+      query.mock.calls.filter(([sql]) =>
+        String(sql).includes("UPDATE personnel"),
+      ),
+    ).toHaveLength(1);
+    expect(
+      query.mock.calls
+        .filter(([sql]) =>
+          String(sql).includes("INSERT INTO migration_staging.map_personnel"),
+        )
+        .map(([, values]) => (values as readonly unknown[])[3]),
+    ).toEqual([10, 10]);
   });
 });

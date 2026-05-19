@@ -23,6 +23,8 @@
     "migration:bootstrap-staging": "bun --env-file .env.dev scripts/migration/bootstrap-staging.ts",
     "migration:master-data:dry-run": "bun --env-file .env.dev scripts/migration/master-data/migrate.ts",
     "migration:master-data:execute": "bun --env-file .env.dev scripts/migration/master-data/migrate.ts --execute",
+    "migration:master-data:dedupe-personnel:dry-run": "bun --env-file .env.dev scripts/migration/master-data/dedupe-personnel.ts",
+    "migration:master-data:dedupe-personnel:execute": "bun --env-file .env.dev scripts/migration/master-data/dedupe-personnel.ts --execute",
     "migration:master-data:normalize-codes:dry-run": "bun --env-file .env.dev scripts/migration/master-data/normalize-default-category-and-auto-material-codes.ts",
     "migration:master-data:normalize-codes:execute": "bun --env-file .env.dev scripts/migration/master-data/normalize-default-category-and-auto-material-codes.ts --execute",
     "migration:master-data:validate": "bun --env-file .env.dev scripts/migration/master-data/validate.ts",

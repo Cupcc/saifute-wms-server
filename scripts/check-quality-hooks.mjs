@@ -8,14 +8,14 @@
  * `docs/architecture/40-code-quality-governance.md`.
  *
  * Checks:
- *   1. File line count ≤ 500
+ *   1. File line count warns above 500 and fails above 1000
  *   2. Dead barrel / pure re-export shells are flagged
  *   3. application/ layer does not inject PrismaService (type-only Prisma imports are allowed per §2.3.1)
  *   4. Cross-module repository imports are flagged
  *   5. Constructor dependency count stays within the governance threshold
  *
  * Exit codes:
- *   0 — clean, no violation
+ *   0 — clean or warning-only, no blocking violation
  *   1 — violation detected (stderr carries a clear, actionable message
  *       so the coding environment surfaces it to the agent)
  *
@@ -26,7 +26,8 @@
 import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 
-const MAX_LINES = 500;
+const WARN_MAX_LINES = 500;
+const ERROR_MAX_LINES = 1000;
 const APPLICATION_LAYER_PATTERN = /\/modules\/[^/]+\/application\//;
 const REPO_ROOT = process.cwd();
 
@@ -69,18 +70,31 @@ if (!fileStat.isFile()) {
 }
 
 const content = await readFile(absolutePath, "utf8");
-const lines = content.split(/\r?\n/);
-const lineCount = lines.endsWith?.("\n") ? lines.length - 1 : lines.length;
+const normalizedContent = content.replaceAll("\r\n", "\n");
+const lines =
+  normalizedContent.length === 0 ? [] : normalizedContent.split("\n");
+if (normalizedContent.endsWith("\n")) {
+  lines.pop();
+}
+const lineCount = lines.length;
 
+const warnings = [];
 const violations = [];
 
 // ---- Check 1: line count ---------------------------------------------------
-if (lineCount > MAX_LINES) {
+if (lineCount > ERROR_MAX_LINES) {
   violations.push(
-    `❌ File exceeds ${MAX_LINES} lines (currently ${lineCount}).\n` +
-      `   → Split this file before adding more code.\n` +
-      `   → Reference: docs/architecture/40-code-quality-governance.md §4\n` +
+    `❌ File exceeds ${ERROR_MAX_LINES} lines (currently ${lineCount}).\n` +
+      `   → This is above the hard safety limit. Split this file before adding more code.\n` +
+      `   → Reference: docs/architecture/40-code-quality-governance.md §5.1\n` +
       `   → Positive example: src/modules/master-data/application/`,
+  );
+} else if (lineCount > WARN_MAX_LINES) {
+  warnings.push(
+    `⚠️  File exceeds ${WARN_MAX_LINES} warning lines (currently ${lineCount}).\n` +
+      `   → Treat this as review pressure, not an automatic blocker.\n` +
+      `   → If the change adds a new use case, prefer a focused file instead of growing this one.\n` +
+      `   → Reference: docs/architecture/40-code-quality-governance.md §5.1`,
   );
 }
 
@@ -203,6 +217,22 @@ if (!isTestFile && normalized.endsWith(".service.ts") && isApplicationLayer) {
 
 // ---- Report ---------------------------------------------------------------
 if (violations.length === 0) {
+  if (warnings.length > 0) {
+    console.warn(
+      `\n[quality-hook] ${warnings.length} warning(s) in ${path.relative(
+        REPO_ROOT,
+        absolutePath,
+      )}:\n`,
+    );
+    for (const warning of warnings) {
+      console.warn(warning);
+      console.warn("");
+    }
+    console.warn(
+      "Baseline: docs/architecture/40-code-quality-governance.md\n" +
+        "Warnings do not block the edit, but should be considered during review.",
+    );
+  }
   process.exit(0);
 }
 

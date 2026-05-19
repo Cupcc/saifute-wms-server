@@ -83,14 +83,6 @@
          </el-table-column>
       </el-table>
 
-      <pagination
-         v-show="total > 0"
-         :total="total"
-         v-model:page="queryParams.pageNum"
-         v-model:limit="queryParams.pageSize"
-         @pagination="getList"
-      />
-
       <!-- 添加或修改菜单对话框 -->
       <el-dialog :title="title" v-model="open" width="680px" append-to-body v-loading="dialogLoading">
          <el-form ref="menuRef" :model="form" :rules="rules" label-width="100px">
@@ -325,15 +317,12 @@ const isExpandAll = ref(false);
 const refreshTable = ref(true);
 const iconSelectRef = ref(null);
 const dialogLoading = ref(false);
-const total = ref(0);
 
 const data = reactive({
   form: {},
   queryParams: {
-    pageNum: 1,
-    pageSize: 30,
     menuName: undefined,
-    visible: undefined,
+    status: undefined,
   },
   rules: {
     menuName: [
@@ -354,7 +343,6 @@ function getList() {
   listMenu(queryParams.value).then((response) => {
     const rows = response.data?.rows || response.data || [];
     menuList.value = proxy.handleTree(rows, "menuId");
-    total.value = response.data?.total ?? rows.length;
     loading.value = false;
   });
 }
@@ -404,7 +392,6 @@ function selected(name) {
 
 /** 搜索按钮操作 */
 function handleQuery() {
-  queryParams.value.pageNum = 1;
   getList();
 }
 

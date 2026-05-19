@@ -185,7 +185,8 @@
     />
 
     <!-- 添加或修改验收单对话框 -->
-    <el-dialog :title="title" v-model="open" width="1200px" append-to-body draggable>
+    <el-dialog :title="title" v-model="open" width="1200px" append-to-body draggable class="document-dialog">
+      <div class="document-form-shell">
       <el-form ref="orderRef" :model="form" :rules="rules" label-width="80px" v-loading="dialogLoading">
         <el-row>
           <el-col :span="12">
@@ -304,8 +305,8 @@
       </el-form>
       
       <!-- 明细列表 -->
-      <div style="margin-top: 20px;">
-        <el-table :data="detailList" border stripe v-loading="dialogLoading">
+      <div ref="documentLinesSectionRef" class="document-lines-section" style="margin-top: 20px;">
+        <el-table :data="detailList" border stripe v-loading="dialogLoading" class="document-lines-table">
 	        <el-table-column type="index" width="50" align="center" />
           <el-table-column label="物料" prop="materialId" width="220">
             <template #default="scope">
@@ -393,6 +394,7 @@
 		    <el-button type="primary" plain icon="Plus" @click="addDetailItem" :disabled="form.inboundId != null">添加明细</el-button>
 		    <span>合计金额: {{ form.totalAmount }}</span>
 	    </div>
+      </div>
       
       <template #footer>
         <div class="dialog-footer">
@@ -404,7 +406,7 @@
     </el-dialog>
     
     <!-- 验收单详情对话框 -->
-    <el-dialog title="验收单详情" v-model="detailOpen" width="800px" append-to-body>
+    <el-dialog title="验收单详情" v-model="detailOpen" width="800px" append-to-body class="document-dialog">
       <el-row :gutter="10">
         <el-col :span="24">
           <el-card class="box-card">
@@ -443,7 +445,7 @@
                 <span>明细信息</span>
               </div>
             </template>
-            <el-table :data="detailData.details" border stripe>
+            <el-table :data="detailData.details" border stripe max-height="320" class="document-lines-table">
               <el-table-column label="物料编码" prop="material.materialCode" />
               <el-table-column label="物料名称" prop="material.materialName" />
               <el-table-column label="规格型号" prop="material.specification" />
@@ -481,7 +483,7 @@
     </el-dialog>
     
     <!-- 退给厂家对话框 -->
-    <el-dialog title="退给厂家" v-model="supplierReturnOpen" width="980px" append-to-body draggable>
+    <el-dialog title="退给厂家" v-model="supplierReturnOpen" width="980px" append-to-body draggable class="document-dialog">
       <el-form ref="supplierReturnRef" :model="supplierReturnForm" :rules="supplierReturnRules" label-width="90px" v-loading="supplierReturnLoading">
         <el-row>
           <el-col :span="12">
@@ -518,7 +520,7 @@
         </el-form-item>
       </el-form>
 
-      <el-table :data="supplierReturnLines" border stripe v-loading="supplierReturnLoading">
+      <el-table :data="supplierReturnLines" border stripe v-loading="supplierReturnLoading" max-height="320" class="document-lines-table">
         <el-table-column type="index" width="50" align="center" />
         <el-table-column label="物料编码" prop="materialCode" min-width="80" show-overflow-tooltip />
         <el-table-column label="物料名称" prop="materialName" min-width="150" show-overflow-tooltip />
@@ -620,6 +622,7 @@ import {
   materialOptionsFromDocumentSnapshots,
   mergeMaterialOptions,
 } from "@/utils/materialOptions";
+import { scrollDocumentDialogToBottom } from "@/utils/documentDialogScroll";
 import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
 
 const userStore = useUserStore();
@@ -679,6 +682,7 @@ const workshopLoadingForForm = ref(false);
 const salesProjectOptionsForForm = ref([]);
 const salesProjectLoadingForForm = ref(false);
 const lastRouteProjectPrefillKey = ref("");
+const documentLinesSectionRef = ref(null);
 
 const data = reactive({
   form: {},
@@ -1110,6 +1114,7 @@ function addDetailItem() {
     amount: 0,
   });
   calculateTotalAmount();
+  scrollDocumentDialogToBottom(documentLinesSectionRef);
 }
 
 /** 删除明细项 */

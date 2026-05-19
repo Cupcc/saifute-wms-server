@@ -116,7 +116,7 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="异常单据">
+        <el-form-item v-if="!isMaterialCategoryView" label="异常单据">
           <el-switch v-model="filters.abnormalOnly" />
         </el-form-item>
         <el-form-item label="关键字">
@@ -186,142 +186,16 @@
       </el-row>
 
       <el-row v-else :gutter="16" class="summary-row">
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">验收入库数量</div>
-            <div class="stat-value">{{ summary.acceptanceInboundQuantity }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">验收入库金额</div>
-            <div class="stat-value">{{ summary.acceptanceInboundAmount }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">生产入库数量</div>
-            <div class="stat-value">{{ summary.productionReceiptQuantity }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">生产入库金额</div>
-            <div class="stat-value">{{ summary.productionReceiptAmount }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">销售出库数量</div>
-            <div class="stat-value">{{ summary.salesOutboundQuantity }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">销售出库金额</div>
-            <div class="stat-value">{{ summary.salesOutboundAmount }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">退给厂家数量</div>
-            <div class="stat-value">{{ summary.supplierReturnQuantity }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">退给厂家金额</div>
-            <div class="stat-value">{{ summary.supplierReturnAmount }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">车间领料数量</div>
-            <div class="stat-value">{{ summary.workshopPickQuantity }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">车间领料金额</div>
-            <div class="stat-value">{{ summary.workshopPickAmount }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">车间退料数量</div>
-            <div class="stat-value">{{ summary.workshopReturnQuantity }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">车间退料金额</div>
-            <div class="stat-value">{{ summary.workshopReturnAmount }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">车间净使用数量</div>
-            <div class="stat-value">{{ summary.workshopNetUsedQuantity }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">车间净使用金额</div>
-            <div class="stat-value">{{ summary.workshopNetUsedAmount }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">销售退货数量</div>
-            <div class="stat-value">{{ summary.salesReturnQuantity }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">销售退货金额</div>
-            <div class="stat-value">{{ summary.salesReturnAmount }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">净发生数量</div>
-            <div class="stat-value">{{ summary.netQuantity }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">净发生金额</div>
-            <div class="stat-value">{{ summary.netAmount }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">月初库存数量</div>
-            <div class="stat-value">{{ summary.openingQuantity }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">月初库存金额</div>
-            <div class="stat-value">{{ summary.openingAmount }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">月末库存数量</div>
-            <div class="stat-value">{{ summary.closingQuantity }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">月末库存金额</div>
-            <div class="stat-value">{{ summary.closingAmount }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box danger-box">
-            <div class="stat-label">单据行数</div>
-            <div class="stat-value">{{ summary.lineCount }}</div>
+        <el-col
+          v-for="item in materialCategorySummaryStats"
+          :key="item.key"
+          :xs="24"
+          :sm="12"
+          :lg="4"
+        >
+          <div class="stat-box" :class="{ 'danger-box': item.danger }">
+            <div class="stat-label">{{ item.label }}</div>
+            <div class="stat-value">{{ item.value }}</div>
           </div>
         </el-col>
       </el-row>
@@ -491,7 +365,6 @@
           <el-table-column prop="workshopName" label="车间" min-width="160" />
           <el-table-column prop="lineCount" label="单据行数" min-width="90" />
           <el-table-column prop="documentCount" label="单据数" min-width="80" />
-          <el-table-column prop="abnormalDocumentCount" label="异常单据数" min-width="120" />
           <el-table-column prop="pickQuantity" label="领料数量" min-width="120" />
           <el-table-column prop="pickAmount" label="领料金额" min-width="140" />
           <el-table-column prop="returnQuantity" label="退料数量" min-width="120" />
@@ -530,7 +403,12 @@
           <el-table-column prop="categoryName" label="分类名称" min-width="100" />
           <el-table-column prop="lineCount" label="单据行数" min-width="80" />
           <el-table-column prop="documentCount" label="单据数" min-width="80" />
-          <el-table-column prop="abnormalDocumentCount" label="异常单据数" min-width="120" />
+          <el-table-column prop="openingQuantity" label="月初库存数量" min-width="130" />
+          <el-table-column prop="openingAmount" label="月初库存金额" min-width="140" />
+          <el-table-column prop="netQuantity" label="库存净发生数量" min-width="150" />
+          <el-table-column prop="netAmount" label="库存净发生金额" min-width="150" />
+          <el-table-column prop="closingQuantity" label="月末库存数量" min-width="130" />
+          <el-table-column prop="closingAmount" label="月末库存金额" min-width="140" />
           <el-table-column prop="acceptanceInboundQuantity" label="验收入库数量" min-width="120" />
           <el-table-column prop="acceptanceInboundAmount" label="验收入库金额" min-width="140" />
           <el-table-column prop="productionReceiptQuantity" label="生产入库数量" min-width="120" />
@@ -544,15 +422,11 @@
           <el-table-column prop="workshopNetUsedQuantity" label="车间净使用数量" min-width="130" />
           <el-table-column prop="workshopNetUsedAmount" label="车间净使用金额" min-width="150" />
           <el-table-column prop="salesOutboundQuantity" label="销售出库数量" min-width="120" />
-          <el-table-column prop="salesOutboundAmount" label="销售出库金额" min-width="140" />
+          <el-table-column prop="salesOutboundSalesAmount" label="销售出库销售价金额" min-width="170" />
+          <el-table-column prop="salesOutboundCostAmount" label="销售出库成本价金额" min-width="170" />
           <el-table-column prop="salesReturnQuantity" label="销售退货数量" min-width="120" />
-          <el-table-column prop="salesReturnAmount" label="销售退货金额" min-width="140" />
-          <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
-          <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
-          <el-table-column prop="openingQuantity" label="月初库存数量" min-width="130" />
-          <el-table-column prop="openingAmount" label="月初库存金额" min-width="140" />
-          <el-table-column prop="closingQuantity" label="月末库存数量" min-width="130" />
-          <el-table-column prop="closingAmount" label="月末库存金额" min-width="140" />
+          <el-table-column prop="salesReturnSalesAmount" label="销售退货销售价金额" min-width="170" />
+          <el-table-column prop="salesReturnCostAmount" label="销售退货成本价金额" min-width="170" />
         </el-table>
       </el-card>
 
@@ -577,14 +451,14 @@
           <el-table-column prop="unitCode" label="单位" min-width="60" />
           <el-table-column prop="lineCount" label="单据行数" min-width="80" />
           <el-table-column prop="documentCount" label="单据数" min-width="80" />
-          <el-table-column prop="abnormalDocumentCount" label="异常单据数" min-width="120" />
           <el-table-column prop="openingQuantity" label="月初数量" min-width="120" />
           <el-table-column prop="openingAmount" label="月初金额" min-width="120" />
-          <el-table-column prop="inQuantity" label="入库数量" min-width="120" />
-          <el-table-column prop="outQuantity" label="出库数量" min-width="120" />
-          <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
+          <el-table-column prop="netQuantity" label="库存净发生数量" min-width="150" />
+          <el-table-column prop="netAmount" label="库存净发生金额" min-width="150" />
           <el-table-column prop="closingQuantity" label="月末数量" min-width="120" />
           <el-table-column prop="closingAmount" label="月末金额" min-width="120" />
+          <el-table-column prop="inQuantity" label="入库数量" min-width="120" />
+          <el-table-column prop="outQuantity" label="出库数量" min-width="120" />
           <el-table-column prop="acceptanceInboundQuantity" label="验收入库数量" min-width="120" />
           <el-table-column prop="acceptanceInboundAmount" label="验收入库金额" min-width="140" />
           <el-table-column prop="productionReceiptQuantity" label="生产入库数量" min-width="120" />
@@ -598,10 +472,11 @@
           <el-table-column prop="workshopNetUsedQuantity" label="车间净使用数量" min-width="130" />
           <el-table-column prop="workshopNetUsedAmount" label="车间净使用金额" min-width="150" />
           <el-table-column prop="salesOutboundQuantity" label="销售出库数量" min-width="120" />
-          <el-table-column prop="salesOutboundAmount" label="销售出库金额" min-width="140" />
+          <el-table-column prop="salesOutboundSalesAmount" label="销售出库销售价金额" min-width="170" />
+          <el-table-column prop="salesOutboundCostAmount" label="销售出库成本价金额" min-width="170" />
           <el-table-column prop="salesReturnQuantity" label="销售退货数量" min-width="120" />
-          <el-table-column prop="salesReturnAmount" label="销售退货金额" min-width="140" />
-          <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
+          <el-table-column prop="salesReturnSalesAmount" label="销售退货销售价金额" min-width="170" />
+          <el-table-column prop="salesReturnCostAmount" label="销售退货成本价金额" min-width="170" />
         </el-table>
         <div class="pagination-wrap">
           <el-pagination
@@ -680,22 +555,6 @@
           <el-table-column prop="quantity" label="数量" min-width="120" />
           <el-table-column prop="amount" label="金额" min-width="120" />
           <el-table-column prop="cost" label="成本" min-width="120" />
-          <el-table-column label="异常标识" min-width="220">
-            <template #default="{ row }">
-              <div v-if="row.abnormalLabels.length > 0" class="tag-wrap">
-                <el-tag
-                  v-for="tag in row.abnormalLabels"
-                  :key="`${row.documentNo}-${row.lineNo}-${tag}`"
-                  size="small"
-                  effect="plain"
-                  type="danger"
-                >
-                  {{ tag }}
-                </el-tag>
-              </div>
-              <span v-else>-</span>
-            </template>
-          </el-table-column>
         </el-table>
 
         <div class="pagination-wrap">
@@ -795,6 +654,134 @@ const siblingViewRouteName = computed(() => {
 const siblingViewActionText = computed(() =>
   isMaterialCategoryView.value ? "查看领域月报" : "查看物料分类月报",
 );
+const materialCategorySummaryStats = computed(() => [
+  {
+    key: "openingQuantity",
+    label: "月初库存数量",
+    value: summary.value.openingQuantity,
+  },
+  {
+    key: "openingAmount",
+    label: "月初库存金额",
+    value: summary.value.openingAmount,
+  },
+  {
+    key: "netQuantity",
+    label: "库存净发生数量",
+    value: summary.value.netQuantity,
+  },
+  {
+    key: "netAmount",
+    label: "库存净发生金额",
+    value: summary.value.netAmount,
+  },
+  {
+    key: "closingQuantity",
+    label: "月末库存数量",
+    value: summary.value.closingQuantity,
+  },
+  {
+    key: "closingAmount",
+    label: "月末库存金额",
+    value: summary.value.closingAmount,
+  },
+  {
+    key: "acceptanceInboundQuantity",
+    label: "验收入库数量",
+    value: summary.value.acceptanceInboundQuantity,
+  },
+  {
+    key: "acceptanceInboundAmount",
+    label: "验收入库金额",
+    value: summary.value.acceptanceInboundAmount,
+  },
+  {
+    key: "productionReceiptQuantity",
+    label: "生产入库数量",
+    value: summary.value.productionReceiptQuantity,
+  },
+  {
+    key: "productionReceiptAmount",
+    label: "生产入库金额",
+    value: summary.value.productionReceiptAmount,
+  },
+  {
+    key: "supplierReturnQuantity",
+    label: "退给厂家数量",
+    value: summary.value.supplierReturnQuantity,
+  },
+  {
+    key: "supplierReturnAmount",
+    label: "退给厂家金额",
+    value: summary.value.supplierReturnAmount,
+  },
+  {
+    key: "salesOutboundQuantity",
+    label: "销售出库数量",
+    value: summary.value.salesOutboundQuantity,
+  },
+  {
+    key: "salesOutboundSalesAmount",
+    label: "销售出库销售价金额",
+    value: summary.value.salesOutboundSalesAmount,
+  },
+  {
+    key: "salesOutboundCostAmount",
+    label: "销售出库成本价金额",
+    value: summary.value.salesOutboundCostAmount,
+  },
+  {
+    key: "salesReturnQuantity",
+    label: "销售退货数量",
+    value: summary.value.salesReturnQuantity,
+  },
+  {
+    key: "salesReturnSalesAmount",
+    label: "销售退货销售价金额",
+    value: summary.value.salesReturnSalesAmount,
+  },
+  {
+    key: "salesReturnCostAmount",
+    label: "销售退货成本价金额",
+    value: summary.value.salesReturnCostAmount,
+  },
+  {
+    key: "workshopPickQuantity",
+    label: "车间领料数量",
+    value: summary.value.workshopPickQuantity,
+  },
+  {
+    key: "workshopPickAmount",
+    label: "车间领料金额",
+    value: summary.value.workshopPickAmount,
+  },
+  {
+    key: "workshopReturnQuantity",
+    label: "车间退料数量",
+    value: summary.value.workshopReturnQuantity,
+  },
+  {
+    key: "workshopReturnAmount",
+    label: "车间退料金额",
+    value: summary.value.workshopReturnAmount,
+  },
+  {
+    key: "workshopNetUsedQuantity",
+    label: "车间净使用数量",
+    value: summary.value.workshopNetUsedQuantity,
+  },
+  {
+    key: "workshopNetUsedAmount",
+    label: "车间净使用金额",
+    value: summary.value.workshopNetUsedAmount,
+  },
+  {
+    key: "lineCount",
+    label: "单据行数",
+    value: summary.value.lineCount,
+    danger: true,
+  },
+]);
 const activeCategoryNodeKey = computed(
   () => selectedCategoryNodeKey.value || filters.value.categoryNodeKey,
 );
@@ -1023,8 +1010,12 @@ function createEmptyMaterialCategorySummary() {
     workshopNetUsedAmount: "0.00",
     salesOutboundQuantity: "0.00",
     salesOutboundAmount: "0.00",
+    salesOutboundSalesAmount: "0.00",
+    salesOutboundCostAmount: "0.00",
     salesReturnQuantity: "0.00",
     salesReturnAmount: "0.00",
+    salesReturnSalesAmount: "0.00",
+    salesReturnCostAmount: "0.00",
     netQuantity: "0.00",
     netAmount: "0.00",
     openingQuantity: "0.00",
@@ -1086,7 +1077,9 @@ function buildBaseQuery({ useSelectedCategory = false } = {}) {
         ? resolveDetailCategoryNodeKey()
         : filters.value.categoryNodeKey
       : undefined,
-    abnormalOnly: filters.value.abnormalOnly || undefined,
+    abnormalOnly: isMaterialCategoryView.value
+      ? undefined
+      : filters.value.abnormalOnly || undefined,
     keyword: filters.value.keyword?.trim() || undefined,
   };
 }
