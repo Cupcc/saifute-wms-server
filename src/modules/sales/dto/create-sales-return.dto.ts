@@ -22,8 +22,9 @@ export class CreateSalesReturnDto {
   bizDate!: string;
 
   @IsInt()
+  @IsOptional()
   @Min(1)
-  sourceOutboundOrderId!: number;
+  sourceOutboundOrderId?: number;
 
   @IsInt()
   @IsOptional()

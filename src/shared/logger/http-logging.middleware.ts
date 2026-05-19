@@ -17,7 +17,6 @@ export class HttpLoggingMiddleware implements NestMiddleware {
       const durationMs = Date.now() - startedAt;
       const path = request.originalUrl || request.url;
       const ip = resolveRequestIp(request);
-      const userAgent = this.resolveUserAgent(request);
       const contentLength = response.getHeader("content-length");
       const level = this.resolveLogLevel(response.statusCode);
 
@@ -28,10 +27,8 @@ export class HttpLoggingMiddleware implements NestMiddleware {
           context: "HTTP",
           method: request.method,
           path,
-          statusCode: response.statusCode,
           durationMs,
           ip,
-          userAgent,
           contentLength:
             typeof contentLength === "number" ||
             typeof contentLength === "string"
@@ -42,14 +39,6 @@ export class HttpLoggingMiddleware implements NestMiddleware {
     });
 
     next();
-  }
-  private resolveUserAgent(request: Request): string {
-    const userAgent = request.headers["user-agent"];
-    if (Array.isArray(userAgent)) {
-      return userAgent[0] ?? "unknown";
-    }
-
-    return userAgent ?? "unknown";
   }
 
   private resolveLogLevel(statusCode: number): "info" | "warn" | "error" {

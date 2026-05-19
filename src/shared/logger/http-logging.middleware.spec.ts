@@ -55,9 +55,7 @@ describe("HttpLoggingMiddleware", () => {
         context: "HTTP",
         method: "GET",
         path: `/test-${statusCode}`,
-        statusCode,
         ip: "127.0.0.1",
-        userAgent: "jest-agent",
         contentLength: "62",
       }),
     );

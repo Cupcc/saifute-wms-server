@@ -176,6 +176,97 @@ describe("SalesReturnService", () => {
       );
     });
 
+    it("should create standalone sales return when source outbound is omitted", async () => {
+      const standaloneReturnOrder = {
+        ...mockSalesReturnOrder,
+        lines: [
+          {
+            ...mockSalesReturnOrder.lines[0],
+            sourceDocumentType: null,
+            sourceDocumentId: null,
+            sourceDocumentLineId: null,
+            selectedUnitCost: new Prisma.Decimal("12.50"),
+            costUnitPrice: new Prisma.Decimal("12.50"),
+            costAmount: new Prisma.Decimal("25.00"),
+          },
+        ],
+      };
+      (repository.createOrder as jest.Mock).mockResolvedValue(
+        standaloneReturnOrder,
+      );
+
+      const result = await service.createSalesReturn(
+        {
+          documentNo: "SR-STANDALONE",
+          bizDate: "2025-03-14",
+          customerId: 10,
+          handlerPersonnelId: 20,
+          workshopId: 1,
+          lines: [
+            {
+              materialId: 100,
+              quantity: "2",
+              selectedUnitCost: "12.50",
+              unitPrice: "15",
+            },
+          ],
+        },
+        "1",
+      );
+
+      expect(result).toEqual(standaloneReturnOrder);
+      expect(repository.findOrderById).not.toHaveBeenCalled();
+      expect(
+        repository.sumActiveReturnedQtyByOutboundLine,
+      ).not.toHaveBeenCalled();
+      expect(repository.createDocumentRelation).not.toHaveBeenCalled();
+      expect(repository.createDocumentLineRelation).not.toHaveBeenCalled();
+
+      const createOrderLines = (repository.createOrder as jest.Mock).mock
+        .calls[0][1];
+      expect(createOrderLines[0]).toEqual(
+        expect.objectContaining({
+          sourceDocumentType: null,
+          sourceDocumentId: null,
+          sourceDocumentLineId: null,
+        }),
+      );
+      expect(createOrderLines[0].selectedUnitCost.toString()).toBe("12.5");
+      expect(createOrderLines[0].costUnitPrice.toString()).toBe("12.5");
+      expect(createOrderLines[0].costAmount.toString()).toBe("25");
+
+      const increaseStockCommand = (inventoryService.increaseStock as jest.Mock)
+        .mock.calls[0][0];
+      expect(increaseStockCommand.unitCost.toString()).toBe("12.5");
+      expect(increaseStockCommand.costAmount.toString()).toBe("25");
+      expect(increaseStockCommand.note).toContain(
+        "Standalone sales return source accepted",
+      );
+    });
+
+    it("should reject standalone sales return without selected cost", async () => {
+      await expect(
+        service.createSalesReturn(
+          {
+            documentNo: "SR-STANDALONE-NO-COST",
+            bizDate: "2025-03-14",
+            customerId: 10,
+            workshopId: 1,
+            lines: [
+              {
+                materialId: 100,
+                quantity: "2",
+                unitPrice: "15",
+              },
+            ],
+          },
+          "1",
+        ),
+      ).rejects.toThrow("第 1 行成本价不能为空");
+
+      expect(repository.createOrder).not.toHaveBeenCalled();
+    });
+
     it("should reject when split lines in the same request cumulatively exceed source outbound line quantity", async () => {
       (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(null);
       (repository.findOrderById as jest.Mock).mockResolvedValue(

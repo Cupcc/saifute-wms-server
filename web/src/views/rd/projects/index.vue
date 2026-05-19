@@ -610,6 +610,7 @@ import {
   voidRdProjectMaterialAction,
 } from "@/api/rd-subwarehouse";
 import useUserStore from "@/store/modules/user";
+import { confirmDocumentSave } from "@/utils/documentConfirm";
 import { formatDateOnly, generateRdDocumentNo } from "@/utils/rd-documents";
 
 const userStore = useUserStore();
@@ -1064,6 +1065,9 @@ async function submitAction() {
     return;
   }
 
+  if (!(await confirmDocumentSave({ documentName: "研发项目物料动作单" }))) {
+    return;
+  }
   actionSubmitting.value = true;
   try {
     await createRdProjectMaterialAction(selectedProjectId.value, {

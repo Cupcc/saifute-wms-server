@@ -214,6 +214,7 @@ function buildCustomerPayload(data, mode, handlerPersonnelId, isUpdate) {
         materialId: line.materialId,
         quantity: toDecimalString(line.quantity),
         sourceOutboundLineId: line.sourceOutboundLineId,
+        selectedUnitCost: toDecimalString(line.selectedUnitCost),
         unitPrice: toDecimalString(line.unitPrice),
         remark: line.remark,
       })),

@@ -256,7 +256,8 @@ describe("MonthlyReportExportService", () => {
       viewMode: MonthlyReportingViewMode.MATERIAL_CATEGORY,
     });
 
-    expect(exportResult.fileName).toBe(
+    expect(exportResult.fileName).toBe("物料分类月报-2026-03.xls");
+    expect(exportResult.fallbackFileName).toBe(
       "monthly-reporting-material-category-2026-03.xls",
     );
     expect(exportResult.content).toContain('<Worksheet ss:Name="分类汇总">');
@@ -358,7 +359,8 @@ describe("MonthlyReportExportService", () => {
       keyword: "RDH-002",
     });
 
-    expect(result.fileName).toBe("monthly-reporting-2026-03.xls");
+    expect(result.fileName).toBe("月度对账报表-2026-03.xls");
+    expect(result.fallbackFileName).toBe("monthly-reporting-2026-03.xls");
     expect(result.contentType).toContain("application/vnd.ms-excel");
     expect(result.content).toContain('<Worksheet ss:Name="单据类型汇总">');
     expect(result.content).toContain("2026-03 月度对账报表 - 总览");

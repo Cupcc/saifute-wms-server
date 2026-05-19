@@ -189,6 +189,7 @@ import {
   updateIntoDetail,
 } from "@/api/entry/intoDetail";
 import { selectSaifuteInventoryListGroupByMaterial } from "@/api/stock/inventory.js";
+import { confirmDocumentSave } from "@/utils/documentConfirm";
 
 const { proxy } = getCurrentInstance();
 
@@ -469,9 +470,13 @@ function handleUpdate(row) {
 
 /** 提交按钮 */
 function submitForm() {
-  proxy.$refs["intoDetailRef"].validate((valid) => {
+  proxy.$refs["intoDetailRef"].validate(async (valid) => {
     if (valid) {
-      if (form.value.detailId != null) {
+      const isUpdate = form.value.detailId != null;
+      if (!(await confirmDocumentSave({ documentName: "入库明细", isUpdate }))) {
+        return;
+      }
+      if (isUpdate) {
         updateIntoDetail(form.value).then((response) => {
           proxy.$modal.msgSuccess("修改成功");
           open.value = false;

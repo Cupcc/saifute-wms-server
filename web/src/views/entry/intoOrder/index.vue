@@ -445,6 +445,7 @@ import {
   materialOptionsFromDocumentSnapshots,
   mergeMaterialOptions,
 } from "@/utils/materialOptions";
+import { confirmDocumentSave } from "@/utils/documentConfirm";
 import { scrollDocumentDialogToBottom } from "@/utils/documentDialogScroll";
 import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
 
@@ -906,7 +907,7 @@ function handleUpdate(row) {
 
 /** 提交按钮 */
 function submitForm() {
-  proxy.$refs["intoOrderRef"].validate((valid) => {
+  proxy.$refs["intoOrderRef"].validate(async (valid) => {
     if (valid) {
       if (!detailList.value || detailList.value.length === 0) {
         proxy.$modal.msgError("至少需要添加一条明细");
@@ -936,9 +937,13 @@ function submitForm() {
       }
 
       form.value.details = detailList.value;
+      const isUpdate = form.value.intoId != null;
+      if (!(await confirmDocumentSave({ documentName: "入库单", isUpdate }))) {
+        return;
+      }
       submitLoading.value = true;
 
-      if (form.value.intoId != null) {
+      if (isUpdate) {
         updateIntoOrder(form.value)
           .then((response) => {
             clearSuggestionsCache();

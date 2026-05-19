@@ -433,6 +433,7 @@ import {
   materialOptionsFromDocumentSnapshots,
   mergeMaterialOptions,
 } from "@/utils/materialOptions";
+import { confirmDocumentSave } from "@/utils/documentConfirm";
 import { scrollDocumentDialogToBottom } from "@/utils/documentDialogScroll";
 import { formatDateToYYYYMMDD, generateOrderNo } from "@/utils/orderNumber";
 import request from "@/utils/request";
@@ -767,7 +768,7 @@ function handleUpdate(row) {
 
 /** 提交按钮 */
 function submitForm() {
-  proxy.$refs["pickOrderRef"].validate((valid) => {
+  proxy.$refs["pickOrderRef"].validate(async (valid) => {
     if (valid) {
       if (!form.value.details || form.value.details.length === 0) {
         proxy.$modal.msgError("至少需要添加一条明细");
@@ -777,7 +778,11 @@ function submitForm() {
       if (!validatePickDetails()) {
         return;
       }
-      if (form.value.pickId != null) {
+      const isUpdate = form.value.pickId != null;
+      if (!(await confirmDocumentSave({ documentName: "领料单", isUpdate }))) {
+        return;
+      }
+      if (isUpdate) {
         // 调用修改接口（包含明细数据）
         updatePickOrder(form.value).then(() => {
           clearSuggestionsCache();

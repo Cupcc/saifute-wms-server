@@ -29,6 +29,24 @@ import {
 
 const WAREHOUSE_MANAGER_ROLE = "warehouse-manager";
 
+function encodeAttachmentFileName(fileName: string): string {
+  return encodeURIComponent(fileName).replace(
+    /[!'()*]/gu,
+    (char) => `%${char.charCodeAt(0).toString(16).toUpperCase()}`,
+  );
+}
+
+function buildAttachmentDisposition(
+  fileName: string,
+  fallbackFileName = fileName,
+): string {
+  const safeFallbackFileName = fallbackFileName
+    .replace(/[^\x20-\x7e]/gu, "_")
+    .replace(/["\\]/gu, "_");
+
+  return `attachment; filename="${safeFallbackFileName}"; filename*=UTF-8''${encodeAttachmentFileName(fileName)}`;
+}
+
 @Controller("reporting")
 export class ReportingController {
   constructor(
@@ -190,7 +208,10 @@ export class ReportingController {
       },
     );
     return new StreamableFile(Buffer.from(exportResult.content, "utf8"), {
-      disposition: `attachment; filename="${exportResult.fileName}"`,
+      disposition: buildAttachmentDisposition(
+        exportResult.fileName,
+        exportResult.fallbackFileName,
+      ),
       type: exportResult.contentType,
     });
   }
@@ -216,7 +237,7 @@ export class ReportingController {
       inventoryScope?.stockScope,
     );
     return new StreamableFile(Buffer.from(exportResult.content, "utf8"), {
-      disposition: `attachment; filename="${exportResult.fileName}"`,
+      disposition: buildAttachmentDisposition(exportResult.fileName),
       type: exportResult.contentType,
     });
   }

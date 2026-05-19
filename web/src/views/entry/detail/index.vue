@@ -183,6 +183,7 @@ import {
   updateDetail,
 } from "@/api/entry/detail";
 import { selectSaifuteInventoryListGroupByMaterial } from "@/api/stock/inventory.js";
+import { confirmDocumentSave } from "@/utils/documentConfirm";
 
 const { proxy } = getCurrentInstance();
 
@@ -516,9 +517,13 @@ function handleUpdate(row) {
 
 /** 提交按钮 */
 function submitForm() {
-  proxy.$refs["detailRef"].validate((valid) => {
+  proxy.$refs["detailRef"].validate(async (valid) => {
     if (valid) {
-      if (form.value.detailId != null) {
+      const isUpdate = form.value.detailId != null;
+      if (!(await confirmDocumentSave({ documentName: "验收明细", isUpdate }))) {
+        return;
+      }
+      if (isUpdate) {
         updateDetail(form.value).then((response) => {
           proxy.$modal.msgSuccess("修改成功");
           open.value = false;

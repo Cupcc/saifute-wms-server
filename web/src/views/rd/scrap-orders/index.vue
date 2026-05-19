@@ -259,6 +259,7 @@ import {
   voidRdScrapOrder,
 } from "@/api/rd-subwarehouse";
 import useUserStore from "@/store/modules/user";
+import { confirmDocumentSave } from "@/utils/documentConfirm";
 import { formatDateOnly } from "@/utils/rd-documents";
 
 const userStore = useUserStore();
@@ -504,6 +505,9 @@ async function submitCreate() {
     return;
   }
 
+  if (!(await confirmDocumentSave({ documentName: "报废单" }))) {
+    return;
+  }
   submitting.value = true;
   try {
     await createRdScrapOrder({

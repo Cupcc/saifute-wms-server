@@ -47,7 +47,8 @@
                 filterable
                 remote
                 reserve-keyword
-                clearable
+                :clearable="!isSourceOutboundLocked"
+                :disabled="isSourceOutboundLocked"
                 placeholder="请输入出库单号搜索"
                 style="width: 100%"
                 :remote-method="searchSourceOrders"
@@ -65,7 +66,32 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="客户">
-              <el-input :model-value="form.customerName || '-'" disabled />
+              <template v-if="isLinkedSalesReturnMode">
+                <el-input :model-value="form.customerName || '-'" disabled />
+              </template>
+              <template v-else>
+                <el-select
+                  v-model="form.customerId"
+                  filterable
+                  remote
+                  reserve-keyword
+                  clearable
+                  placeholder="请输入客户名称搜索"
+                  style="width: 100%"
+                  :remote-method="searchCustomers"
+                  :loading="customerLoading"
+                >
+                  <el-option
+                    v-for="item in customerOptions"
+                    :key="item.customerId"
+                    :label="item.customerName"
+                    :value="item.customerId"
+                  >
+                    <span style="float: left">{{ item.customerName }}</span>
+                    <span style="float: right; color: #909399">{{ item.customerCode }}</span>
+                  </el-option>
+                </el-select>
+              </template>
             </el-form-item>
           </el-col>
         </el-row>
@@ -126,7 +152,7 @@
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="车间" prop="workshopId">
-              <template v-if="isSalesReturnMode">
+              <template v-if="isLinkedSalesReturnMode">
                 <el-input :model-value="form.workshopName || '-'" disabled />
               </template>
               <template v-else>
@@ -172,7 +198,7 @@
           <el-table-column type="index" width="56" align="center" />
 
           <el-table-column
-            v-if="isSalesReturnMode"
+            v-if="isLinkedSalesReturnMode"
             label="来源出库明细"
             min-width="240"
           >
@@ -196,7 +222,7 @@
           </el-table-column>
 
           <el-table-column
-            v-if="!isSalesReturnMode"
+            v-if="!isSalesReturnMode || isStandaloneSalesReturnMode"
             label="物料"
             min-width="250"
           >
@@ -296,6 +322,19 @@
               </el-select>
             </template>
           </el-table-column>
+          <el-table-column
+            v-else-if="isStandaloneSalesReturnMode"
+            label="成本价"
+            width="130"
+          >
+            <template #default="{ row }">
+              <el-input
+                v-model="row.selectedUnitCost"
+                placeholder="成本价"
+                @input="normalizeDecimalField(row, 'selectedUnitCost', 2)"
+              />
+            </template>
+          </el-table-column>
 
           <el-table-column label="数量" width="150">
             <template #default="{ row }">
@@ -365,11 +404,27 @@
         </el-table>
           <div class="document-lines-actions">
             <div class="document-lines-actions__left">
-              <el-button type="primary" plain icon="Plus" @click="handleAddLine">
+              <el-button
+                v-if="isLinkedSalesReturnMode"
+                type="primary"
+                plain
+                icon="Plus"
+                :disabled="!hasAvailableSourceLine"
+                @click="handleAddLine"
+              >
+                添加来源明细
+              </el-button>
+              <el-button
+                v-else
+                type="primary"
+                plain
+                icon="Plus"
+                @click="handleAddLine"
+              >
                 新增明细
               </el-button>
               <span v-if="isSalesReturnMode" class="detail-tip">
-                选择来源出库单后会自动带出明细，可删除不需要退回的行。
+                {{ salesReturnDetailTip }}
               </span>
             </div>
             <span>合计金额: {{ lineTotalAmount }}</span>
@@ -405,6 +460,7 @@ import {
 import {
   addSalesReturnOrder,
 } from "@/api/sales/salesReturnOrder";
+import { confirmDocumentSave } from "@/utils/documentConfirm";
 import { mergeMaterialOptions } from "@/utils/materialOptions";
 import request from "@/utils/request";
 import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
@@ -451,8 +507,18 @@ const salesProjectLoading = ref(false);
 const sourceOrderLoading = ref(false);
 
 const form = reactive(buildEmptyForm());
+const lockedSourceOutboundOrderId = ref(null);
 
 const isSalesReturnMode = computed(() => props.mode === "salesReturn");
+const isSourceOutboundLocked = computed(
+  () => isSalesReturnMode.value && Boolean(lockedSourceOutboundOrderId.value),
+);
+const isLinkedSalesReturnMode = computed(
+  () => isSalesReturnMode.value && Boolean(form.sourceOutboundOrderId),
+);
+const isStandaloneSalesReturnMode = computed(
+  () => isSalesReturnMode.value && !form.sourceOutboundOrderId,
+);
 const isOrderEditMode = computed(
   () => props.mode === "order" && Number.isInteger(props.orderId),
 );
@@ -461,13 +527,6 @@ const documentLabel = computed(() =>
 );
 const formRules = computed(() => ({
   bizDate: [{ required: true, message: "业务日期不能为空", trigger: "change" }],
-  ...(isSalesReturnMode.value
-    ? {
-        sourceOutboundOrderId: [
-          { required: true, message: "请选择来源出库单", trigger: "change" },
-        ],
-      }
-    : {}),
 }));
 const dialogTitle = computed(() => {
   if (isSalesReturnMode.value) {
@@ -475,6 +534,28 @@ const dialogTitle = computed(() => {
   }
   return isOrderEditMode.value ? "修改出库单" : "新增出库单";
 });
+const salesReturnDetailTip = computed(() =>
+  isLinkedSalesReturnMode.value
+    ? "只能从来源出库单补回明细，不能添加其他物料。"
+    : "来源出库单可不选；未选择来源时可手动新增明细。",
+);
+const selectedSourceLineIds = computed(
+  () =>
+    new Set(
+      form.details
+        .map((line) => line.sourceOutboundLineId)
+        .filter((value) => Number.isInteger(value)),
+    ),
+);
+const nextAvailableSourceLine = computed(
+  () =>
+    sourceLineOptions.value.find(
+      (line) => !selectedSourceLineIds.value.has(line.detailId),
+    ) ?? null,
+);
+const hasAvailableSourceLine = computed(
+  () => Boolean(nextAvailableSourceLine.value),
+);
 const lineTotalAmount = computed(() =>
   formatAmount(
     form.details.reduce((total, detail) => total + computeLineAmount(detail), 0),
@@ -546,6 +627,7 @@ function buildEmptyForm() {
 
 function resetFormState() {
   Object.assign(form, buildEmptyForm());
+  lockedSourceOutboundOrderId.value = null;
   customerOptions.value = [];
   personnelOptions.value = [];
   workshopOptions.value = [];
@@ -564,7 +646,7 @@ async function initializeDialog() {
       await loadOrderForEdit(props.orderId);
       return;
     }
-    if (!isSalesReturnMode.value && props.draftPayload) {
+    if (props.draftPayload) {
       await applyDraftPayload(props.draftPayload);
     }
   } finally {
@@ -758,6 +840,16 @@ function ensureSalesProjectOption(item) {
 }
 
 async function applyDraftPayload(draft) {
+  if (isSalesReturnMode.value && draft.sourceOutboundOrderId) {
+    form.sourceOutboundOrderId = draft.sourceOutboundOrderId;
+    lockedSourceOutboundOrderId.value = draft.lockSourceOutbound
+      ? draft.sourceOutboundOrderId
+      : null;
+    ensureSourceOrderOption(draft);
+    await handleSourceOrderChange(draft.sourceOutboundOrderId);
+    return;
+  }
+
   form.bizDate = draft.bizDate || form.bizDate;
   form.customerId = draft.customerId ?? undefined;
   form.customerName = draft.customerName || "";
@@ -814,17 +906,47 @@ async function applyDraftPayload(draft) {
   }
 }
 
+function ensureSourceOrderOption(item) {
+  const orderId = item?.sourceOutboundOrderId ?? item?.orderId;
+  if (!orderId) {
+    return;
+  }
+
+  if (sourceOrderOptions.value.some((option) => option.orderId === orderId)) {
+    return;
+  }
+
+  sourceOrderOptions.value.unshift({
+    orderId,
+    documentNo:
+      item.sourceOutboundDocumentNo || item.documentNo || `出库单 ${orderId}`,
+    customerName: item.customerName || "",
+  });
+}
+
 function handleVisibleChange(value) {
   emit("update:modelValue", value);
 }
 
 function handleAddLine() {
+  if (isLinkedSalesReturnMode.value) {
+    const sourceLine = nextAvailableSourceLine.value;
+    if (!sourceLine) {
+      proxy.$modal.msgWarning("当前来源出库单明细已全部带出");
+      return;
+    }
+    const line = mapSourceLineToReturnLine(sourceLine);
+    form.details.push(line);
+    ensureSalesProjectOption(line);
+    return;
+  }
+
   form.details.push(buildEmptyLine());
 }
 
 function handleRemoveLine(index) {
   form.details.splice(index, 1);
-  if (form.details.length === 0) {
+  if (!isLinkedSalesReturnMode.value && form.details.length === 0) {
     form.details.push(buildEmptyLine());
   }
 }
@@ -841,7 +963,9 @@ async function handleMaterialChange(row) {
   row.materialName = material.materialName || "";
   row.specification = material.specification || "";
   row.selectedUnitCost = "";
-  await loadPriceLayerOptions(row);
+  if (!isSalesReturnMode.value) {
+    await loadPriceLayerOptions(row);
+  }
 }
 
 function buildSourceLineLabel(item) {
@@ -849,6 +973,15 @@ function buildSourceLineLabel(item) {
 }
 
 async function handleSourceOrderChange(orderId) {
+  if (
+    isSourceOutboundLocked.value &&
+    orderId !== lockedSourceOutboundOrderId.value
+  ) {
+    form.sourceOutboundOrderId = lockedSourceOutboundOrderId.value;
+    proxy.$modal.msgWarning("从出库单发起的退货不能切换来源出库单");
+    return;
+  }
+
   if (!orderId) {
     form.customerId = undefined;
     form.customerName = "";
@@ -881,25 +1014,9 @@ async function handleSourceOrderChange(orderId) {
     sourceLineOptions.value = Array.isArray(order.details) ? order.details : [];
     form.details =
       sourceLineOptions.value.length > 0
-        ? sourceLineOptions.value.map((detail) => ({
-            detailId: undefined,
-            materialId: detail.materialId,
-            materialCode: detail.materialCode || "",
-            materialName: detail.materialName || "",
-            specification: detail.specification || "",
-            salesProjectId: detail.salesProjectId ?? undefined,
-            salesProjectCode: detail.salesProjectCode || "",
-            salesProjectName: detail.salesProjectName || "",
-            projectTargetId: detail.projectTargetId ?? undefined,
-            sourceProjectTargetId: detail.sourceProjectTargetId ?? undefined,
-            quantity: toInputNumber(detail.quantity),
-            selectedUnitCost: toInputString(detail.selectedUnitCost),
-            unitPrice: toInputString(detail.unitPrice),
-            factoryNumber: "",
-            priceLayerOptions: [],
-            sourceOutboundLineId: detail.detailId,
-            remark: "",
-          }))
+        ? sourceLineOptions.value.map((detail) =>
+            mapSourceLineToReturnLine(detail),
+          )
         : [buildEmptyLine()];
     for (const detail of form.details) {
       ensureSalesProjectOption(detail);
@@ -907,6 +1024,28 @@ async function handleSourceOrderChange(orderId) {
   } finally {
     dialogLoading.value = false;
   }
+}
+
+function mapSourceLineToReturnLine(detail) {
+  return {
+    detailId: undefined,
+    materialId: detail.materialId,
+    materialCode: detail.materialCode || "",
+    materialName: detail.materialName || "",
+    specification: detail.specification || "",
+    salesProjectId: detail.salesProjectId ?? undefined,
+    salesProjectCode: detail.salesProjectCode || "",
+    salesProjectName: detail.salesProjectName || "",
+    projectTargetId: detail.projectTargetId ?? undefined,
+    sourceProjectTargetId: detail.sourceProjectTargetId ?? undefined,
+    quantity: toInputNumber(detail.quantity),
+    selectedUnitCost: toInputString(detail.selectedUnitCost),
+    unitPrice: toInputString(detail.unitPrice),
+    factoryNumber: "",
+    priceLayerOptions: [],
+    sourceOutboundLineId: detail.detailId,
+    remark: "",
+  };
 }
 
 function handleSourceLineChange(row) {
@@ -1292,11 +1431,33 @@ async function validateForm() {
     return false;
   }
 
+  const selectedSourceOutboundLineIds = new Set();
   for (let index = 0; index < form.details.length; index++) {
     const line = form.details[index];
-    if (isSalesReturnMode.value && !line.sourceOutboundLineId) {
-      proxy.$modal.msgError(`第 ${index + 1} 行来源出库明细不能为空`);
-      return false;
+    if (isLinkedSalesReturnMode.value) {
+      if (!line.sourceOutboundLineId) {
+        proxy.$modal.msgError(`第 ${index + 1} 行来源出库明细不能为空`);
+        return false;
+      }
+      if (selectedSourceOutboundLineIds.has(line.sourceOutboundLineId)) {
+        proxy.$modal.msgError(
+          `第 ${index + 1} 行来源出库明细重复，不能重复添加同一条出库明细`,
+        );
+        return false;
+      }
+      selectedSourceOutboundLineIds.add(line.sourceOutboundLineId);
+
+      const sourceLine = sourceLineOptions.value.find(
+        (item) => item.detailId === line.sourceOutboundLineId,
+      );
+      if (!sourceLine) {
+        proxy.$modal.msgError(`第 ${index + 1} 行来源出库明细不存在`);
+        return false;
+      }
+      if (sourceLine.materialId !== line.materialId) {
+        proxy.$modal.msgError(`第 ${index + 1} 行物料必须与来源出库明细一致`);
+        return false;
+      }
     }
     if (!line.materialId) {
       proxy.$modal.msgError(`第 ${index + 1} 行物料不能为空`);
@@ -1336,6 +1497,10 @@ async function validateForm() {
       proxy.$modal.msgError(`第 ${index + 1} 行成本价层不能为空`);
       return false;
     }
+    if (isStandaloneSalesReturnMode.value && !line.selectedUnitCost) {
+      proxy.$modal.msgError(`第 ${index + 1} 行成本价不能为空`);
+      return false;
+    }
     if (!isSalesReturnMode.value) {
       const availableQty = getSelectedPriceLayerAvailableQty(line);
       if (availableQty !== null && quantity > availableQty) {
@@ -1358,7 +1523,8 @@ function buildSubmitPayload() {
     customerId: form.customerId,
     handlerPersonnelId: form.handlerPersonnelId,
     workshopId: form.workshopId ?? null,
-    sourceOutboundOrderId: form.sourceOutboundOrderId,
+    sourceOutboundOrderId:
+      lockedSourceOutboundOrderId.value ?? form.sourceOutboundOrderId,
     remark: form.remark,
     details: form.details.map((line) => ({
       detailId: line.detailId,
@@ -1380,6 +1546,16 @@ function buildSubmitPayload() {
 
 async function submitForm() {
   if (!(await validateForm())) {
+    return;
+  }
+
+  const documentName = isSalesReturnMode.value ? "销售退货单" : "出库单";
+  if (
+    !(await confirmDocumentSave({
+      documentName,
+      isUpdate: isOrderEditMode.value,
+    }))
+  ) {
     return;
   }
 
