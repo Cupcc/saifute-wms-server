@@ -24,6 +24,7 @@ describe("PersonnelService", () => {
 
   it("creates a personnel record", async () => {
     const { repository, service } = createService();
+    repository.findActivePersonnelByIdentity.mockResolvedValue(null);
     repository.createPersonnel.mockResolvedValue({
       id: 1,
       personnelName: "张三",
@@ -33,10 +34,15 @@ describe("PersonnelService", () => {
     });
 
     const result = await service.create(
-      { personnelName: "张三", contactPhone: "13800000000" },
+      { personnelName: " 张三 ", contactPhone: " 13800000000 " },
       "1",
     );
 
+    expect(repository.findActivePersonnelByIdentity).toHaveBeenCalledWith({
+      personnelName: "张三",
+      contactPhone: "13800000000",
+      workshopId: null,
+    });
     expect(repository.createPersonnel).toHaveBeenCalledWith(
       {
         personnelName: "张三",
@@ -55,6 +61,7 @@ describe("PersonnelService", () => {
 
   it("creates personnel with an optional workshop after validating it", async () => {
     const { repository, service } = createService();
+    repository.findActivePersonnelByIdentity.mockResolvedValue(null);
     repository.findWorkshopById.mockResolvedValue({
       id: 2,
       workshopName: "装配车间",
@@ -81,14 +88,33 @@ describe("PersonnelService", () => {
     );
   });
 
+  it("rejects duplicate active personnel on create", async () => {
+    const { repository, service } = createService();
+    repository.findActivePersonnelByIdentity.mockResolvedValue({
+      id: 1,
+      personnelName: "张三",
+      contactPhone: null,
+      workshopId: null,
+      status: "ACTIVE",
+    });
+
+    await expect(
+      service.create({ personnelName: "张三" }, "1"),
+    ).rejects.toThrow("人员已存在: 张三");
+
+    expect(repository.createPersonnel).not.toHaveBeenCalled();
+  });
+
   it("updates personnel and allows clearing contactPhone", async () => {
     const { repository, service } = createService();
     repository.findPersonnelById.mockResolvedValue({
       id: 1,
       personnelName: "张三",
       contactPhone: "13800000000",
+      workshopId: null,
       status: "ACTIVE",
     });
+    repository.findActivePersonnelByIdentity.mockResolvedValue(null);
     repository.updatePersonnel.mockResolvedValue({
       id: 1,
       personnelName: "张三",
@@ -98,9 +124,15 @@ describe("PersonnelService", () => {
 
     const result = await service.update(1, { contactPhone: null }, "1");
 
+    expect(repository.findActivePersonnelByIdentity).toHaveBeenCalledWith({
+      personnelName: "张三",
+      contactPhone: null,
+      workshopId: null,
+      excludeId: 1,
+    });
     expect(repository.updatePersonnel).toHaveBeenCalledWith(
       1,
-      { personnelName: undefined, contactPhone: null },
+      { contactPhone: null },
       "1",
     );
     expect(result).toEqual(
@@ -117,8 +149,10 @@ describe("PersonnelService", () => {
       id: 1,
       personnelName: "张三",
       workshopId: 2,
+      contactPhone: null,
       status: "ACTIVE",
     });
+    repository.findActivePersonnelByIdentity.mockResolvedValue(null);
     repository.updatePersonnel.mockResolvedValue({
       id: 1,
       personnelName: "张三",
@@ -131,9 +165,33 @@ describe("PersonnelService", () => {
     expect(repository.findWorkshopById).not.toHaveBeenCalled();
     expect(repository.updatePersonnel).toHaveBeenCalledWith(
       1,
-      { personnelName: undefined, workshopId: null },
+      { workshopId: null },
       "1",
     );
+  });
+
+  it("rejects duplicate active personnel on update", async () => {
+    const { repository, service } = createService();
+    repository.findPersonnelById.mockResolvedValue({
+      id: 2,
+      personnelName: "李四",
+      contactPhone: null,
+      workshopId: null,
+      status: "ACTIVE",
+    });
+    repository.findActivePersonnelByIdentity.mockResolvedValue({
+      id: 1,
+      personnelName: "张三",
+      contactPhone: null,
+      workshopId: null,
+      status: "ACTIVE",
+    });
+
+    await expect(
+      service.update(2, { personnelName: "张三" }, "1"),
+    ).rejects.toThrow("人员已存在: 张三");
+
+    expect(repository.updatePersonnel).not.toHaveBeenCalled();
   });
 
   it("deactivates active personnel", async () => {

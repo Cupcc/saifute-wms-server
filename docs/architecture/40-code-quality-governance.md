@@ -61,7 +61,7 @@
 | 层次 | 目标 | 载体 | 失败处理 |
 | --- | --- | --- | --- |
 | 知识约束 | 让开发者和 agent 在写代码前知道规则 | 根级指令、架构文档、技能文档 | review 时按本文档纠偏 |
-| 实时反馈 | 在写代码当下发现单文件违规 | PostToolUse hook、`check-quality-hooks.mjs`、LSP、Biome | 立即修复本次编辑引入的问题 |
+| 实时反馈 | 在写代码当下发现单文件风险或违规 | PostToolUse hook、`check-quality-hooks.mjs`、LSP、Biome | 硬违规立即修复；预警进入 review 判断 |
 | 提交门禁 | 阻断不合格变更进入版本记录 | Husky、lint-staged、commitlint、verify 脚本 | 失败则不得提交或推送 |
 | 审计与 Review | 发现跨文件、趋势性和机器难判定问题 | 扫描脚本、review 清单 | 阻断 PR 或要求同 PR 修复 |
 
@@ -87,7 +87,7 @@ hook 至少覆盖以下规则：
 
 | 检查 | 对应规则 |
 | --- | --- |
-| 文件行数不得超过 500 行 | §5.1 |
+| 文件行数 500 行预警、1000 行硬限制 | §5.1 |
 | 拆分残留和纯 re-export 空壳检测 | §5.4 |
 | `application/` 层禁止注入 `PrismaService` 和直接查询 | §3.3 |
 | 跨模块 repository import / 注入识别 | §4 |
@@ -234,7 +234,7 @@ controllers/  ->  application/  ->  infrastructure/
 
 | 指标 | 阈值 | 处置 |
 | --- | --- | --- |
-| 文件行数 | 500 行 | 超过即违规，必须拆分 |
+| 文件行数 | 500 行预警；1000 行硬限制 | 501-1000 行需在 review 中判断职责是否清晰；超过 1000 行必须拆分或记录明确豁免 |
 | 单个方法或函数 | 80 行 | 提取为独立方法、helper 或协作者 |
 | 普通 service 构造函数依赖数 | 5 个 | 超过表明职责过多，应拆分或收拢共享依赖 |
 | facade 构造函数依赖数 | 不限 | facade 注入子 service 是其职责，不计违规 |
@@ -255,9 +255,10 @@ facade 判定标准：
 满足以下任一条件即判定为 God Object。满足 §5.1 facade 标准的文件豁免。
 
 1. 构造函数注入超过 5 个依赖。
-2. 文件超过 800 行。
-3. 同一个 class 处理 3 个以上互不相关的业务职责域。
-4. 单个 service 同时承担命令、查询、导入导出、状态机和跨模块协调等多类职责。
+2. 文件超过 1000 行。
+3. 文件超过 800 行且同时承担多个业务职责域。
+4. 同一个 class 处理 3 个以上互不相关的业务职责域。
+5. 单个 service 同时承担命令、查询、导入导出、状态机和跨模块协调等多类职责。
 
 ### 5.3 拆分原则
 
@@ -271,7 +272,7 @@ facade 判定标准：
 
 拆分前后必须保证：
 
-1. 每个子文件不超过 500 行。
+1. 每个子文件原则上控制在 500 行内；超过 500 行必须能说明职责边界，超过 1000 行不得接受。
 2. 子 service 各自依赖数不超过 5 个；共享依赖应通过 shared service 或 repository 收拢。
 3. 不得因拆分新增 `PrismaService` 注入点。
 4. 不得因拆分新增跨模块 repository 依赖。
@@ -303,9 +304,9 @@ rg "from .*<原文件名>" src/ -l
 
 ### 5.5 新增代码默认规则
 
-1. 新增功能不得追加到已经超过 400 行的文件。
+1. 新增功能应避免追加到已经超过 400 行的文件。
 2. 新增 use case 应创建独立 service 文件。
-3. 如果一个 PR 会让某文件超过 500 行，该 PR 必须同时完成拆分。
+3. 如果一个 PR 会让某文件超过 500 行，该 PR 必须说明为何暂不拆分；如果会超过 1000 行，必须同时完成拆分。
 4. 禁止创建无语义命名的万能文件，如 `utils.ts`、`helpers.ts`、`common.ts`、`misc.ts`。
 5. 工具函数必须归属到明确领域目录，并以职责命名，例如 `decimal-precision.util.ts`、`business-document-ref.factory.ts`。
 6. 同一段逻辑出现少于 3 次时保持内联重复；出现 3 次及以上且语义一致、变更节奏同步时，才抽取为共享函数、helper 或 Value Object。
@@ -465,7 +466,7 @@ pre-push
 | lint | pre-commit / Biome | 必须阻断 |
 | TypeScript 类型检查 | pre-push / verify | 必须阻断 |
 | 单元测试 | pre-push / verify | 必须阻断 |
-| 文件行数 | PostToolUse hook / `lint:src-lines` | 不得新增违规；全仓扫描发现违规时必须处理或说明 |
+| 文件行数 | PostToolUse hook / `lint:src-lines` / `lint:src-lines:strict` | 500 行以上预警；1000 行以上必须阻断；全仓扫描发现预警时必须处理或说明 |
 | 拆分残留 | PostToolUse hook / review | 必须处理 |
 | application 层 Prisma 注入 | PostToolUse hook / review | 必须阻断 |
 | 跨模块 repository 依赖 | PostToolUse hook / review | 必须阻断 |
@@ -493,7 +494,7 @@ Review 必须覆盖以下维度：
 
 1. 分层合规：是否新增 `PrismaService` 注入、直接 Prisma 查询或 application 层事务。
 2. 模块边界：是否跨模块 import / 注入 repository 或 infrastructure。
-3. 文件体积：文件是否超过 500 行，方法是否超过 80 行。
+3. 文件体积：文件是否超过 500 行预警线或 1000 行硬限制，方法是否超过 80 行。
 4. 职责边界：service 是否承担过多 use case，是否形成 God Object。
 5. 复杂度：是否存在超过 3 层嵌套、长 if-else 链或过深 Prisma include。
 6. 事务边界：事务是否由 repository / Unit of Work 管理。
@@ -516,7 +517,7 @@ Review 必须覆盖以下维度：
 | 能否注入其他模块 repository | 任何场景都不允许 | 改为注入 exported service |
 | 一组字段总是一起出现 | 出现 3 次及以上 | 封装 Value Object |
 | 方法太长 | 超过 80 行 | 提取子方法、helper 或协作者 |
-| 文件太长 | 超过 500 行 | 拆分文件 |
+| 文件太长 | 超过 500 行预警；超过 1000 行硬限制 | 先判断职责是否清晰；超过硬限制必须拆分 |
 | 构造函数依赖太多 | 普通 service 超过 5 个 | 拆分职责或收拢共享依赖 |
 | 能否保留原 service 文件 | 外部仍有消费者，且可变成薄 facade | 保留 facade；否则删除 |
 | 是否可以创建 `utils.ts` | 无明确领域语义 | 不允许，按职责命名 |

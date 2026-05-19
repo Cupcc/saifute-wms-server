@@ -78,6 +78,42 @@ function includesDocumentNoTarget(target: string) {
   );
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function appendTargetValues(targets: string[], value: unknown): void {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      appendTargetValues(targets, item);
+    }
+    return;
+  }
+  if (typeof value === "string" && value.length > 0) {
+    targets.push(value);
+  }
+}
+
+function collectUniqueConflictTargets(
+  error: Prisma.PrismaClientKnownRequestError,
+) {
+  const targets: string[] = [];
+  const meta = asRecord(error.meta);
+  appendTargetValues(targets, meta?.target);
+
+  const driverAdapterError = asRecord(meta?.driverAdapterError);
+  const driverCause = asRecord(driverAdapterError?.cause);
+  const constraint = asRecord(driverCause?.constraint);
+  appendTargetValues(targets, constraint?.index);
+  appendTargetValues(targets, constraint?.fields);
+  appendTargetValues(targets, driverCause?.originalMessage);
+  appendTargetValues(targets, error.message);
+
+  return targets;
+}
+
 export function isDocumentNoUniqueConflict(error: unknown) {
   if (
     !(error instanceof Prisma.PrismaClientKnownRequestError) ||
@@ -85,16 +121,8 @@ export function isDocumentNoUniqueConflict(error: unknown) {
   ) {
     return false;
   }
-  const target = (error.meta as { target?: unknown } | undefined)?.target;
-  if (Array.isArray(target)) {
-    return target.some(
-      (item) => typeof item === "string" && includesDocumentNoTarget(item),
-    );
-  }
-  if (typeof target === "string") {
-    return includesDocumentNoTarget(target);
-  }
-  return false;
+
+  return collectUniqueConflictTargets(error).some(includesDocumentNoTarget);
 }
 
 export async function createWithGeneratedDocumentNo<T>(

@@ -59,10 +59,10 @@ describe("RbacService", () => {
     expect(routes.map((route) => route.name)).toEqual([
       "Dashboard",
       "MasterData",
-      "InboundBusiness",
-      "WorkshopMaterialBusiness",
       "InventoryBusiness",
+      "InboundBusiness",
       "SalesBusiness",
+      "WorkshopMaterialBusiness",
       "RdSubwarehouse",
     ]);
     const rdRouteNames =
@@ -88,13 +88,31 @@ describe("RbacService", () => {
       routes
         .find((route) => route.name === "MasterData")
         ?.children?.map((route) => route.name) ?? [];
-    expect(masterDataRouteNames).toContain("StockInventory");
+    expect(masterDataRouteNames).not.toContain("StockInventory");
 
     const inventoryRouteNames =
       routes
         .find((route) => route.name === "InventoryBusiness")
         ?.children?.map((route) => route.name) ?? [];
-    expect(inventoryRouteNames).not.toContain("StockInventory");
+    expect(inventoryRouteNames).toContain("StockInventory");
+    expect(inventoryRouteNames).not.toEqual(
+      expect.arrayContaining(["StockScrapOrder", "StockScrapDetail"]),
+    );
+
+    const workshopRouteNames =
+      routes
+        .find((route) => route.name === "WorkshopMaterialBusiness")
+        ?.children?.map((route) => route.name) ?? [];
+    expect(workshopRouteNames).toEqual(
+      expect.arrayContaining([
+        "TakePickOrder",
+        "TakePickDetail",
+        "TakeReturnOrder",
+        "TakeReturnDetail",
+        "StockScrapOrder",
+        "StockScrapDetail",
+      ]),
+    );
   });
 
   it("should only return rd console routes for rd users", async () => {
@@ -121,7 +139,22 @@ describe("RbacService", () => {
     expect(routeNames).toContain("RdWorkbench");
   });
 
+  it("should only expose routes that have backend menu records", async () => {
+    await repository.deleteMenus([3214]);
+
+    const routes = await rbacService.getRoutesForUser(1);
+
+    expect(findRouteByName(routes, "TakePickOrder")).toBeDefined();
+    expect(findRouteByName(routes, "TakePickDetail")).toBeUndefined();
+  });
+
   it("should expose menu-managed route title, icon, and order", async () => {
+    repository.updateMenu({
+      menuId: 3400,
+      menuName: "客户业务",
+      orderNum: 5,
+      icon: "guide",
+    });
     repository.updateMenu({
       menuId: 3310,
       menuName: "实时库存",
@@ -137,12 +170,21 @@ describe("RbacService", () => {
 
     const routes = await rbacService.getRoutesForUser(1);
     const stockInventory = findRouteByName(routes, "StockInventory");
+    const firstBusinessRoute = routes[1];
     const salesBusiness = findRouteByName(routes, "SalesBusiness");
 
     expect(stockInventory?.meta).toMatchObject({
       title: "实时库存",
       icon: "search",
       orderNum: 9,
+    });
+    expect(firstBusinessRoute).toMatchObject({
+      name: "SalesBusiness",
+      meta: {
+        title: "客户业务",
+        icon: "guide",
+        orderNum: 5,
+      },
     });
     expect(salesBusiness?.children?.[0]).toMatchObject({
       name: "SalesProjectLedger",

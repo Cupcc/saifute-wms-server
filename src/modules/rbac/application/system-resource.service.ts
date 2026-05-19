@@ -147,14 +147,12 @@ export class SystemResourceService {
     const result = await this.wrapPersistentMutation(() =>
       this.rbacRepository.updateMenu(data),
     );
-    await this.invalidateAllRoleSessions();
     return result;
   }
   async deleteMenus(menuIds: number[]) {
     await this.wrapPersistentMutation(() =>
       this.rbacRepository.deleteMenus(menuIds),
     );
-    await this.invalidateAllRoleSessions();
     return { msg: "删除成功" };
   }
 
@@ -234,14 +232,6 @@ export class SystemResourceService {
 
   private async invalidateRoleSessions(roleIds: number[]) {
     const userIds = await this.rbacRepository.findUserIdsByRoleIds(roleIds);
-    if (userIds.length > 0)
-      await this.sessionService.invalidateSessionsByUserIds(userIds);
-  }
-  private async invalidateAllRoleSessions() {
-    const roles = await this.rbacRepository.listRoles({});
-    const userIds = await this.rbacRepository.findUserIdsByRoleIds(
-      roles.rows.map((role) => role.roleId),
-    );
     if (userIds.length > 0)
       await this.sessionService.invalidateSessionsByUserIds(userIds);
   }

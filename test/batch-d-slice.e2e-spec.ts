@@ -582,7 +582,7 @@ describe("Batch D slice acceptance (e2e)", () => {
         salesReturnQuantity: "1.00",
         salesReturnAmount: "8.00",
         netQuantity: "4.00",
-        netAmount: "38.00",
+        netAmount: "36.00",
       },
     });
     expect(summaryResponse.body.data.categories).toEqual([
@@ -660,7 +660,7 @@ describe("Batch D slice acceptance (e2e)", () => {
       categoryName: "化工",
       salesProjectCode: "SP-701",
       salesProjectName: "销售项目 A",
-      abnormalLabels: ["补录影响", "跨月修正"],
+      abnormalLabels: [],
       sourceBizMonth: "2026-03",
       sourceDocumentNo: "CK-BASE-001",
     });
@@ -682,6 +682,8 @@ describe("Batch D slice acceptance (e2e)", () => {
     expect(exportResponse.text).toContain('<Worksheet ss:Name="物料汇总">');
     expect(exportResponse.text).toContain('<Worksheet ss:Name="单据行明细">');
     expect(exportResponse.text).toContain("月初库存金额");
+    expect(exportResponse.text).toContain("库存净发生数量");
+    expect(exportResponse.text).toContain("库存净发生金额");
     expect(exportResponse.text).toContain("月末金额");
     expect(exportResponse.text).toContain("验收入库数量");
     expect(exportResponse.text).toContain("验收入库金额");

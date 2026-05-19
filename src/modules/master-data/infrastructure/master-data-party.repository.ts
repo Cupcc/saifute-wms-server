@@ -17,6 +17,13 @@ const PERSONNEL_WITH_WORKSHOP_INCLUDE = {
   },
 } as const satisfies Prisma.PersonnelInclude;
 
+type PersonnelIdentityParams = {
+  contactPhone: string | null;
+  excludeId?: number;
+  personnelName: string;
+  workshopId: number | null;
+};
+
 type FindCustomersParams = {
   keyword?: string;
   limit: number;
@@ -317,6 +324,30 @@ export class MasterDataPartyRepository {
     return this.prisma.personnel.findUnique({
       where: { id },
       include: PERSONNEL_WITH_WORKSHOP_INCLUDE,
+    });
+  }
+
+  async findActivePersonnelByIdentity(params: PersonnelIdentityParams) {
+    const where: Prisma.PersonnelWhereInput = {
+      personnelName: params.personnelName,
+      status: "ACTIVE",
+      workshopId: params.workshopId,
+    };
+
+    if (params.contactPhone === null) {
+      where.OR = [{ contactPhone: null }, { contactPhone: "" }];
+    } else {
+      where.contactPhone = params.contactPhone;
+    }
+
+    if (params.excludeId !== undefined) {
+      where.id = { not: params.excludeId };
+    }
+
+    return this.prisma.personnel.findFirst({
+      where,
+      include: PERSONNEL_WITH_WORKSHOP_INCLUDE,
+      orderBy: { id: "asc" },
     });
   }
 

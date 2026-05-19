@@ -160,8 +160,8 @@
     />
 
     <!-- 添加或修改领料单对话框 -->
-    <el-dialog :title="title" v-model="open" width="1200px" append-to-body draggable>
-      <el-form ref="pickOrderRef" :model="form" :rules="rules" label-width="96px" v-loading="dialogLoading">
+    <el-dialog :title="title" v-model="open" width="1200px" append-to-body draggable class="document-dialog">
+      <el-form ref="pickOrderRef" :model="form" :rules="rules" label-width="96px" v-loading="dialogLoading" class="document-dialog-form">
         <el-row>
           <el-col :span="12">
             <el-form-item label="领料单号" prop="pickNo">
@@ -218,8 +218,8 @@
 	        </el-col>
         </el-row>
         <!-- 明细列表 -->
-        <div style="margin-top: 20px;">
-          <el-table :data="form.details" border stripe v-loading="dialogLoading">
+        <div ref="documentLinesSectionRef" class="document-lines-section" style="margin-top: 20px;">
+          <el-table :data="form.details" border stripe v-loading="dialogLoading" class="document-lines-table">
 	          <el-table-column type="index" width="50" align="center" />
             <el-table-column label="物料" prop="materialId" width="220">
               <template #default="scope">
@@ -313,7 +313,7 @@
     </el-dialog>
     
     <!-- 查看详情对话框 -->
-    <el-dialog title="查看领料单详情" v-model="detailOpen" width="800px" append-to-body draggable>
+    <el-dialog title="查看领料单详情" v-model="detailOpen" width="800px" append-to-body draggable class="document-dialog">
       <el-row :gutter="10">
         <el-col :span="24">
           <el-card class="box-card">
@@ -353,7 +353,7 @@
               </div>
             </template>
             <div style="margin-top: 20px;">
-              <el-table :data="detailData.details" border stripe>
+              <el-table :data="detailData.details" border stripe class="document-lines-table">
                 <el-table-column label="物料编码" prop="materialCode" />
                 <el-table-column label="物料名称" prop="materialName" />
                 <el-table-column label="规格型号" prop="specification" />
@@ -433,6 +433,7 @@ import {
   materialOptionsFromDocumentSnapshots,
   mergeMaterialOptions,
 } from "@/utils/materialOptions";
+import { scrollDocumentDialogToBottom } from "@/utils/documentDialogScroll";
 import { formatDateToYYYYMMDD, generateOrderNo } from "@/utils/orderNumber";
 import request from "@/utils/request";
 
@@ -465,6 +466,7 @@ const workshopLoadingForForm = ref(false);
 // 详情数据
 const detailData = ref({});
 const dialogLoading = ref(false);
+const documentLinesSectionRef = ref(null);
 
 const data = reactive({
   form: {
@@ -866,6 +868,7 @@ function handleAddDetail() {
     amount: null,
     remark: null,
   });
+  scrollDocumentDialogToBottom(documentLinesSectionRef);
 }
 
 /** 删除明细 */
@@ -1186,10 +1189,8 @@ async function loadPriceLayerOptions(row) {
  * 获取所选成本价层最大可领料数量
  */
 function getMaxQuantity(row) {
-  if (!row?.materialId) {
-    return 0;
-  }
-  return getSelectedPriceLayerAvailableQty(row) ?? undefined;
+  const availableQty = getSelectedPriceLayerAvailableQty(row);
+  return availableQty !== null && availableQty >= 0.01 ? availableQty : undefined;
 }
 
 /**

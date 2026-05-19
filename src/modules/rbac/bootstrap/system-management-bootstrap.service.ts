@@ -27,6 +27,11 @@ export class SystemManagementBootstrapService
     if (hasAnyNormalizedData) {
       await this.rbacRepository.loadFromNormalizedTables();
       if (normalizedBaseCounts.users > 0) {
+        const repairedMenuDisplayMetadata =
+          await this.rbacRepository.repairSeedMenuDisplayMetadata();
+        if (repairedMenuDisplayMetadata) {
+          await this.rbacRepository.flushPersistence();
+        }
         const repairedSeedDrift =
           await this.rbacRepository.ensureSeedPermissionMenus(
             ["rd-operator"],
@@ -35,10 +40,14 @@ export class SystemManagementBootstrapService
         const syncedSeedRoles = await this.rbacRepository.syncSeedRoleMenus([
           "rd-operator",
         ]);
-        if (repairedSeedDrift || syncedSeedRoles) {
+        if (
+          repairedMenuDisplayMetadata ||
+          repairedSeedDrift ||
+          syncedSeedRoles
+        ) {
           await this.rbacRepository.flushPersistence();
           this.logger.log(
-            "Repaired seed permission drift for monthly reporting baseline",
+            "Repaired seed menu metadata and permission drift for system management baseline",
           );
         }
       }

@@ -186,7 +186,7 @@ describe("RbacRuntimeRepository", () => {
   });
 
   it("repairs seeded monthly reporting permission menus for rd users", async () => {
-    await repository.deleteMenus([2914]);
+    await repository.deleteMenus([2914, 2916, 3580, 3590]);
 
     const before = await repository.findUserById(5);
     expect(before?.permissions).not.toContain(
@@ -203,6 +203,9 @@ describe("RbacRuntimeRepository", () => {
     expect(
       (await repository.listMenus({})).some((menu) => menu.menuId === 2914),
     ).toBe(true);
+    expect(
+      (await repository.listMenus({})).some((menu) => menu.menuId === 3580),
+    ).toBe(true);
     expect(after?.permissions).toContain("reporting:monthly-reporting:view");
   });
 
@@ -211,6 +214,7 @@ describe("RbacRuntimeRepository", () => {
     const exportMenu = state.menus.find((menu) => menu.menuId === 2915);
     const staleMonthlyMenu = state.menus.find((menu) => menu.menuId === 2914);
     const rdRole = state.roles.find((role) => role.roleKey === "rd-operator");
+    const monthlyMenuIds = [2914, 2916, 3580, 3590];
 
     if (!exportMenu || !staleMonthlyMenu || !rdRole) {
       throw new Error("Expected reporting seed fixtures to exist");
@@ -220,8 +224,12 @@ describe("RbacRuntimeRepository", () => {
       ...exportMenu,
       menuId: 2914,
     });
-    state.menus = state.menus.filter((menu) => menu.menuId !== 2915);
-    rdRole.menuIds = rdRole.menuIds.filter((menuId) => menuId !== 2914);
+    state.menus = state.menus.filter(
+      (menu) => ![2915, 2916, 3580, 3590].includes(menu.menuId),
+    );
+    rdRole.menuIds = rdRole.menuIds.filter(
+      (menuId) => !monthlyMenuIds.includes(menuId),
+    );
 
     const before = await repo.findUserById(5);
     expect(before?.permissions).not.toContain(
@@ -242,6 +250,9 @@ describe("RbacRuntimeRepository", () => {
     ).toBe(true);
     expect(
       (await repo.listMenus({})).some((menu) => menu.menuId === 2915),
+    ).toBe(true);
+    expect(
+      (await repo.listMenus({})).some((menu) => menu.menuId === 3590),
     ).toBe(true);
     expect(after?.permissions).toContain("reporting:monthly-reporting:view");
     expect(after?.permissions).not.toContain("reporting:export");

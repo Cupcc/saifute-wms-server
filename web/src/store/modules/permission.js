@@ -19,21 +19,21 @@ const SUPPORTED_BACKEND_ROUTE_GROUPS = [
   {
     key: "base",
     path: "/base",
-    name: "Base",
+    name: "MasterData",
     title: "基础数据",
     icon: "tree",
   },
   {
     key: "stock",
     path: "/stock",
-    name: "Stock",
+    name: "InventoryBusiness",
     title: "库存管理",
     icon: "build",
   },
   {
     key: "entry",
     path: "/entry",
-    name: "Entry",
+    name: "InboundBusiness",
     title: "入库管理",
     icon: "edit",
   },
@@ -47,14 +47,14 @@ const SUPPORTED_BACKEND_ROUTE_GROUPS = [
   {
     key: "workshop",
     path: "/take",
-    name: "WorkshopBusiness",
+    name: "WorkshopMaterialBusiness",
     title: "生产车间",
     icon: "guide",
   },
   {
     key: "rd",
     path: "/rd",
-    name: "RdDomain",
+    name: "RdSubwarehouse",
     titleByMode: {
       [CONSOLE_MODES.DEFAULT]: "研发协同",
       [CONSOLE_MODES.RD]: "研发小仓",
@@ -227,10 +227,8 @@ const SUPPORTED_BACKEND_ROUTE_META = {
     group: "entry",
     path: "order",
     component: "entry/order/index",
-    title: "验收单",
+    title: "验收入库",
     icon: "form",
-    displayOrder: 1,
-    preferLocalTitle: true,
   },
   EntryDetail: {
     group: "entry",
@@ -238,8 +236,6 @@ const SUPPORTED_BACKEND_ROUTE_META = {
     component: "entry/detail/index",
     title: "验收明细",
     icon: "list",
-    displayOrder: 2,
-    preferLocalTitle: true,
   },
   EntryIntoOrder: {
     group: "entry",
@@ -247,8 +243,6 @@ const SUPPORTED_BACKEND_ROUTE_META = {
     component: "entry/intoOrder/index",
     title: "入库单",
     icon: "clipboard",
-    displayOrder: 3,
-    preferLocalTitle: true,
   },
   EntryIntoDetail: {
     group: "entry",
@@ -256,8 +250,6 @@ const SUPPORTED_BACKEND_ROUTE_META = {
     component: "entry/intoDetail/index",
     title: "入库明细",
     icon: "list",
-    displayOrder: 4,
-    preferLocalTitle: true,
   },
   EntryReturnOrder: {
     group: "entry",
@@ -265,8 +257,6 @@ const SUPPORTED_BACKEND_ROUTE_META = {
     component: "entry/returnOrder/index",
     title: "退货单",
     icon: "refresh",
-    displayOrder: 5,
-    preferLocalTitle: true,
   },
   EntryReturnDetail: {
     group: "entry",
@@ -274,8 +264,6 @@ const SUPPORTED_BACKEND_ROUTE_META = {
     component: "entry/returnDetail/index",
     title: "退货明细",
     icon: "list",
-    displayOrder: 6,
-    preferLocalTitle: true,
   },
   TakePickOrder: {
     group: "workshop",
@@ -489,18 +477,6 @@ const SUPPORTED_BACKEND_ROUTE_META = {
   },
 };
 
-const FRONTEND_ROUTE_PERMISSION_FALLBACK = {
-  BaseMaterialCategory: ["master:material-category:list"],
-  EntryReturnOrder: ["inbound:order:list"],
-  EntryReturnDetail: ["inbound:order:list"],
-  SalesOrder: ["sales:order:list"],
-  SalesDetail: ["sales:order:list"],
-  SalesReturnOrder: ["sales:return:list"],
-  SalesReturnDetail: ["sales:return:list"],
-  MonthlyReportingMaterialCategory: ["reporting:monthly-reporting:view"],
-  RdMonthlyReportingMaterialCategory: ["reporting:monthly-reporting:view"],
-};
-
 function collectBackendRoutes(routes, routeMap = new Map()) {
   routes.forEach((route) => {
     if (!route || typeof route !== "object") {
@@ -520,28 +496,31 @@ function collectBackendRoutes(routes, routeMap = new Map()) {
 }
 
 function resolveRouteOrder(routeMeta, backendRoute, declarationIndex) {
-  if (typeof routeMeta.displayOrder === "number") {
-    return routeMeta.displayOrder;
-  }
-
   const orderNum = backendRoute?.meta?.orderNum;
   return typeof orderNum === "number" ? orderNum : 100000 + declarationIndex;
 }
 
-function resolveRouteTitle(routeMeta, backendMeta) {
-  if (routeMeta.preferLocalTitle) {
-    return routeMeta.title;
-  }
-  return backendMeta.title || routeMeta.title;
+function resolveGroupOrder(backendRoute, declarationIndex) {
+  const orderNum = backendRoute?.meta?.orderNum;
+  return typeof orderNum === "number" ? orderNum : 100000 + declarationIndex;
 }
 
-function resolveGroupTitle(groupMeta, currentConsoleMode) {
-  if (typeof groupMeta.title === "string") {
-    return groupMeta.title;
+function resolveGroupTitle(groupMeta, backendMeta, currentConsoleMode) {
+  if (
+    groupMeta.titleByMode &&
+    currentConsoleMode !== CONSOLE_MODES.DEFAULT
+  ) {
+    return (
+      groupMeta.titleByMode?.[currentConsoleMode] ??
+      backendMeta.title ??
+      groupMeta.titleByMode?.[CONSOLE_MODES.DEFAULT] ??
+      ""
+    );
   }
   return (
-    groupMeta.titleByMode?.[currentConsoleMode] ??
-    groupMeta.titleByMode?.[CONSOLE_MODES.DEFAULT] ??
+    backendMeta.title ||
+    groupMeta.title ||
+    groupMeta.titleByMode?.[CONSOLE_MODES.DEFAULT] ||
     ""
   );
 }
@@ -592,7 +571,13 @@ function buildFrontendRoutes(
   currentIsAdminUser = false,
 ) {
   const backendRoutesByName = collectBackendRoutes(backendRoutes);
-  return SUPPORTED_BACKEND_ROUTE_GROUPS.map((groupMeta) => {
+  return SUPPORTED_BACKEND_ROUTE_GROUPS.map((groupMeta, groupIndex) => {
+    const backendGroupRoute = backendRoutesByName.get(groupMeta.name);
+    if (!backendGroupRoute) {
+      return null;
+    }
+
+    const backendGroupMeta = backendGroupRoute?.meta ?? {};
     const children = Object.entries(SUPPORTED_BACKEND_ROUTE_META)
       .map(([routeName, routeMeta], declarationIndex) => ({
         routeName,
@@ -615,10 +600,7 @@ function buildFrontendRoutes(
           return false;
         }
 
-        return (
-          backendRoute ||
-          auth.hasPermiOr(FRONTEND_ROUTE_PERMISSION_FALLBACK[routeName] || [])
-        );
+        return Boolean(backendRoute);
       })
       .sort(
         (left, right) =>
@@ -635,10 +617,7 @@ function buildFrontendRoutes(
       )
       .map(({ routeName, routeMeta, backendRoute }) => {
         const backendMeta = backendRoute?.meta ?? {};
-        const displayOrder =
-          typeof routeMeta.displayOrder === "number"
-            ? routeMeta.displayOrder
-            : backendMeta.orderNum;
+        const displayOrder = backendMeta.orderNum;
         return {
           path: routeMeta.path,
           component: routeMeta.component,
@@ -646,7 +625,7 @@ function buildFrontendRoutes(
           ...(backendRoute?.hidden ? { hidden: true } : {}),
           ...(backendRoute?.query ? { query: backendRoute.query } : {}),
           meta: {
-            title: resolveRouteTitle(routeMeta, backendMeta),
+            title: backendMeta.title || routeMeta.title,
             icon: backendMeta.icon || routeMeta.icon,
             ...(typeof displayOrder === "number"
               ? { orderNum: displayOrder }
@@ -665,21 +644,42 @@ function buildFrontendRoutes(
     const redirectPath = children[0]?.path.startsWith("/")
       ? children[0].path
       : `${groupMeta.path}/${children[0]?.path}`;
-    const groupTitle = resolveGroupTitle(groupMeta, currentConsoleMode);
+    const groupTitle = resolveGroupTitle(
+      groupMeta,
+      backendGroupMeta,
+      currentConsoleMode,
+    );
 
     return {
-      path: groupMeta.path,
-      component: "Layout",
-      redirect: redirectPath,
-      alwaysShow: true,
-      name: groupMeta.name,
-      meta: {
-        title: groupTitle,
-        icon: groupMeta.icon,
+      backendGroupRoute,
+      groupIndex,
+      route: {
+        path: groupMeta.path,
+        component: "Layout",
+        redirect: redirectPath,
+        alwaysShow: true,
+        name: groupMeta.name,
+        meta: {
+          title: groupTitle,
+          icon: backendGroupMeta.icon || groupMeta.icon,
+          ...(typeof backendGroupMeta.orderNum === "number"
+            ? { orderNum: backendGroupMeta.orderNum }
+            : {}),
+        },
+        children,
       },
-      children,
     };
-  }).filter(Boolean);
+  })
+    .filter(Boolean)
+    .sort(
+      (left, right) =>
+        resolveGroupOrder(left.backendGroupRoute, left.groupIndex) -
+        resolveGroupOrder(
+          right.backendGroupRoute,
+          right.groupIndex,
+        ),
+    )
+    .map(({ route }) => route);
 }
 
 const usePermissionStore = defineStore("permission", {

@@ -13,6 +13,8 @@ import {
 export interface MonthlyMaterialCategoryBalanceTotals {
   openingQuantity: string;
   openingAmount: string;
+  netQuantity: string;
+  netAmount: string;
   closingQuantity: string;
   closingAmount: string;
 }
@@ -360,6 +362,12 @@ function formatBalanceAccumulator(
   return {
     openingQuantity: formatQuantity(accumulator.openingQuantity),
     openingAmount: formatMoney(accumulator.openingAmount),
+    netQuantity: formatQuantity(
+      accumulator.closingQuantity.sub(accumulator.openingQuantity),
+    ),
+    netAmount: formatMoney(
+      accumulator.closingAmount.sub(accumulator.openingAmount),
+    ),
     closingQuantity: formatQuantity(accumulator.closingQuantity),
     closingAmount: formatMoney(accumulator.closingAmount),
   };

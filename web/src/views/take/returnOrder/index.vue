@@ -191,7 +191,8 @@
 		/>
 		
 		<!-- 添加或修改退料单对话框 -->
-		<el-dialog :title="title" v-model="open" width="1200px" append-to-body draggable>
+		<el-dialog :title="title" v-model="open" width="1200px" append-to-body draggable class="document-dialog">
+			<div class="document-form-shell">
 			<el-form ref="returnOrderRef" :model="form" :rules="rules" label-width="80px" v-loading="dialogLoading">
 				<el-row>
 					<el-col :span="8">
@@ -277,8 +278,8 @@
 			</el-form>
 			
 			<!-- 明细列表 -->
-			<div style="margin-top: 20px;">
-				<el-table :data="detailList" border stripe v-loading="dialogLoading">
+			<div ref="documentLinesSectionRef" class="document-lines-section" style="margin-top: 20px;">
+				<el-table :data="detailList" border stripe v-loading="dialogLoading" class="document-lines-table">
 					<el-table-column type="index" width="50" align="center" />
 					<el-table-column label="物料" prop="materialId" width="220">
 						<template #default="scope">
@@ -335,6 +336,7 @@
 				<el-button type="primary" plain icon="Plus" @click="addDetailItem" :disabled="isView">添加明细</el-button>
 				<span>合计金额: {{ form.totalAmount }}</span>
 			</div>
+			</div>
 			
 			<template #footer>
 				<div class="dialog-footer">
@@ -346,7 +348,7 @@
 		</el-dialog>
 		
 		<!-- 退料单详情对话框 -->
-		<el-dialog title="退料单详情" v-model="detailOpen" width="800px" append-to-body draggable>
+		<el-dialog title="退料单详情" v-model="detailOpen" width="800px" append-to-body draggable class="document-dialog">
 			<el-row :gutter="10">
 				<el-col :span="24">
 					<el-card class="box-card">
@@ -387,7 +389,7 @@
 							</div>
 						</template>
 						<div style="margin-top: 20px;">
-							<el-table :data="detailData.details" border stripe>
+							<el-table :data="detailData.details" border stripe max-height="320" class="document-lines-table">
 								<el-table-column label="物料编码" prop="material.materialCode" />
 								<el-table-column label="物料名称" prop="material.materialName" />
 								<el-table-column label="规格型号" prop="material.specification" />
@@ -524,6 +526,7 @@ import {
   materialOptionsFromDocumentSnapshots,
   mergeMaterialOptions,
 } from "@/utils/materialOptions";
+import { scrollDocumentDialogToBottom } from "@/utils/documentDialogScroll";
 import { formatDateToYYYYMMDD, generateOrderNo } from "@/utils/orderNumber";
 
 const { proxy } = getCurrentInstance();
@@ -573,6 +576,7 @@ const workshopLoading = ref(false);
 // 详情数据
 const detailData = ref({});
 const dialogLoading = ref(false);
+const documentLinesSectionRef = ref(null);
 
 const data = reactive({
   form: {},
@@ -931,6 +935,7 @@ function addDetailItem() {
     amount: 0,
   });
   calculateTotalAmount();
+  scrollDocumentDialogToBottom(documentLinesSectionRef);
 }
 
 /** 删除明细项 */

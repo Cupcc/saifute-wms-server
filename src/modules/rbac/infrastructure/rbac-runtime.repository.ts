@@ -50,6 +50,11 @@ export class RbacRuntimeRepository {
       this.seedRepairRepo.syncSeedRoleMenus(roleKeys),
     );
   }
+  async repairSeedMenuDisplayMetadata(): Promise<boolean> {
+    return this.mutateState(() =>
+      this.seedRepairRepo.repairSeedMenuDisplayMetadata(),
+    );
+  }
   async persistState(): Promise<void> {
     return this.persistenceRepo.persistState();
   }
@@ -335,14 +340,19 @@ export class RbacRuntimeRepository {
   ): RouteNode[] {
     return routes
       .map((route) => this.decorateRoute(route, menuByRouteName))
+      .filter((route): route is RouteNode => Boolean(route))
       .sort(compareRoutesByMenuOrder);
   }
 
   private decorateRoute(
     route: RouteNode,
     menuByRouteName: Map<string, ManagedMenuRecord>,
-  ): RouteNode {
+  ): RouteNode | null {
     const menu = menuByRouteName.get(route.name);
+    if (!menu) {
+      return null;
+    }
+
     const children = route.children
       ? this.decorateRoutes(route.children, menuByRouteName)
       : undefined;

@@ -139,8 +139,8 @@
     />
 
     <!-- 添加或修改报废单对话框 -->
-    <el-dialog :title="title" v-model="open" width="1200px" append-to-body draggable v-loading="dialogLoading">
-      <el-form ref="scrapOrderRef" :model="form" :rules="rules" label-width="80px">
+    <el-dialog :title="title" v-model="open" width="1200px" append-to-body draggable v-loading="dialogLoading" class="document-dialog">
+      <el-form ref="scrapOrderRef" :model="form" :rules="rules" label-width="80px" class="document-dialog-form">
         <el-row>
           <el-col :span="12">
             <el-form-item label="报废单号" prop="scrapNo">
@@ -208,11 +208,11 @@
           </el-col>
         </el-row>
         
-        <div style="margin-top: 20px;">
+        <div ref="documentLinesSectionRef" class="document-lines-section" style="margin-top: 20px;">
           <div style="margin-bottom: 10px;">
             <el-button type="primary" plain icon="Plus" @click="addDetailItem" :disabled="isView">添加明细</el-button>
           </div>
-          <adaptive-table :data="detailList" border stripe v-loading="dialogLoading">
+          <adaptive-table :data="detailList" border stripe v-loading="dialogLoading" class="document-lines-table">
             <el-table-column label="物料" prop="materialId" width="220">
               <template #default="scope">
                 <el-select
@@ -286,7 +286,7 @@
     </el-dialog>
     
     <!-- 报废单详情对话框 -->
-    <el-dialog title="报废单详情" v-model="detailOpen" width="800px" append-to-body>
+    <el-dialog title="报废单详情" v-model="detailOpen" width="800px" append-to-body class="document-dialog">
       <el-tabs v-model="detailTabActive">
         <el-tab-pane label="报废单信息" name="main">
           <el-descriptions :column="2" border>
@@ -302,7 +302,7 @@
           </el-descriptions>
         </el-tab-pane>
         <el-tab-pane label="明细信息" name="details">
-          <adaptive-table :data="detailData.details" border stripe>
+          <adaptive-table :data="detailData.details" border stripe max-height="320" class="document-lines-table">
             <el-table-column label="序号" type="index" width="50" align="center" />
             <el-table-column label="物料编码" prop="material.materialCode" />
             <el-table-column label="物料名称" prop="material.materialName" />
@@ -359,6 +359,7 @@ import {
   materialOptionsFromDocumentSnapshots,
   mergeMaterialOptions,
 } from "@/utils/materialOptions";
+import { scrollDocumentDialogToBottom } from "@/utils/documentDialogScroll";
 import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
 
 const { proxy } = getCurrentInstance();
@@ -396,6 +397,7 @@ const workshopLoading = ref(false);
 // 详情数据
 const detailData = ref({});
 const dialogLoading = ref(false);
+const documentLinesSectionRef = ref(null);
 
 const data = reactive({
   form: {},
@@ -629,6 +631,7 @@ function addDetailItem() {
     estimatedLoss: null,
     remark: "",
   });
+  scrollDocumentDialogToBottom(documentLinesSectionRef);
 }
 
 /** 删除明细项 */

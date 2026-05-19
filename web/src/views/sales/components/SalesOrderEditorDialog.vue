@@ -5,10 +5,17 @@
     width="1180px"
     append-to-body
     draggable
+    class="document-dialog"
     @update:model-value="handleVisibleChange"
   >
-    <div v-loading="dialogLoading || submitting">
-      <el-form ref="formRef" :model="form" :rules="formRules" label-width="96px">
+    <div v-loading="dialogLoading || submitting" class="document-form-shell">
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="formRules"
+        label-width="96px"
+        class="document-dialog-form"
+      >
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item :label="documentLabel">
@@ -160,16 +167,8 @@
 
         <el-divider content-position="left">单据明细</el-divider>
 
-        <div class="detail-toolbar">
-          <el-button type="primary" plain icon="Plus" @click="handleAddLine">
-            新增明细
-          </el-button>
-          <span v-if="isSalesReturnMode" class="detail-tip">
-            选择来源出库单后会自动带出明细，可删除不需要退回的行。
-          </span>
-        </div>
-
-        <el-table :data="form.details" border stripe max-height="420">
+        <div class="document-lines-section">
+        <el-table :data="form.details" border stripe class="document-lines-table">
           <el-table-column type="index" width="56" align="center" />
 
           <el-table-column
@@ -364,6 +363,18 @@
             </template>
           </el-table-column>
         </el-table>
+          <div class="document-lines-actions">
+            <div class="document-lines-actions__left">
+              <el-button type="primary" plain icon="Plus" @click="handleAddLine">
+                新增明细
+              </el-button>
+              <span v-if="isSalesReturnMode" class="detail-tip">
+                选择来源出库单后会自动带出明细，可删除不需要退回的行。
+              </span>
+            </div>
+            <span>合计金额: {{ lineTotalAmount }}</span>
+          </div>
+        </div>
       </el-form>
     </div>
 
@@ -464,6 +475,11 @@ const dialogTitle = computed(() => {
   }
   return isOrderEditMode.value ? "修改出库单" : "新增出库单";
 });
+const lineTotalAmount = computed(() =>
+  formatAmount(
+    form.details.reduce((total, detail) => total + computeLineAmount(detail), 0),
+  ),
+);
 
 watch(
   () => props.modelValue,
@@ -1030,7 +1046,7 @@ function getLineQuantityMax(row) {
     return factoryNumberCount;
   }
   const availableQty = getSelectedPriceLayerAvailableQty(row);
-  return availableQty === null ? undefined : availableQty;
+  return availableQty !== null && availableQty >= 0.01 ? availableQty : undefined;
 }
 
 function handleQuantityChange(row) {
@@ -1428,15 +1444,22 @@ void [
 </script>
 
 <style scoped lang="scss">
-.detail-toolbar {
+.document-lines-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 12px;
+  margin-top: 10px;
+}
 
-  .detail-tip {
-    color: #909399;
-    font-size: 13px;
-  }
+.document-lines-actions__left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.detail-tip {
+  color: #909399;
+  font-size: 13px;
 }
 </style>

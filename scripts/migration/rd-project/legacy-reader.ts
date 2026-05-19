@@ -369,11 +369,15 @@ async function readPersonnelDependencies(
     }
 
     const existingRows = groupedPersonnel.get(normalizedName) ?? [];
-    existingRows.push({
-      targetId: row.targetId,
-      personnelCode: row.personnelCode,
-      personnelName: row.personnelName,
-    });
+    if (
+      !existingRows.some((existingRow) => existingRow.targetId === row.targetId)
+    ) {
+      existingRows.push({
+        targetId: row.targetId,
+        personnelCode: row.personnelCode,
+        personnelName: row.personnelName,
+      });
+    }
     groupedPersonnel.set(normalizedName, existingRows);
   }
 

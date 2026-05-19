@@ -93,12 +93,18 @@ export class MonthlyReportSourceService {
       query.yearMonth,
       this.appConfigService.businessTimezone,
     );
-    return this.materialCategoryRepository.findMonthlyMaterialCategoryEntries({
-      start,
-      end,
-      stockScope: query.stockScope,
-      workshopId: query.workshopId,
-    });
+    const entries =
+      await this.materialCategoryRepository.findMonthlyMaterialCategoryEntries({
+        start,
+        end,
+        stockScope: query.stockScope,
+        workshopId: query.workshopId,
+      });
+
+    return entries.map((entry) => ({
+      ...entry,
+      abnormalFlags: [],
+    }));
   }
 
   async loadMaterialCategoryBalanceSnapshots(

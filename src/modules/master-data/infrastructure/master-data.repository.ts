@@ -286,6 +286,14 @@ export class MasterDataRepository {
     return this.partyRepository.findPersonnelById(...args);
   }
 
+  async findActivePersonnelByIdentity(
+    ...args: Parameters<
+      MasterDataPartyRepository["findActivePersonnelByIdentity"]
+    >
+  ) {
+    return this.partyRepository.findActivePersonnelByIdentity(...args);
+  }
+
   async createPersonnel(
     ...args: Parameters<MasterDataPartyRepository["createPersonnel"]>
   ) {
