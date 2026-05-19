@@ -18,10 +18,8 @@ Core stack:
 
 - Prefer `bun` for package scripts and runtime commands.
 - Prefer `rg` / `rg --files` for search.
-- Keep changes minimal and focused on the requested task.
-- Do not rewrite unrelated modules while fixing a local issue.
-- Do not commit, push, or create branches unless explicitly asked.
-- Do not add new dependencies unless there is a clear need and existing utilities cannot solve the problem.
+- Keep changes focused; do not rewrite unrelated modules.
+- After a task is complete, automatically commit only the current task scope; never include `.env*` secrets or unrelated local files.
 
 ## Architecture Rules
 
@@ -88,7 +86,6 @@ Use these docs before making broad architectural changes:
 
 ## Safety Rules
 
-- Never expose or commit secrets from `.env*` files.
 - Do not modify generated files unless the project convention requires it.
 - Do not perform production/staging data migrations without explicit user approval.
 - Do not silence TypeScript, lint, or test failures with broad ignores.
