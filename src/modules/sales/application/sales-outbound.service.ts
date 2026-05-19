@@ -21,7 +21,10 @@ import { FIFO_SOURCE_OPERATION_TYPES } from "../../inventory-core/application/in
 import type { CreateOutboundOrderDto } from "../dto/create-outbound-order.dto";
 import type { QueryOutboundOrderDto } from "../dto/query-outbound-order.dto";
 import { SalesRepository } from "../infrastructure/sales.repository";
-import { resolveFactoryNumberRangesOrThrow } from "./factory-number-ranges";
+import {
+  assertFactoryNumberQuantityMatches,
+  resolveFactoryNumberRangesOrThrow,
+} from "./factory-number-ranges";
 import { assertNoDuplicateOutboundPriceLayers } from "./sales-price-layer-rules";
 import { SalesSharedService } from "./sales-shared.service";
 import { type OutboundLineWriteData } from "./sales-snapshots.service";
@@ -130,6 +133,7 @@ export class SalesOutboundService {
       linesWithSnapshots.map((line) => [line.lineNo, line.projectTargetId]),
     );
     assertNoDuplicateOutboundPriceLayers(linesWithSnapshots);
+    linesWithSnapshots.forEach(assertFactoryNumberQuantityMatches);
     await this.assertOutboundPriceLayerAvailability(
       linesWithSnapshots,
       dto.workshopId,

@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
+import { normalizeMaterialCode } from "../../../shared/domain/material-code";
 import type { CreateMaterialDto } from "../dto/create-material.dto";
 import type { QueryMaterialDto } from "../dto/query-master-data.dto";
 import type { UpdateMaterialDto } from "../dto/update-material.dto";
@@ -39,15 +40,20 @@ export class MaterialService {
   }
 
   async create(dto: CreateMaterialDto, createdBy?: string) {
-    const existing = await this.repository.findMaterialByCode(dto.materialCode);
+    const materialCode = normalizeMaterialCode(dto.materialCode);
+    if (!materialCode) {
+      throw new BadRequestException("物料编码不能为空");
+    }
+
+    const existing = await this.repository.findMaterialByCode(materialCode);
     if (existing) {
-      throw new ConflictException(`物料编码已存在: ${dto.materialCode}`);
+      throw new ConflictException(`物料编码已存在: ${materialCode}`);
     }
     const categoryId = await this.resolveCategoryId(dto.categoryId);
 
     return this.repository.createMaterial(
       {
-        materialCode: dto.materialCode,
+        materialCode,
         materialName: dto.materialName,
         specModel: dto.specModel,
         categoryId,
@@ -118,9 +124,12 @@ export class MaterialService {
     },
     createdBy?: string,
   ) {
-    const existing = await this.repository.findMaterialByCode(
-      params.materialCode,
-    );
+    const materialCode = normalizeMaterialCode(params.materialCode);
+    if (!materialCode) {
+      throw new BadRequestException("物料编码不能为空");
+    }
+
+    const existing = await this.repository.findMaterialByCode(materialCode);
     if (existing) {
       return existing;
     }
@@ -134,7 +143,7 @@ export class MaterialService {
 
     return this.repository.createAutoMaterial(
       {
-        materialCode: params.materialCode,
+        materialCode,
         materialName: params.materialName,
         unitCode: params.unitCode,
         specModel: params.specModel,

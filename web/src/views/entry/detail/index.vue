@@ -102,7 +102,7 @@
 
     <adaptive-table border stripe v-loading="loading" :data="detailList">
       <el-table-column type="index" width="60" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="验收单号" align="center" prop="inboundNo" key="inboundNo" v-if="columns[0].visible"/>
+      <el-table-column sortable show-overflow-tooltip label="验收单号" align="center" prop="inboundNo" key="inboundNo" min-width="140" v-if="columns[0].visible"/>
       <el-table-column
         sortable
         show-overflow-tooltip

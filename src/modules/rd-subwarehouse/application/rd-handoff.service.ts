@@ -185,11 +185,7 @@ export class RdHandoffService {
         : targetStockScopeRecord.scopeName;
 
     return createWithGeneratedDocumentNo((attempt) => {
-      const documentNo = buildDashedTimestampDocumentNo(
-        "RDH",
-        bizDate,
-        attempt,
-      );
+      const documentNo = buildDashedTimestampDocumentNo("RH", bizDate, attempt);
       return this.repository.runInTransaction(async (tx) => {
         const projectTargetIdByProjectId = new Map<number, number>();
         const order = await this.repository.createOrder(

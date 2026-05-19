@@ -275,36 +275,43 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="数量" width="130">
-            <template #default="{ row }">
-              <el-input
-                v-model="row.quantity"
-                placeholder="数量"
-                @input="normalizeDecimalField(row, 'quantity', 6)"
-              />
-            </template>
-          </el-table-column>
-
           <el-table-column
             v-if="!isSalesReturnMode"
             label="成本价层"
-            width="150"
+            width="200"
           >
             <template #default="{ row }">
               <el-select
                 v-model="row.selectedUnitCost"
                 filterable
                 clearable
-                placeholder="请选择"
+                placeholder="请选择成本价层"
                 style="width: 100%"
               >
                 <el-option
                   v-for="item in row.priceLayerOptions"
                   :key="item.unitCost"
-                  :label="`${item.unitCost} / 可用 ${item.availableQty}`"
+                  :label="formatPriceLayerLabel(item)"
                   :value="item.unitCost"
                 />
               </el-select>
+            </template>
+          </el-table-column>
+
+          <el-table-column label="数量" width="150">
+            <template #default="{ row }">
+              <el-input-number
+                v-model="row.quantity"
+                placeholder="数量"
+                :min="0.01"
+                :max="getLineQuantityMax(row)"
+                :precision="2"
+                :step="1"
+                controls-position="right"
+                style="width: 100%"
+                :disabled="isFactoryNumberQuantityLocked(row)"
+                @change="handleQuantityChange(row)"
+              />
             </template>
           </el-table-column>
 
@@ -494,7 +501,7 @@ function buildEmptyLine() {
     salesProjectName: "",
     projectTargetId: undefined,
     sourceProjectTargetId: undefined,
-    quantity: "",
+    quantity: undefined,
     selectedUnitCost: "",
     unitPrice: "",
     factoryNumber: "",
@@ -596,6 +603,7 @@ function mapOrderDetailToLine(detail) {
   return {
     detailId: detail.detailId,
     materialId: detail.materialId,
+    originalMaterialId: detail.materialId,
     materialCode: detail.materialCode || "",
     materialName: detail.materialName || "",
     specification: detail.specification || "",
@@ -604,8 +612,10 @@ function mapOrderDetailToLine(detail) {
     salesProjectName: detail.salesProjectName || "",
     projectTargetId: detail.projectTargetId ?? undefined,
     sourceProjectTargetId: detail.sourceProjectTargetId ?? undefined,
-    quantity: toInputString(detail.quantity),
+    quantity: toInputNumber(detail.quantity),
+    originalQuantity: toInputString(detail.quantity),
     selectedUnitCost: toInputString(detail.selectedUnitCost),
+    originalSelectedUnitCost: toInputString(detail.selectedUnitCost),
     unitPrice: toInputString(detail.unitPrice),
     factoryNumber: formatFactoryNumber(detail),
     priceLayerOptions: [],
@@ -619,6 +629,14 @@ function toInputString(value) {
     return "";
   }
   return String(value);
+}
+
+function toInputNumber(value) {
+  if (value === null || typeof value === "undefined" || value === "") {
+    return undefined;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : undefined;
 }
 
 function ensureCustomerOption(item) {
@@ -751,7 +769,7 @@ async function applyDraftPayload(draft) {
             Object.hasOwn(line, "sourceProjectTargetId")
               ? line.sourceProjectTargetId
               : (line.projectTargetId ?? draft.projectTargetId ?? undefined),
-          quantity: toInputString(line.quantity),
+          quantity: toInputNumber(line.quantity),
           selectedUnitCost: toInputString(line.selectedUnitCost),
           unitPrice: toInputString(line.unitPrice),
           remark: line.remark || "",
@@ -858,7 +876,7 @@ async function handleSourceOrderChange(orderId) {
             salesProjectName: detail.salesProjectName || "",
             projectTargetId: detail.projectTargetId ?? undefined,
             sourceProjectTargetId: detail.sourceProjectTargetId ?? undefined,
-            quantity: toInputString(detail.quantity),
+            quantity: toInputNumber(detail.quantity),
             selectedUnitCost: toInputString(detail.selectedUnitCost),
             unitPrice: toInputString(detail.unitPrice),
             factoryNumber: "",
@@ -895,7 +913,7 @@ function handleSourceLineChange(row) {
   row.selectedUnitCost = toInputString(sourceLine.selectedUnitCost);
   ensureSalesProjectOption(row);
   if (!row.quantity) {
-    row.quantity = toInputString(sourceLine.quantity);
+    row.quantity = toInputNumber(sourceLine.quantity);
   }
   if (!row.unitPrice) {
     row.unitPrice = toInputString(sourceLine.unitPrice);
@@ -984,10 +1002,48 @@ function formatFactoryNumber(row) {
 
 function handleFactoryNumberInput(row) {
   row.factoryNumber = normalizeFactoryNumber(row.factoryNumber);
-  const count = calculateFactoryNumberCount(row.factoryNumber);
-  if (count > 0) {
-    row.quantity = String(count);
+  const count = getFactoryNumberCount(row);
+  if (count !== null) {
+    row.quantity = count;
   }
+}
+
+function getFactoryNumberCount(row) {
+  const factoryNumber = toInputString(row?.factoryNumber);
+  if (!factoryNumber || !isValidFactoryNumber(factoryNumber)) {
+    return null;
+  }
+  const count = calculateFactoryNumberCount(factoryNumber);
+  return count > 0 ? count : null;
+}
+
+function isFactoryNumberQuantityLocked(row) {
+  return !isSalesReturnMode.value && getFactoryNumberCount(row) !== null;
+}
+
+function getLineQuantityMax(row) {
+  if (isSalesReturnMode.value) {
+    return undefined;
+  }
+  const factoryNumberCount = getFactoryNumberCount(row);
+  if (factoryNumberCount !== null) {
+    return factoryNumberCount;
+  }
+  const availableQty = getSelectedPriceLayerAvailableQty(row);
+  return availableQty === null ? undefined : availableQty;
+}
+
+function handleQuantityChange(row) {
+  const factoryNumberCount = getFactoryNumberCount(row);
+  if (factoryNumberCount !== null) {
+    row.quantity = factoryNumberCount;
+    return;
+  }
+  if (row.quantity === null || typeof row.quantity === "undefined") {
+    row.quantity = undefined;
+    return;
+  }
+  row.quantity = toInputNumber(row.quantity);
 }
 
 function computeLineAmount(row) {
@@ -1002,6 +1058,59 @@ function computeLineAmount(row) {
 function formatAmount(value) {
   const parsed = Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed.toFixed(2) : "0.00";
+}
+
+function getSelectedPriceLayer(row) {
+  const selectedUnitCost = toInputString(row?.selectedUnitCost);
+  if (!selectedUnitCost) {
+    return null;
+  }
+  return (
+    row?.priceLayerOptions?.find((item) => item.unitCost === selectedUnitCost) ??
+    null
+  );
+}
+
+function getOriginalSelectedPriceLayerQuantity(row) {
+  if (!row?.detailId) {
+    return 0;
+  }
+  const sameMaterial = row.originalMaterialId === row.materialId;
+  const samePriceLayer =
+    toInputString(row.originalSelectedUnitCost) ===
+    toInputString(row.selectedUnitCost);
+  const originalQuantity = Number(row.originalQuantity);
+  if (!sameMaterial || !samePriceLayer || !Number.isFinite(originalQuantity)) {
+    return 0;
+  }
+  return originalQuantity > 0 ? originalQuantity : 0;
+}
+
+function getSelectedPriceLayerAvailableQty(row) {
+  const selectedLayer = getSelectedPriceLayer(row);
+  if (!selectedLayer) {
+    return null;
+  }
+  const originalQuantity = getOriginalSelectedPriceLayerQuantity(row);
+  const layerAvailableQty = Number(selectedLayer.availableQty);
+  if (Number.isFinite(layerAvailableQty)) {
+    return layerAvailableQty + originalQuantity;
+  }
+  return originalQuantity > 0 ? originalQuantity : null;
+}
+
+function formatQuantityDisplay(value) {
+  const quantity = Number(value);
+  if (!Number.isFinite(quantity)) {
+    return "-";
+  }
+  return quantity.toFixed(2);
+}
+
+function formatPriceLayerLabel(item) {
+  const unitCost = formatAmount(item?.unitCost);
+  const availableQty = formatQuantityDisplay(item?.availableQty);
+  return `${unitCost} / 可用 ${availableQty}`;
 }
 
 async function searchCustomers(keyword) {
@@ -1122,13 +1231,20 @@ async function loadPriceLayerOptions(row) {
     unitCost: toInputString(item.unitCost),
     availableQty: toInputString(item.availableQty),
   }));
-  if (
-    row.selectedUnitCost &&
-    row.priceLayerOptions.some(
-      (item) => item.unitCost === toInputString(row.selectedUnitCost),
-    )
-  ) {
-    row.selectedUnitCost = toInputString(row.selectedUnitCost);
+  const selectedUnitCost = toInputString(row.selectedUnitCost);
+  const hasSelectedLayer =
+    selectedUnitCost &&
+    row.priceLayerOptions.some((item) => item.unitCost === selectedUnitCost);
+  if (hasSelectedLayer) {
+    row.selectedUnitCost = selectedUnitCost;
+    return;
+  }
+  if (selectedUnitCost && getOriginalSelectedPriceLayerQuantity(row) > 0) {
+    row.priceLayerOptions.unshift({
+      unitCost: selectedUnitCost,
+      availableQty: "-",
+    });
+    row.selectedUnitCost = selectedUnitCost;
     return;
   }
 
@@ -1174,6 +1290,11 @@ async function validateForm() {
       proxy.$modal.msgError(`第 ${index + 1} 行数量不能为空`);
       return false;
     }
+    const quantity = Number(line.quantity);
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      proxy.$modal.msgError(`第 ${index + 1} 行数量必须大于0`);
+      return false;
+    }
     if (
       !isSalesReturnMode.value &&
       line.factoryNumber &&
@@ -1184,9 +1305,29 @@ async function validateForm() {
       );
       return false;
     }
+    const factoryNumberCount = getFactoryNumberCount(line);
+    if (
+      !isSalesReturnMode.value &&
+      factoryNumberCount !== null &&
+      quantity !== factoryNumberCount
+    ) {
+      proxy.$modal.msgError(
+        `第 ${index + 1} 行编号数量与出库数量不一致：编号数量${factoryNumberCount}，输入${formatQuantityDisplay(quantity)}`,
+      );
+      return false;
+    }
     if (!isSalesReturnMode.value && !line.selectedUnitCost) {
       proxy.$modal.msgError(`第 ${index + 1} 行成本价层不能为空`);
       return false;
+    }
+    if (!isSalesReturnMode.value) {
+      const availableQty = getSelectedPriceLayerAvailableQty(line);
+      if (availableQty !== null && quantity > availableQty) {
+        proxy.$modal.msgError(
+          `第 ${index + 1} 行所选成本价层可用数量不足：可用${formatQuantityDisplay(availableQty)}，输入${formatQuantityDisplay(quantity)}`,
+        );
+        return false;
+      }
     }
   }
 

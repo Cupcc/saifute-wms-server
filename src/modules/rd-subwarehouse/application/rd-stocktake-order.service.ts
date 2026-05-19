@@ -116,11 +116,7 @@ export class RdStocktakeOrderService {
     const bizDate = new Date(dto.bizDate);
 
     return createWithGeneratedDocumentNo((attempt) => {
-      const documentNo = buildDashedTimestampDocumentNo(
-        "RDST",
-        bizDate,
-        attempt,
-      );
+      const documentNo = buildDashedTimestampDocumentNo("RP", bizDate, attempt);
       return this.repository.runInTransaction(async (tx) => {
         const projectTargetIdByProjectId = new Map<number, number>();
         const linesWithSnapshots = await Promise.all(

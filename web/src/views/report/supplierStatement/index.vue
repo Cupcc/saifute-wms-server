@@ -321,7 +321,7 @@ function handleExport() {
           :summary-method="getEntrySummaries"
         >
           <el-table-column type="index" label="序号" width="60" align="center" />
-          <el-table-column prop="inboundNo" label="验收单号" align="center" show-overflow-tooltip />
+          <el-table-column prop="inboundNo" label="验收单号" align="center" min-width="140" show-overflow-tooltip />
           <el-table-column prop="inboundDate" label="验收日期" align="center" width="120" />
           <el-table-column prop="material.materialName" label="物料名称" align="center" show-overflow-tooltip>
             <template #default="scope">

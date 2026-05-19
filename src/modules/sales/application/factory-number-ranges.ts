@@ -84,6 +84,34 @@ export function hasFactoryNumberExpression(
   return Boolean(formatFactoryNumberExpression(startNumber, endNumber));
 }
 
+function countFactoryNumberRanges(ranges: FactoryNumberRange[]) {
+  return ranges.reduce(
+    (sum, range) =>
+      sum + Number(range.endNumber) - Number(range.startNumber) + 1,
+    0,
+  );
+}
+
+export function assertFactoryNumberQuantityMatches(line: {
+  lineNo?: number;
+  quantity: { toString(): string };
+  startNumber?: string | null;
+  endNumber?: string | null;
+}) {
+  const ranges = resolveFactoryNumberRangesOrThrow(line);
+  if (ranges.length === 0) {
+    return;
+  }
+
+  const expectedQuantity = countFactoryNumberRanges(ranges);
+  const actualQuantity = Number(line.quantity.toString());
+  if (!Number.isFinite(actualQuantity) || actualQuantity !== expectedQuantity) {
+    throw new BadRequestException(
+      `第 ${line.lineNo ?? "-"} 行编号数量与出库数量不一致: 编号数量=${expectedQuantity}, 出库数量=${line.quantity.toString()}`,
+    );
+  }
+}
+
 export function resolveFactoryNumberRangesOrThrow(line: {
   lineNo?: number;
   startNumber?: string | null;

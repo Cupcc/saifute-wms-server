@@ -147,7 +147,7 @@
         v-if="columns[0].visible"
         label="单号"
         prop="documentNo"
-        min-width="170"
+        min-width="140"
         show-overflow-tooltip
       >
         <template #default="scope">
@@ -525,7 +525,7 @@ function compareBizDateRows(left, right) {
 
 function formatNumber(value) {
   const parsed = Number(value ?? 0);
-  return Number.isFinite(parsed) ? parsed : 0;
+  return Number.isFinite(parsed) ? parsed.toFixed(2) : "0.00";
 }
 
 function formatAmount(value) {

@@ -94,7 +94,7 @@
 
     <adaptive-table border stripe v-loading="loading" :data="orderList">
       <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="验收单号" align="center" min-width="120" prop="inboundNo" v-if="columns[0].visible">
+      <el-table-column sortable show-overflow-tooltip label="验收单号" align="center" min-width="140" prop="inboundNo" v-if="columns[0].visible">
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
             {{ scope.row.inboundNo }}

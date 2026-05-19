@@ -190,7 +190,7 @@ describe("WorkshopMaterialPickService", () => {
           },
           "1",
         ),
-      ).rejects.toThrow("第 1 行成本价层不能为空");
+      ).rejects.toThrow("第 1 行单价不能为空");
 
       expect(mocks.repository.createOrder).not.toHaveBeenCalled();
       expect(mocks.inventoryService.settleConsumerOut).not.toHaveBeenCalled();
@@ -349,7 +349,7 @@ describe("WorkshopMaterialPickService", () => {
           },
           "1",
         ),
-      ).rejects.toThrow("第 1 行成本价层不能为空");
+      ).rejects.toThrow("第 1 行单价不能为空");
 
       expect(
         mocks.inventoryService.releaseAllSourceUsagesForConsumer,

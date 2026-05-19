@@ -1,3 +1,4 @@
+import { Transform } from "class-transformer";
 import {
   IsNotEmpty,
   IsNumber,
@@ -6,8 +7,12 @@ import {
   Matches,
   MaxLength,
 } from "class-validator";
+import { normalizeMaterialCode } from "../../../shared/domain/material-code";
 
 export class CreateMaterialDto {
+  @Transform(({ value }) =>
+    typeof value === "string" ? normalizeMaterialCode(value) : value,
+  )
   @IsString()
   @IsNotEmpty()
   @MaxLength(64)

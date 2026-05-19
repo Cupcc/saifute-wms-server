@@ -628,7 +628,7 @@
         <el-table v-if="!isMaterialCategoryView" :data="detailRows" stripe v-loading="detailLoading">
           <el-table-column prop="domainLabel" label="领域" min-width="120" />
           <el-table-column prop="documentTypeLabel" label="单据类型" min-width="140" />
-          <el-table-column prop="documentNo" label="单据编号" min-width="180" />
+          <el-table-column prop="documentNo" label="单据编号" min-width="140" />
           <el-table-column prop="bizDate" label="业务日期" min-width="120" />
           <el-table-column prop="stockScopeName" label="仓别" min-width="140" />
           <el-table-column prop="workshopName" label="车间" min-width="140" />
@@ -666,7 +666,7 @@
           <el-table-column prop="categoryCode" label="分类编码" min-width="80" />
           <el-table-column prop="categoryName" label="分类名称" min-width="100" show-overflow-tooltip />
           <el-table-column prop="documentTypeLabel" label="单据类型" min-width="140" />
-          <el-table-column prop="documentNo" label="单据编号" min-width="180" />
+          <el-table-column prop="documentNo" label="单据编号" min-width="140" />
           <el-table-column prop="lineNo" label="行号" min-width="90" />
           <el-table-column prop="bizDate" label="业务日期" min-width="120" />
           <el-table-column prop="stockScopeName" label="仓别" min-width="140" />

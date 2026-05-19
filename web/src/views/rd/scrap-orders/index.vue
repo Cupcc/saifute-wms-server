@@ -29,7 +29,7 @@
       </div>
 
       <el-table :data="rows" stripe v-loading="loading">
-        <el-table-column prop="documentNo" label="单据编号" min-width="180">
+        <el-table-column prop="documentNo" label="单据编号" min-width="140">
           <template #default="{ row }">
             <el-button link type="primary" @click="openDetail(row.id)">
               {{ row.documentNo }}

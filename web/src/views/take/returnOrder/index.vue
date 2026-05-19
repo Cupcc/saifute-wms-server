@@ -20,13 +20,13 @@
 					end-placeholder="结束日期"
 				></el-date-picker>
 			</el-form-item>
-			<el-form-item label="退料部门" prop="workshopId">
+			<el-form-item label="退料车间" prop="workshopId">
 				<el-select
 					v-model="queryParams.workshopId"
 					filterable
 					remote
 					reserve-keyword
-					placeholder="请输入部门名称搜索"
+					placeholder="请输入车间名称搜索"
 					:remote-method="searchWorkshop"
 					:loading="workshopLoading"
 					style="width: 240px">
@@ -125,7 +125,7 @@
 		<adaptive-table border stripe v-loading="loading" :data="returnOrderList" @selection-change="handleSelectionChange" @row-click="handleRowClick">
 			<el-table-column type="selection" width="50" align="center" />
 			<el-table-column type="index" width="50" align="center" />
-			<el-table-column sortable show-overflow-tooltip label="退料单号" align="center" prop="returnNo" v-if="columns[0].visible">
+			<el-table-column sortable show-overflow-tooltip label="退料单号" align="center" prop="returnNo" min-width="140" v-if="columns[0].visible">
 				<template #default="scope">
 					<el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
 						{{ scope.row.returnNo }}
@@ -152,7 +152,7 @@
 					</el-button>
 				</template>
 			</el-table-column>
-			<el-table-column sortable show-overflow-tooltip label="退料部门" align="center" prop="workshopName" v-if="columns[2].visible" />
+			<el-table-column sortable show-overflow-tooltip label="退料车间" align="center" prop="workshopName" v-if="columns[2].visible" />
 			<el-table-column sortable show-overflow-tooltip label="退料类型" align="center" prop="sourceType" v-if="columns[3].visible">
 				<template #default="scope">
 					<el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
@@ -160,7 +160,7 @@
 					</el-button>
 				</template>
 			</el-table-column>
-			<el-table-column sortable show-overflow-tooltip label="领料单号" align="center" prop="pickNo" v-if="columns[4].visible" />
+			<el-table-column sortable show-overflow-tooltip label="领料单号" align="center" prop="pickNo" min-width="140" v-if="columns[4].visible" />
 			<el-table-column sortable show-overflow-tooltip label="退料人" align="center" prop="returnBy" v-if="columns[5].visible" />
 			<el-table-column sortable show-overflow-tooltip label="创建人" align="center" prop="createBy" v-if="columns[6].visible" />
 			<el-table-column sortable show-overflow-tooltip label="总金额" align="center" prop="totalAmount" v-if="columns[7].visible" />
@@ -211,13 +211,13 @@
 						</el-form-item>
 					</el-col>
 					<el-col :span="8">
-						<el-form-item label="退料部门" prop="workshopId">
+						<el-form-item label="退料车间" prop="workshopId">
 							<el-select
 								v-model="form.workshopId"
 								filterable
 								remote
 								reserve-keyword
-								placeholder="请输入部门名称搜索"
+								placeholder="请输入车间名称搜索"
 								:remote-method="searchWorkshop"
 								:loading="workshopLoading"
 								style="width: 100%">
@@ -358,7 +358,7 @@
 						<el-descriptions :column="2" border>
 							<el-descriptions-item label="退料单号">{{ detailData.returnNo }}</el-descriptions-item>
 							<el-descriptions-item label="退料日期">{{ parseTime(detailData.returnDate, '{y}-{m}-{d}') }}</el-descriptions-item>
-							<el-descriptions-item label="退料部门">{{ detailData.workshopName }}</el-descriptions-item>
+							<el-descriptions-item label="退料车间">{{ detailData.workshopName }}</el-descriptions-item>
 							<el-descriptions-item label="退料类型">
 								<dict-tag :options="source_type" :value="detailData.sourceType"/>
 							</el-descriptions-item>
@@ -473,7 +473,7 @@
 			</el-form>
 			
 			<el-table border stripe v-loading="pickOrderLoading" :data="pickOrderList" @row-dblclick="handlePickOrderSelect">
-				<el-table-column label="领料单号" align="center" prop="pickNo" />
+				<el-table-column label="领料单号" align="center" prop="pickNo" min-width="140" />
 				<el-table-column label="领料日期" align="center" prop="pickDate" width="180">
 					<template #default="scope">
 						<span>{{ parseTime(scope.row.pickDate, '{y}-{m}-{d}') }}</span>
@@ -566,7 +566,7 @@ const materialSerch = ref([]);
 const personnelOptions = ref([]);
 const personnelLoading = ref(false);
 
-// 部门相关
+// 车间相关
 const workshopOptions = ref([]);
 const workshopLoading = ref(false);
 
@@ -627,7 +627,7 @@ const {
 const columns = ref([
   { key: 0, label: `退料单号`, visible: true },
   { key: 1, label: `退料日期`, visible: true },
-  { key: 2, label: `退料部门`, visible: true },
+  { key: 2, label: `退料车间`, visible: true },
   { key: 3, label: `退料类型`, visible: true },
   { key: 4, label: `领料单号`, visible: true },
   { key: 5, label: `退料人`, visible: true },
@@ -819,7 +819,7 @@ function searchPersonnelForQuery(query) {
     });
 }
 
-/** 查询部门（用于搜索和表单） */
+/** 查询车间（用于搜索和表单） */
 function searchWorkshop(query) {
   workshopLoading.value = true;
   listByNameOrContact({ workshopName: query })
@@ -892,7 +892,7 @@ function reset() {
   materialOptions.value = [];
   materialLoading.value = false;
   personnelOptions.value = [];
-  workshopOptions.value = []; // 重置部门选项
+  workshopOptions.value = []; // 重置车间选项
   proxy.resetForm("returnOrderRef");
 }
 

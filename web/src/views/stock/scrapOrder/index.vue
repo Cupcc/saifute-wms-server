@@ -79,7 +79,7 @@
     <adaptive-table border stripe v-loading="loading" :data="scrapOrderList" @selection-change="handleSelectionChange" @row-click="handleRowClick">
       <el-table-column type="selection" width="50" align="center" />
       <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="报废单号" align="center" prop="scrapNo" v-if="columns[0].visible">
+      <el-table-column sortable show-overflow-tooltip label="报废单号" align="center" prop="scrapNo" min-width="140" v-if="columns[0].visible">
         <template #default="scope">
           <el-button link type="primary" @click="handleDetail(scope.row)">{{ scope.row.scrapNo }}</el-button>
         </template>

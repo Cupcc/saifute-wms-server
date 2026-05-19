@@ -52,11 +52,11 @@ export function toProjectInventoryOperationType(
 function getActionPrefix(actionType: RdProjectMaterialActionType) {
   switch (actionType) {
     case RdProjectMaterialActionType.PICK:
-      return "RAP";
+      return "RL";
     case RdProjectMaterialActionType.RETURN:
-      return "RAR";
+      return "RR";
     case RdProjectMaterialActionType.SCRAP:
-      return "RAS";
+      return "RS";
     default:
       throw new BadRequestException(`Unsupported actionType: ${actionType}`);
   }

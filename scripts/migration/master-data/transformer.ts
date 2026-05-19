@@ -1,4 +1,8 @@
 import {
+  buildNextSequentialMaterialCode,
+  normalizeMaterialCode,
+} from "../../../src/shared/domain/material-code";
+import {
   buildFallbackCode,
   DEFAULT_WORKSHOP_NAME,
   normalizeOptionalText,
@@ -33,6 +37,8 @@ type MaterialUnitOverride = {
   evidence: string;
   referenceLegacyIds: number[];
 };
+
+const MATERIAL_CODE_MAX_LENGTH = 64;
 
 // These inactive legacy rows are unreferenced by business detail tables.
 // Keep the correction in migration code so the legacy source stays untouched.
@@ -226,6 +232,77 @@ function resolveLegacyCodes<
       rewritten: rewrite.rewritten,
     })),
   };
+}
+
+function materialCodeKey(value: string): string {
+  return normalizeMaterialCode(value).toLocaleLowerCase("en-US");
+}
+
+function hasWhitespace(value: string): boolean {
+  return /\s/u.test(value);
+}
+
+function buildTrimmedMaterialCodeWithSuffix(
+  baseCode: string,
+  suffix: string,
+): string {
+  const maxBaseLength = MATERIAL_CODE_MAX_LENGTH - suffix.length;
+
+  if (maxBaseLength <= 0) {
+    throw new Error(`Material code suffix ${suffix} exceeds target length.`);
+  }
+
+  return `${baseCode.slice(0, maxBaseLength)}${suffix}`;
+}
+
+function buildMaterialSourceCodeMap(
+  rows: readonly LegacyMaterialRow[],
+): Map<number, string | null> {
+  const cleanCodeKeys = new Set(
+    rows
+      .map((row) => normalizeOptionalText(row.materialCode))
+      .filter((code): code is string => code !== null && !hasWhitespace(code))
+      .map((code) => materialCodeKey(code)),
+  );
+  const cleanCodes = rows
+    .map((row) => normalizeOptionalText(row.materialCode))
+    .filter((code): code is string => code !== null && !hasWhitespace(code));
+  const assignedCodes = new Set<string>();
+
+  return new Map(
+    rows.map((row) => {
+      const rawCode = normalizeOptionalText(row.materialCode);
+      const normalizedCode = rawCode ? normalizeMaterialCode(rawCode) : null;
+
+      if (!normalizedCode) {
+        return [row.materialId, null] as const;
+      }
+
+      if (
+        rawCode !== null &&
+        hasWhitespace(rawCode) &&
+        cleanCodeKeys.has(materialCodeKey(rawCode))
+      ) {
+        const nextSequentialCode = buildNextSequentialMaterialCode(
+          normalizedCode,
+          [...cleanCodes, ...assignedCodes],
+        );
+        if (nextSequentialCode) {
+          assignedCodes.add(nextSequentialCode);
+          return [row.materialId, nextSequentialCode] as const;
+        }
+
+        const fallbackCode = buildTrimmedMaterialCodeWithSuffix(
+          normalizedCode,
+          `-LEGACY-${row.materialId}`,
+        );
+        assignedCodes.add(fallbackCode);
+        return [row.materialId, fallbackCode] as const;
+      }
+
+      return [row.materialId, normalizedCode] as const;
+    }),
+  );
 }
 
 function transformMaterialCategories(
@@ -793,10 +870,11 @@ function transformMaterials(
   duplicateRewrites: DuplicateRewriteSummary[];
 } {
   const warnings: MigrationWarning[] = [];
+  const materialSourceCodeByLegacyId = buildMaterialSourceCodeMap(rows);
   const { codeByLegacyId, rewrites } = resolveLegacyCodes(
     rows.map((row) => ({
       legacyId: row.materialId,
-      sourceCode: normalizeOptionalText(row.materialCode),
+      sourceCode: materialSourceCodeByLegacyId.get(row.materialId) ?? null,
       isActive: toStatus(row.delFlag) === "ACTIVE",
     })),
     "MAT-LEGACY",

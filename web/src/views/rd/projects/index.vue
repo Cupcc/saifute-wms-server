@@ -415,7 +415,7 @@
                     </el-table>
                   </template>
                 </el-table-column>
-                <el-table-column prop="documentNo" label="单号" min-width="160" />
+                <el-table-column prop="documentNo" label="单号" min-width="140" />
                 <el-table-column label="动作类型" min-width="110">
                   <template #default="{ row }">
                     <el-tag :type="actionTagType(row.actionType)">{{ actionLabel(row.actionType) }}</el-tag>

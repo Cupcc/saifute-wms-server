@@ -9,6 +9,11 @@ import {
   type FindInventoryBalancesParams,
   InventoryBalanceQueryRepository,
 } from "./inventory-balance-query.repository";
+import {
+  type FindInventoryLogsParams,
+  type FindPriceLayerSnapshotLogsParams,
+  InventoryLogQueryRepository,
+} from "./inventory-log-query.repository";
 
 type InventoryDbClient = Prisma.TransactionClient | PrismaService;
 
@@ -36,9 +41,11 @@ function historicalReplayReturnSourceWhere(): Prisma.InventoryLogWhereInput {
 @Injectable()
 export class InventoryRepository {
   private readonly balanceQueries: InventoryBalanceQueryRepository;
+  private readonly logQueries: InventoryLogQueryRepository;
 
   constructor(private readonly prisma: PrismaService) {
     this.balanceQueries = new InventoryBalanceQueryRepository(prisma);
+    this.logQueries = new InventoryLogQueryRepository(prisma);
   }
 
   runInTransaction<T>(
@@ -97,62 +104,12 @@ export class InventoryRepository {
     });
   }
 
-  async findLogs(params: {
-    materialId?: number;
-    stockScopeIds?: number[];
-    workshopId?: number;
-    businessDocumentId?: number;
-    businessDocumentType?: string;
-    businessDocumentNumber?: string;
-    operationType?: string;
-    bizDateFrom?: Date;
-    bizDateTo?: Date;
-    limit: number;
-    offset: number;
-  }) {
-    const where: Prisma.InventoryLogWhereInput = {};
-    if (params.materialId) where.materialId = params.materialId;
-    if (params.stockScopeIds?.length === 1) {
-      where.stockScopeId = params.stockScopeIds[0];
-    } else if (params.stockScopeIds?.length) {
-      where.stockScopeId = { in: params.stockScopeIds };
-    }
-    if (params.workshopId) where.workshopId = params.workshopId;
-    if (params.businessDocumentId)
-      where.businessDocumentId = params.businessDocumentId;
-    if (params.businessDocumentType)
-      where.businessDocumentType = params.businessDocumentType;
-    if (params.businessDocumentNumber) {
-      where.businessDocumentNumber = {
-        contains: params.businessDocumentNumber,
-      };
-    }
-    if (params.operationType) {
-      where.operationType =
-        params.operationType as Prisma.EnumInventoryOperationTypeFilter;
-    }
-    if (params.bizDateFrom || params.bizDateTo) {
-      where.bizDate = {};
-      if (params.bizDateFrom) {
-        where.bizDate.gte = params.bizDateFrom;
-      }
-      if (params.bizDateTo) {
-        where.bizDate.lte = params.bizDateTo;
-      }
-    }
+  async findLogs(params: FindInventoryLogsParams) {
+    return this.logQueries.findLogs(params);
+  }
 
-    const [items, total] = await Promise.all([
-      this.prisma.inventoryLog.findMany({
-        where,
-        take: params.limit,
-        skip: params.offset,
-        orderBy: [{ bizDate: "desc" }, { occurredAt: "desc" }, { id: "desc" }],
-        include: { material: true, stockScope: true, workshop: true },
-      }),
-      this.prisma.inventoryLog.count({ where }),
-    ]);
-
-    return { items, total };
+  async findPriceLayerSnapshotLogs(params: FindPriceLayerSnapshotLogsParams) {
+    return this.logQueries.findPriceLayerSnapshotLogs(params);
   }
 
   async findSourceUsages(
