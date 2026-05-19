@@ -13,7 +13,7 @@
       :model="queryParams"
       :inline="true"
       v-show="showSearch"
-      label-width="84px"
+      :label-width="queryLabelWidth"
     >
       <el-form-item :label="documentLabel" prop="documentNo">
         <el-input
@@ -151,11 +151,16 @@
         v-if="columns[0].visible"
         label="单号"
         prop="documentNo"
-        min-width="140"
+        min-width="180"
         show-overflow-tooltip
       >
         <template #default="{ row }">
-          <el-button link type="primary" @click="handleOpenDetail(row)">
+          <el-button
+            class="document-no-link"
+            link
+            type="primary"
+            @click="handleOpenDetail(row)"
+          >
             {{ row.documentNo }}
           </el-button>
         </template>
@@ -247,7 +252,7 @@
         min-width="180"
         show-overflow-tooltip
       />
-      <el-table-column label="操作" width="180" align="center" fixed="right">
+      <el-table-column label="操作" width="240" align="center" fixed="right">
         <template #default="{ row }">
           <el-button
             v-if="isOrderMode && row.lifecycleStatus !== 'VOIDED'"
@@ -258,6 +263,16 @@
             @click="handleUpdate(row)"
           >
             修改
+          </el-button>
+          <el-button
+            v-if="isOrderMode && row.lifecycleStatus !== 'VOIDED'"
+            link
+            type="warning"
+            icon="RefreshLeft"
+            v-hasPermi="[salesReturnCreatePermission]"
+            @click="handleReturn(row)"
+          >
+            退货
           </el-button>
           <el-button
             v-if="row.lifecycleStatus !== 'VOIDED'"
@@ -292,8 +307,9 @@
 
     <sales-order-editor-dialog
       v-model="editorOpen"
-      :mode="mode"
+      :mode="editorMode"
       :order-id="editingOrderId"
+      :draft-payload="editorDraftPayload"
       @submitted="handleEditorSubmitted"
     />
   </div>
@@ -359,6 +375,7 @@ const isOrderMode = computed(() => props.mode === "order");
 const createPermission = computed(() =>
   isOrderMode.value ? "sales:order:create" : "sales:return:create",
 );
+const salesReturnCreatePermission = computed(() => "sales:return:create");
 const updatePermission = computed(() => "sales:order:update");
 const voidPermission = computed(() =>
   isOrderMode.value ? "sales:order:void" : "sales:return:void",
@@ -377,10 +394,16 @@ const detailOpen = ref(false);
 const detailLoading = ref(false);
 const detailData = ref({});
 const editorOpen = ref(false);
+const editorMode = ref(props.mode);
+const editorDraftPayload = ref(null);
 const editingOrderId = ref(null);
 const selectedIds = ref([]);
 const single = ref(true);
 const multiple = ref(true);
+
+const queryLabelWidth = computed(() =>
+  props.documentLabel.length > 4 ? "112px" : "84px",
+);
 
 const queryParams = reactive({
   pageNum: 1,
@@ -468,6 +491,8 @@ function handleSelectionChange(selection) {
 }
 
 function handleAdd() {
+  editorMode.value = props.mode;
+  editorDraftPayload.value = null;
   editingOrderId.value = null;
   editorOpen.value = true;
 }
@@ -479,7 +504,28 @@ function handleUpdate(row) {
     return;
   }
 
+  editorMode.value = props.mode;
+  editorDraftPayload.value = null;
   editingOrderId.value = targetId;
+  editorOpen.value = true;
+}
+
+function handleReturn(row) {
+  if (!row?.orderId) {
+    proxy.$modal.msgWarning("请先选择一条出库单");
+    return;
+  }
+
+  editorMode.value = "salesReturn";
+  editingOrderId.value = null;
+  editorDraftPayload.value = {
+    sourceOutboundOrderId: row.orderId,
+    sourceOutboundDocumentNo: row.documentNo,
+    lockSourceOutbound: true,
+    customerId: row.customerId,
+    customerCode: row.customerCode,
+    customerName: row.customerName,
+  };
   editorOpen.value = true;
 }
 
@@ -504,6 +550,8 @@ async function handleVoid(row) {
 function handleEditorSubmitted() {
   editorOpen.value = false;
   editingOrderId.value = null;
+  editorDraftPayload.value = null;
+  editorMode.value = props.mode;
   getList();
 }
 
@@ -632,6 +680,7 @@ void [
   SalesOrderEditorDialog,
   isOrderMode,
   createPermission,
+  salesReturnCreatePermission,
   updatePermission,
   voidPermission,
   rows,
@@ -647,10 +696,13 @@ void [
   detailLoading,
   detailData,
   editorOpen,
+  editorMode,
+  editorDraftPayload,
   editingOrderId,
   selectedIds,
   single,
   multiple,
+  queryLabelWidth,
   queryParams,
   columns,
   quantityColumnIndex,
@@ -661,6 +713,7 @@ void [
   handleSelectionChange,
   handleAdd,
   handleUpdate,
+  handleReturn,
   handleVoid,
   handleEditorSubmitted,
   handleOpenDetail,
@@ -675,3 +728,14 @@ void [
 
 getList();
 </script>
+
+<style scoped>
+.document-no-link {
+  max-width: 100%;
+  display: inline-block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+</style>

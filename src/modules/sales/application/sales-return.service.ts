@@ -27,6 +27,8 @@ import { SalesSharedService } from "./sales-shared.service";
 
 const DOCUMENT_TYPE = BusinessDocumentType.SalesStockOrder;
 const BUSINESS_MODULE = "sales";
+const STANDALONE_SALES_RETURN_SOURCE_NOTE =
+  "Standalone sales return source accepted: no reliable source link; return line cost is used as the source cost.";
 
 @Injectable()
 export class SalesReturnService {
@@ -90,24 +92,10 @@ export class SalesReturnService {
   }
 
   async createSalesReturn(dto: CreateSalesReturnDto, createdBy?: string) {
-    const sourceOutbound = await this.repository.findOrderById(
-      dto.sourceOutboundOrderId,
-    );
-    if (!sourceOutbound) {
-      throw new NotFoundException(
-        `来源出库单不存在: ${dto.sourceOutboundOrderId}`,
-      );
-    }
-    if (sourceOutbound.orderType !== SalesStockOrderType.OUTBOUND) {
-      throw new BadRequestException(
-        `来源单据不是出库单: ${dto.sourceOutboundOrderId}`,
-      );
-    }
-    if (sourceOutbound.lifecycleStatus === DocumentLifecycleStatus.VOIDED) {
-      throw new BadRequestException(
-        `来源出库单已作废: ${dto.sourceOutboundOrderId}`,
-      );
-    }
+    const sourceOutboundOrderId = dto.sourceOutboundOrderId;
+    const sourceOutbound = sourceOutboundOrderId
+      ? await this.getValidSourceOutbound(sourceOutboundOrderId)
+      : null;
 
     const workshopId = await this.validateMasterDataForSalesReturn(
       dto,
@@ -115,7 +103,8 @@ export class SalesReturnService {
     );
 
     const bizDate = new Date(dto.bizDate);
-    const customerId = dto.customerId ?? sourceOutbound.customerId ?? undefined;
+    const customerId =
+      dto.customerId ?? sourceOutbound?.customerId ?? undefined;
     const { customerCodeSnapshot, customerNameSnapshot } =
       await this.shared.snapshots.resolveCustomerSnapshot(customerId);
     const { handlerNameSnapshot } =
@@ -128,64 +117,76 @@ export class SalesReturnService {
       ? await this.shared.masterDataService.getWorkshopById(workshopId)
       : null;
 
+    const sourceOutboundLines = sourceOutbound?.lines ?? [];
     const outboundLinesById = new Map(
-      sourceOutbound.lines.map((l) => [l.id, l]),
+      sourceOutboundLines.map((l) => [l.id, l]),
     );
     const salesProjectById =
       await this.salesProjectService.listProjectReferencesByIds(
-        sourceOutbound.lines
+        sourceOutboundLines
           .map((line) => line.salesProjectId)
           .filter((value): value is number => value != null),
         { allowVoided: true },
       );
 
-    const incomingBySourceLine = new Map<number, Prisma.Decimal>();
-    for (const line of dto.lines) {
-      const prev =
-        incomingBySourceLine.get(line.sourceOutboundLineId) ??
-        new Prisma.Decimal(0);
-      incomingBySourceLine.set(
-        line.sourceOutboundLineId,
-        prev.add(new Prisma.Decimal(line.quantity)),
-      );
-    }
-    const activeReturnedByLine =
-      await this.repository.sumActiveReturnedQtyByOutboundLine(
-        dto.sourceOutboundOrderId,
-      );
-    for (const [sourceLineId, incomingQty] of incomingBySourceLine) {
-      const sourceLine = outboundLinesById.get(sourceLineId);
-      if (sourceLine) {
-        const alreadyReturned =
-          activeReturnedByLine.get(sourceLineId) ?? new Prisma.Decimal(0);
-        if (
-          alreadyReturned
-            .add(incomingQty)
-            .gt(new Prisma.Decimal(sourceLine.quantity))
-        ) {
-          throw new BadRequestException(
-            `来源出库明细 ${sourceLineId} 累计有效退货数量超过出库数量`,
-          );
+    if (sourceOutboundOrderId) {
+      const incomingBySourceLine = new Map<number, Prisma.Decimal>();
+      for (const [idx, line] of dto.lines.entries()) {
+        if (!line.sourceOutboundLineId) {
+          throw new BadRequestException(`第 ${idx + 1} 行来源出库明细不能为空`);
+        }
+        const prev =
+          incomingBySourceLine.get(line.sourceOutboundLineId) ??
+          new Prisma.Decimal(0);
+        incomingBySourceLine.set(
+          line.sourceOutboundLineId,
+          prev.add(new Prisma.Decimal(line.quantity)),
+        );
+      }
+      const activeReturnedByLine =
+        await this.repository.sumActiveReturnedQtyByOutboundLine(
+          sourceOutboundOrderId,
+        );
+      for (const [sourceLineId, incomingQty] of incomingBySourceLine) {
+        const sourceLine = outboundLinesById.get(sourceLineId);
+        if (sourceLine) {
+          const alreadyReturned =
+            activeReturnedByLine.get(sourceLineId) ?? new Prisma.Decimal(0);
+          if (
+            alreadyReturned
+              .add(incomingQty)
+              .gt(new Prisma.Decimal(sourceLine.quantity))
+          ) {
+            throw new BadRequestException(
+              `来源出库明细 ${sourceLineId} 累计有效退货数量超过出库数量`,
+            );
+          }
         }
       }
+    } else if (dto.lines.some((line) => line.sourceOutboundLineId)) {
+      throw new BadRequestException("未选择来源出库单时不能填写来源出库明细");
     }
 
     const linesWithSnapshots = await Promise.all(
       dto.lines.map(async (line, idx) => {
-        const sourceLine = outboundLinesById.get(line.sourceOutboundLineId);
-        if (!sourceLine) {
+        const sourceLine = line.sourceOutboundLineId
+          ? outboundLinesById.get(line.sourceOutboundLineId)
+          : null;
+        if (sourceOutboundOrderId && !sourceLine) {
           throw new BadRequestException(
             `来源出库明细不存在: ${line.sourceOutboundLineId}`,
           );
         }
-        if (sourceLine.materialId !== line.materialId) {
+        if (sourceLine && sourceLine.materialId !== line.materialId) {
           throw new BadRequestException(
             `明细 ${idx + 1} 物料与来源出库明细不一致`,
           );
         }
         const returnQty = new Prisma.Decimal(line.quantity);
-        const sourceQty = new Prisma.Decimal(sourceLine.quantity);
-        if (returnQty.gt(sourceQty)) {
+        const sourceQty = sourceLine
+          ? new Prisma.Decimal(sourceLine.quantity)
+          : null;
+        if (sourceQty && returnQty.gt(sourceQty)) {
           throw new BadRequestException(
             `明细 ${idx + 1} 退货数量不能超过来源出库数量`,
           );
@@ -197,19 +198,24 @@ export class SalesReturnService {
           await this.shared.snapshots.buildMaterialCategorySnapshot(material);
         const unitPrice = new Prisma.Decimal(line.unitPrice ?? "0");
         const amount = returnQty.mul(unitPrice);
-        const selectedUnitCost = new Prisma.Decimal(
-          sourceLine.selectedUnitCost,
-        );
+        const selectedUnitCost = sourceLine
+          ? new Prisma.Decimal(sourceLine.selectedUnitCost)
+          : this.resolveStandaloneSelectedUnitCost(line.selectedUnitCost, idx);
+        const standaloneCostAmount = sourceLine
+          ? null
+          : returnQty.mul(selectedUnitCost);
         const salesProjectReference =
-          sourceLine.salesProjectId != null
+          sourceLine?.salesProjectId != null
             ? (salesProjectById.get(sourceLine.salesProjectId) ?? null)
             : null;
         return {
           lineNo: idx + 1,
           materialId: material.id,
-          salesProjectId: sourceLine.salesProjectId ?? null,
-          salesProjectCodeSnapshot: sourceLine.salesProjectCodeSnapshot ?? null,
-          salesProjectNameSnapshot: sourceLine.salesProjectNameSnapshot ?? null,
+          salesProjectId: sourceLine?.salesProjectId ?? null,
+          salesProjectCodeSnapshot:
+            sourceLine?.salesProjectCodeSnapshot ?? null,
+          salesProjectNameSnapshot:
+            sourceLine?.salesProjectNameSnapshot ?? null,
           materialCategoryIdSnapshot: materialCategorySnapshot.id,
           materialCategoryCodeSnapshot: materialCategorySnapshot.code,
           materialCategoryNameSnapshot: materialCategorySnapshot.name,
@@ -222,10 +228,12 @@ export class SalesReturnService {
           unitPrice,
           amount,
           selectedUnitCost,
+          costUnitPrice: sourceLine ? undefined : selectedUnitCost,
+          costAmount: standaloneCostAmount ?? undefined,
           projectTargetId: salesProjectReference?.projectTargetId ?? null,
-          sourceDocumentType: DOCUMENT_TYPE,
-          sourceDocumentId: dto.sourceOutboundOrderId,
-          sourceDocumentLineId: line.sourceOutboundLineId,
+          sourceDocumentType: sourceLine ? DOCUMENT_TYPE : null,
+          sourceDocumentId: sourceLine ? (sourceOutboundOrderId ?? null) : null,
+          sourceDocumentLineId: sourceLine ? line.sourceOutboundLineId : null,
           remark: line.remark,
         };
       }),
@@ -274,29 +282,31 @@ export class SalesReturnService {
           tx,
         );
 
-        await this.repository.createDocumentRelation(
-          {
-            relationType: DocumentRelationType.SALES_RETURN_FROM_OUTBOUND,
-            upstreamFamily: DocumentFamily.SALES_STOCK,
-            upstreamDocumentType: DOCUMENT_TYPE,
-            upstreamDocumentId: dto.sourceOutboundOrderId,
-            downstreamFamily: DocumentFamily.SALES_STOCK,
-            downstreamDocumentType: DOCUMENT_TYPE,
-            downstreamDocumentId: order.id,
-            isActive: true,
-            createdBy,
-            updatedBy: createdBy,
-          },
-          tx,
-        );
+        if (sourceOutboundOrderId) {
+          await this.repository.createDocumentRelation(
+            {
+              relationType: DocumentRelationType.SALES_RETURN_FROM_OUTBOUND,
+              upstreamFamily: DocumentFamily.SALES_STOCK,
+              upstreamDocumentType: DOCUMENT_TYPE,
+              upstreamDocumentId: sourceOutboundOrderId,
+              downstreamFamily: DocumentFamily.SALES_STOCK,
+              downstreamDocumentType: DOCUMENT_TYPE,
+              downstreamDocumentId: order.id,
+              isActive: true,
+              createdBy,
+              updatedBy: createdBy,
+            },
+            tx,
+          );
+        }
 
         for (const line of order.lines) {
           let returnCostUnitPrice: Prisma.Decimal | null = null;
           let returnCostAmount: Prisma.Decimal | null = null;
-          if (line.sourceDocumentLineId) {
+          if (sourceOutboundOrderId && line.sourceDocumentLineId) {
             const releaseResult =
               await this.returnSource.releaseOutboundSourceForReturn(
-                dto.sourceOutboundOrderId,
+                sourceOutboundOrderId,
                 line.sourceDocumentLineId,
                 new Prisma.Decimal(line.quantity),
                 createdBy,
@@ -318,10 +328,15 @@ export class SalesReturnService {
               businessDocumentId: order.id,
               businessDocumentNumber: order.documentNo,
               businessDocumentLineId: line.id,
+              unitCost: returnCostUnitPrice ?? line.costUnitPrice ?? undefined,
+              costAmount: returnCostAmount ?? line.costAmount ?? undefined,
               projectTargetId:
                 projectTargetByLineNo.get(line.lineNo) ?? undefined,
               operatorId: createdBy,
               idempotencyKey: `SalesStockOrder:${order.id}:line:${line.id}`,
+              note: line.sourceDocumentLineId
+                ? undefined
+                : STANDALONE_SALES_RETURN_SOURCE_NOTE,
             },
             tx,
           );
@@ -337,13 +352,13 @@ export class SalesReturnService {
             );
           }
 
-          if (line.sourceDocumentLineId) {
+          if (sourceOutboundOrderId && line.sourceDocumentLineId) {
             await this.repository.createDocumentLineRelation(
               {
                 relationType: DocumentRelationType.SALES_RETURN_FROM_OUTBOUND,
                 upstreamFamily: DocumentFamily.SALES_STOCK,
                 upstreamDocumentType: DOCUMENT_TYPE,
-                upstreamDocumentId: dto.sourceOutboundOrderId,
+                upstreamDocumentId: sourceOutboundOrderId,
                 upstreamLineId: line.sourceDocumentLineId,
                 downstreamFamily: DocumentFamily.SALES_STOCK,
                 downstreamDocumentType: DOCUMENT_TYPE,
@@ -460,18 +475,55 @@ export class SalesReturnService {
     });
   }
 
+  private async getValidSourceOutbound(sourceOutboundOrderId: number) {
+    const sourceOutbound = await this.repository.findOrderById(
+      sourceOutboundOrderId,
+    );
+    if (!sourceOutbound) {
+      throw new NotFoundException(`来源出库单不存在: ${sourceOutboundOrderId}`);
+    }
+    if (sourceOutbound.orderType !== SalesStockOrderType.OUTBOUND) {
+      throw new BadRequestException(
+        `来源单据不是出库单: ${sourceOutboundOrderId}`,
+      );
+    }
+    if (sourceOutbound.lifecycleStatus === DocumentLifecycleStatus.VOIDED) {
+      throw new BadRequestException(
+        `来源出库单已作废: ${sourceOutboundOrderId}`,
+      );
+    }
+    return sourceOutbound;
+  }
+
+  private resolveStandaloneSelectedUnitCost(
+    selectedUnitCost: string | undefined,
+    lineIndex: number,
+  ) {
+    if (!selectedUnitCost) {
+      throw new BadRequestException(`第 ${lineIndex + 1} 行成本价不能为空`);
+    }
+    return new Prisma.Decimal(selectedUnitCost);
+  }
+
   private async validateMasterDataForSalesReturn(
     dto: CreateSalesReturnDto,
-    sourceOutbound: { workshopId: number | null; customerId: number | null },
+    sourceOutbound: {
+      workshopId: number | null;
+      customerId: number | null;
+    } | null,
   ) {
-    const workshopId = dto.workshopId ?? sourceOutbound.workshopId ?? null;
-    if (dto.workshopId && dto.workshopId !== sourceOutbound.workshopId) {
+    const workshopId = dto.workshopId ?? sourceOutbound?.workshopId ?? null;
+    if (
+      sourceOutbound &&
+      dto.workshopId &&
+      dto.workshopId !== sourceOutbound.workshopId
+    ) {
       throw new BadRequestException("销售退货车间必须与来源出库单一致");
     }
     if (workshopId) {
       await this.shared.masterDataService.getWorkshopById(workshopId);
     }
-    if (dto.customerId && sourceOutbound.customerId) {
+    if (dto.customerId && sourceOutbound?.customerId) {
       if (dto.customerId !== sourceOutbound.customerId) {
         throw new BadRequestException("销售退货客户应与来源出库单一致");
       }

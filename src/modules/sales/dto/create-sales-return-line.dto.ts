@@ -19,8 +19,17 @@ export class CreateSalesReturnLineDto {
   quantity!: string;
 
   @IsInt()
+  @IsOptional()
   @Min(1)
-  sourceOutboundLineId!: number;
+  sourceOutboundLineId?: number;
+
+  @IsString()
+  @IsOptional()
+  @Matches(/^\d+(\.\d{1,2})?$/, {
+    message:
+      "selectedUnitCost must be a non-negative decimal string with up to 2 decimals",
+  })
+  selectedUnitCost?: string;
 
   @IsString()
   @IsOptional()

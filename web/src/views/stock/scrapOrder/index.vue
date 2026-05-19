@@ -359,6 +359,7 @@ import {
   materialOptionsFromDocumentSnapshots,
   mergeMaterialOptions,
 } from "@/utils/materialOptions";
+import { confirmDocumentSave } from "@/utils/documentConfirm";
 import { scrollDocumentDialogToBottom } from "@/utils/documentDialogScroll";
 import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
 
@@ -749,7 +750,7 @@ function handleRowClick(row) {
 
 /** 提交按钮 */
 function submitForm() {
-  proxy.$refs["scrapOrderRef"].validate((valid) => {
+  proxy.$refs["scrapOrderRef"].validate(async (valid) => {
     if (valid) {
       // 验证明细必填项
       if (!detailList.value || detailList.value.length === 0) {
@@ -776,7 +777,11 @@ function submitForm() {
       // 将明细数据添加到表单中
       form.value.details = detailList.value;
 
-      if (form.value.scrapId != null) {
+      const isUpdate = form.value.scrapId != null;
+      if (!(await confirmDocumentSave({ documentName: "报废单", isUpdate }))) {
+        return;
+      }
+      if (isUpdate) {
         updateScrapOrder(form.value).then((response) => {
           clearSuggestionsCache();
           proxy.$modal.msgSuccess("修改成功");

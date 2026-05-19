@@ -678,6 +678,9 @@ describe("Batch D slice acceptance (e2e)", () => {
     expect(exportResponse.headers["content-type"]).toContain(
       "application/vnd.ms-excel",
     );
+    expect(exportResponse.headers["content-disposition"]).toContain(
+      "filename*=UTF-8''%E7%89%A9%E6%96%99%E5%88%86%E7%B1%BB%E6%9C%88%E6%8A%A5-2026-04.xls",
+    );
     expect(exportResponse.text).toContain('<Worksheet ss:Name="分类汇总">');
     expect(exportResponse.text).toContain('<Worksheet ss:Name="物料汇总">');
     expect(exportResponse.text).toContain('<Worksheet ss:Name="单据行明细">');
@@ -710,6 +713,9 @@ describe("Batch D slice acceptance (e2e)", () => {
     );
     expect(exportResponse.headers["content-disposition"]).toContain(
       "attachment",
+    );
+    expect(exportResponse.headers["content-disposition"]).toContain(
+      "filename*=UTF-8''%E6%9C%88%E5%BA%A6%E5%AF%B9%E8%B4%A6%E6%8A%A5%E8%A1%A8-2026-04.xls",
     );
     expect(exportResponse.text).toContain("<Workbook");
   });

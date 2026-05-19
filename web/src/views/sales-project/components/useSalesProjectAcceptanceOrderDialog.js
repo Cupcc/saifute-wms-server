@@ -5,6 +5,7 @@ import { listSupplierByKeyword } from "@/api/base/supplier";
 import { getLatestDetailByMaterialId } from "@/api/entry/detail";
 import { addOrder } from "@/api/entry/order";
 import useUserStore from "@/store/modules/user";
+import { confirmDocumentSave } from "@/utils/documentConfirm";
 import { mergeMaterialOptions } from "@/utils/materialOptions";
 import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
 import { toInputString } from "../shared";
@@ -164,7 +165,7 @@ export function useSalesProjectAcceptanceOrderDialog(props, emit) {
   }
 
   function submitForm() {
-    orderFormRef.value?.validate((valid) => {
+    orderFormRef.value?.validate(async (valid) => {
       if (!valid || !validateDetailLines()) {
         return;
       }
@@ -173,6 +174,9 @@ export function useSalesProjectAcceptanceOrderDialog(props, emit) {
         return;
       }
 
+      if (!(await confirmDocumentSave({ documentName: "项目验收单" }))) {
+        return;
+      }
       submitting.value = true;
       addOrder(buildSubmitPayload(form.value, detailList.value, supplierOptions.value))
         .then((response) => {

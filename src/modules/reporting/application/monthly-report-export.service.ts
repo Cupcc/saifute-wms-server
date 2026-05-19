@@ -28,6 +28,7 @@ import {
 
 export interface MonthlyReportExportResult {
   fileName: string;
+  fallbackFileName: string;
   content: string;
   contentType: string;
 }
@@ -68,7 +69,8 @@ export class MonthlyReportExportService {
       this.aggregatorService.buildRdProjectItems(filteredRows);
 
     return {
-      fileName: `monthly-reporting-${query.yearMonth}.xls`,
+      fileName: `月度对账报表-${query.yearMonth}.xls`,
+      fallbackFileName: `monthly-reporting-${query.yearMonth}.xls`,
       content: buildMonthlyReportExcelXmlWorkbook(
         this.buildDomainSheets(
           query.yearMonth,
@@ -115,7 +117,8 @@ export class MonthlyReportExportService {
     );
 
     return {
-      fileName: `monthly-reporting-material-category-${query.yearMonth}.xls`,
+      fileName: `物料分类月报-${query.yearMonth}.xls`,
+      fallbackFileName: `monthly-reporting-material-category-${query.yearMonth}.xls`,
       content: buildMonthlyReportExcelXmlWorkbook(
         buildMaterialCategoryExportSheets({
           yearMonth: query.yearMonth,

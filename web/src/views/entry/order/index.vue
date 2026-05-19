@@ -622,6 +622,7 @@ import {
   materialOptionsFromDocumentSnapshots,
   mergeMaterialOptions,
 } from "@/utils/materialOptions";
+import { confirmDocumentSave } from "@/utils/documentConfirm";
 import { scrollDocumentDialogToBottom } from "@/utils/documentDialogScroll";
 import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
 
@@ -1325,7 +1326,7 @@ function cancelSupplierReturn() {
 }
 
 function submitSupplierReturnForm() {
-  proxy.$refs["supplierReturnRef"].validate((valid) => {
+  proxy.$refs["supplierReturnRef"].validate(async (valid) => {
     if (!valid) {
       return;
     }
@@ -1338,6 +1339,9 @@ function submitSupplierReturnForm() {
       return;
     }
 
+    if (!(await confirmDocumentSave({ documentName: "供应商退货单" }))) {
+      return;
+    }
     supplierReturnLoading.value = true;
     returnOrderToSupplier(supplierReturnForm.value.sourceInboundId, {
       bizDate: supplierReturnForm.value.bizDate,
@@ -1362,7 +1366,7 @@ function submitSupplierReturnForm() {
 
 /** 提交按钮 */
 function submitForm() {
-  proxy.$refs["orderRef"].validate((valid) => {
+  proxy.$refs["orderRef"].validate(async (valid) => {
     if (valid) {
       // 验证明细至少有一条记录
       if (!detailList.value || detailList.value.length === 0) {
@@ -1415,7 +1419,11 @@ function submitForm() {
       }
 
       // 直接提交表单，后端会处理经办人创建逻辑
-      if (form.value.inboundId != null) {
+      const isUpdate = form.value.inboundId != null;
+      if (!(await confirmDocumentSave({ documentName: "验收单", isUpdate }))) {
+        return;
+      }
+      if (isUpdate) {
         updateOrder(form.value).then(() => {
           clearSuggestionsCache();
           proxy.$modal.msgSuccess("修改成功");
