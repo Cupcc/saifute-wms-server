@@ -8,7 +8,6 @@ import {
   normalizeMonthlyReportWorkshopRef,
 } from "./monthly-reporting.formatters";
 import {
-  formatDecimal,
   formatMoney,
   formatQuantity,
   formatYearMonth,
@@ -126,7 +125,7 @@ export class MonthlyReportItemMapperService {
       targetWorkshopName: normalizeMonthlyReportWorkshopName(
         row.targetWorkshopName,
       ),
-      quantity: formatDecimal(row.quantity),
+      quantity: formatQuantity(row.quantity),
       amount: formatMoney(row.amount),
       cost: formatMoney(row.cost),
       abnormalFlags: row.abnormalFlags,

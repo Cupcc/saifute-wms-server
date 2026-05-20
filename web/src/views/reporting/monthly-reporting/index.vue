@@ -102,7 +102,7 @@
         </el-form-item>
         <el-form-item label="单据类型">
           <el-select
-            v-model="filters.documentTypeLabel"
+            v-model="filters.documentTypeKey"
             clearable
             filterable
             placeholder="全部单据类型"
@@ -110,9 +110,9 @@
           >
             <el-option
               v-for="item in filteredDocumentTypeOptions"
-              :key="`${item.domainKey}-${item.documentTypeLabel}`"
+              :key="resolveDocumentTypeOptionKey(item)"
               :label="formatDocumentTypeOptionLabel(item)"
-              :value="item.documentTypeLabel"
+              :value="resolveDocumentTypeFilterValue(item)"
             />
           </el-select>
         </el-form-item>
@@ -230,7 +230,15 @@
           <el-table-column prop="totalOutAmount" label="总出金额" min-width="140" />
           <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
           <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
-          <el-table-column prop="totalCost" label="总成本" min-width="140" />
+          <el-table-column prop="salesOutboundQuantity" label="销售出库数量" min-width="120" />
+          <el-table-column prop="salesOutboundSalesAmount" label="销售出库销售价金额" min-width="170" />
+          <el-table-column prop="salesOutboundCostAmount" label="销售出库成本价金额" min-width="170" />
+          <el-table-column prop="salesReturnQuantity" label="销售退货数量" min-width="120" />
+          <el-table-column prop="salesReturnSalesAmount" label="销售退货销售价金额" min-width="170" />
+          <el-table-column prop="salesReturnCostAmount" label="销售退货成本价金额" min-width="170" />
+          <el-table-column prop="netSalesQuantity" label="净销售数量" min-width="120" />
+          <el-table-column prop="netSalesAmount" label="净销售价金额" min-width="150" />
+          <el-table-column prop="netCostAmount" label="净成本价金额" min-width="150" />
         </el-table>
       </el-card>
 
@@ -241,7 +249,7 @@
             <div class="detail-actions">
               <span class="section-tip">{{ activeDocumentTypeLabel }}</span>
               <el-button
-                v-if="filters.documentTypeLabel"
+                v-if="filters.documentTypeKey"
                 text
                 type="primary"
                 @click="clearDocumentTypeFilter"
@@ -269,7 +277,6 @@
           <el-table-column prop="totalOutAmount" label="总出金额" min-width="140" />
           <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
           <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
-          <el-table-column prop="totalCost" label="总成本" min-width="140" />
         </el-table>
       </el-card>
 
@@ -302,7 +309,6 @@
               <el-table-column prop="scrapAmount" label="报废金额" min-width="140" />
               <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
               <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
-              <el-table-column prop="totalCost" label="总成本" min-width="140" />
             </el-table>
           </el-tab-pane>
           <el-tab-pane
@@ -316,12 +322,14 @@
               <el-table-column prop="documentCount" label="单据数" min-width="80" />
               <el-table-column prop="abnormalDocumentCount" label="异常单据数" min-width="120" />
               <el-table-column prop="salesOutboundQuantity" label="销售出库数量" min-width="120" />
-              <el-table-column prop="salesOutboundAmount" label="销售出库金额" min-width="140" />
+              <el-table-column prop="salesOutboundSalesAmount" label="销售出库销售价金额" min-width="170" />
+              <el-table-column prop="salesOutboundCostAmount" label="销售出库成本价金额" min-width="170" />
               <el-table-column prop="salesReturnQuantity" label="销售退货数量" min-width="120" />
-              <el-table-column prop="salesReturnAmount" label="销售退货金额" min-width="140" />
+              <el-table-column prop="salesReturnSalesAmount" label="销售退货销售价金额" min-width="170" />
+              <el-table-column prop="salesReturnCostAmount" label="销售退货成本价金额" min-width="170" />
               <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
-              <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
-              <el-table-column prop="totalCost" label="总成本" min-width="140" />
+              <el-table-column prop="netSalesAmount" label="净销售价金额" min-width="150" />
+              <el-table-column prop="netCostAmount" label="净成本价金额" min-width="150" />
             </el-table>
           </el-tab-pane>
           <el-tab-pane
@@ -344,7 +352,6 @@
               <el-table-column prop="scrapAmount" label="项目报废金额" min-width="140" />
               <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
               <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
-              <el-table-column prop="totalCost" label="总成本" min-width="140" />
             </el-table>
           </el-tab-pane>
         </el-tabs>
@@ -880,13 +887,11 @@ const keywordPlaceholder = computed(() =>
     : "单据号 / 单据类型 / 销售项目 / 来源单据",
 );
 const activeDocumentTypeLabel = computed(() => {
-  if (!filters.value.documentTypeLabel) {
+  if (!filters.value.documentTypeKey) {
     return "当前显示全部单据类型明细";
   }
 
-  const current = documentTypeCatalog.value.find(
-    (item) => item.documentTypeLabel === filters.value.documentTypeLabel,
-  );
+  const current = findCurrentDocumentTypeOption();
 
   return current
     ? isMaterialCategoryView.value
@@ -980,13 +985,12 @@ function createEmptyDomainSummary() {
     domainCount: 0,
     documentCount: 0,
     abnormalDocumentCount: 0,
-    totalInQuantity: "0.000000",
+    totalInQuantity: "0.00",
     totalInAmount: "0.00",
-    totalOutQuantity: "0.000000",
+    totalOutQuantity: "0.00",
     totalOutAmount: "0.00",
-    netQuantity: "0.000000",
+    netQuantity: "0.00",
     netAmount: "0.00",
-    totalCost: "0.00",
   };
 }
 
@@ -1051,7 +1055,7 @@ function createDefaultFilters(viewMode = DOMAIN_VIEW) {
     stockScope: fixedStockScope.value,
     workshopId: fixedWorkshopId.value,
     domainKey: undefined,
-    documentTypeLabel: undefined,
+    documentTypeKey: undefined,
     categoryNodeKey: undefined,
     abnormalOnly: false,
     keyword: "",
@@ -1063,6 +1067,8 @@ function resolveDetailCategoryNodeKey() {
 }
 
 function buildBaseQuery({ useSelectedCategory = false } = {}) {
+  const documentTypeQuery = resolveDocumentTypeQuery();
+
   return {
     yearMonth: filters.value.yearMonth,
     viewMode: filters.value.viewMode,
@@ -1071,7 +1077,7 @@ function buildBaseQuery({ useSelectedCategory = false } = {}) {
     domainKey: isMaterialCategoryView.value
       ? undefined
       : filters.value.domainKey,
-    documentTypeLabel: filters.value.documentTypeLabel?.trim() || undefined,
+    ...documentTypeQuery,
     categoryNodeKey: isMaterialCategoryView.value
       ? useSelectedCategory
         ? resolveDetailCategoryNodeKey()
@@ -1081,6 +1087,48 @@ function buildBaseQuery({ useSelectedCategory = false } = {}) {
       ? undefined
       : filters.value.abnormalOnly || undefined,
     keyword: filters.value.keyword?.trim() || undefined,
+  };
+}
+
+function resolveDocumentTypeFilterValue(item) {
+  if (isMaterialCategoryView.value) {
+    return item.documentTypeLabel;
+  }
+
+  return item.topicKey || item.documentTypeLabel;
+}
+
+function resolveDocumentTypeOptionKey(item) {
+  return `${item.domainKey || "ALL"}:${resolveDocumentTypeFilterValue(item)}`;
+}
+
+function findCurrentDocumentTypeOption() {
+  const currentValue = filters.value.documentTypeKey;
+
+  if (!currentValue) {
+    return undefined;
+  }
+
+  return filteredDocumentTypeOptions.value.find(
+    (item) => resolveDocumentTypeFilterValue(item) === currentValue,
+  );
+}
+
+function resolveDocumentTypeQuery() {
+  const currentValue = filters.value.documentTypeKey?.trim();
+
+  if (!currentValue) {
+    return {};
+  }
+
+  const current = findCurrentDocumentTypeOption();
+
+  if (!isMaterialCategoryView.value && current?.topicKey) {
+    return { topicKey: current.topicKey };
+  }
+
+  return {
+    documentTypeLabel: current?.documentTypeLabel || currentValue,
   };
 }
 
@@ -1227,7 +1275,7 @@ function handleDocumentTypeRowClick(row) {
     return;
   }
 
-  filters.value.documentTypeLabel = row.documentTypeLabel;
+  filters.value.documentTypeKey = resolveDocumentTypeFilterValue(row);
   pageNum.value = 1;
   loadDetails();
 }
@@ -1250,19 +1298,20 @@ function handleDomainChange() {
   }
 
   if (
-    filters.value.documentTypeLabel &&
+    filters.value.documentTypeKey &&
     !filteredDocumentTypeOptions.value.some(
-      (item) => item.documentTypeLabel === filters.value.documentTypeLabel,
+      (item) =>
+        resolveDocumentTypeFilterValue(item) === filters.value.documentTypeKey,
     )
   ) {
-    filters.value.documentTypeLabel = undefined;
+    filters.value.documentTypeKey = undefined;
   }
 
   syncBusinessSummaryTab();
 }
 
 function clearDocumentTypeFilter() {
-  filters.value.documentTypeLabel = undefined;
+  filters.value.documentTypeKey = undefined;
   pageNum.value = 1;
   loadDetails();
 }
@@ -1327,13 +1376,13 @@ function syncBusinessSummaryTab() {
 }
 
 function resolveDocumentTypeRowClassName({ row }) {
-  return row.documentTypeLabel === filters.value.documentTypeLabel
+  return resolveDocumentTypeFilterValue(row) === filters.value.documentTypeKey
     ? "is-active-row"
     : "";
 }
 
 function resolveDocumentTypeRowKey(row) {
-  return `${row.domainKey || "ALL"}:${row.documentTypeLabel}`;
+  return `${row.domainKey || "ALL"}:${resolveDocumentTypeFilterValue(row)}`;
 }
 
 function resolveCategoryRowClassName({ row }) {

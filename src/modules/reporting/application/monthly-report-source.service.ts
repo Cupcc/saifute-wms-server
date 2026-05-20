@@ -129,9 +129,14 @@ export class MonthlyReportSourceService {
     query: MonthlyReportQuery,
     options: {
       ignoreDocumentTypeLabel?: boolean;
+      ignoreTopicKey?: boolean;
     } = {},
   ): MonthlyReportEntry[] {
     const documentTypeLabel = query.documentTypeLabel?.trim() || null;
+    const documentTypeLabelFilter =
+      !query.topicKey && !options.ignoreDocumentTypeLabel
+        ? documentTypeLabel
+        : null;
 
     return [...rows]
       .filter((row) =>
@@ -141,12 +146,14 @@ export class MonthlyReportSourceService {
           : true,
       )
       .filter((row) =>
-        query.topicKey ? row.topicKey === query.topicKey : true,
+        query.topicKey && !options.ignoreTopicKey
+          ? row.topicKey === query.topicKey
+          : true,
       )
       .filter((row) =>
-        options.ignoreDocumentTypeLabel || !documentTypeLabel
-          ? true
-          : row.documentTypeLabel === documentTypeLabel,
+        documentTypeLabelFilter
+          ? row.documentTypeLabel === documentTypeLabelFilter
+          : true,
       )
       .filter((row) =>
         query.abnormalOnly ? row.abnormalFlags.length > 0 : true,
@@ -178,7 +185,7 @@ export class MonthlyReportSourceService {
         query.topicKey ? entry.topicKey === query.topicKey : true,
       )
       .filter((entry) =>
-        documentTypeLabel
+        !query.topicKey && documentTypeLabel
           ? entry.documentTypeLabel === documentTypeLabel
           : true,
       )
