@@ -3,7 +3,10 @@ import { Prisma } from "../../../../generated/prisma/client";
 import { AppConfigService } from "../../../shared/config/app-config.service";
 import { MonthlyMaterialCategoryRepository } from "../infrastructure/monthly-material-category.repository";
 import { MonthlyMaterialCategoryBalanceRepository } from "../infrastructure/monthly-material-category-balance.repository";
-import { MonthlyReportRepository } from "../infrastructure/monthly-report.repository";
+import {
+  MonthlyReportRepository,
+  type MonthlySalesProjectEntry,
+} from "../infrastructure/monthly-report.repository";
 import { MonthlyReportCatalogService } from "./monthly-report-catalog.service";
 import { MonthlyReportDomainAggregatorService } from "./monthly-report-domain-aggregator.service";
 import { MonthlyReportDomainSummaryService } from "./monthly-report-domain-summary.service";
@@ -18,6 +21,7 @@ import {
   type MonthlyReportEntry,
   MonthlyReportingAbnormalFlag,
   MonthlyReportingDirection,
+  MonthlyReportingDomainKey,
   MonthlyReportingTopicKey,
   MonthlyReportingViewMode,
 } from "./monthly-reporting.shared";
@@ -111,6 +115,27 @@ describe("MonthlyReportExportService", () => {
       abnormalFlags: [],
       sourceBizDate: null,
       sourceDocumentNo: null,
+      ...overrides,
+    };
+  }
+
+  function createSalesProjectEntry(
+    overrides: Partial<MonthlySalesProjectEntry> = {},
+  ): MonthlySalesProjectEntry {
+    return {
+      salesProjectId: 101,
+      salesProjectCode: "SP-101",
+      salesProjectName: "销售项目 A",
+      topicKey: MonthlyReportingTopicKey.SALES_OUTBOUND,
+      documentTypeLabel: "销售出库单",
+      documentId: 1,
+      documentNo: "SO-001",
+      bizDate: new Date("2026-03-05T02:00:00.000Z"),
+      createdAt: new Date("2026-03-05T03:00:00.000Z"),
+      quantity: new Prisma.Decimal("10"),
+      amount: new Prisma.Decimal("100"),
+      cost: new Prisma.Decimal("70"),
+      abnormalFlags: [],
       ...overrides,
     };
   }
@@ -376,8 +401,90 @@ describe("MonthlyReportExportService", () => {
     expect(result.content).toContain("RDH-002");
     expect(result.content).toContain("项目交接入数量");
     expect(result.content).toContain("项目交接入金额");
+    expect(result.content).toContain('<Data ss:Type="Number">1.00</Data>');
+    expect(result.content).not.toContain("1.000000");
     expect(result.content).not.toContain("交接金额");
     expect(result.content).not.toContain("主仓到RD交接汇总");
     expect(result.content).not.toContain("SO-001");
+  });
+
+  it("should export the selected sales return zero row when the month only has outbound rows", async () => {
+    repository.findMonthlyReportEntries.mockResolvedValue([createEntry()]);
+    repository.findMonthlySalesProjectEntries.mockResolvedValue([]);
+
+    const result = await service.exportMonthlyReport({
+      yearMonth: "2026-03",
+      domainKey: MonthlyReportingDomainKey.SALES,
+      topicKey: MonthlyReportingTopicKey.SALES_RETURN,
+    });
+    const documentTypeSheet = extractWorksheet(result.content, "单据类型汇总");
+
+    expect(documentTypeSheet).toContain("销售退货单");
+    expect(documentTypeSheet).toContain('<Data ss:Type="Number">0.00</Data>');
+    expect(documentTypeSheet).not.toContain("销售出库单");
+  });
+
+  it("should split ordinary sales project sales-price and cost-price amounts", async () => {
+    repository.findMonthlyReportEntries.mockResolvedValue([
+      createEntry(),
+      createEntry({
+        topicKey: MonthlyReportingTopicKey.SALES_RETURN,
+        direction: MonthlyReportingDirection.IN,
+        documentId: 2,
+        documentNo: "SR-001",
+        documentTypeLabel: "销售退货单",
+        quantity: new Prisma.Decimal("2"),
+        amount: new Prisma.Decimal("20"),
+        cost: new Prisma.Decimal("14"),
+      }),
+    ]);
+    repository.findMonthlySalesProjectEntries.mockResolvedValue([
+      createSalesProjectEntry(),
+      createSalesProjectEntry({
+        topicKey: MonthlyReportingTopicKey.SALES_RETURN,
+        documentTypeLabel: "销售退货单",
+        documentId: 2,
+        documentNo: "SR-001",
+        quantity: new Prisma.Decimal("2"),
+        amount: new Prisma.Decimal("20"),
+        cost: new Prisma.Decimal("14"),
+      }),
+    ]);
+
+    const result = await service.exportMonthlyReport({
+      yearMonth: "2026-03",
+      domainKey: MonthlyReportingDomainKey.SALES,
+    });
+    const domainSheet = extractWorksheet(result.content, "领域汇总");
+    const salesProjectSheet = extractWorksheet(result.content, "销售项目汇总");
+
+    expect(result.content).not.toContain("总成本");
+    expectLabelsInOrder(domainSheet, [
+      "销售出库数量",
+      "销售出库销售价金额",
+      "销售出库成本价金额",
+      "销售退货数量",
+      "销售退货销售价金额",
+      "销售退货成本价金额",
+      "净销售数量",
+      "净销售价金额",
+      "净成本价金额",
+    ]);
+    expectLabelsInOrder(salesProjectSheet, [
+      "销售出库数量",
+      "销售出库销售价金额",
+      "销售出库成本价金额",
+      "销售退货数量",
+      "销售退货销售价金额",
+      "销售退货成本价金额",
+      "净发生数量",
+      "净销售价金额",
+      "净成本价金额",
+    ]);
+    expect(salesProjectSheet).toContain("销售项目 A");
+    expect(domainSheet).toContain('<Data ss:Type="Number">80.00</Data>');
+    expect(domainSheet).toContain('<Data ss:Type="Number">56.00</Data>');
+    expect(salesProjectSheet).toContain('<Data ss:Type="Number">80.00</Data>');
+    expect(salesProjectSheet).toContain('<Data ss:Type="Number">56.00</Data>');
   });
 });

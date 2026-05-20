@@ -23,6 +23,7 @@ import {
 import { buildMonthlyReportExcelXmlWorkbook } from "./monthly-reporting.formatters";
 import {
   type MonthlyReportEntry,
+  MonthlyReportingTopicKey,
   MonthlyReportingViewMode,
 } from "./monthly-reporting.shared";
 
@@ -52,14 +53,31 @@ export class MonthlyReportExportService {
 
     const { rows, salesProjectEntries } =
       await this.sourceService.loadSourceData(query);
-    const filteredRows = this.sourceService.filterRows(rows, query);
+    const rowsBeforeDocumentTypeFilter = this.sourceService.filterRows(
+      rows,
+      query,
+      {
+        ignoreDocumentTypeLabel: true,
+        ignoreTopicKey: true,
+      },
+    );
+    const filteredRows = this.sourceService.filterRows(
+      rowsBeforeDocumentTypeFilter,
+      query,
+    );
     const filteredSalesProjectEntries =
       this.sourceService.filterSalesProjectEntries(salesProjectEntries, query);
     const totals = this.domainSummaryService.buildTotals(filteredRows);
     const domainItems =
       this.domainSummaryService.buildDomainItems(filteredRows);
-    const documentTypeItems =
-      this.domainSummaryService.buildDocumentTypeItems(filteredRows);
+    const documentTypeItems = this.domainSummaryService.buildDocumentTypeItems(
+      filteredRows,
+      {
+        includeMissingSalesTopics: !query.topicKey,
+        missingSalesTopicKeys: resolveSelectedSalesTopicKeys(query.topicKey),
+        salesReferenceRows: rowsBeforeDocumentTypeFilter,
+      },
+    );
     const workshopItems =
       this.aggregatorService.buildWorkshopItems(filteredRows);
     const salesProjectItems = this.aggregatorService.buildSalesProjectItems(
@@ -162,7 +180,6 @@ export class MonthlyReportExportService {
           ["净发生金额", totals.netAmount],
           ["单据数", totals.documentCount],
           ["异常单据数", totals.abnormalDocumentCount],
-          ["总成本", totals.totalCost],
         ] as Array<Array<string | number>>,
       },
       {
@@ -178,7 +195,15 @@ export class MonthlyReportExportService {
           "总出金额",
           "净发生数量",
           "净发生金额",
-          "总成本",
+          "销售出库数量",
+          "销售出库销售价金额",
+          "销售出库成本价金额",
+          "销售退货数量",
+          "销售退货销售价金额",
+          "销售退货成本价金额",
+          "净销售数量",
+          "净销售价金额",
+          "净成本价金额",
         ],
         rows: domainItems.map((item) => [
           item.domainLabel,
@@ -190,7 +215,15 @@ export class MonthlyReportExportService {
           item.totalOutAmount,
           item.netQuantity,
           item.netAmount,
-          item.totalCost,
+          item.salesOutboundQuantity ?? "",
+          item.salesOutboundSalesAmount ?? "",
+          item.salesOutboundCostAmount ?? "",
+          item.salesReturnQuantity ?? "",
+          item.salesReturnSalesAmount ?? "",
+          item.salesReturnCostAmount ?? "",
+          item.netSalesQuantity ?? "",
+          item.netSalesAmount ?? "",
+          item.netCostAmount ?? "",
         ]) as Array<Array<string | number>>,
       },
       {
@@ -207,7 +240,6 @@ export class MonthlyReportExportService {
           "总出金额",
           "净发生数量",
           "净发生金额",
-          "总成本",
         ],
         rows: documentTypeItems.map((item) => [
           item.domainLabel,
@@ -220,7 +252,6 @@ export class MonthlyReportExportService {
           item.totalOutAmount,
           item.netQuantity,
           item.netAmount,
-          item.totalCost,
         ]) as Array<Array<string | number>>,
       },
       {
@@ -238,7 +269,6 @@ export class MonthlyReportExportService {
           "报废金额",
           "净发生数量",
           "净发生金额",
-          "总成本",
         ],
         rows: workshopItems.map((item) => [
           item.workshopName,
@@ -252,7 +282,6 @@ export class MonthlyReportExportService {
           item.scrapAmount,
           item.netQuantity,
           item.netAmount,
-          item.totalCost,
         ]) as Array<Array<string | number>>,
       },
       {
@@ -264,12 +293,14 @@ export class MonthlyReportExportService {
           "单据数",
           "异常单据数",
           "销售出库数量",
-          "销售出库金额",
+          "销售出库销售价金额",
+          "销售出库成本价金额",
           "销售退货数量",
-          "销售退货金额",
+          "销售退货销售价金额",
+          "销售退货成本价金额",
           "净发生数量",
-          "净发生金额",
-          "总成本",
+          "净销售价金额",
+          "净成本价金额",
         ],
         rows: salesProjectItems.map((item) => [
           item.salesProjectCode ?? "",
@@ -277,12 +308,14 @@ export class MonthlyReportExportService {
           item.documentCount,
           item.abnormalDocumentCount,
           item.salesOutboundQuantity,
-          item.salesOutboundAmount,
+          item.salesOutboundSalesAmount,
+          item.salesOutboundCostAmount,
           item.salesReturnQuantity,
-          item.salesReturnAmount,
+          item.salesReturnSalesAmount,
+          item.salesReturnCostAmount,
           item.netQuantity,
-          item.netAmount,
-          item.totalCost,
+          item.netSalesAmount,
+          item.netCostAmount,
         ]) as Array<Array<string | number>>,
       },
       {
@@ -303,7 +336,6 @@ export class MonthlyReportExportService {
           "项目报废金额",
           "净发生数量",
           "净发生金额",
-          "总成本",
         ],
         rows: rdProjectItems.map((item) => [
           item.rdProjectCode ?? "",
@@ -320,7 +352,6 @@ export class MonthlyReportExportService {
           item.scrapAmount,
           item.netQuantity,
           item.netAmount,
-          item.totalCost,
         ]) as Array<Array<string | number>>,
       },
       {
@@ -374,4 +405,22 @@ export class MonthlyReportExportService {
       },
     ];
   }
+}
+
+function resolveSelectedSalesTopicKeys(
+  topicKey: MonthlyReportQuery["topicKey"],
+):
+  | ReadonlyArray<
+      | MonthlyReportingTopicKey.SALES_OUTBOUND
+      | MonthlyReportingTopicKey.SALES_RETURN
+    >
+  | undefined {
+  if (
+    topicKey === MonthlyReportingTopicKey.SALES_OUTBOUND ||
+    topicKey === MonthlyReportingTopicKey.SALES_RETURN
+  ) {
+    return [topicKey];
+  }
+
+  return undefined;
 }

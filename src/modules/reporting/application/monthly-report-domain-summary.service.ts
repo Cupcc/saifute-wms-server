@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import type { StockScopeCode } from "../../session/domain/user-session";
 import {
+  MonthlyReportCatalogService,
   type MonthlyReportDocumentTypeCatalogItem,
   type MonthlyReportDomainCatalogItem,
-  MonthlyReportCatalogService,
 } from "./monthly-report-catalog.service";
 import {
   MonthlyReportDomainAggregatorService,
@@ -20,13 +20,14 @@ import {
   MonthlyReportSourceService,
 } from "./monthly-report-source.service";
 import {
-  formatDecimal,
   formatMoney,
+  formatQuantity,
   getMonthlyReportingDomainMeta,
   getMonthlyReportingTopicMeta,
   type MonthlyReportEntry,
   MonthlyReportingDirection,
-  type MonthlyReportingDomainKey,
+  MonthlyReportingDomainKey,
+  MonthlyReportingTopicKey,
   MonthlyReportingViewMode,
   sumDecimals,
 } from "./monthly-reporting.shared";
@@ -41,19 +42,32 @@ export interface MonthlyReportSummaryTotals {
   totalOutAmount: string;
   netQuantity: string;
   netAmount: string;
-  totalCost: string;
 }
 
 export interface MonthlyReportDomainSummaryItem
-  extends Omit<MonthlyReportSummaryTotals, "domainCount"> {
+  extends Omit<MonthlyReportSummaryTotals, "domainCount">,
+    MonthlyReportSalesFixedColumns {
   domainKey: MonthlyReportingDomainKey;
   domainLabel: string;
+}
+
+export interface MonthlyReportSalesFixedColumns {
+  salesOutboundQuantity: string | null;
+  salesOutboundSalesAmount: string | null;
+  salesOutboundCostAmount: string | null;
+  salesReturnQuantity: string | null;
+  salesReturnSalesAmount: string | null;
+  salesReturnCostAmount: string | null;
+  netSalesQuantity: string | null;
+  netSalesAmount: string | null;
+  netCostAmount: string | null;
 }
 
 export interface MonthlyReportDocumentTypeSummaryItem
   extends Omit<MonthlyReportSummaryTotals, "domainCount"> {
   domainKey: MonthlyReportingDomainKey;
   domainLabel: string;
+  topicKey: MonthlyReportingTopicKey;
   documentTypeLabel: string;
 }
 
@@ -62,6 +76,7 @@ export interface MonthlyReportDomainFilters {
   stockScope: StockScopeCode | null;
   workshopId: number | null;
   domainKey: MonthlyReportingDomainKey | null;
+  topicKey: MonthlyReportingTopicKey | null;
   documentTypeLabel: string | null;
   abnormalOnly: boolean;
   keyword: string | null;
@@ -108,6 +123,7 @@ export class MonthlyReportDomainSummaryService {
       query,
       {
         ignoreDocumentTypeLabel: true,
+        ignoreTopicKey: true,
       },
     );
     const filteredRows = this.sourceService.filterRows(
@@ -125,6 +141,7 @@ export class MonthlyReportDomainSummaryService {
         stockScope: query.stockScope ?? null,
         workshopId: query.workshopId ?? null,
         domainKey: query.domainKey ?? null,
+        topicKey: query.topicKey ?? null,
         documentTypeLabel: query.documentTypeLabel?.trim() || null,
         abnormalOnly: query.abnormalOnly ?? false,
         keyword: query.keyword?.trim() || null,
@@ -135,7 +152,13 @@ export class MonthlyReportDomainSummaryService {
         rowsBeforeDocumentTypeFilter,
       ),
       domains: domainItems,
-      documentTypes: this.buildDocumentTypeItems(filteredRows),
+      documentTypes: this.buildDocumentTypeItems(filteredRows, {
+        includeMissingSalesTopics: !query.topicKey,
+        missingSalesTopicKeys: this.resolveSelectedSalesTopicKeys(
+          query.topicKey,
+        ),
+        salesReferenceRows: rowsBeforeDocumentTypeFilter,
+      }),
       workshopItems: this.aggregatorService.buildWorkshopItems(filteredRows),
       salesProjectItems: this.aggregatorService.buildSalesProjectItems(
         filteredSalesProjectEntries,
@@ -192,13 +215,12 @@ export class MonthlyReportDomainSummaryService {
     return {
       documentCount: documentKeys.size,
       abnormalDocumentCount: abnormalDocumentKeys.size,
-      totalInQuantity: formatDecimal(totalInQuantity),
+      totalInQuantity: formatQuantity(totalInQuantity),
       totalInAmount: formatMoney(totalInAmount),
-      totalOutQuantity: formatDecimal(totalOutQuantity),
+      totalOutQuantity: formatQuantity(totalOutQuantity),
       totalOutAmount: formatMoney(totalOutAmount),
-      netQuantity: formatDecimal(totalInQuantity.sub(totalOutQuantity)),
+      netQuantity: formatQuantity(totalInQuantity.sub(totalOutQuantity)),
       netAmount: formatMoney(totalInAmount.sub(totalOutAmount)),
-      totalCost: formatMoney(sumDecimals(rows.map((row) => row.cost))),
     };
   }
 
@@ -219,6 +241,7 @@ export class MonthlyReportDomainSummaryService {
         domainKey,
         domainLabel: getMonthlyReportingDomainMeta(domainKey).label,
         ...this.buildTotals(domainRows),
+        ...this.buildSalesFixedColumns(domainKey, domainRows),
       }))
       .sort(
         (left, right) =>
@@ -227,13 +250,70 @@ export class MonthlyReportDomainSummaryService {
       );
   }
 
+  private buildSalesFixedColumns(
+    domainKey: MonthlyReportingDomainKey,
+    rows: MonthlyReportEntry[],
+  ): MonthlyReportSalesFixedColumns {
+    if (domainKey !== MonthlyReportingDomainKey.SALES) {
+      return {
+        salesOutboundQuantity: null,
+        salesOutboundSalesAmount: null,
+        salesOutboundCostAmount: null,
+        salesReturnQuantity: null,
+        salesReturnSalesAmount: null,
+        salesReturnCostAmount: null,
+        netSalesQuantity: null,
+        netSalesAmount: null,
+        netCostAmount: null,
+      };
+    }
+
+    const outboundRows = rows.filter(
+      (row) => row.topicKey === MonthlyReportingTopicKey.SALES_OUTBOUND,
+    );
+    const returnRows = rows.filter(
+      (row) => row.topicKey === MonthlyReportingTopicKey.SALES_RETURN,
+    );
+    const outboundQuantity = sumDecimals(
+      outboundRows.map((row) => row.quantity),
+    );
+    const returnQuantity = sumDecimals(returnRows.map((row) => row.quantity));
+    const outboundSalesAmount = sumDecimals(
+      outboundRows.map((row) => row.amount),
+    );
+    const returnSalesAmount = sumDecimals(returnRows.map((row) => row.amount));
+    const outboundCostAmount = sumDecimals(outboundRows.map((row) => row.cost));
+    const returnCostAmount = sumDecimals(returnRows.map((row) => row.cost));
+
+    return {
+      salesOutboundQuantity: formatQuantity(outboundQuantity),
+      salesOutboundSalesAmount: formatMoney(outboundSalesAmount),
+      salesOutboundCostAmount: formatMoney(outboundCostAmount),
+      salesReturnQuantity: formatQuantity(returnQuantity),
+      salesReturnSalesAmount: formatMoney(returnSalesAmount),
+      salesReturnCostAmount: formatMoney(returnCostAmount),
+      netSalesQuantity: formatQuantity(outboundQuantity.sub(returnQuantity)),
+      netSalesAmount: formatMoney(outboundSalesAmount.sub(returnSalesAmount)),
+      netCostAmount: formatMoney(outboundCostAmount.sub(returnCostAmount)),
+    };
+  }
+
   buildDocumentTypeItems(
     rows: MonthlyReportEntry[],
+    options: {
+      includeMissingSalesTopics?: boolean;
+      missingSalesTopicKeys?: ReadonlyArray<
+        | MonthlyReportingTopicKey.SALES_OUTBOUND
+        | MonthlyReportingTopicKey.SALES_RETURN
+      >;
+      salesReferenceRows?: MonthlyReportEntry[];
+    } = {},
   ): MonthlyReportDocumentTypeSummaryItem[] {
     const grouped = new Map<
-      string,
+      MonthlyReportingTopicKey,
       {
         domainKey: MonthlyReportingDomainKey;
+        topicKey: MonthlyReportingTopicKey;
         documentTypeLabel: string;
         sortOrder: number;
         rows: MonthlyReportEntry[];
@@ -242,9 +322,10 @@ export class MonthlyReportDomainSummaryService {
 
     for (const row of rows) {
       const topicMeta = getMonthlyReportingTopicMeta(row.topicKey);
-      const mapKey = `${topicMeta.domainKey}:${row.documentTypeLabel}`;
+      const mapKey = row.topicKey;
       const current = grouped.get(mapKey) ?? {
         domainKey: topicMeta.domainKey,
+        topicKey: row.topicKey,
         documentTypeLabel: row.documentTypeLabel,
         sortOrder: topicMeta.order,
         rows: [],
@@ -254,10 +335,27 @@ export class MonthlyReportDomainSummaryService {
       grouped.set(mapKey, current);
     }
 
+    const missingSalesTopicKeys =
+      options.missingSalesTopicKeys ??
+      ((options.includeMissingSalesTopics ?? true)
+        ? [
+            MonthlyReportingTopicKey.SALES_OUTBOUND,
+            MonthlyReportingTopicKey.SALES_RETURN,
+          ]
+        : []);
+
+    if (missingSalesTopicKeys.length > 0) {
+      this.addMissingSalesDocumentTypeItems(grouped, {
+        referenceRows: options.salesReferenceRows ?? rows,
+        topicKeys: missingSalesTopicKeys,
+      });
+    }
+
     return [...grouped.values()]
       .map((item) => ({
         domainKey: item.domainKey,
         domainLabel: getMonthlyReportingDomainMeta(item.domainKey).label,
+        topicKey: item.topicKey,
         documentTypeLabel: item.documentTypeLabel,
         sortOrder: item.sortOrder,
         ...this.buildTotals(item.rows),
@@ -283,5 +381,80 @@ export class MonthlyReportDomainSummaryService {
         );
       })
       .map(({ sortOrder: _sortOrder, ...item }) => item);
+  }
+
+  private addMissingSalesDocumentTypeItems(
+    grouped: Map<
+      MonthlyReportingTopicKey,
+      {
+        domainKey: MonthlyReportingDomainKey;
+        topicKey: MonthlyReportingTopicKey;
+        documentTypeLabel: string;
+        sortOrder: number;
+        rows: MonthlyReportEntry[];
+      }
+    >,
+    options: {
+      referenceRows: MonthlyReportEntry[];
+      topicKeys: ReadonlyArray<
+        | MonthlyReportingTopicKey.SALES_OUTBOUND
+        | MonthlyReportingTopicKey.SALES_RETURN
+      >;
+    },
+  ): void {
+    const salesTopicKeys = [
+      MonthlyReportingTopicKey.SALES_OUTBOUND,
+      MonthlyReportingTopicKey.SALES_RETURN,
+    ] as const;
+    const hasGroupedSalesFact = salesTopicKeys.some((topicKey) =>
+      grouped.has(topicKey),
+    );
+    const hasReferenceSalesFact = options.referenceRows.some(
+      (row) =>
+        row.topicKey === MonthlyReportingTopicKey.SALES_OUTBOUND ||
+        row.topicKey === MonthlyReportingTopicKey.SALES_RETURN,
+    );
+    if (!hasGroupedSalesFact && !hasReferenceSalesFact) {
+      return;
+    }
+
+    const documentTypeLabels: Record<(typeof salesTopicKeys)[number], string> =
+      {
+        [MonthlyReportingTopicKey.SALES_OUTBOUND]: "销售出库单",
+        [MonthlyReportingTopicKey.SALES_RETURN]: "销售退货单",
+      };
+
+    for (const topicKey of options.topicKeys) {
+      if (grouped.has(topicKey)) {
+        continue;
+      }
+
+      const topicMeta = getMonthlyReportingTopicMeta(topicKey);
+      grouped.set(topicKey, {
+        domainKey: topicMeta.domainKey,
+        topicKey,
+        documentTypeLabel: documentTypeLabels[topicKey],
+        sortOrder: topicMeta.order,
+        rows: [],
+      });
+    }
+  }
+
+  private resolveSelectedSalesTopicKeys(
+    topicKey: MonthlyReportingTopicKey | undefined,
+  ):
+    | ReadonlyArray<
+        | MonthlyReportingTopicKey.SALES_OUTBOUND
+        | MonthlyReportingTopicKey.SALES_RETURN
+      >
+    | undefined {
+    if (
+      topicKey === MonthlyReportingTopicKey.SALES_OUTBOUND ||
+      topicKey === MonthlyReportingTopicKey.SALES_RETURN
+    ) {
+      return [topicKey];
+    }
+
+    return undefined;
   }
 }

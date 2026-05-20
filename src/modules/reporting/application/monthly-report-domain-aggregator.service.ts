@@ -1,14 +1,19 @@
 import { Injectable } from "@nestjs/common";
+import { Prisma } from "../../../../generated/prisma/client";
 import type { MonthlySalesProjectEntry } from "../infrastructure/monthly-report.repository";
 import { normalizeMonthlyReportWorkshopRef } from "./monthly-reporting.formatters";
 import {
-  formatDecimal,
   formatMoney,
+  formatQuantity,
   getMonthlyReportingTopicMeta,
   type MonthlyReportEntry,
   MonthlyReportingDirection,
   sumDecimals,
 } from "./monthly-reporting.shared";
+
+function compareDecimalStringsDesc(left: string, right: string): number {
+  return new Prisma.Decimal(right).cmp(new Prisma.Decimal(left));
+}
 
 export interface MonthlyReportWorkshopSummaryItem {
   workshopId: number | null;
@@ -23,7 +28,6 @@ export interface MonthlyReportWorkshopSummaryItem {
   scrapAmount: string;
   netQuantity: string;
   netAmount: string;
-  totalCost: string;
 }
 
 export interface MonthlyReportSalesProjectSummaryItem {
@@ -33,12 +37,14 @@ export interface MonthlyReportSalesProjectSummaryItem {
   documentCount: number;
   abnormalDocumentCount: number;
   salesOutboundQuantity: string;
-  salesOutboundAmount: string;
+  salesOutboundSalesAmount: string;
+  salesOutboundCostAmount: string;
   salesReturnQuantity: string;
-  salesReturnAmount: string;
+  salesReturnSalesAmount: string;
+  salesReturnCostAmount: string;
   netQuantity: string;
-  netAmount: string;
-  totalCost: string;
+  netSalesAmount: string;
+  netCostAmount: string;
 }
 
 export interface MonthlyReportRdProjectSummaryItem {
@@ -57,7 +63,6 @@ export interface MonthlyReportRdProjectSummaryItem {
   scrapAmount: string;
   netQuantity: string;
   netAmount: string;
-  totalCost: string;
 }
 
 @Injectable()
@@ -128,21 +133,20 @@ export class MonthlyReportDomainAggregatorService {
           workshopName: item.workshopName,
           documentCount: documentKeys.size,
           abnormalDocumentCount: abnormalDocumentKeys.size,
-          pickQuantity: formatDecimal(pickQuantity),
+          pickQuantity: formatQuantity(pickQuantity),
           pickAmount: formatMoney(pickAmount),
-          returnQuantity: formatDecimal(returnQuantity),
+          returnQuantity: formatQuantity(returnQuantity),
           returnAmount: formatMoney(returnAmount),
-          scrapQuantity: formatDecimal(scrapQuantity),
+          scrapQuantity: formatQuantity(scrapQuantity),
           scrapAmount: formatMoney(scrapAmount),
-          netQuantity: formatDecimal(
+          netQuantity: formatQuantity(
             returnQuantity.sub(pickQuantity).sub(scrapQuantity),
           ),
           netAmount: formatMoney(returnAmount.sub(pickAmount).sub(scrapAmount)),
-          totalCost: formatMoney(sumDecimals(item.rows.map((row) => row.cost))),
         };
       })
       .sort((left, right) =>
-        right.netAmount.localeCompare(left.netAmount, "en"),
+        compareDecimalStringsDesc(left.netAmount, right.netAmount),
       );
   }
 
@@ -204,6 +208,12 @@ export class MonthlyReportDomainAggregatorService {
         const returnAmount = sumDecimals(
           returnEntries.map((entry) => entry.amount),
         );
+        const outboundCostAmount = sumDecimals(
+          outboundEntries.map((entry) => entry.cost),
+        );
+        const returnCostAmount = sumDecimals(
+          returnEntries.map((entry) => entry.cost),
+        );
 
         return {
           salesProjectId: item.salesProjectId,
@@ -211,19 +221,19 @@ export class MonthlyReportDomainAggregatorService {
           salesProjectName: item.salesProjectName,
           documentCount: documentKeys.size,
           abnormalDocumentCount: abnormalDocumentKeys.size,
-          salesOutboundQuantity: formatDecimal(outboundQuantity),
-          salesOutboundAmount: formatMoney(outboundAmount),
-          salesReturnQuantity: formatDecimal(returnQuantity),
-          salesReturnAmount: formatMoney(returnAmount),
-          netQuantity: formatDecimal(outboundQuantity.sub(returnQuantity)),
-          netAmount: formatMoney(outboundAmount.sub(returnAmount)),
-          totalCost: formatMoney(
-            sumDecimals(item.entries.map((entry) => entry.cost)),
-          ),
+          salesOutboundQuantity: formatQuantity(outboundQuantity),
+          salesOutboundSalesAmount: formatMoney(outboundAmount),
+          salesOutboundCostAmount: formatMoney(outboundCostAmount),
+          salesReturnQuantity: formatQuantity(returnQuantity),
+          salesReturnSalesAmount: formatMoney(returnAmount),
+          salesReturnCostAmount: formatMoney(returnCostAmount),
+          netQuantity: formatQuantity(outboundQuantity.sub(returnQuantity)),
+          netSalesAmount: formatMoney(outboundAmount.sub(returnAmount)),
+          netCostAmount: formatMoney(outboundCostAmount.sub(returnCostAmount)),
         };
       })
       .sort((left, right) =>
-        right.netAmount.localeCompare(left.netAmount, "en"),
+        compareDecimalStringsDesc(left.netSalesAmount, right.netSalesAmount),
       );
   }
 
@@ -317,15 +327,15 @@ export class MonthlyReportDomainAggregatorService {
           rdProjectName: item.rdProjectName,
           documentCount: documentKeys.size,
           abnormalDocumentCount: abnormalDocumentKeys.size,
-          handoffInQuantity: formatDecimal(handoffInQuantity),
+          handoffInQuantity: formatQuantity(handoffInQuantity),
           handoffInAmount: formatMoney(handoffInAmount),
-          pickQuantity: formatDecimal(pickQuantity),
+          pickQuantity: formatQuantity(pickQuantity),
           pickAmount: formatMoney(pickAmount),
-          returnQuantity: formatDecimal(returnQuantity),
+          returnQuantity: formatQuantity(returnQuantity),
           returnAmount: formatMoney(returnAmount),
-          scrapQuantity: formatDecimal(scrapQuantity),
+          scrapQuantity: formatQuantity(scrapQuantity),
           scrapAmount: formatMoney(scrapAmount),
-          netQuantity: formatDecimal(
+          netQuantity: formatQuantity(
             handoffInQuantity
               .add(returnQuantity)
               .sub(pickQuantity)
@@ -334,11 +344,10 @@ export class MonthlyReportDomainAggregatorService {
           netAmount: formatMoney(
             handoffInAmount.add(returnAmount).sub(pickAmount).sub(scrapAmount),
           ),
-          totalCost: formatMoney(sumDecimals(item.rows.map((row) => row.cost))),
         };
       })
       .sort((left, right) =>
-        right.netAmount.localeCompare(left.netAmount, "en"),
+        compareDecimalStringsDesc(left.netAmount, right.netAmount),
       );
   }
 }

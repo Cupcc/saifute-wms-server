@@ -197,11 +197,28 @@ describe("MonthlyReportDomainSummaryService", () => {
     expect(result.summary.documentCount).toBe(3);
     expect(result.summary.totalOutAmount).toBe("120.00");
     expect(result.summary.totalInAmount).toBe("20.00");
-    expect(result.summary.totalCost).toBe("102.00");
+    expect(result.summary).not.toHaveProperty("totalCost");
     expect(result.domains.map((item) => item.domainLabel)).toEqual([
       "销售",
       "研发项目",
     ]);
+    expect(result.domains[0]).toMatchObject({
+      salesOutboundQuantity: "10.00",
+      salesOutboundSalesAmount: "100.00",
+      salesOutboundCostAmount: "70.00",
+      salesReturnQuantity: "2.00",
+      salesReturnSalesAmount: "20.00",
+      salesReturnCostAmount: "14.00",
+      netSalesQuantity: "8.00",
+      netSalesAmount: "80.00",
+      netCostAmount: "56.00",
+    });
+    expect(result.domains[0]).not.toHaveProperty("totalCost");
+    expect(result.domains[1]).toMatchObject({
+      salesOutboundQuantity: null,
+      salesReturnQuantity: null,
+      netSalesAmount: null,
+    });
     expect(result.documentTypes).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -214,20 +231,27 @@ describe("MonthlyReportDomainSummaryService", () => {
         }),
       ]),
     );
+    expect(result.documentTypes[0]).not.toHaveProperty("totalCost");
     expect(result.salesProjectItems[0]).toMatchObject({
       salesProjectCode: "SP-101",
       salesProjectName: "项目A",
-      salesOutboundAmount: "100.00",
-      salesReturnAmount: "20.00",
-      netAmount: "80.00",
+      salesOutboundSalesAmount: "100.00",
+      salesOutboundCostAmount: "70.00",
+      salesReturnSalesAmount: "20.00",
+      salesReturnCostAmount: "14.00",
+      netSalesAmount: "80.00",
+      netCostAmount: "56.00",
     });
+    expect(result.salesProjectItems[0]).not.toHaveProperty("totalCost");
     expect(result.documentTypeCatalog).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
+          topicKey: MonthlyReportingTopicKey.SALES_OUTBOUND,
           documentTypeLabel: "销售出库单",
         }),
         expect.objectContaining({
           domainLabel: "研发项目",
+          topicKey: MonthlyReportingTopicKey.RD_HANDOFF,
           documentTypeLabel: "RD 交接单",
         }),
       ]),
