@@ -67,15 +67,22 @@ export class MonthlyReportExportService {
     );
     const filteredSalesProjectEntries =
       this.sourceService.filterSalesProjectEntries(salesProjectEntries, query);
-    const totals = this.domainSummaryService.buildTotals(filteredRows);
-    const domainItems =
-      this.domainSummaryService.buildDomainItems(filteredRows);
+    const totals = this.domainSummaryService.buildTotals(filteredRows, {
+      stockScope: query.stockScope,
+    });
+    const domainItems = this.domainSummaryService.buildDomainItems(
+      filteredRows,
+      {
+        stockScope: query.stockScope,
+      },
+    );
     const documentTypeItems = this.domainSummaryService.buildDocumentTypeItems(
       filteredRows,
       {
         includeMissingSalesTopics: !query.topicKey,
         missingSalesTopicKeys: resolveSelectedSalesTopicKeys(query.topicKey),
         salesReferenceRows: rowsBeforeDocumentTypeFilter,
+        stockScope: query.stockScope,
       },
     );
     const workshopItems =
@@ -179,7 +186,6 @@ export class MonthlyReportExportService {
           ["净发生数量", totals.netQuantity],
           ["净发生金额", totals.netAmount],
           ["单据数", totals.documentCount],
-          ["异常单据数", totals.abnormalDocumentCount],
         ] as Array<Array<string | number>>,
       },
       {
@@ -188,42 +194,28 @@ export class MonthlyReportExportService {
         columns: [
           "领域",
           "单据数",
-          "异常单据数",
           "总入数量",
           "总入金额",
           "总出数量",
           "总出金额",
           "净发生数量",
           "净发生金额",
-          "销售出库数量",
-          "销售出库销售价金额",
-          "销售出库成本价金额",
-          "销售退货数量",
-          "销售退货销售价金额",
-          "销售退货成本价金额",
-          "净销售数量",
-          "净销售价金额",
-          "净成本价金额",
+          "销售净售出金额",
+          "销售净成本金额",
+          "销售毛利金额",
         ],
         rows: domainItems.map((item) => [
           item.domainLabel,
           item.documentCount,
-          item.abnormalDocumentCount,
           item.totalInQuantity,
           item.totalInAmount,
           item.totalOutQuantity,
           item.totalOutAmount,
           item.netQuantity,
           item.netAmount,
-          item.salesOutboundQuantity ?? "",
-          item.salesOutboundSalesAmount ?? "",
-          item.salesOutboundCostAmount ?? "",
-          item.salesReturnQuantity ?? "",
-          item.salesReturnSalesAmount ?? "",
-          item.salesReturnCostAmount ?? "",
-          item.netSalesQuantity ?? "",
           item.netSalesAmount ?? "",
           item.netCostAmount ?? "",
+          item.salesGrossProfitAmount ?? "",
         ]) as Array<Array<string | number>>,
       },
       {
@@ -233,7 +225,6 @@ export class MonthlyReportExportService {
           "领域",
           "单据类型",
           "单据数",
-          "异常单据数",
           "总入数量",
           "总入金额",
           "总出数量",
@@ -245,7 +236,6 @@ export class MonthlyReportExportService {
           item.domainLabel,
           item.documentTypeLabel,
           item.documentCount,
-          item.abnormalDocumentCount,
           item.totalInQuantity,
           item.totalInAmount,
           item.totalOutQuantity,
@@ -260,7 +250,6 @@ export class MonthlyReportExportService {
         columns: [
           "车间",
           "单据数",
-          "异常单据数",
           "领料数量",
           "领料金额",
           "退料数量",
@@ -273,7 +262,6 @@ export class MonthlyReportExportService {
         rows: workshopItems.map((item) => [
           item.workshopName,
           item.documentCount,
-          item.abnormalDocumentCount,
           item.pickQuantity,
           item.pickAmount,
           item.returnQuantity,
@@ -291,14 +279,13 @@ export class MonthlyReportExportService {
           "销售项目编码",
           "销售项目名称",
           "单据数",
-          "异常单据数",
           "销售出库数量",
           "销售出库销售价金额",
           "销售出库成本价金额",
           "销售退货数量",
           "销售退货销售价金额",
           "销售退货成本价金额",
-          "净发生数量",
+          "净销售数量",
           "净销售价金额",
           "净成本价金额",
         ],
@@ -306,7 +293,6 @@ export class MonthlyReportExportService {
           item.salesProjectCode ?? "",
           item.salesProjectName,
           item.documentCount,
-          item.abnormalDocumentCount,
           item.salesOutboundQuantity,
           item.salesOutboundSalesAmount,
           item.salesOutboundCostAmount,
@@ -325,7 +311,6 @@ export class MonthlyReportExportService {
           "研发项目编码",
           "研发项目名称",
           "单据数",
-          "异常单据数",
           "项目交接入数量",
           "项目交接入金额",
           "项目领用数量",
@@ -341,7 +326,6 @@ export class MonthlyReportExportService {
           item.rdProjectCode ?? "",
           item.rdProjectName,
           item.documentCount,
-          item.abnormalDocumentCount,
           item.handoffInQuantity,
           item.handoffInAmount,
           item.pickQuantity,
@@ -374,7 +358,6 @@ export class MonthlyReportExportService {
           "数量",
           "金额",
           "成本",
-          "异常标识",
           "来源月份",
           "来源单据",
         ],
@@ -397,7 +380,6 @@ export class MonthlyReportExportService {
             item.quantity,
             item.amount,
             item.cost,
-            item.abnormalLabels.join("、"),
             item.sourceBizMonth ?? "",
             item.sourceDocumentNo ?? "",
           ];

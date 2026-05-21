@@ -17,6 +17,21 @@ export function resolveMaterialCategoryLineAmount(
   return toDecimal(quantity).mul(currentUnitPrice);
 }
 
+export function resolveMaterialCategoryUnitPrice(params: {
+  amount: Prisma.Decimal | string | number | null | undefined;
+  quantity: Prisma.Decimal | string | number | null | undefined;
+  fallbackUnitPrice?: Prisma.Decimal | string | number | null;
+}) {
+  const amount = toDecimal(params.amount);
+  const quantity = toDecimal(params.quantity);
+
+  if (!quantity.isZero() && !amount.isZero()) {
+    return amount.div(quantity);
+  }
+
+  return toDecimal(params.fallbackUnitPrice);
+}
+
 export function resolveMaterialCategorySalesCostAmount(params: {
   lineCostAmount: Prisma.Decimal | string | number | null | undefined;
   inventoryCostAmount: Prisma.Decimal | string | number | null | undefined;

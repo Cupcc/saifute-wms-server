@@ -122,20 +122,34 @@ export function formatMonthlyReportDateOnly(
   return formatter.format(value);
 }
 
+type MonthlyReportExcelRowStyleId = "Total";
+
+type MonthlyReportExcelCellValue = string | number;
+
+export interface MonthlyReportExcelStyledRow {
+  values: MonthlyReportExcelCellValue[];
+  styleId?: MonthlyReportExcelRowStyleId;
+}
+
+export type MonthlyReportExcelRow =
+  | MonthlyReportExcelCellValue[]
+  | MonthlyReportExcelStyledRow;
+
 export interface MonthlyReportExcelSheet {
   name: string;
   title?: string;
   columnWidths?: number[];
   columns: string[];
-  rows: Array<Array<string | number>>;
+  rows: MonthlyReportExcelRow[];
 }
 
 const MONTHLY_REPORT_NUMERIC_COLUMN_SUFFIXES = [
   "数量",
+  "单价",
+  "销售价",
   "金额",
   "成本",
   "单据数",
-  "异常单据数",
   "单据行数",
 ] as const;
 
@@ -184,11 +198,38 @@ function resolveMonthlyReportNumberStyleId(value: string | number): string {
   return fractionLength > 0 ? "NumberDecimal2" : "NumberInteger";
 }
 
+function normalizeMonthlyReportExcelRow(
+  row: MonthlyReportExcelRow,
+): MonthlyReportExcelStyledRow {
+  return Array.isArray(row) ? { values: row } : row;
+}
+
+function resolveMonthlyReportCellStyleId(
+  value: string | number,
+  isHeader: boolean,
+  shouldWriteAsNumber: boolean,
+  rowStyleId?: MonthlyReportExcelRowStyleId,
+): string | null {
+  if (isHeader) {
+    return "Header";
+  }
+
+  if (rowStyleId === "Total") {
+    return shouldWriteAsNumber
+      ? `Total${resolveMonthlyReportNumberStyleId(value)}`
+      : "Total";
+  }
+
+  return shouldWriteAsNumber ? resolveMonthlyReportNumberStyleId(value) : null;
+}
+
 function buildMonthlyReportExcelRow(
-  values: Array<string | number>,
+  row: MonthlyReportExcelRow,
   columns: string[] = [],
   isHeader = false,
 ): string {
+  const { values, styleId: rowStyleId } = normalizeMonthlyReportExcelRow(row);
+
   return `<Row>${values
     .map((value, columnIndex) => {
       const shouldWriteAsNumber =
@@ -198,12 +239,14 @@ function buildMonthlyReportExcelRow(
       const dataType = shouldWriteAsNumber ? "Number" : "String";
       const cellValue =
         shouldWriteAsNumber && typeof value === "string" ? value.trim() : value;
-      const styleId = isHeader
-        ? ' ss:StyleID="Header"'
-        : shouldWriteAsNumber
-          ? ` ss:StyleID="${resolveMonthlyReportNumberStyleId(value)}"`
-          : "";
-      return `<Cell${styleId}><Data ss:Type="${dataType}">${escapeMonthlyReportXml(
+      const styleId = resolveMonthlyReportCellStyleId(
+        value,
+        isHeader,
+        shouldWriteAsNumber,
+        rowStyleId,
+      );
+      const styleAttribute = styleId ? ` ss:StyleID="${styleId}"` : "";
+      return `<Cell${styleAttribute}><Data ss:Type="${dataType}">${escapeMonthlyReportXml(
         cellValue,
       )}</Data></Cell>`;
     })
@@ -262,6 +305,9 @@ export function buildMonthlyReportExcelXmlWorkbook(
     <Style ss:ID="Header">
       <Font ss:Bold="1" />
     </Style>
+    <Style ss:ID="Total">
+      <Font ss:Bold="1" />
+    </Style>
     <Style ss:ID="NumberInteger">
       <NumberFormat ss:Format="0" />
     </Style>
@@ -269,6 +315,18 @@ export function buildMonthlyReportExcelXmlWorkbook(
       <NumberFormat ss:Format="0.00" />
     </Style>
     <Style ss:ID="NumberDecimal6">
+      <NumberFormat ss:Format="0.000000" />
+    </Style>
+    <Style ss:ID="TotalNumberInteger">
+      <Font ss:Bold="1" />
+      <NumberFormat ss:Format="0" />
+    </Style>
+    <Style ss:ID="TotalNumberDecimal2">
+      <Font ss:Bold="1" />
+      <NumberFormat ss:Format="0.00" />
+    </Style>
+    <Style ss:ID="TotalNumberDecimal6">
+      <Font ss:Bold="1" />
       <NumberFormat ss:Format="0.000000" />
     </Style>
   </Styles>

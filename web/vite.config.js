@@ -3,6 +3,8 @@ import path from "node:path";
 import { defineConfig, loadEnv } from "vite";
 import createVitePlugins from "./vite/plugins";
 
+const allowedDevServerHosts = ["company.sdsft.cc"];
+
 function readBackendPortFromRootEnv() {
   const rootDir = path.resolve(__dirname, "..");
   const envCandidates = [".env.dev", ".env"];
@@ -75,6 +77,7 @@ export default defineConfig(({ mode, command }) => {
     server: {
       port: 90,
       host: true,
+      allowedHosts: allowedDevServerHosts,
       open: false,
       proxy: {
         // https://cn.vitejs.dev/config/#server-proxy

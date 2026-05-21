@@ -1,13 +1,11 @@
 import { Prisma } from "../../../../generated/prisma/client";
 import {
-  MonthlyReportingAbnormalFlag,
   MonthlyReportingDirection,
   MonthlyReportingTopicKey,
 } from "../application/monthly-reporting.shared";
 import { InventoryReportingRepository } from "./inventory-reporting.repository";
 import { MonthlyMaterialCategoryRepository } from "./monthly-material-category.repository";
 import { MonthlyReportRepository } from "./monthly-report.repository";
-import { buildAbnormalFlags } from "./reporting-repository.helpers";
 
 describe("ReportingRepository", () => {
   function createMockPrisma() {
@@ -243,7 +241,7 @@ describe("ReportingRepository", () => {
     expect(handoffRows[0]?.amount.toString()).toBe("200");
   });
 
-  it("treats rd handoff as project inbound when no stock-scope viewpoint is specified", async () => {
+  it("keeps rd handoff visible without treating all-stock view as a scoped warehouse viewpoint", async () => {
     const { repository, rdHandoffOrder } = createMonthlyReportRepository();
     rdHandoffOrder.findMany.mockResolvedValue([
       {
@@ -285,8 +283,79 @@ describe("ReportingRepository", () => {
       expect.objectContaining({
         topicKey: "RD_HANDOFF",
         direction: "IN",
+        stockScope: null,
+        stockScopeName: "主仓 -> 研发小仓",
+        workshopName: "主仓 -> 研发一车间",
         rdProjectCode: "TEST-RDP-001",
         amount: new Prisma.Decimal(900),
+      }),
+    ]);
+  });
+
+  it("keeps sales project summary rows bound to stored sales-project facts only", async () => {
+    const { repository, salesStockOrderLine } = createMonthlyReportRepository();
+
+    salesStockOrderLine.findMany.mockResolvedValue([
+      {
+        id: 301,
+        orderId: 401,
+        lineNo: 1,
+        materialId: 501,
+        salesProjectId: null,
+        salesProjectCodeSnapshot: null,
+        salesProjectNameSnapshot: null,
+        sourceDocumentId: null,
+        quantity: new Prisma.Decimal("4"),
+        amount: new Prisma.Decimal("80"),
+        costAmount: new Prisma.Decimal("50"),
+        order: {
+          id: 401,
+          documentNo: "CK-001",
+          bizDate: new Date("2026-05-04T00:00:00.000Z"),
+          createdAt: new Date("2026-05-04T09:00:00.000Z"),
+          orderType: "OUTBOUND",
+        },
+      },
+      {
+        id: 302,
+        orderId: 402,
+        lineNo: 1,
+        materialId: 502,
+        salesProjectId: 802,
+        salesProjectCodeSnapshot: "SP-802",
+        salesProjectNameSnapshot: "明确项目",
+        sourceDocumentId: null,
+        quantity: new Prisma.Decimal("2"),
+        amount: new Prisma.Decimal("40"),
+        costAmount: new Prisma.Decimal("30"),
+        order: {
+          id: 402,
+          documentNo: "CK-002",
+          bizDate: new Date("2026-05-05T00:00:00.000Z"),
+          createdAt: new Date("2026-05-05T09:00:00.000Z"),
+          orderType: "OUTBOUND",
+        },
+      },
+    ] as never);
+
+    const result = await repository.findMonthlySalesProjectEntries({
+      start: new Date("2026-05-01T00:00:00.000Z"),
+      end: new Date("2026-05-31T23:59:59.999Z"),
+      stockScope: "MAIN",
+    });
+
+    expect(result).toEqual([
+      expect.objectContaining({
+        salesProjectId: null,
+        salesProjectCode: null,
+        salesProjectName: null,
+        documentNo: "CK-001",
+      }),
+      expect.objectContaining({
+        salesProjectId: 802,
+        salesProjectCode: "SP-802",
+        salesProjectName: "明确项目",
+        documentNo: "CK-002",
       }),
     ]);
   });
@@ -416,10 +485,6 @@ describe("ReportingRepository", () => {
           salesProjectCode: "SP-701",
           sourceBizDate: new Date("2026-03-31T15:30:00.000Z"),
           sourceDocumentNo: "CK-BASE-001",
-          abnormalFlags: expect.arrayContaining([
-            MonthlyReportingAbnormalFlag.BACKFILL_IMPACT,
-            MonthlyReportingAbnormalFlag.CROSS_MONTH_REFERENCE,
-          ]),
         }),
       ]),
     );
@@ -509,24 +574,6 @@ describe("ReportingRepository", () => {
         totalAmount: new Prisma.Decimal(-24),
       }),
     ]);
-  });
-
-  it("marks abnormal flags with the configured business timezone", () => {
-    const flags = buildAbnormalFlags(
-      {
-        bizDate: new Date("2026-03-31T16:30:00.000Z"),
-        createdAt: new Date("2026-04-30T16:30:00.000Z"),
-        sourceBizDate: new Date("2026-03-31T15:30:00.000Z"),
-      },
-      "Asia/Shanghai",
-    );
-
-    expect(flags).toEqual(
-      expect.arrayContaining([
-        MonthlyReportingAbnormalFlag.BACKFILL_IMPACT,
-        MonthlyReportingAbnormalFlag.CROSS_MONTH_REFERENCE,
-      ]),
-    );
   });
 
   it("avoids reserved keywords in inventory valuation raw SQL aliases", async () => {

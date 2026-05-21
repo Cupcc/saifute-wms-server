@@ -38,13 +38,6 @@ export enum MonthlyReportingTopicKey {
   PRICE_CORRECTION_OUT = "PRICE_CORRECTION_OUT",
 }
 
-export enum MonthlyReportingAbnormalFlag {
-  PRICE_CORRECTION = "PRICE_CORRECTION",
-  BACKFILL_IMPACT = "BACKFILL_IMPACT",
-  CROSS_MONTH_REFERENCE = "CROSS_MONTH_REFERENCE",
-  STOCKTAKE_ADJUSTMENT = "STOCKTAKE_ADJUSTMENT",
-}
-
 export interface MonthlyReportingDomainMeta {
   order: number;
   label: string;
@@ -187,16 +180,6 @@ export const MONTHLY_REPORTING_MATERIAL_CATEGORY_TOPIC_OPTIONS: ReadonlyArray<Mo
     MonthlyReportingTopicKey.SALES_RETURN,
   ];
 
-export const MONTHLY_REPORTING_ABNORMAL_LABELS: Record<
-  MonthlyReportingAbnormalFlag,
-  string
-> = {
-  [MonthlyReportingAbnormalFlag.PRICE_CORRECTION]: "调价",
-  [MonthlyReportingAbnormalFlag.BACKFILL_IMPACT]: "补录影响",
-  [MonthlyReportingAbnormalFlag.CROSS_MONTH_REFERENCE]: "跨月修正",
-  [MonthlyReportingAbnormalFlag.STOCKTAKE_ADJUSTMENT]: "盘点调整",
-};
-
 export interface MonthlyReportEntry {
   topicKey: MonthlyReportingTopicKey;
   direction: MonthlyReportingDirection;
@@ -223,7 +206,6 @@ export interface MonthlyReportEntry {
   quantity: Prisma.Decimal;
   amount: Prisma.Decimal;
   cost: Prisma.Decimal;
-  abnormalFlags: MonthlyReportingAbnormalFlag[];
   sourceBizDate: Date | null;
   sourceDocumentNo: string | null;
 }
@@ -259,12 +241,14 @@ export interface MonthlyMaterialCategoryEntry {
   categoryName: string;
   categoryPath: MaterialCategorySnapshotNode[];
   quantity: Prisma.Decimal;
+  unitPrice: Prisma.Decimal;
   amount: Prisma.Decimal;
   cost: Prisma.Decimal;
+  salesUnitPrice: Prisma.Decimal | null;
+  salesAmount: Prisma.Decimal | null;
   salesProjectId: number | null;
   salesProjectCode: string | null;
   salesProjectName: string | null;
-  abnormalFlags: MonthlyReportingAbnormalFlag[];
   sourceBizDate: Date | null;
   sourceDocumentNo: string | null;
 }

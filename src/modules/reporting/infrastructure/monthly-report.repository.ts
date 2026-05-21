@@ -12,14 +12,12 @@ import { PrismaService } from "../../../shared/prisma/prisma.service";
 import type { StockScopeCode } from "../../session/domain/user-session";
 import {
   type MonthlyReportEntry,
-  MonthlyReportingAbnormalFlag,
   MonthlyReportingDirection,
   MonthlyReportingTopicKey,
 } from "../application/monthly-reporting.shared";
 import { MonthlyReportAdjustmentRepository } from "./monthly-report-adjustment.repository";
 import { MonthlyReportRdRepository } from "./monthly-report-rd.repository";
 import {
-  buildAbnormalFlags,
   buildMonthlyReportStockScopeWhere,
   collectDistinctNumbers,
   collectDistinctStrings,
@@ -48,8 +46,8 @@ export interface MonthlySalesProjectEntry {
   quantity: Prisma.Decimal;
   amount: Prisma.Decimal;
   cost: Prisma.Decimal;
-  abnormalFlags: MonthlyReportingAbnormalFlag[];
 }
+
 @Injectable()
 export class MonthlyReportRepository {
   private readonly rdRepo: MonthlyReportRdRepository;
@@ -128,51 +126,7 @@ export class MonthlyReportRepository {
       orderBy: [{ orderId: "asc" }, { lineNo: "asc" }],
     });
 
-    const sourceOrderIds = [
-      ...new Set(
-        lines
-          .filter(
-            (line) =>
-              line.order.orderType === SalesStockOrderType.SALES_RETURN &&
-              typeof line.sourceDocumentId === "number",
-          )
-          .map((line) => line.sourceDocumentId as number),
-      ),
-    ];
-    const sourceOrderMap = await loadSalesOrderSourceMap(
-      this.prisma,
-      sourceOrderIds,
-    );
-    const sourceRefsByOrder = new Map<
-      number,
-      Array<{ bizDate: Date; documentNo: string }>
-    >();
-
-    for (const line of lines) {
-      if (
-        line.order.orderType !== SalesStockOrderType.SALES_RETURN ||
-        typeof line.sourceDocumentId !== "number"
-      ) {
-        continue;
-      }
-
-      const source = sourceOrderMap.get(line.sourceDocumentId);
-      if (!source) {
-        continue;
-      }
-
-      const current = sourceRefsByOrder.get(line.orderId) ?? [];
-      current.push(source);
-      sourceRefsByOrder.set(line.orderId, current);
-    }
-
     return lines.map((line) => {
-      const sourceReference = resolveSourceReference(
-        line.order.bizDate,
-        sourceRefsByOrder.get(line.orderId) ?? [],
-        this.appConfigService.businessTimezone,
-      );
-
       return {
         salesProjectId: line.salesProjectId ?? null,
         salesProjectCode: line.salesProjectCodeSnapshot ?? null,
@@ -192,14 +146,6 @@ export class MonthlyReportRepository {
         quantity: line.quantity,
         amount: line.amount,
         cost: toDecimal(line.costAmount),
-        abnormalFlags: buildAbnormalFlags(
-          {
-            bizDate: line.order.bizDate,
-            createdAt: line.order.createdAt,
-            sourceBizDate: sourceReference.sourceBizDate,
-          },
-          this.appConfigService.businessTimezone,
-        ),
       };
     });
   }
@@ -264,13 +210,6 @@ export class MonthlyReportRepository {
       quantity: order.totalQty,
       amount: order.totalAmount,
       cost: order.totalAmount,
-      abnormalFlags: buildAbnormalFlags(
-        {
-          bizDate: order.bizDate,
-          createdAt: order.createdAt,
-        },
-        this.appConfigService.businessTimezone,
-      ),
       sourceBizDate: null,
       sourceDocumentNo: null,
     }));
@@ -407,14 +346,6 @@ export class MonthlyReportRepository {
         quantity: order.totalQty,
         amount: order.totalAmount,
         cost: sumNullableDecimals(order.lines.map((line) => line.costAmount)),
-        abnormalFlags: buildAbnormalFlags(
-          {
-            bizDate: order.bizDate,
-            createdAt: order.createdAt,
-            sourceBizDate: sourceReference.sourceBizDate,
-          },
-          this.appConfigService.businessTimezone,
-        ),
         sourceBizDate: sourceReference.sourceBizDate,
         sourceDocumentNo: sourceReference.sourceDocumentNo,
       };
@@ -524,14 +455,6 @@ export class MonthlyReportRepository {
         quantity: order.totalQty,
         amount: order.totalAmount,
         cost: sumNullableDecimals(order.lines.map((line) => line.costAmount)),
-        abnormalFlags: buildAbnormalFlags(
-          {
-            bizDate: order.bizDate,
-            createdAt: order.createdAt,
-            sourceBizDate: sourceReference.sourceBizDate,
-          },
-          this.appConfigService.businessTimezone,
-        ),
         sourceBizDate: sourceReference.sourceBizDate,
         sourceDocumentNo: sourceReference.sourceDocumentNo,
       };

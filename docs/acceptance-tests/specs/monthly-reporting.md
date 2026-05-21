@@ -15,18 +15,17 @@
 | F1 | 本期发生金额月度口径 | `已验收` |
 | F2 | 领域优先目录与业务汇总 | `待复核` |
 | F3 | 领域汇总到单据头追溯 | `待复核` |
-| F4 | 异常 / 跨月修正展示规则 | `已验收` |
 | F5 | 仓库侧查看与导出 | `待复核` |
 | F9 | 物料分类视角月度对账 | `已验收` |
 
-## F1-F5 / F9 总体验收摘要
+## 总体验收摘要
 
 - accepted 基线：`docs/tasks/archive/retained-completed/task-20260411-0301-monthly-reporting-phase1-delivery.md`
 - 当前 redesign 任务：`docs/tasks/task-20260411-1105-monthly-reporting-domain-first-redesign.md`
 - 验收模式：`full`
 - 当前结论：`in_review`
 - 理由摘要：
-  - accepted `Phase 1` 基线已经证明月度对账的权限、导出、`RD_SUB` 范围隔离、异常标识与基础 live API 合同成立。
+  - accepted `Phase 1` 基线已经证明月度对账的权限、导出、`RD_SUB` 范围隔离与基础 live API 合同成立。
   - `2026-04-11` 新增的“领域优先”重切实现，已经把页面和导出从旧的“总类 / 主题”口径切成“总入 / 总出 / 净发生 -> 领域汇总 -> 业务操作汇总 -> 车间 / 销售项目 / 研发项目汇总 -> 单据头明细”。
   - 这轮 redesign 的 focused 自动化证据已通过：shared/service/repository tests、e2e、`typecheck` 与 web build 全部通过。
   - 当前仍缺一轮基于 redesign 后页面结构的独立浏览器 acceptance，因此 `F2/F3/F5` 暂保持 `待复核`。
@@ -97,23 +96,11 @@
 
 | AC | 描述 | 结论 | 执行面 | 关键证据 | 备注 |
 |----|------|------|--------|----------|------|
-| AC-3 | 用户可从领域汇总、业务操作汇总或业务汇总追到单据头清单，并看到数量、金额、成本与差异定位字段 | `met` | unit + e2e + build + live API | service tests 已覆盖领域汇总、销售项目汇总和研发项目汇总；明细合同包含 `领域 / 操作 / 仓别 / 车间 / 销售项目 / 研发项目 / 来源目标仓别车间 / 数量 / 金额 / 成本 / 异常标识 / 来源月份 / 来源单据`；e2e 与 live API 已覆盖 API 明细与导出 | handoff 已通过研发项目领域下钻，不再需要独立 handoff 汇总页签 |
+| AC-3 | 用户可从领域汇总、业务操作汇总或业务汇总追到单据头清单，并看到数量、金额、成本与差异定位字段 | `met` | unit + e2e + build + live API | service tests 已覆盖领域汇总、销售项目汇总和研发项目汇总；明细合同包含 `领域 / 操作 / 仓别 / 车间 / 销售项目 / 研发项目 / 来源目标仓别车间 / 数量 / 金额 / 成本 / 来源月份 / 来源单据`；e2e 与 live API 已覆盖 API 明细与导出 | handoff 已通过研发项目领域下钻，不再需要独立 handoff 汇总页签 |
 
 ### 残余风险
 
 - 浏览器点击路径可继续补强，但 API、导出与类型构建已通过。
-
-## F4 异常 / 跨月修正展示规则
-
-### 验收矩阵
-
-| AC | 描述 | 结论 | 执行面 | 关键证据 | 备注 |
-|----|------|------|--------|----------|------|
-| AC-4 | 异常 / 跨月修正金额归原业务操作并保留异常标识或异常列 | `met` | unit + e2e | shared/service/repository tests 继续覆盖 `abnormalLabels / sourceBizMonth / sourceDocumentNo` 合同；e2e 仍通过 export / detail 接口 | redesign 未改变异常归属逻辑 |
-
-### 残余风险
-
-- live fixture 是否有非空异常样本，仍需依赖实际环境数据。
 
 ## F5 仓库侧查看与导出
 
@@ -136,7 +123,7 @@
 | AC-9.1 | `/reporting/monthly-reporting` 在不替换既有领域视角的前提下，新增 `物料分类视角` 切换，并输出 `验收入库 / 生产入库 / 销售出库 / 销售退货 / 净发生` 金额 | `met` | browser + live API | browser walkthrough 证实默认仍落在领域视角，切换到分类视角后 summary cards、分类汇总和单据行明细正常渲染；live API 返回 `viewMode = MATERIAL_CATEGORY` 与四类金额汇总 | 同页切换成立，旧领域视角未回归 |
 | AC-9.2 | 分类归属使用业务发生时快照，历史行通过 schema/backfill 补齐，不在查询时回读当前主数据重算 | `met` | migration + unit + live API | 本地 `.env.dev` 执行 `migration:monthly-reporting-material-category-snapshot:dry-run/execute` 后，两个行表新增四个快照字段并回填 `5` 行，剩余缺口为 `0`；focused inbound/sales/reporting tests 覆盖写侧快照与读侧解析 | backfill 以本地当前主数据为基线，符合 follow-on 合同 |
 | AC-9.3 | 分类月报基于单据行事实，只按稳定最终分类单层聚合，明细下钻到单据行 | `met` | unit + e2e + browser | service/repository tests 覆盖 `stock_in_order_line` 与 `sales_stock_order_line` 行级事实、单层分类聚合与单据行明细；batch-d e2e 覆盖 category summary/detail/export；browser 页面展示分类汇总表和单据行明细表 | 第一版范围冻结在 `验收入库 / 生产入库 / 销售出库 / 销售退货` |
-| AC-9.4 | 分类视角与导出、筛选、异常/来源追溯合同保持一致 | `met` | browser + live API + e2e | browser walkthrough 在分类视角下把操作过滤到 `销售退货`，页面只保留 `1` 行明细且 UI 导出成功；live API 与 e2e 共同证明分类筛选已切到 leaf-only `categoryNodeKey`，且 Excel 工作表不再输出 `分类路径 / 层级`，同时保留 `sourceBizMonth / sourceDocumentNo` 与异常标识 | 导出与页面同口径成立 |
+| AC-9.4 | 分类视角与导出、筛选、来源追溯合同保持一致 | `met` | browser + live API + e2e | browser walkthrough 在分类视角下把操作过滤到 `销售退货`，页面只保留 `1` 行明细且 UI 导出成功；live API 与 e2e 共同证明分类筛选已切到 leaf-only `categoryNodeKey`，且 Excel 工作表不再输出 `分类路径 / 层级`，同时保留 `sourceBizMonth / sourceDocumentNo` | 导出与页面同口径成立 |
 
 ### 残余风险
 

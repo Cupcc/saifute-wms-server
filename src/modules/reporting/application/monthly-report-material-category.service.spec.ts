@@ -82,16 +82,8 @@ describe("MonthlyReportMaterialCategoryService", () => {
     overrides: Partial<MonthlyMaterialCategoryEntry> = {},
   ): MonthlyMaterialCategoryEntry {
     const categoryPath = createMaterialCategoryPath([
-      {
-        id: 10,
-        categoryCode: "RAW",
-        categoryName: "原料",
-      },
-      {
-        id: 11,
-        categoryCode: "CHEM",
-        categoryName: "化工",
-      },
+      { id: 10, categoryCode: "RAW", categoryName: "原料" },
+      { id: 11, categoryCode: "CHEM", categoryName: "化工" },
     ]);
 
     return {
@@ -119,12 +111,14 @@ describe("MonthlyReportMaterialCategoryService", () => {
       categoryName: "化工",
       categoryPath,
       quantity: new Prisma.Decimal("3"),
+      unitPrice: new Prisma.Decimal("10"),
       amount: new Prisma.Decimal("30"),
       cost: new Prisma.Decimal("30"),
+      salesUnitPrice: null,
+      salesAmount: null,
       salesProjectId: null,
       salesProjectCode: null,
       salesProjectName: null,
-      abnormalFlags: [],
       sourceBizDate: null,
       sourceDocumentNo: null,
       ...overrides,
@@ -297,7 +291,6 @@ describe("MonthlyReportMaterialCategoryService", () => {
         materialName: "原料 B",
         lineCount: 2,
         documentCount: 2,
-        abnormalDocumentCount: 0,
         openingQuantity: "7.00",
         openingAmount: "70.00",
         closingQuantity: "7.00",
@@ -379,8 +372,11 @@ describe("MonthlyReportMaterialCategoryService", () => {
           documentNo: "XSTH-001",
           documentLineId: 2002,
           lineNo: 2,
+          unitPrice: new Prisma.Decimal("2"),
           amount: new Prisma.Decimal("8"),
           cost: new Prisma.Decimal("6"),
+          salesUnitPrice: new Prisma.Decimal("2.6667"),
+          salesAmount: new Prisma.Decimal("8"),
           salesProjectId: 701,
           salesProjectCode: "SP-701",
           salesProjectName: "销售项目 A",
@@ -404,8 +400,11 @@ describe("MonthlyReportMaterialCategoryService", () => {
       categoryCode: "CHEM",
       categoryName: "化工",
       salesProjectCode: "SP-701",
-      abnormalLabels: [],
       quantity: "3.00",
+      unitPrice: "2.00",
+      amount: "6.00",
+      salesUnitPrice: "2.67",
+      salesAmount: "8.00",
       sourceBizMonth: "2026-02",
       sourceDocumentNo: "CK-0009",
     });

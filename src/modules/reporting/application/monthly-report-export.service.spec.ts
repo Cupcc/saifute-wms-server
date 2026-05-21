@@ -19,7 +19,6 @@ import {
   type MonthlyMaterialCategoryBalanceSnapshot,
   type MonthlyMaterialCategoryEntry,
   type MonthlyReportEntry,
-  MonthlyReportingAbnormalFlag,
   MonthlyReportingDirection,
   MonthlyReportingDomainKey,
   MonthlyReportingTopicKey,
@@ -112,7 +111,6 @@ describe("MonthlyReportExportService", () => {
       quantity: new Prisma.Decimal("10"),
       amount: new Prisma.Decimal("100"),
       cost: new Prisma.Decimal("70"),
-      abnormalFlags: [],
       sourceBizDate: null,
       sourceDocumentNo: null,
       ...overrides,
@@ -135,7 +133,6 @@ describe("MonthlyReportExportService", () => {
       quantity: new Prisma.Decimal("10"),
       amount: new Prisma.Decimal("100"),
       cost: new Prisma.Decimal("70"),
-      abnormalFlags: [],
       ...overrides,
     };
   }
@@ -154,16 +151,8 @@ describe("MonthlyReportExportService", () => {
     overrides: Partial<MonthlyMaterialCategoryEntry> = {},
   ): MonthlyMaterialCategoryEntry {
     const categoryPath = createMaterialCategoryPath([
-      {
-        id: 10,
-        categoryCode: "RAW",
-        categoryName: "原料",
-      },
-      {
-        id: 11,
-        categoryCode: "CHEM",
-        categoryName: "化工",
-      },
+      { id: 10, categoryCode: "RAW", categoryName: "原料" },
+      { id: 11, categoryCode: "CHEM", categoryName: "化工" },
     ]);
 
     return {
@@ -191,12 +180,14 @@ describe("MonthlyReportExportService", () => {
       categoryName: "化工",
       categoryPath,
       quantity: new Prisma.Decimal("3"),
+      unitPrice: new Prisma.Decimal("10"),
       amount: new Prisma.Decimal("30"),
       cost: new Prisma.Decimal("30"),
+      salesUnitPrice: null,
+      salesAmount: null,
       salesProjectId: null,
       salesProjectCode: null,
       salesProjectName: null,
-      abnormalFlags: [],
       sourceBizDate: null,
       sourceDocumentNo: null,
       ...overrides,
@@ -262,8 +253,11 @@ describe("MonthlyReportExportService", () => {
           documentNo: "XSTH-001",
           documentLineId: 2002,
           lineNo: 2,
+          unitPrice: new Prisma.Decimal("2"),
           amount: new Prisma.Decimal("8"),
           cost: new Prisma.Decimal("6"),
+          salesUnitPrice: new Prisma.Decimal("2.6667"),
+          salesAmount: new Prisma.Decimal("8"),
           salesProjectId: 701,
           salesProjectCode: "SP-701",
           salesProjectName: "销售项目 A",
@@ -296,7 +290,7 @@ describe("MonthlyReportExportService", () => {
     expect(exportResult.content).toContain("2026-03 物料分类月报 - 单据行明细");
     expect(exportResult.content).toContain('<Style ss:ID="Title">');
     expect(exportResult.content).toContain(
-      'ss:MergeAcross="16" ss:StyleID="Title"><Data ss:Type="String">2026-03 物料分类月报 - 单据行明细',
+      'ss:MergeAcross="18" ss:StyleID="Title"><Data ss:Type="String">2026-03 物料分类月报 - 单据行明细',
     );
     expect(exportResult.content).toContain(
       '<Column ss:Width="160" /><Column ss:Width="100" />',
@@ -310,6 +304,7 @@ describe("MonthlyReportExportService", () => {
     expect(exportResult.content).toContain("销售出库成本价金额");
     expect(exportResult.content).toContain("销售退货销售价金额");
     expect(exportResult.content).toContain("销售退货成本价金额");
+    expect(exportResult.content).toContain("销售金额");
     expect(exportResult.content).toContain("库存净发生数量");
     expect(exportResult.content).toContain("库存净发生金额");
     expect(exportResult.content).toContain("100.00");
@@ -345,6 +340,13 @@ describe("MonthlyReportExportService", () => {
       "月末金额",
       "入库数量",
     ]);
+    expectLabelsInOrder(extractWorksheet(exportResult.content, "单据行明细"), [
+      "数量",
+      "单价",
+      "金额",
+      "销售价",
+      "销售金额",
+    ]);
   });
 
   it("should export excel content using the same filtered contract", async () => {
@@ -374,7 +376,6 @@ describe("MonthlyReportExportService", () => {
         quantity: new Prisma.Decimal("1"),
         amount: new Prisma.Decimal("20"),
         cost: new Prisma.Decimal("18"),
-        abnormalFlags: [MonthlyReportingAbnormalFlag.BACKFILL_IMPACT],
       }),
     ]);
     repository.findMonthlySalesProjectEntries.mockResolvedValue([]);
@@ -392,7 +393,7 @@ describe("MonthlyReportExportService", () => {
     expect(result.content).toContain("2026-03 月度对账报表 - 单据类型汇总");
     expect(result.content).toContain("2026-03 月度对账报表 - 单据头明细");
     expect(result.content).toContain(
-      'ss:MergeAcross="18" ss:StyleID="Title"><Data ss:Type="String">2026-03 月度对账报表 - 单据头明细',
+      'ss:MergeAcross="17" ss:StyleID="Title"><Data ss:Type="String">2026-03 月度对账报表 - 单据头明细',
     );
     expect(result.content).toContain(
       '<Column ss:Width="160" /><Column ss:Width="100" />',
@@ -405,6 +406,8 @@ describe("MonthlyReportExportService", () => {
     expect(result.content).not.toContain("1.000000");
     expect(result.content).not.toContain("交接金额");
     expect(result.content).not.toContain("主仓到RD交接汇总");
+    expect(result.content).not.toContain("异常单据数");
+    expect(result.content).not.toContain("异常标识");
     expect(result.content).not.toContain("SO-001");
   });
 
@@ -460,6 +463,14 @@ describe("MonthlyReportExportService", () => {
 
     expect(result.content).not.toContain("总成本");
     expectLabelsInOrder(domainSheet, [
+      "销售净售出金额",
+      "销售净成本金额",
+      "销售毛利金额",
+    ]);
+    expect(domainSheet).not.toContain("销售出库数量");
+    expect(domainSheet).not.toContain("销售退货数量");
+    expect(domainSheet).not.toContain("净销售数量");
+    expectLabelsInOrder(salesProjectSheet, [
       "销售出库数量",
       "销售出库销售价金额",
       "销售出库成本价金额",
@@ -470,20 +481,10 @@ describe("MonthlyReportExportService", () => {
       "净销售价金额",
       "净成本价金额",
     ]);
-    expectLabelsInOrder(salesProjectSheet, [
-      "销售出库数量",
-      "销售出库销售价金额",
-      "销售出库成本价金额",
-      "销售退货数量",
-      "销售退货销售价金额",
-      "销售退货成本价金额",
-      "净发生数量",
-      "净销售价金额",
-      "净成本价金额",
-    ]);
     expect(salesProjectSheet).toContain("销售项目 A");
     expect(domainSheet).toContain('<Data ss:Type="Number">80.00</Data>');
     expect(domainSheet).toContain('<Data ss:Type="Number">56.00</Data>');
+    expect(domainSheet).toContain('<Data ss:Type="Number">24.00</Data>');
     expect(salesProjectSheet).toContain('<Data ss:Type="Number">80.00</Data>');
     expect(salesProjectSheet).toContain('<Data ss:Type="Number">56.00</Data>');
   });

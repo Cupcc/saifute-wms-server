@@ -69,9 +69,9 @@
          </el-table-column>
          <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
             <template #default="scope">
-               <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:dept:edit']">修改</el-button>
+               <el-button v-if="!isRootDept(scope.row)" link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['system:dept:edit']">修改</el-button>
                <el-button link type="primary" icon="Plus" @click="handleAdd(scope.row)" v-hasPermi="['system:dept:add']">新增</el-button>
-               <el-button v-if="scope.row.parentId !== 0" link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:dept:remove']">删除</el-button>
+               <el-button v-if="!isRootDept(scope.row) && scope.row.parentId !== 0" link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:dept:remove']">删除</el-button>
             </template>
          </el-table-column>
       </el-table>
@@ -88,7 +88,7 @@
       <el-dialog :title="title" v-model="open" width="600px" append-to-body v-loading="dialogLoading">
          <el-form ref="deptRef" :model="form" :rules="rules" label-width="80px">
             <el-row>
-               <el-col :span="24" v-if="form.parentId !== 0">
+               <el-col :span="24">
                   <el-form-item label="上级部门" prop="parentId">
                      <el-tree-select
                         v-model="form.parentId"
@@ -171,6 +171,13 @@ const isExpandAll = ref(true);
 const refreshTable = ref(true);
 const dialogLoading = ref(false);
 const total = ref(0);
+const ROOT_DEPT_OPTION = {
+  deptId: 0,
+  parentId: null,
+  deptName: "山东赛福特公司",
+  orderNum: 0,
+  status: "0",
+};
 
 const data = reactive({
   form: {},
@@ -213,11 +220,46 @@ const { queryParams, form, rules } = toRefs(data);
 function getList() {
   loading.value = true;
   listDept(queryParams.value).then((response) => {
-    const rows = response.data?.rows || response.data || [];
-    deptList.value = proxy.handleTree(rows, "deptId");
+    const rows = extractDeptRows(response);
+    deptList.value = [buildRootDeptNode(buildDeptTree(rows))];
     total.value = response.data?.total ?? rows.length;
     loading.value = false;
   });
+}
+
+function extractDeptRows(response) {
+  if (Array.isArray(response.data)) {
+    return response.data;
+  }
+  return response.data?.rows || [];
+}
+
+function buildDeptOptions(rows) {
+  return [buildRootDeptNode(buildDeptTree(rows))];
+}
+
+function buildDeptTree(rows) {
+  return proxy.handleTree(
+    rows.map((row) => ({ ...row })),
+    "deptId",
+  );
+}
+
+function buildRootDeptNode(children) {
+  return {
+    ...ROOT_DEPT_OPTION,
+    children,
+  };
+}
+
+function loadDeptOptions(request) {
+  return request().then((response) => {
+    deptOptions.value = buildDeptOptions(extractDeptRows(response));
+  });
+}
+
+function isRootDept(row) {
+  return row?.deptId === ROOT_DEPT_OPTION.deptId;
 }
 
 /** 取消按钮 */
@@ -230,7 +272,7 @@ function cancel() {
 function reset() {
   form.value = {
     deptId: undefined,
-    parentId: undefined,
+    parentId: 0,
     deptName: undefined,
     orderNum: 0,
     leader: undefined,
@@ -256,12 +298,8 @@ function resetQuery() {
 /** 新增按钮操作 */
 function handleAdd(row) {
   reset();
-  listDept().then((response) => {
-    deptOptions.value = proxy.handleTree(response.data, "deptId");
-  });
-  if (row != null) {
-    form.value.parentId = row.deptId;
-  }
+  loadDeptOptions(listDept);
+  form.value.parentId = row?.deptId ?? 0;
   open.value = true;
   title.value = "添加部门";
 }
@@ -281,9 +319,7 @@ function handleUpdate(row) {
   open.value = true;
   title.value = "修改部门";
   dialogLoading.value = true;
-  listDeptExcludeChild(row.deptId).then((response) => {
-    deptOptions.value = proxy.handleTree(response.data, "deptId");
-  });
+  loadDeptOptions(() => listDeptExcludeChild(row.deptId));
   getDept(row.deptId)
     .then((response) => {
       form.value = response.data;

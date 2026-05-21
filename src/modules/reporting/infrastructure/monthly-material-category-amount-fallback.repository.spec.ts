@@ -120,13 +120,19 @@ describe("MonthlyMaterialCategoryRepository amount fallback", () => {
       expect.arrayContaining([
         expect.objectContaining({
           documentNo: "YS-IMPORTED",
+          unitPrice: new Prisma.Decimal("10"),
           amount: new Prisma.Decimal("30"),
           cost: new Prisma.Decimal("30"),
+          salesUnitPrice: null,
+          salesAmount: null,
         }),
         expect.objectContaining({
           documentNo: "CK-IMPORTED",
+          unitPrice: new Prisma.Decimal("6"),
           amount: new Prisma.Decimal("16"),
           cost: new Prisma.Decimal("12"),
+          salesUnitPrice: new Prisma.Decimal("8"),
+          salesAmount: new Prisma.Decimal("16"),
         }),
       ]),
     );

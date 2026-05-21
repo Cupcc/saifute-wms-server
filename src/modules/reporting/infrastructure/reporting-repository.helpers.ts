@@ -7,7 +7,6 @@ import type { PrismaService } from "../../../shared/prisma/prisma.service";
 import type { StockScopeCode } from "../../session/domain/user-session";
 import {
   isSameYearMonth,
-  MonthlyReportingAbnormalFlag,
   MonthlyReportingTopicKey,
 } from "../application/monthly-reporting.shared";
 
@@ -36,31 +35,6 @@ export function resolveSourceReference(
           ? uniqueDocumentNos[0]
           : `${uniqueDocumentNos[0]} 等${uniqueDocumentNos.length}张`,
   };
-}
-
-export function buildAbnormalFlags(
-  params: {
-    bizDate: Date;
-    createdAt: Date;
-    sourceBizDate?: Date | null;
-    extraFlags?: MonthlyReportingAbnormalFlag[];
-  },
-  businessTimezone: string,
-) {
-  const flags = [...(params.extraFlags ?? [])];
-
-  if (!isSameYearMonth(params.bizDate, params.createdAt, businessTimezone)) {
-    flags.push(MonthlyReportingAbnormalFlag.BACKFILL_IMPACT);
-  }
-
-  if (
-    params.sourceBizDate &&
-    !isSameYearMonth(params.bizDate, params.sourceBizDate, businessTimezone)
-  ) {
-    flags.push(MonthlyReportingAbnormalFlag.CROSS_MONTH_REFERENCE);
-  }
-
-  return [...new Set(flags)];
 }
 
 export function toStockScopeCode(
@@ -99,6 +73,56 @@ export function buildMonthlyReportStockScopeWhere(stockScope?: StockScopeCode) {
         scopeCode: stockScope,
       },
     },
+  };
+}
+
+export function buildMonthlyReportHandoffStockScopeWhere(
+  stockScope?: StockScopeCode,
+): Prisma.RdHandoffOrderWhereInput | undefined {
+  if (!stockScope) {
+    return undefined;
+  }
+
+  if (stockScope === "MAIN") {
+    return {
+      OR: [
+        {
+          sourceStockScope: {
+            is: {
+              scopeCode: "MAIN",
+            },
+          },
+        },
+        {
+          targetStockScope: {
+            is: {
+              scopeCode: "MAIN",
+            },
+          },
+        },
+        { sourceStockScopeId: null },
+        { targetStockScopeId: null },
+      ],
+    };
+  }
+
+  return {
+    OR: [
+      {
+        sourceStockScope: {
+          is: {
+            scopeCode: stockScope,
+          },
+        },
+      },
+      {
+        targetStockScope: {
+          is: {
+            scopeCode: stockScope,
+          },
+        },
+      },
+    ],
   };
 }
 
