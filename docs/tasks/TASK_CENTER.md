@@ -40,6 +40,7 @@
 
 | Task 文档 | 状态 | 说明 |
 | --- | --- | --- |
+| `archive/retained-completed/analysis-20260521-rbac-finance-accountant-role-review.md` | `implemented` | RBAC 财务会计只读角色已完成并归档：新增 `finance-accountant` seed 角色和只读权限 preset；启动修复只补缺失角色，不覆盖已存在运行态角色配置；相关系统管理 / 月报文档已同步，focused RBAC 测试、typecheck、Biome 与 diff 检查通过。 |
 | `archive/retained-completed/analysis-20260520-monthly-reporting-domain-review.md` | `implemented` | 普通月度对账报表完善已完成并归档：数量统一 2 位；普通月报单据类型筛选改为 `topicKey`；销售域在原 `领域汇总`区域新增固定销售列，不新增独立销售汇总区；`单据类型汇总`保留销售退货 0 行用于筛选和钻取；汇总层 `总成本`已删除，销售项目金额拆分为销售价金额 / 成本价金额。 |
 | `archive/retained-completed/task-20260501-construct-correct-price-layer-replay.md` | `accepted` | 价格层重建已在 configured target `saifute-wms` 执行、验证并归档：最终 dry-run `blockers=[]`；execute 删除旧余额 `835`、孤儿来源占用 `1897`，插入 `inventory_log=4546`、`inventory_source_usage=2637`、`inventory_balance=1230`；validate `0` blocker issue。历史允许负库存、乱序和无来源的出库 / 领料均以明确 warning 留痕，`cp002` / `jg36` 最终负库存转为后续盘库调整 warning。 |
 | `archive/retained-completed/task-20260429-1342-openapi-contract-governance.md` | `accepted` | OpenAPI / Swagger 契约治理 Phase 0 + Phase 1 已完成：新增可复用 audit 基线脚本，移除 Swagger 公开接口 / no-envelope 手工 path 表，改由 `@Public()` / `@SkipResponseEnvelope()` metadata 驱动，补齐上传 multipart、下载 / 导出 binary response 和统一错误响应 schema；响应 DTO、summary、query/path 描述与 CI 阈值留到后续阶段。 |

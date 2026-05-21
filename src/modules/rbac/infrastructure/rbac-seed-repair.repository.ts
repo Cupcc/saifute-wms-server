@@ -1,6 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { createSystemManagementSeedState } from "../../../../prisma/system-management.seed";
-import type { ManagedMenuRecord } from "../domain/rbac.types";
+import type {
+  ManagedMenuRecord,
+  ManagedRoleRecord,
+} from "../domain/rbac.types";
 import { RbacState } from "./rbac-state";
 
 const LEGACY_ROUTE_NAME_RENAMES = new Map([
@@ -86,6 +89,42 @@ const LEGACY_ORDER_BY_ROUTE_NAME = new Map<string, number>([
 @Injectable()
 export class RbacSeedRepairRepository {
   constructor(private readonly state: RbacState) {}
+
+  ensureSeedRoles(roleKeys: string[]): boolean {
+    const seedState = createSystemManagementSeedState();
+    const requiredRoleKeys = new Set(roleKeys.filter(Boolean));
+    if (requiredRoleKeys.size === 0) {
+      return false;
+    }
+
+    const currentMenuIds = new Set(this.state.menus.map((menu) => menu.menuId));
+    let changed = false;
+    for (const seedRole of seedState.roles) {
+      if (!requiredRoleKeys.has(seedRole.roleKey)) {
+        continue;
+      }
+
+      const currentRole = this.state.roles.find(
+        (role) => role.roleKey === seedRole.roleKey,
+      );
+      if (currentRole) {
+        // Existing role definitions are runtime-managed system data; startup
+        // repair must not reset administrator customizations back to seed.
+        continue;
+      }
+
+      this.state.roles.push(
+        this.createRoleDefinitionForCurrentMenus(
+          seedRole,
+          this.resolveSeedRoleId(seedRole.roleId),
+          currentMenuIds,
+        ),
+      );
+      changed = true;
+    }
+
+    return changed;
+  }
 
   repairSeedMenuDisplayMetadata(): boolean {
     const seedState = createSystemManagementSeedState();
@@ -253,6 +292,30 @@ export class RbacSeedRepairRepository {
     }
 
     return changed;
+  }
+
+  private createRoleDefinitionForCurrentMenus(
+    seedRole: ManagedRoleRecord,
+    roleId: number,
+    currentMenuIds: Set<number>,
+  ): ManagedRoleRecord {
+    return {
+      ...seedRole,
+      roleId,
+      menuIds: seedRole.menuIds.filter((menuId) => currentMenuIds.has(menuId)),
+    };
+  }
+
+  private resolveSeedRoleId(seedRoleId: number) {
+    if (!this.state.roles.some((role) => role.roleId === seedRoleId)) {
+      return seedRoleId;
+    }
+
+    const maxRoleId = this.state.roles.reduce(
+      (max, role) => Math.max(max, role.roleId),
+      0,
+    );
+    return maxRoleId + 1;
   }
 
   private replaceMenuDefinition(

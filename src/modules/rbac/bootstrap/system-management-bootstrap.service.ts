@@ -3,6 +3,10 @@ import {
   Logger,
   type OnApplicationBootstrap,
 } from "@nestjs/common";
+import {
+  FINANCE_ACCOUNTANT_PERMISSION_PRESET,
+  FINANCE_ACCOUNTANT_ROLE_KEY,
+} from "../../../../prisma/system-management.seed";
 import { RbacRuntimeRepository } from "../infrastructure/rbac-runtime.repository";
 
 @Injectable()
@@ -32,17 +36,28 @@ export class SystemManagementBootstrapService
         if (repairedMenuDisplayMetadata) {
           await this.rbacRepository.flushPersistence();
         }
-        const repairedSeedDrift =
+        const repairedSeedRoles = await this.rbacRepository.ensureSeedRoles([
+          FINANCE_ACCOUNTANT_ROLE_KEY,
+        ]);
+        const repairedRdSeedDrift =
           await this.rbacRepository.ensureSeedPermissionMenus(
             ["rd-operator"],
             ["reporting:monthly-reporting:view", "reporting:export"],
           );
+        const repairedFinanceSeedDrift = repairedSeedRoles
+          ? await this.rbacRepository.ensureSeedPermissionMenus(
+              [FINANCE_ACCOUNTANT_ROLE_KEY],
+              FINANCE_ACCOUNTANT_PERMISSION_PRESET,
+            )
+          : false;
         const syncedSeedRoles = await this.rbacRepository.syncSeedRoleMenus([
           "rd-operator",
         ]);
         if (
           repairedMenuDisplayMetadata ||
-          repairedSeedDrift ||
+          repairedSeedRoles ||
+          repairedRdSeedDrift ||
+          repairedFinanceSeedDrift ||
           syncedSeedRoles
         ) {
           await this.rbacRepository.flushPersistence();
