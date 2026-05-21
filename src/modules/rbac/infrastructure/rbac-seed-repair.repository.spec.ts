@@ -1,3 +1,4 @@
+import { FINANCE_ACCOUNTANT_ROLE_KEY } from "../../../../prisma/system-management.seed";
 import { RbacSeedRepairRepository } from "./rbac-seed-repair.repository";
 import { RbacState } from "./rbac-state";
 
@@ -60,6 +61,81 @@ describe("RbacSeedRepairRepository", () => {
     expect(adminRole.menuIds).toEqual(
       expect.arrayContaining([3114, 3214, 3224, 3234]),
     );
+  });
+
+  it("recreates a missing seeded finance role without reusing an occupied role id", () => {
+    const state = new RbacState();
+    const repository = new RbacSeedRepairRepository(state);
+    const seedRole = state.roles.find(
+      (role) => role.roleKey === FINANCE_ACCOUNTANT_ROLE_KEY,
+    );
+    if (!seedRole) {
+      throw new Error("Expected finance accountant role seed fixture to exist");
+    }
+
+    state.roles = state.roles.filter(
+      (role) => role.roleKey !== FINANCE_ACCOUNTANT_ROLE_KEY,
+    );
+    state.roles.push({
+      ...seedRole,
+      roleKey: "custom-role",
+      roleName: "自定义角色",
+      menuIds: [],
+    });
+
+    expect(repository.ensureSeedRoles([FINANCE_ACCOUNTANT_ROLE_KEY])).toBe(
+      true,
+    );
+
+    const repairedRole = state.roles.find(
+      (role) => role.roleKey === FINANCE_ACCOUNTANT_ROLE_KEY,
+    );
+    expect(repairedRole).toMatchObject({
+      roleName: "财务会计",
+      roleKey: FINANCE_ACCOUNTANT_ROLE_KEY,
+      dataScope: "1",
+    });
+    expect(repairedRole?.roleId).not.toBe(seedRole.roleId);
+    expect(repairedRole?.menuIds.length).toBeGreaterThan(0);
+  });
+
+  it("preserves an existing seeded finance role as runtime-managed data", () => {
+    const state = new RbacState();
+    const repository = new RbacSeedRepairRepository(state);
+    const financeRole = state.roles.find(
+      (role) => role.roleKey === FINANCE_ACCOUNTANT_ROLE_KEY,
+    );
+    const customMenu = state.menus.find(
+      (menu) => menu.perms === "system:user:list",
+    );
+    if (!financeRole || !customMenu) {
+      throw new Error(
+        "Expected finance role and custom menu fixtures to exist",
+      );
+    }
+
+    Object.assign(financeRole, {
+      roleName: "自定义财务角色",
+      status: "1",
+      dataScope: "5",
+      deptIds: [200],
+      remark: "管理员已调整",
+      createdAt: "2026-05-21T00:00:00.000Z",
+      menuIds: [customMenu.menuId],
+    });
+
+    expect(repository.ensureSeedRoles([FINANCE_ACCOUNTANT_ROLE_KEY])).toBe(
+      false,
+    );
+    expect(financeRole).toMatchObject({
+      roleName: "自定义财务角色",
+      status: "1",
+      dataScope: "5",
+      deptIds: [200],
+      remark: "管理员已调整",
+      createdAt: "2026-05-21T00:00:00.000Z",
+      menuIds: [customMenu.menuId],
+    });
   });
 });
 

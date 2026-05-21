@@ -135,11 +135,52 @@ const PROCUREMENT_PERMISSION_PRESET = [
   "inbound:order:list",
 ];
 
+export const FINANCE_ACCOUNTANT_ROLE_KEY = "finance-accountant";
+
+export const FINANCE_ACCOUNTANT_PERMISSION_PRESET = [
+  "dashboard:view",
+  "reporting:home:view",
+  "reporting:inventory-summary:view",
+  "reporting:material-category-summary:view",
+  "reporting:monthly-reporting:view",
+  "reporting:trends:view",
+  "reporting:export",
+  "approval:document:status",
+  "approval:document:list",
+  "master:material-category:list",
+  "master:material:list",
+  "master:customer:list",
+  "master:supplier:list",
+  "master:personnel:list",
+  "master:workshop:list",
+  "master:stock-scope:list",
+  "inbound:order:list",
+  "inbound:into-order:list",
+  "workshop-material:pick-order:list",
+  "workshop-material:return-order:list",
+  "workshop-material:scrap-order:list",
+  "inventory:balance:list",
+  "inventory:factory-number:list",
+  "inventory:log:list",
+  "inventory:source-usage:list",
+  "sales:order:list",
+  "sales:return:list",
+  "sales:project:list",
+  "sales:project:get",
+  "rd:workbench:view",
+  "rd:procurement-request:list",
+  "rd:handoff-order:list",
+  "rd:stocktake-order:list",
+  "rd:project:list",
+  "rd:project:get",
+];
+
 // 这些只用于首次初始化默认角色授权；运行态权限真源仍由角色菜单关系承接。
 const DEFAULT_ROLE_PERMISSION_ASSIGNMENTS: Record<string, string[]> = {
   "warehouse-manager": WAREHOUSE_MANAGER_PERMISSION_PRESET,
   "rd-operator": RD_OPERATOR_PERMISSION_PRESET,
   procurement: PROCUREMENT_PERMISSION_PRESET,
+  [FINANCE_ACCOUNTANT_ROLE_KEY]: FINANCE_ACCOUNTANT_PERMISSION_PRESET,
 };
 
 export function createSystemManagementSeedState(): SystemManagementState {
@@ -3254,6 +3295,20 @@ export function createSystemManagementSeedState(): SystemManagementState {
       menuIds: [],
       deptIds: [200],
       remark: "采购执行与验收回看角色",
+      createdAt: "2026-03-01T09:00:00.000Z",
+    },
+    {
+      roleId: 5,
+      roleName: "财务会计",
+      roleKey: FINANCE_ACCOUNTANT_ROLE_KEY,
+      roleSort: 5,
+      status: "0",
+      dataScope: "1",
+      menuCheckStrictly: true,
+      deptCheckStrictly: true,
+      menuIds: [],
+      deptIds: [100, 200, 300],
+      remark: "财务核算与经营数据只读角色",
       createdAt: "2026-03-01T09:00:00.000Z",
     },
   ];

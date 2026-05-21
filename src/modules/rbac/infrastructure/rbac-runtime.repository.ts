@@ -37,6 +37,11 @@ export class RbacRuntimeRepository {
   async loadFromNormalizedTables(): Promise<void> {
     return this.persistenceRepo.loadFromNormalizedTables();
   }
+  async ensureSeedRoles(roleKeys: string[]): Promise<boolean> {
+    return this.mutateState(() =>
+      this.seedRepairRepo.ensureSeedRoles(roleKeys),
+    );
+  }
   async ensureSeedPermissionMenus(
     roleKeys: string[],
     permissionKeys: string[],
