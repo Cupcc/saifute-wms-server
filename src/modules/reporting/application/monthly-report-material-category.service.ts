@@ -42,7 +42,6 @@ export interface MonthlyReportMaterialCategorySummaryTotals {
   categoryCount: number;
   lineCount: number;
   documentCount: number;
-  abnormalDocumentCount: number;
   acceptanceInboundQuantity: string;
   acceptanceInboundAmount: string;
   productionReceiptQuantity: string;
@@ -78,7 +77,6 @@ export interface MonthlyReportMaterialCategorySummaryItem {
   categoryName: string;
   lineCount: number;
   documentCount: number;
-  abnormalDocumentCount: number;
   acceptanceInboundQuantity: string;
   acceptanceInboundAmount: string;
   productionReceiptQuantity: string;
@@ -125,7 +123,6 @@ export interface MonthlyReportMaterialSummaryItem {
   unitCode: string;
   lineCount: number;
   documentCount: number;
-  abnormalDocumentCount: number;
   inQuantity: string;
   outQuantity: string;
   netQuantity: string;
@@ -163,7 +160,6 @@ export interface MonthlyReportMaterialCategoryFilters {
   documentTypeLabel: string | null;
   categoryId: number | null;
   categoryNodeKey: string | null;
-  abnormalOnly: boolean;
   keyword: string | null;
 }
 
@@ -229,7 +225,6 @@ export class MonthlyReportMaterialCategoryService {
         documentTypeLabel: query.documentTypeLabel?.trim() || null,
         categoryId: query.categoryId ?? null,
         categoryNodeKey: query.categoryNodeKey?.trim() || null,
-        abnormalOnly: query.abnormalOnly ?? false,
         keyword: query.keyword?.trim() || null,
       },
       documentTypeCatalog:
@@ -380,11 +375,6 @@ export class MonthlyReportMaterialCategoryService {
     const documentKeys = new Set(
       entries.map((entry) => `${entry.documentType}:${entry.documentId}`),
     );
-    const abnormalDocumentKeys = new Set(
-      entries
-        .filter((entry) => entry.abnormalFlags.length > 0)
-        .map((entry) => `${entry.documentType}:${entry.documentId}`),
-    );
     const acceptanceInboundEntries = entries.filter(
       (entry) => entry.topicKey === "ACCEPTANCE_INBOUND",
     );
@@ -457,7 +447,6 @@ export class MonthlyReportMaterialCategoryService {
     return {
       lineCount: entries.length,
       documentCount: documentKeys.size,
-      abnormalDocumentCount: abnormalDocumentKeys.size,
       acceptanceInboundQuantity: formatQuantity(acceptanceInboundQuantity),
       acceptanceInboundAmount: formatMoney(acceptanceInboundAmount),
       productionReceiptQuantity: formatQuantity(productionReceiptQuantity),

@@ -11,7 +11,6 @@ export interface MonthlyReportMaterialCategoryWorkshopSummaryItem {
   workshopName: string;
   lineCount: number;
   documentCount: number;
-  abnormalDocumentCount: number;
   pickQuantity: string;
   pickAmount: string;
   returnQuantity: string;
@@ -79,18 +78,11 @@ export function buildMonthlyMaterialCategoryWorkshopUsageItems(
           (entry) => `${entry.documentType}:${entry.documentId}`,
         ),
       );
-      const abnormalDocumentKeys = new Set(
-        item.entries
-          .filter((entry) => entry.abnormalFlags.length > 0)
-          .map((entry) => `${entry.documentType}:${entry.documentId}`),
-      );
-
       return {
         workshopId: item.workshopId,
         workshopName: item.workshopName,
         lineCount: item.entries.length,
         documentCount: documentKeys.size,
-        abnormalDocumentCount: abnormalDocumentKeys.size,
         pickQuantity: formatQuantity(pickQuantity),
         pickAmount: formatMoney(pickAmount),
         returnQuantity: formatQuantity(returnQuantity),

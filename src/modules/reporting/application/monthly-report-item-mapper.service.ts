@@ -13,7 +13,6 @@ import {
   formatYearMonth,
   getMonthlyReportingDomainMeta,
   getMonthlyReportingTopicMeta,
-  MONTHLY_REPORTING_ABNORMAL_LABELS,
   type MonthlyMaterialCategoryEntry,
   type MonthlyReportEntry,
   MonthlyReportingDirection,
@@ -43,8 +42,6 @@ export interface MonthlyReportDocumentItem {
   quantity: string;
   amount: string;
   cost: string;
-  abnormalFlags: string[];
-  abnormalLabels: string[];
   sourceBizMonth: string | null;
   sourceDocumentNo: string | null;
   createdAt: string;
@@ -74,10 +71,10 @@ export interface MonthlyReportMaterialCategoryDetailItem {
   salesProjectCode: string | null;
   salesProjectName: string | null;
   quantity: string;
+  unitPrice: string;
   amount: string;
-  cost: string;
-  abnormalFlags: string[];
-  abnormalLabels: string[];
+  salesUnitPrice: string | null;
+  salesAmount: string | null;
   sourceBizMonth: string | null;
   sourceDocumentNo: string | null;
   createdAt: string;
@@ -128,10 +125,6 @@ export class MonthlyReportItemMapperService {
       quantity: formatQuantity(row.quantity),
       amount: formatMoney(row.amount),
       cost: formatMoney(row.cost),
-      abnormalFlags: row.abnormalFlags,
-      abnormalLabels: row.abnormalFlags.map(
-        (flag) => MONTHLY_REPORTING_ABNORMAL_LABELS[flag],
-      ),
       sourceBizMonth: row.sourceBizDate
         ? formatYearMonth(
             row.sourceBizDate,
@@ -178,12 +171,12 @@ export class MonthlyReportItemMapperService {
       salesProjectCode: entry.salesProjectCode,
       salesProjectName: entry.salesProjectName,
       quantity: formatQuantity(entry.quantity),
-      amount: formatMoney(entry.amount),
-      cost: formatMoney(entry.cost),
-      abnormalFlags: entry.abnormalFlags,
-      abnormalLabels: entry.abnormalFlags.map(
-        (flag) => MONTHLY_REPORTING_ABNORMAL_LABELS[flag],
-      ),
+      unitPrice: formatMoney(entry.unitPrice),
+      amount: formatMoney(entry.cost),
+      salesUnitPrice: entry.salesUnitPrice
+        ? formatMoney(entry.salesUnitPrice)
+        : null,
+      salesAmount: entry.salesAmount ? formatMoney(entry.salesAmount) : null,
       sourceBizMonth: entry.sourceBizDate
         ? formatYearMonth(
             entry.sourceBizDate,

@@ -14,7 +14,6 @@ import { MonthlyReportItemMapperService } from "./monthly-report-item-mapper.ser
 import { MonthlyReportSourceService } from "./monthly-report-source.service";
 import {
   type MonthlyReportEntry,
-  MonthlyReportingAbnormalFlag,
   MonthlyReportingDirection,
   MonthlyReportingTopicKey,
 } from "./monthly-reporting.shared";
@@ -92,7 +91,6 @@ describe("MonthlyReportDomainSummaryService", () => {
       quantity: new Prisma.Decimal("10"),
       amount: new Prisma.Decimal("100"),
       cost: new Prisma.Decimal("70"),
-      abnormalFlags: [],
       sourceBizDate: null,
       sourceDocumentNo: null,
       ...overrides,
@@ -115,7 +113,6 @@ describe("MonthlyReportDomainSummaryService", () => {
       quantity: new Prisma.Decimal("10"),
       amount: new Prisma.Decimal("100"),
       cost: new Prisma.Decimal("70"),
-      abnormalFlags: [],
       ...overrides,
     };
   }
@@ -132,7 +129,6 @@ describe("MonthlyReportDomainSummaryService", () => {
         quantity: new Prisma.Decimal("2"),
         amount: new Prisma.Decimal("20"),
         cost: new Prisma.Decimal("14"),
-        abnormalFlags: [MonthlyReportingAbnormalFlag.CROSS_MONTH_REFERENCE],
         sourceBizDate: new Date("2026-02-27T02:00:00.000Z"),
         sourceDocumentNo: "SO-099",
       }),
@@ -160,7 +156,6 @@ describe("MonthlyReportDomainSummaryService", () => {
         quantity: new Prisma.Decimal("1"),
         amount: new Prisma.Decimal("20"),
         cost: new Prisma.Decimal("18"),
-        abnormalFlags: [MonthlyReportingAbnormalFlag.BACKFILL_IMPACT],
       }),
     ]);
     repository.findMonthlySalesProjectEntries.mockResolvedValue([
@@ -172,7 +167,6 @@ describe("MonthlyReportDomainSummaryService", () => {
         quantity: new Prisma.Decimal("2"),
         amount: new Prisma.Decimal("20"),
         cost: new Prisma.Decimal("14"),
-        abnormalFlags: [MonthlyReportingAbnormalFlag.CROSS_MONTH_REFERENCE],
       }),
     ]);
 
@@ -212,12 +206,14 @@ describe("MonthlyReportDomainSummaryService", () => {
       netSalesQuantity: "8.00",
       netSalesAmount: "80.00",
       netCostAmount: "56.00",
+      salesGrossProfitAmount: "24.00",
     });
     expect(result.domains[0]).not.toHaveProperty("totalCost");
     expect(result.domains[1]).toMatchObject({
       salesOutboundQuantity: null,
       salesReturnQuantity: null,
       netSalesAmount: null,
+      salesGrossProfitAmount: null,
     });
     expect(result.documentTypes).toEqual(
       expect.arrayContaining([
@@ -258,7 +254,7 @@ describe("MonthlyReportDomainSummaryService", () => {
     );
   });
 
-  it("should count project handoff as rd-project inbound in all-stock view", async () => {
+  it("should keep all-stock rd handoff out of ordinary in-out totals while preserving project-view evidence", async () => {
     repository.findMonthlyReportEntries.mockResolvedValue([
       createEntry({
         topicKey: MonthlyReportingTopicKey.RD_HANDOFF,
@@ -292,11 +288,13 @@ describe("MonthlyReportDomainSummaryService", () => {
       yearMonth: "2026-03",
     });
 
-    expect(result.summary.totalInAmount).toBe("900.00");
+    expect(result.summary.totalInAmount).toBe("0.00");
+    expect(result.summary.totalOutAmount).toBe("0.00");
+    expect(result.summary.netAmount).toBe("0.00");
     expect(result.domains).toEqual([
       expect.objectContaining({
         domainLabel: "研发项目",
-        totalInAmount: "900.00",
+        totalInAmount: "0.00",
         totalOutAmount: "0.00",
       }),
     ]);
@@ -309,7 +307,7 @@ describe("MonthlyReportDomainSummaryService", () => {
     ]);
   });
 
-  it("should apply abnormal and keyword filters to document drill-down", async () => {
+  it("should apply keyword filters to document drill-down", async () => {
     repository.findMonthlyReportEntries.mockResolvedValue([
       createEntry(),
       createEntry({
@@ -321,7 +319,6 @@ describe("MonthlyReportDomainSummaryService", () => {
         quantity: new Prisma.Decimal("2"),
         amount: new Prisma.Decimal("20"),
         cost: new Prisma.Decimal("14"),
-        abnormalFlags: [MonthlyReportingAbnormalFlag.CROSS_MONTH_REFERENCE],
         sourceBizDate: new Date("2026-02-27T02:00:00.000Z"),
         sourceDocumentNo: "SO-099",
       }),
@@ -330,15 +327,13 @@ describe("MonthlyReportDomainSummaryService", () => {
 
     const result = await service.getDomainDocuments({
       yearMonth: "2026-03",
-      abnormalOnly: true,
-      keyword: "跨月",
+      keyword: "SO-099",
     });
 
     expect(result.total).toBe(1);
     expect(result.items[0]).toMatchObject({
       documentNo: "SR-001",
       documentTypeLabel: "销售退货单",
-      abnormalLabels: ["跨月修正"],
       sourceBizMonth: "2026-02",
       sourceDocumentNo: "SO-099",
     });

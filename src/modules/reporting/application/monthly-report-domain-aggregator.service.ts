@@ -19,7 +19,6 @@ export interface MonthlyReportWorkshopSummaryItem {
   workshopId: number | null;
   workshopName: string;
   documentCount: number;
-  abnormalDocumentCount: number;
   pickQuantity: string;
   pickAmount: string;
   returnQuantity: string;
@@ -35,7 +34,6 @@ export interface MonthlyReportSalesProjectSummaryItem {
   salesProjectCode: string | null;
   salesProjectName: string;
   documentCount: number;
-  abnormalDocumentCount: number;
   salesOutboundQuantity: string;
   salesOutboundSalesAmount: string;
   salesOutboundCostAmount: string;
@@ -52,7 +50,6 @@ export interface MonthlyReportRdProjectSummaryItem {
   rdProjectCode: string | null;
   rdProjectName: string;
   documentCount: number;
-  abnormalDocumentCount: number;
   handoffInQuantity: string;
   handoffInAmount: string;
   pickQuantity: string;
@@ -122,17 +119,10 @@ export class MonthlyReportDomainAggregatorService {
         const documentKeys = new Set(
           item.rows.map((row) => `${row.documentType}:${row.documentId}`),
         );
-        const abnormalDocumentKeys = new Set(
-          item.rows
-            .filter((row) => row.abnormalFlags.length > 0)
-            .map((row) => `${row.documentType}:${row.documentId}`),
-        );
-
         return {
           workshopId: item.workshopId,
           workshopName: item.workshopName,
           documentCount: documentKeys.size,
-          abnormalDocumentCount: abnormalDocumentKeys.size,
           pickQuantity: formatQuantity(pickQuantity),
           pickAmount: formatMoney(pickAmount),
           returnQuantity: formatQuantity(returnQuantity),
@@ -191,11 +181,6 @@ export class MonthlyReportDomainAggregatorService {
         const documentKeys = new Set(
           item.entries.map((entry) => `SalesStockOrder:${entry.documentId}`),
         );
-        const abnormalDocumentKeys = new Set(
-          item.entries
-            .filter((entry) => entry.abnormalFlags.length > 0)
-            .map((entry) => `SalesStockOrder:${entry.documentId}`),
-        );
         const outboundQuantity = sumDecimals(
           outboundEntries.map((entry) => entry.quantity),
         );
@@ -220,7 +205,6 @@ export class MonthlyReportDomainAggregatorService {
           salesProjectCode: item.salesProjectCode,
           salesProjectName: item.salesProjectName,
           documentCount: documentKeys.size,
-          abnormalDocumentCount: abnormalDocumentKeys.size,
           salesOutboundQuantity: formatQuantity(outboundQuantity),
           salesOutboundSalesAmount: formatMoney(outboundAmount),
           salesOutboundCostAmount: formatMoney(outboundCostAmount),
@@ -301,11 +285,6 @@ export class MonthlyReportDomainAggregatorService {
         const documentKeys = new Set(
           item.rows.map((row) => `${row.documentType}:${row.documentId}`),
         );
-        const abnormalDocumentKeys = new Set(
-          item.rows
-            .filter((row) => row.abnormalFlags.length > 0)
-            .map((row) => `${row.documentType}:${row.documentId}`),
-        );
         const handoffInQuantity = sumDecimals(
           handoffRows.map((row) => row.quantity),
         );
@@ -326,7 +305,6 @@ export class MonthlyReportDomainAggregatorService {
           rdProjectCode: item.rdProjectCode,
           rdProjectName: item.rdProjectName,
           documentCount: documentKeys.size,
-          abnormalDocumentCount: abnormalDocumentKeys.size,
           handoffInQuantity: formatQuantity(handoffInQuantity),
           handoffInAmount: formatMoney(handoffInAmount),
           pickQuantity: formatQuantity(pickQuantity),

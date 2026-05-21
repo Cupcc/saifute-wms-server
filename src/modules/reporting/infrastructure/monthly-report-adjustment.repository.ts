@@ -8,12 +8,11 @@ import type { PrismaService } from "../../../shared/prisma/prisma.service";
 import type { StockScopeCode } from "../../session/domain/user-session";
 import {
   type MonthlyReportEntry,
-  MonthlyReportingAbnormalFlag,
   MonthlyReportingDirection,
   MonthlyReportingTopicKey,
 } from "../application/monthly-reporting.shared";
 import {
-  buildAbnormalFlags,
+  buildMonthlyReportStockScopeWhere,
   multiplyDecimals,
   resolveSourceReference,
   sumNullableDecimals,
@@ -37,15 +36,7 @@ export class MonthlyReportAdjustmentRepository {
       where: {
         lifecycleStatus: DocumentLifecycleStatus.EFFECTIVE,
         bizDate: { gte: params.start, lte: params.end },
-        ...(params.stockScope
-          ? {
-              stockScope: {
-                is: {
-                  scopeCode: params.stockScope,
-                },
-              },
-            }
-          : {}),
+        ...buildMonthlyReportStockScopeWhere(params.stockScope),
         ...(params.workshopId ? { workshopId: params.workshopId } : {}),
       },
       include: {
@@ -62,11 +53,6 @@ export class MonthlyReportAdjustmentRepository {
     });
 
     return orders.flatMap((order) => {
-      const abnormalFlags = buildAbnormalFlags({
-        bizDate: order.bizDate,
-        createdAt: order.createdAt,
-        extraFlags: [MonthlyReportingAbnormalFlag.STOCKTAKE_ADJUSTMENT],
-      }, this.appConfigService.businessTimezone);
       const grouped = new Map<
         string,
         {
@@ -144,7 +130,6 @@ export class MonthlyReportAdjustmentRepository {
         quantity: item.quantity,
         amount: item.amount,
         cost: item.cost,
-        abnormalFlags,
         sourceBizDate: null,
         sourceDocumentNo: null,
       }));
@@ -161,15 +146,7 @@ export class MonthlyReportAdjustmentRepository {
       where: {
         lifecycleStatus: DocumentLifecycleStatus.EFFECTIVE,
         bizDate: { gte: params.start, lte: params.end },
-        ...(params.stockScope
-          ? {
-              stockScope: {
-                is: {
-                  scopeCode: params.stockScope,
-                },
-              },
-            }
-          : {}),
+        ...buildMonthlyReportStockScopeWhere(params.stockScope),
         ...(params.workshopId ? { workshopId: params.workshopId } : {}),
       },
       include: {
@@ -197,17 +174,12 @@ export class MonthlyReportAdjustmentRepository {
                 }
               : null,
           )
-          .filter((value): value is { bizDate: Date; documentNo: string } =>
-            value !== null,
+          .filter(
+            (value): value is { bizDate: Date; documentNo: string } =>
+              value !== null,
           ),
         this.appConfigService.businessTimezone,
       );
-      const abnormalFlags = buildAbnormalFlags({
-        bizDate: order.bizDate,
-        createdAt: order.createdAt,
-        sourceBizDate: sourceReference.sourceBizDate,
-        extraFlags: [MonthlyReportingAbnormalFlag.PRICE_CORRECTION],
-      }, this.appConfigService.businessTimezone);
       const totalOutQty = sumNullableDecimals(
         order.lines.map((line) => line.remainingQtyAtCorrection),
       );
@@ -215,10 +187,7 @@ export class MonthlyReportAdjustmentRepository {
         order.lines.map(
           (line) =>
             line.generatedOutLog?.costAmount ??
-            multiplyDecimals(
-              line.remainingQtyAtCorrection,
-              line.wrongUnitCost,
-            ),
+            multiplyDecimals(line.remainingQtyAtCorrection, line.wrongUnitCost),
         ),
       );
       const totalInQty = sumNullableDecimals(
@@ -260,7 +229,6 @@ export class MonthlyReportAdjustmentRepository {
           quantity: totalOutQty,
           amount: totalOutAmount,
           cost: totalOutAmount,
-          abnormalFlags,
           sourceBizDate: sourceReference.sourceBizDate,
           sourceDocumentNo: sourceReference.sourceDocumentNo,
         });
@@ -293,7 +261,6 @@ export class MonthlyReportAdjustmentRepository {
           quantity: totalInQty,
           amount: totalInAmount,
           cost: totalInAmount,
-          abnormalFlags,
           sourceBizDate: sourceReference.sourceBizDate,
           sourceDocumentNo: sourceReference.sourceDocumentNo,
         });

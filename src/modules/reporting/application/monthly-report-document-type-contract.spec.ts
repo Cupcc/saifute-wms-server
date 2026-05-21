@@ -92,7 +92,6 @@ describe("Monthly report document type contract", () => {
       quantity: new Prisma.Decimal("10"),
       amount: new Prisma.Decimal("100"),
       cost: new Prisma.Decimal("70"),
-      abnormalFlags: [],
       sourceBizDate: null,
       sourceDocumentNo: null,
       ...overrides,
@@ -115,7 +114,6 @@ describe("Monthly report document type contract", () => {
       quantity: new Prisma.Decimal("10"),
       amount: new Prisma.Decimal("100"),
       cost: new Prisma.Decimal("70"),
-      abnormalFlags: [],
       ...overrides,
     };
   }

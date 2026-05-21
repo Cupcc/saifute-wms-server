@@ -133,4 +133,65 @@ describe("monthly report stock-scope fallback", () => {
       }),
     ]);
   });
+
+  it("treats legacy null stock scope as main in RD and adjustment reporting filters", async () => {
+    const prisma = createMockPrisma();
+    const repository = new MonthlyReportRepository(
+      prisma as never,
+      createAppConfig(),
+    );
+
+    await repository.findMonthlyReportEntries({
+      start: new Date("2026-04-01T00:00:00.000Z"),
+      end: new Date("2026-04-30T23:59:59.999Z"),
+      stockScope: "MAIN",
+    });
+
+    expect(prisma.rdProjectMaterialAction.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            { stockScopeId: null },
+            { stockScope: { is: { scopeCode: "MAIN" } } },
+          ]),
+        }),
+      }),
+    );
+    expect(prisma.rdStocktakeOrder.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            { stockScopeId: null },
+            { stockScope: { is: { scopeCode: "MAIN" } } },
+          ]),
+        }),
+      }),
+    );
+    expect(prisma.stockInPriceCorrectionOrder.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          OR: expect.arrayContaining([
+            { stockScopeId: null },
+            { stockScope: { is: { scopeCode: "MAIN" } } },
+          ]),
+        }),
+      }),
+    );
+    expect(prisma.rdHandoffOrder.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          AND: expect.arrayContaining([
+            {
+              OR: expect.arrayContaining([
+                { sourceStockScopeId: null },
+                { targetStockScopeId: null },
+                { sourceStockScope: { is: { scopeCode: "MAIN" } } },
+                { targetStockScope: { is: { scopeCode: "MAIN" } } },
+              ]),
+            },
+          ]),
+        }),
+      }),
+    );
+  });
 });

@@ -12,9 +12,11 @@ import {
   type MonthlyMaterialCategoryEntry,
   MonthlyReportingDirection,
 } from "../application/monthly-reporting.shared";
-import { resolveMaterialCategoryLineAmount } from "./monthly-material-category.helpers";
 import {
-  buildAbnormalFlags,
+  resolveMaterialCategoryLineAmount,
+  resolveMaterialCategoryUnitPrice,
+} from "./monthly-material-category.helpers";
+import {
   buildMonthlyReportStockScopeWhere,
   loadWorkshopOrderSourceMap,
   resolveMonthlyReportStockScopeCode,
@@ -129,6 +131,11 @@ export class MonthlyMaterialCategoryWorkshopRepository {
       const currentCost = toDecimal(line.costAmount);
       const lineCost =
         currentCost.isZero() && !lineAmount.isZero() ? lineAmount : currentCost;
+      const lineUnitPrice = resolveMaterialCategoryUnitPrice({
+        amount: lineCost,
+        quantity: line.quantity,
+        fallbackUnitPrice: line.unitPrice,
+      });
       const categoryPath = this.resolveMaterialCategoryPath(
         line.material.category,
       );
@@ -183,19 +190,14 @@ export class MonthlyMaterialCategoryWorkshopRepository {
         categoryName: leafCategory.categoryName,
         categoryPath,
         quantity: line.quantity,
+        unitPrice: lineUnitPrice,
         amount: lineAmount,
         cost: lineCost,
+        salesUnitPrice: null,
+        salesAmount: null,
         salesProjectId: null,
         salesProjectCode: null,
         salesProjectName: null,
-        abnormalFlags: buildAbnormalFlags(
-          {
-            bizDate: line.order.bizDate,
-            createdAt: line.order.createdAt,
-            sourceBizDate: sourceReference.sourceBizDate,
-          },
-          this.appConfigService.businessTimezone,
-        ),
         sourceBizDate: sourceReference.sourceBizDate,
         sourceDocumentNo: sourceReference.sourceDocumentNo,
       } satisfies MonthlyMaterialCategoryEntry;

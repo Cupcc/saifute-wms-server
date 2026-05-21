@@ -18,7 +18,6 @@ import {
   formatYearMonth,
   getMonthlyReportingDomainMeta,
   getMonthlyReportingTopicMeta,
-  MONTHLY_REPORTING_ABNORMAL_LABELS,
   MONTHLY_REPORTING_MATERIAL_CATEGORY_TOPIC_OPTIONS,
   type MonthlyMaterialCategoryBalanceSnapshot,
   type MonthlyMaterialCategoryEntry,
@@ -36,7 +35,6 @@ export interface MonthlyReportQuery {
   domainKey?: MonthlyReportingDomainKey;
   documentTypeLabel?: string;
   topicKey?: MonthlyReportingTopicKey;
-  abnormalOnly?: boolean;
   keyword?: string;
   categoryId?: number;
   categoryNodeKey?: string;
@@ -101,10 +99,7 @@ export class MonthlyReportSourceService {
         workshopId: query.workshopId,
       });
 
-    return entries.map((entry) => ({
-      ...entry,
-      abnormalFlags: [],
-    }));
+    return entries;
   }
 
   async loadMaterialCategoryBalanceSnapshots(
@@ -155,9 +150,6 @@ export class MonthlyReportSourceService {
           ? row.documentTypeLabel === documentTypeLabelFilter
           : true,
       )
-      .filter((row) =>
-        query.abnormalOnly ? row.abnormalFlags.length > 0 : true,
-      )
       .filter((row) => this.matchesKeyword(row, query.keyword))
       .sort((left, right) => this.compareRows(left, right));
   }
@@ -188,9 +180,6 @@ export class MonthlyReportSourceService {
         !query.topicKey && documentTypeLabel
           ? entry.documentTypeLabel === documentTypeLabel
           : true,
-      )
-      .filter((entry) =>
-        query.abnormalOnly ? entry.abnormalFlags.length > 0 : true,
       )
       .filter((entry) => this.matchesSalesProjectKeyword(entry, query.keyword));
   }
@@ -229,9 +218,6 @@ export class MonthlyReportSourceService {
           : query.categoryId
             ? resolveMonthlyMaterialCategoryLeaf(entry).id === query.categoryId
             : true,
-      )
-      .filter((entry) =>
-        query.abnormalOnly ? entry.abnormalFlags.length > 0 : true,
       )
       .filter((entry) =>
         this.matchesMaterialCategoryKeyword(entry, query.keyword),
@@ -344,10 +330,6 @@ export class MonthlyReportSourceService {
     const domainLabel = getMonthlyReportingDomainMeta(
       topicMeta.domainKey,
     ).label;
-    const abnormalLabels = row.abnormalFlags.map(
-      (flag) => MONTHLY_REPORTING_ABNORMAL_LABELS[flag],
-    );
-
     return [
       row.documentNo,
       row.documentTypeLabel,
@@ -371,7 +353,6 @@ export class MonthlyReportSourceService {
             this.appConfigService.businessTimezone,
           )
         : null,
-      ...abnormalLabels,
     ]
       .filter(Boolean)
       .some((candidate) =>
@@ -388,10 +369,6 @@ export class MonthlyReportSourceService {
       return true;
     }
 
-    const abnormalLabels = entry.abnormalFlags.map(
-      (flag) => MONTHLY_REPORTING_ABNORMAL_LABELS[flag],
-    );
-
     return [
       entry.documentNo,
       entry.documentTypeLabel,
@@ -404,7 +381,6 @@ export class MonthlyReportSourceService {
       entry.categoryName,
       entry.salesProjectCode,
       entry.salesProjectName,
-      ...abnormalLabels,
     ]
       .filter(Boolean)
       .some((candidate) =>
@@ -421,16 +397,11 @@ export class MonthlyReportSourceService {
       return true;
     }
 
-    const abnormalLabels = entry.abnormalFlags.map(
-      (flag) => MONTHLY_REPORTING_ABNORMAL_LABELS[flag],
-    );
-
     return [
       entry.documentNo,
       entry.documentTypeLabel,
       entry.salesProjectCode,
       entry.salesProjectName,
-      ...abnormalLabels,
     ]
       .filter(Boolean)
       .some((candidate) =>

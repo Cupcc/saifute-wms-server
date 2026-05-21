@@ -1,7 +1,6 @@
 import { Prisma } from "../../../../generated/prisma/client";
 import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import {
-  MonthlyReportingAbnormalFlag,
   MonthlyReportingDirection,
   MonthlyReportingTopicKey,
 } from "../application/monthly-reporting.shared";
@@ -140,8 +139,11 @@ describe("MonthlyMaterialCategoryWorkshopRepository", () => {
         categoryId: 11,
         categoryCode: "CHEM",
         categoryName: "化工",
+        unitPrice: new Prisma.Decimal("10"),
         amount: new Prisma.Decimal("20"),
         cost: new Prisma.Decimal("20"),
+        salesUnitPrice: null,
+        salesAmount: null,
         workshopName: "装备车间",
       }),
       expect.objectContaining({
@@ -152,10 +154,6 @@ describe("MonthlyMaterialCategoryWorkshopRepository", () => {
         stockScope: "MAIN",
         sourceBizDate: new Date("2026-04-30T00:00:00.000Z"),
         sourceDocumentNo: "LL-001",
-        abnormalFlags: expect.arrayContaining([
-          MonthlyReportingAbnormalFlag.BACKFILL_IMPACT,
-          MonthlyReportingAbnormalFlag.CROSS_MONTH_REFERENCE,
-        ]),
       }),
     ]);
   });

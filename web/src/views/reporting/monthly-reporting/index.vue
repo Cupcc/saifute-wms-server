@@ -116,9 +116,6 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="!isMaterialCategoryView" label="异常单据">
-          <el-switch v-model="filters.abnormalOnly" />
-        </el-form-item>
         <el-form-item label="关键字">
           <el-input
             v-model="filters.keyword"
@@ -172,12 +169,6 @@
           </div>
         </el-col>
         <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box danger-box">
-            <div class="stat-label">异常单据数</div>
-            <div class="stat-value">{{ summary.abnormalDocumentCount }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
           <div class="stat-box">
             <div class="stat-label">单据数</div>
             <div class="stat-value">{{ summary.documentCount }}</div>
@@ -223,22 +214,30 @@
         <el-table :data="domainRows" stripe v-loading="summaryLoading">
           <el-table-column prop="domainLabel" label="领域" min-width="140" />
           <el-table-column prop="documentCount" label="单据数" min-width="80" />
-          <el-table-column prop="abnormalDocumentCount" label="异常单据数" min-width="120" />
           <el-table-column prop="totalInQuantity" label="总入数量" min-width="120" />
           <el-table-column prop="totalInAmount" label="总入金额" min-width="140" />
           <el-table-column prop="totalOutQuantity" label="总出数量" min-width="120" />
           <el-table-column prop="totalOutAmount" label="总出金额" min-width="140" />
           <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
           <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
-          <el-table-column prop="salesOutboundQuantity" label="销售出库数量" min-width="120" />
-          <el-table-column prop="salesOutboundSalesAmount" label="销售出库销售价金额" min-width="170" />
-          <el-table-column prop="salesOutboundCostAmount" label="销售出库成本价金额" min-width="170" />
-          <el-table-column prop="salesReturnQuantity" label="销售退货数量" min-width="120" />
-          <el-table-column prop="salesReturnSalesAmount" label="销售退货销售价金额" min-width="170" />
-          <el-table-column prop="salesReturnCostAmount" label="销售退货成本价金额" min-width="170" />
-          <el-table-column prop="netSalesQuantity" label="净销售数量" min-width="120" />
-          <el-table-column prop="netSalesAmount" label="净销售价金额" min-width="150" />
-          <el-table-column prop="netCostAmount" label="净成本价金额" min-width="150" />
+          <el-table-column
+            v-if="hasSalesDomainRow"
+            prop="netSalesAmount"
+            label="销售净售出金额"
+            min-width="150"
+          />
+          <el-table-column
+            v-if="hasSalesDomainRow"
+            prop="netCostAmount"
+            label="销售净成本金额"
+            min-width="150"
+          />
+          <el-table-column
+            v-if="hasSalesDomainRow"
+            prop="salesGrossProfitAmount"
+            label="销售毛利金额"
+            min-width="140"
+          />
         </el-table>
       </el-card>
 
@@ -270,7 +269,6 @@
           <el-table-column prop="domainLabel" label="领域" min-width="120" />
           <el-table-column prop="documentTypeLabel" label="单据类型" min-width="180" />
           <el-table-column prop="documentCount" label="单据数" min-width="80" />
-          <el-table-column prop="abnormalDocumentCount" label="异常单据数" min-width="120" />
           <el-table-column prop="totalInQuantity" label="总入数量" min-width="120" />
           <el-table-column prop="totalInAmount" label="总入金额" min-width="140" />
           <el-table-column prop="totalOutQuantity" label="总出数量" min-width="120" />
@@ -300,7 +298,6 @@
             <el-table :data="workshopRows" stripe v-loading="summaryLoading">
               <el-table-column prop="workshopName" label="车间" min-width="160" />
               <el-table-column prop="documentCount" label="单据数" min-width="80" />
-              <el-table-column prop="abnormalDocumentCount" label="异常单据数" min-width="120" />
               <el-table-column prop="pickQuantity" label="领料数量" min-width="120" />
               <el-table-column prop="pickAmount" label="领料金额" min-width="140" />
               <el-table-column prop="returnQuantity" label="退料数量" min-width="120" />
@@ -320,14 +317,13 @@
               <el-table-column prop="salesProjectCode" label="销售项目编码" min-width="160" />
               <el-table-column prop="salesProjectName" label="销售项目名称" min-width="180" />
               <el-table-column prop="documentCount" label="单据数" min-width="80" />
-              <el-table-column prop="abnormalDocumentCount" label="异常单据数" min-width="120" />
               <el-table-column prop="salesOutboundQuantity" label="销售出库数量" min-width="120" />
               <el-table-column prop="salesOutboundSalesAmount" label="销售出库销售价金额" min-width="170" />
               <el-table-column prop="salesOutboundCostAmount" label="销售出库成本价金额" min-width="170" />
               <el-table-column prop="salesReturnQuantity" label="销售退货数量" min-width="120" />
               <el-table-column prop="salesReturnSalesAmount" label="销售退货销售价金额" min-width="170" />
               <el-table-column prop="salesReturnCostAmount" label="销售退货成本价金额" min-width="170" />
-              <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
+              <el-table-column prop="netQuantity" label="净销售数量" min-width="120" />
               <el-table-column prop="netSalesAmount" label="净销售价金额" min-width="150" />
               <el-table-column prop="netCostAmount" label="净成本价金额" min-width="150" />
             </el-table>
@@ -341,7 +337,6 @@
               <el-table-column prop="rdProjectCode" label="研发项目编码" min-width="160" />
               <el-table-column prop="rdProjectName" label="研发项目名称" min-width="180" />
               <el-table-column prop="documentCount" label="单据数" min-width="80" />
-              <el-table-column prop="abnormalDocumentCount" label="异常单据数" min-width="120" />
               <el-table-column prop="handoffInQuantity" label="项目交接入数量" min-width="130" />
               <el-table-column prop="handoffInAmount" label="项目交接入金额" min-width="140" />
               <el-table-column prop="pickQuantity" label="项目领用数量" min-width="120" />
@@ -368,7 +363,14 @@
             <span class="section-tip">按车间汇总领料、退料和净使用。</span>
           </div>
         </template>
-        <el-table :data="workshopRows" stripe v-loading="summaryLoading">
+        <el-table
+          :data="workshopRows"
+          class="monthly-summary-table"
+          stripe
+          show-summary
+          :summary-method="getWorkshopUsageSummaries"
+          v-loading="summaryLoading"
+        >
           <el-table-column prop="workshopName" label="车间" min-width="160" />
           <el-table-column prop="lineCount" label="单据行数" min-width="90" />
           <el-table-column prop="documentCount" label="单据数" min-width="80" />
@@ -400,7 +402,10 @@
         </template>
         <el-table
           :data="categoryRows"
+          class="monthly-summary-table"
           stripe
+          show-summary
+          :summary-method="getCategorySummaries"
           row-key="nodeKey"
           v-loading="summaryLoading"
           :row-class-name="resolveCategoryRowClassName"
@@ -524,22 +529,6 @@
           <el-table-column prop="quantity" label="数量" min-width="120" />
           <el-table-column prop="amount" label="金额" min-width="120" />
           <el-table-column prop="cost" label="成本" min-width="120" />
-          <el-table-column label="异常标识" min-width="220">
-            <template #default="{ row }">
-              <div v-if="row.abnormalLabels.length > 0" class="tag-wrap">
-                <el-tag
-                  v-for="tag in row.abnormalLabels"
-                  :key="`${row.documentNo}-${tag}`"
-                  size="small"
-                  effect="plain"
-                  type="danger"
-                >
-                  {{ tag }}
-                </el-tag>
-              </div>
-              <span v-else>-</span>
-            </template>
-          </el-table-column>
           <el-table-column prop="sourceBizMonth" label="来源月份" min-width="120" />
           <el-table-column prop="sourceDocumentNo" label="来源单据" min-width="200" show-overflow-tooltip />
         </el-table>
@@ -560,8 +549,10 @@
           <el-table-column prop="salesProjectCode" label="销售项目编码" min-width="160" />
           <el-table-column prop="salesProjectName" label="销售项目名称" min-width="180" show-overflow-tooltip />
           <el-table-column prop="quantity" label="数量" min-width="120" />
+          <el-table-column prop="unitPrice" label="单价" min-width="120" />
           <el-table-column prop="amount" label="金额" min-width="120" />
-          <el-table-column prop="cost" label="成本" min-width="120" />
+          <el-table-column prop="salesUnitPrice" label="销售价" min-width="120" />
+          <el-table-column prop="salesAmount" label="销售金额" min-width="120" />
         </el-table>
 
         <div class="pagination-wrap">
@@ -788,6 +779,12 @@ const materialCategorySummaryStats = computed(() => [
     value: summary.value.lineCount,
     danger: true,
   },
+  {
+    key: "documentCount",
+    label: "单据数量",
+    value: summary.value.documentCount,
+    danger: true,
+  },
 ]);
 const activeCategoryNodeKey = computed(
   () => selectedCategoryNodeKey.value || filters.value.categoryNodeKey,
@@ -825,6 +822,9 @@ const filteredDocumentTypeOptions = computed(() => {
     (item) => item.domainKey === filters.value.domainKey,
   );
 });
+const hasSalesDomainRow = computed(() =>
+  domainRows.value.some((row) => row.domainKey === "SALES"),
+);
 const categoryOptions = computed(() => {
   return [...categoryCatalog.value]
     .map((row) => ({
@@ -979,12 +979,51 @@ const activeBusinessSummaryTip = computed(
       (item) => item.key === activeBusinessSummaryTab.value,
     )?.tip || "切换查看不同业务锚点的汇总。",
 );
+const WORKSHOP_USAGE_COUNT_TOTAL_KEYS = new Set([
+  "lineCount",
+  "documentCount",
+]);
+const WORKSHOP_USAGE_DECIMAL_TOTAL_KEYS = new Set([
+  "pickQuantity",
+  "pickAmount",
+  "returnQuantity",
+  "returnAmount",
+  "netUsedQuantity",
+  "netUsedAmount",
+]);
+const MATERIAL_CATEGORY_TOTAL_KEYS = new Set([
+  "lineCount",
+  "documentCount",
+  "openingQuantity",
+  "openingAmount",
+  "netQuantity",
+  "netAmount",
+  "closingQuantity",
+  "closingAmount",
+  "acceptanceInboundQuantity",
+  "acceptanceInboundAmount",
+  "productionReceiptQuantity",
+  "productionReceiptAmount",
+  "supplierReturnQuantity",
+  "supplierReturnAmount",
+  "workshopPickQuantity",
+  "workshopPickAmount",
+  "workshopReturnQuantity",
+  "workshopReturnAmount",
+  "workshopNetUsedQuantity",
+  "workshopNetUsedAmount",
+  "salesOutboundQuantity",
+  "salesOutboundSalesAmount",
+  "salesOutboundCostAmount",
+  "salesReturnQuantity",
+  "salesReturnSalesAmount",
+  "salesReturnCostAmount",
+]);
 
 function createEmptyDomainSummary() {
   return {
     domainCount: 0,
     documentCount: 0,
-    abnormalDocumentCount: 0,
     totalInQuantity: "0.00",
     totalInAmount: "0.00",
     totalOutQuantity: "0.00",
@@ -999,7 +1038,6 @@ function createEmptyMaterialCategorySummary() {
     categoryCount: 0,
     lineCount: 0,
     documentCount: 0,
-    abnormalDocumentCount: 0,
     acceptanceInboundQuantity: "0.00",
     acceptanceInboundAmount: "0.00",
     productionReceiptQuantity: "0.00",
@@ -1057,9 +1095,56 @@ function createDefaultFilters(viewMode = DOMAIN_VIEW) {
     domainKey: undefined,
     documentTypeKey: undefined,
     categoryNodeKey: undefined,
-    abnormalOnly: false,
     keyword: "",
   };
+}
+
+function parseSummaryNumber(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function sumSummaryRows(data, property) {
+  return data.reduce(
+    (sum, item) => sum + parseSummaryNumber(item?.[property]),
+    0,
+  );
+}
+
+function buildSummaryCells(columns, resolveValue) {
+  return columns.map((column, index) => {
+    if (index === 0) {
+      return "总计";
+    }
+
+    if (!column.property) {
+      return "";
+    }
+
+    return resolveValue(column.property);
+  });
+}
+
+function getWorkshopUsageSummaries({ columns, data }) {
+  return buildSummaryCells(columns, (property) => {
+    if (WORKSHOP_USAGE_COUNT_TOTAL_KEYS.has(property)) {
+      return sumSummaryRows(data, property);
+    }
+
+    if (WORKSHOP_USAGE_DECIMAL_TOTAL_KEYS.has(property)) {
+      return sumSummaryRows(data, property).toFixed(2);
+    }
+
+    return "";
+  });
+}
+
+function getCategorySummaries({ columns }) {
+  return buildSummaryCells(columns, (property) =>
+    MATERIAL_CATEGORY_TOTAL_KEYS.has(property)
+      ? (summary.value[property] ?? "0.00")
+      : "",
+  );
 }
 
 function resolveDetailCategoryNodeKey() {
@@ -1083,9 +1168,6 @@ function buildBaseQuery({ useSelectedCategory = false } = {}) {
         ? resolveDetailCategoryNodeKey()
         : filters.value.categoryNodeKey
       : undefined,
-    abnormalOnly: isMaterialCategoryView.value
-      ? undefined
-      : filters.value.abnormalOnly || undefined,
     keyword: filters.value.keyword?.trim() || undefined,
   };
 }
@@ -1523,6 +1605,18 @@ watch(
     }
   }
 
+  .monthly-summary-table {
+    :deep(.el-table__footer-wrapper td.el-table__cell) {
+      background: #fdf6ec;
+      color: #9a5b00;
+      font-weight: 700;
+    }
+
+    :deep(.el-table__footer-wrapper .cell) {
+      font-weight: 700;
+    }
+  }
+
   .stat-box {
     border: 1px solid #ebeef5;
     border-radius: 6px;
@@ -1548,12 +1642,6 @@ watch(
     font-weight: 600;
     line-height: 1.1;
     word-break: break-word;
-  }
-
-  .tag-wrap {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
   }
 
   .pagination-wrap {

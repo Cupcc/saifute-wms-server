@@ -13,7 +13,8 @@ import {
   MonthlyReportingTopicKey,
 } from "../application/monthly-reporting.shared";
 import {
-  buildAbnormalFlags,
+  buildMonthlyReportHandoffStockScopeWhere,
+  buildMonthlyReportStockScopeWhere,
   joinArrowLabels,
   loadRdProjectActionSourceMap,
   resolveSourceReference,
@@ -39,15 +40,7 @@ export class MonthlyReportRdRepository {
       where: {
         lifecycleStatus: DocumentLifecycleStatus.EFFECTIVE,
         bizDate: { gte: params.start, lte: params.end },
-        ...(params.stockScope
-          ? {
-              stockScope: {
-                is: {
-                  scopeCode: params.stockScope,
-                },
-              },
-            }
-          : {}),
+        ...buildMonthlyReportStockScopeWhere(params.stockScope),
         ...(params.workshopId ? { workshopId: params.workshopId } : {}),
       },
       include: {
@@ -84,8 +77,10 @@ export class MonthlyReportRdRepository {
         ),
       ),
     ];
-    const sourceActionMap =
-      await loadRdProjectActionSourceMap(this.prisma, sourceActionIds);
+    const sourceActionMap = await loadRdProjectActionSourceMap(
+      this.prisma,
+      sourceActionIds,
+    );
 
     return actions.map((action) => {
       const sourceReference = resolveSourceReference(
@@ -98,11 +93,12 @@ export class MonthlyReportRdRepository {
           )
           .map((line) =>
             typeof line.sourceDocumentId === "number"
-              ? sourceActionMap.get(line.sourceDocumentId) ?? null
+              ? (sourceActionMap.get(line.sourceDocumentId) ?? null)
               : null,
           )
-          .filter((value): value is { bizDate: Date; documentNo: string } =>
-            value !== null,
+          .filter(
+            (value): value is { bizDate: Date; documentNo: string } =>
+              value !== null,
           ),
         this.appConfigService.businessTimezone,
       );
@@ -136,11 +132,6 @@ export class MonthlyReportRdRepository {
         quantity: action.totalQty,
         amount: action.totalAmount,
         cost: sumNullableDecimals(action.lines.map((line) => line.costAmount)),
-        abnormalFlags: buildAbnormalFlags({
-          bizDate: action.bizDate,
-          createdAt: action.createdAt,
-          sourceBizDate: sourceReference.sourceBizDate,
-        }, this.appConfigService.businessTimezone),
         sourceBizDate: sourceReference.sourceBizDate,
         sourceDocumentNo: sourceReference.sourceDocumentNo,
       };
@@ -154,25 +145,11 @@ export class MonthlyReportRdRepository {
     workshopId?: number;
   }): Promise<MonthlyReportEntry[]> {
     const andFilters: Prisma.RdHandoffOrderWhereInput[] = [];
-    if (params.stockScope) {
-      andFilters.push({
-        OR: [
-          {
-            sourceStockScope: {
-              is: {
-                scopeCode: params.stockScope,
-              },
-            },
-          },
-          {
-            targetStockScope: {
-              is: {
-                scopeCode: params.stockScope,
-              },
-            },
-          },
-        ],
-      });
+    const stockScopeWhere = buildMonthlyReportHandoffStockScopeWhere(
+      params.stockScope,
+    );
+    if (stockScopeWhere) {
+      andFilters.push(stockScopeWhere);
     }
     if (params.workshopId) {
       andFilters.push({
@@ -259,17 +236,16 @@ export class MonthlyReportRdRepository {
           return true;
         }
         return (
-          line.rdProject?.workshopId ??
-          order.targetWorkshopId ??
-          null
-        ) === params.workshopId;
+          (line.rdProject?.workshopId ?? order.targetWorkshopId ?? null) ===
+          params.workshopId
+        );
       });
 
       for (const line of filteredLines) {
-        const lineWorkshopId = line.rdProject?.workshopId ?? order.targetWorkshopId;
+        const lineWorkshopId =
+          line.rdProject?.workshopId ?? order.targetWorkshopId;
         const lineWorkshopName =
-          line.rdProject?.workshopNameSnapshot ??
-          targetWorkshopName;
+          line.rdProject?.workshopNameSnapshot ?? targetWorkshopName;
         const key = [
           line.rdProjectId ?? "null",
           line.rdProjectCodeSnapshot ?? "",
@@ -308,12 +284,12 @@ export class MonthlyReportRdRepository {
             : params.stockScope === "RD_SUB"
               ? "RD_SUB"
               : null,
-          stockScopeName:
-            params.stockScope === "MAIN"
-              ? sourceStockScopeName
-              : params.stockScope === "RD_SUB"
-                ? targetStockScopeName
-                : joinArrowLabels(sourceStockScopeName, targetStockScopeName),
+        stockScopeName:
+          params.stockScope === "MAIN"
+            ? sourceStockScopeName
+            : params.stockScope === "RD_SUB"
+              ? targetStockScopeName
+              : joinArrowLabels(sourceStockScopeName, targetStockScopeName),
         workshopId: item.workshopId,
         workshopName:
           params.stockScope === "MAIN" || params.stockScope === "RD_SUB"
@@ -332,10 +308,6 @@ export class MonthlyReportRdRepository {
         quantity: item.quantity,
         amount: item.amount,
         cost: item.cost,
-        abnormalFlags: buildAbnormalFlags({
-          bizDate: order.bizDate,
-          createdAt: order.createdAt,
-        }, this.appConfigService.businessTimezone),
         sourceBizDate: null,
         sourceDocumentNo: null,
       }));

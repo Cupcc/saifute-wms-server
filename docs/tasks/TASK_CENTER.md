@@ -32,7 +32,7 @@
 | `task-20260411-1105-monthly-reporting-domain-first-redesign.md` | `reviewing` | 在 accepted `monthly-reporting Phase 1` 基线上，已完成月度对账领域优先重切实现：先回答仓库总入 / 总出 / 净发生，再按入库、车间、销售、研发项目、RD小仓展开操作、销售项目与主仓到RD交接汇总，当前进入 review / acceptance 收口。 |
 | `task-20260414-1418-rd-sub-project-attribution-and-reporting-alignment.md` | `planned` | 围绕新确认规则收口 `RD_SUB` 项目化归属、主仓到小仓交接项目绑定、库存事实 project attribution、月报 viewpoint 重算，以及 local/test 冲突数据可受控清理重注的实施与 QA 计划。 |
 | `task-20260407-0929-workshop-material-f1-f3-autonomous-delivery.md` | `planned` | 车间物料 `F1/F2/F3` 端到端自治交付：沿用统一后端家族模型与三个既有前端页面，补齐改单补偿、主仓库存 / 来源追溯、前端 API 接通与 full acceptance；明确排除 `F4` 报表 / 净耗用 / 导出。 |
-| `analysis-20260519-monthly-reporting-material-category-abnormal-documents.md` | `implemented` | 物料分类月报异常列处理：业务确认补录和跨月退回都按业务日期归属月份，不再作为异常展示；已移除物料分类视角页面 / 导出中的 `异常单据数`、`异常标识` 和异常筛选，保留普通月度对账异常追溯。 |
+| `analysis-20260519-monthly-reporting-material-category-abnormal-documents.md` | `implemented` | 物料分类月报异常列处理：业务确认补录和跨月退回都按业务日期归属月份，不再作为异常展示；已移除物料分类视角页面 / 导出中的 `异常单据数`、`异常标识` 和异常筛选；当前月报真源也不再要求普通月度对账保留异常 / 纠偏展示。 |
 | `analysis-20260518-project-pause-decision-report.md` | `draft` | 项目暂停 / 继续决策报告：面向管理层说明当前不是单纯开发延期，而是历史数据核验、库存来源链修复、月报性能收口共同构成的决策问题；已同步 2026-05-19 `yf57` 日期修复、定向库存重建和 `004` 单据价修复后，初始 `44` 行价格层漂移已全部闭环，建议暂停新增功能，保留 `5 ~ 10` 个工作日数据冻结、性能基线和核验清单收口窗口。 |
 | `analysis-20260517-workshop-selected-price-layer-drift-blocked-44.md` | `resolved` | 车间领料 / 报废单据价格层漂移确认清单：初始 `44` 行未自动修复，`zjq113`、`zjq031`、`dz3`、`033`、`yh1`、`jg6`、`yf12`、`lb004`、`lb005`、`yh10`、`zjq106`、`yf42`、`zjq042`、`cp032`、`zjq149`、`yf81`、`yf2`、`cp001`、`yf57`、`004` 已按业务事实 / 仓库确认价 / 说明字段拆分 / 日期修复和定向重建收口；另已统一 `lb007` 当前价格，最终通用 drift dry-run 为 `planned=0, blocked=0`。 |
 

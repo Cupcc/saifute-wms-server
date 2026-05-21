@@ -5,6 +5,83 @@ import type {
   MonthlyReportMaterialSummaryItem,
 } from "./monthly-report-material-category.service";
 import type { MonthlyReportMaterialCategoryWorkshopSummaryItem } from "./monthly-report-material-category-workshop.helper";
+import type {
+  MonthlyReportExcelRow,
+  MonthlyReportExcelSheet,
+} from "./monthly-reporting.formatters";
+
+function buildTotalRow(values: Array<string | number>): MonthlyReportExcelRow {
+  return {
+    values,
+    styleId: "Total",
+  };
+}
+
+function parseExportNumber(value: string | number | null | undefined): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function sumWorkshopUsageItems(
+  items: MonthlyReportMaterialCategoryWorkshopSummaryItem[],
+  property: keyof MonthlyReportMaterialCategoryWorkshopSummaryItem,
+): number {
+  return items.reduce(
+    (sum, item) => sum + parseExportNumber(item[property]),
+    0,
+  );
+}
+
+function buildCategorySummaryTotalRow(
+  totals: Omit<MonthlyReportMaterialCategorySummaryTotals, "categoryCount">,
+): MonthlyReportExcelRow {
+  return buildTotalRow([
+    "总计",
+    "",
+    totals.lineCount,
+    totals.documentCount,
+    totals.openingQuantity,
+    totals.openingAmount,
+    totals.netQuantity,
+    totals.netAmount,
+    totals.closingQuantity,
+    totals.closingAmount,
+    totals.acceptanceInboundQuantity,
+    totals.acceptanceInboundAmount,
+    totals.productionReceiptQuantity,
+    totals.productionReceiptAmount,
+    totals.supplierReturnQuantity,
+    totals.supplierReturnAmount,
+    totals.workshopPickQuantity,
+    totals.workshopPickAmount,
+    totals.workshopReturnQuantity,
+    totals.workshopReturnAmount,
+    totals.workshopNetUsedQuantity,
+    totals.workshopNetUsedAmount,
+    totals.salesOutboundQuantity,
+    totals.salesOutboundSalesAmount,
+    totals.salesOutboundCostAmount,
+    totals.salesReturnQuantity,
+    totals.salesReturnSalesAmount,
+    totals.salesReturnCostAmount,
+  ]);
+}
+
+function buildWorkshopUsageTotalRow(
+  items: MonthlyReportMaterialCategoryWorkshopSummaryItem[],
+): MonthlyReportExcelRow {
+  return buildTotalRow([
+    "总计",
+    sumWorkshopUsageItems(items, "lineCount"),
+    sumWorkshopUsageItems(items, "documentCount"),
+    sumWorkshopUsageItems(items, "pickQuantity").toFixed(2),
+    sumWorkshopUsageItems(items, "pickAmount").toFixed(2),
+    sumWorkshopUsageItems(items, "returnQuantity").toFixed(2),
+    sumWorkshopUsageItems(items, "returnAmount").toFixed(2),
+    sumWorkshopUsageItems(items, "netUsedQuantity").toFixed(2),
+    sumWorkshopUsageItems(items, "netUsedAmount").toFixed(2),
+  ]);
+}
 
 export function buildMaterialCategoryExportSheets(params: {
   yearMonth: string;
@@ -13,7 +90,7 @@ export function buildMaterialCategoryExportSheets(params: {
   materialItems: MonthlyReportMaterialSummaryItem[];
   workshopItems: MonthlyReportMaterialCategoryWorkshopSummaryItem[];
   detailItems: MonthlyReportMaterialCategoryDetailItem[];
-}) {
+}): MonthlyReportExcelSheet[] {
   const reportTitle = `${params.yearMonth} 物料分类月报`;
 
   return [
@@ -84,36 +161,39 @@ export function buildMaterialCategoryExportSheets(params: {
         "销售退货销售价金额",
         "销售退货成本价金额",
       ],
-      rows: params.categoryItems.map((item) => [
-        item.categoryCode ?? "",
-        item.categoryName,
-        item.lineCount,
-        item.documentCount,
-        item.openingQuantity,
-        item.openingAmount,
-        item.netQuantity,
-        item.netAmount,
-        item.closingQuantity,
-        item.closingAmount,
-        item.acceptanceInboundQuantity,
-        item.acceptanceInboundAmount,
-        item.productionReceiptQuantity,
-        item.productionReceiptAmount,
-        item.supplierReturnQuantity,
-        item.supplierReturnAmount,
-        item.workshopPickQuantity,
-        item.workshopPickAmount,
-        item.workshopReturnQuantity,
-        item.workshopReturnAmount,
-        item.workshopNetUsedQuantity,
-        item.workshopNetUsedAmount,
-        item.salesOutboundQuantity,
-        item.salesOutboundSalesAmount,
-        item.salesOutboundCostAmount,
-        item.salesReturnQuantity,
-        item.salesReturnSalesAmount,
-        item.salesReturnCostAmount,
-      ]) as Array<Array<string | number>>,
+      rows: [
+        ...params.categoryItems.map((item) => [
+          item.categoryCode ?? "",
+          item.categoryName,
+          item.lineCount,
+          item.documentCount,
+          item.openingQuantity,
+          item.openingAmount,
+          item.netQuantity,
+          item.netAmount,
+          item.closingQuantity,
+          item.closingAmount,
+          item.acceptanceInboundQuantity,
+          item.acceptanceInboundAmount,
+          item.productionReceiptQuantity,
+          item.productionReceiptAmount,
+          item.supplierReturnQuantity,
+          item.supplierReturnAmount,
+          item.workshopPickQuantity,
+          item.workshopPickAmount,
+          item.workshopReturnQuantity,
+          item.workshopReturnAmount,
+          item.workshopNetUsedQuantity,
+          item.workshopNetUsedAmount,
+          item.salesOutboundQuantity,
+          item.salesOutboundSalesAmount,
+          item.salesOutboundCostAmount,
+          item.salesReturnQuantity,
+          item.salesReturnSalesAmount,
+          item.salesReturnCostAmount,
+        ]),
+        buildCategorySummaryTotalRow(params.totals),
+      ],
     },
     {
       name: "物料汇总",
@@ -205,17 +285,20 @@ export function buildMaterialCategoryExportSheets(params: {
         "净使用数量",
         "净使用金额",
       ],
-      rows: params.workshopItems.map((item) => [
-        item.workshopName,
-        item.lineCount,
-        item.documentCount,
-        item.pickQuantity,
-        item.pickAmount,
-        item.returnQuantity,
-        item.returnAmount,
-        item.netUsedQuantity,
-        item.netUsedAmount,
-      ]) as Array<Array<string | number>>,
+      rows: [
+        ...params.workshopItems.map((item) => [
+          item.workshopName,
+          item.lineCount,
+          item.documentCount,
+          item.pickQuantity,
+          item.pickAmount,
+          item.returnQuantity,
+          item.returnAmount,
+          item.netUsedQuantity,
+          item.netUsedAmount,
+        ]),
+        buildWorkshopUsageTotalRow(params.workshopItems),
+      ],
     },
     {
       name: "单据行明细",
@@ -236,8 +319,10 @@ export function buildMaterialCategoryExportSheets(params: {
         "销售项目编码",
         "销售项目名称",
         "数量",
+        "单价",
         "金额",
-        "成本",
+        "销售价",
+        "销售金额",
       ],
       rows: params.detailItems.map((item) => [
         item.categoryCode ?? "",
@@ -255,8 +340,10 @@ export function buildMaterialCategoryExportSheets(params: {
         item.salesProjectCode ?? "",
         item.salesProjectName ?? "",
         item.quantity,
+        item.unitPrice,
         item.amount,
-        item.cost,
+        item.salesUnitPrice ?? "",
+        item.salesAmount ?? "",
       ]) as Array<Array<string | number>>,
     },
   ];

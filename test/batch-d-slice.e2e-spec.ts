@@ -434,7 +434,6 @@ describe("Batch D slice acceptance (e2e)", () => {
       workshopName: "装备车间",
       amount: "20.00",
       cost: "12.34",
-      abnormalLabels: ["补录影响", "跨月修正"],
       sourceBizMonth: "2026-03",
       sourceDocumentNo: "CK-QA-001",
     });
@@ -454,6 +453,7 @@ describe("Batch D slice acceptance (e2e)", () => {
         materialSpecSnapshot: "25kg",
         unitCodeSnapshot: "KG",
         quantity: new Prisma.Decimal("3"),
+        unitPrice: new Prisma.Decimal("10"),
         amount: new Prisma.Decimal("30"),
         materialCategoryIdSnapshot: 11,
         materialCategoryCodeSnapshot: "CHEM",
@@ -490,7 +490,9 @@ describe("Batch D slice acceptance (e2e)", () => {
         materialSpecSnapshot: "10kg",
         unitCodeSnapshot: "KG",
         quantity: new Prisma.Decimal("1"),
+        unitPrice: new Prisma.Decimal("8"),
         amount: new Prisma.Decimal("8"),
+        selectedUnitCost: new Prisma.Decimal("6"),
         costAmount: new Prisma.Decimal("6"),
         salesProjectId: 701,
         salesProjectCodeSnapshot: "SP-701",
@@ -660,7 +662,10 @@ describe("Batch D slice acceptance (e2e)", () => {
       categoryName: "化工",
       salesProjectCode: "SP-701",
       salesProjectName: "销售项目 A",
-      abnormalLabels: [],
+      unitPrice: "6.00",
+      amount: "6.00",
+      salesUnitPrice: "8.00",
+      salesAmount: "8.00",
       sourceBizMonth: "2026-03",
       sourceDocumentNo: "CK-BASE-001",
     });
@@ -690,6 +695,8 @@ describe("Batch D slice acceptance (e2e)", () => {
     expect(exportResponse.text).toContain("月末金额");
     expect(exportResponse.text).toContain("验收入库数量");
     expect(exportResponse.text).toContain("验收入库金额");
+    expect(exportResponse.text).toContain("销售价");
+    expect(exportResponse.text).toContain("销售金额");
     expect(exportResponse.text).toContain("化工");
     expect(exportResponse.text).not.toContain("总成本");
     expect(exportResponse.text).not.toContain("分类路径");

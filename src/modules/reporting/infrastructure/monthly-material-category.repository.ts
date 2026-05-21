@@ -18,10 +18,10 @@ import {
   parseMaterialCategoryPathSnapshot,
   resolveMaterialCategoryLineAmount,
   resolveMaterialCategorySalesCostAmount,
+  resolveMaterialCategoryUnitPrice,
 } from "./monthly-material-category.helpers";
 import { MonthlyMaterialCategoryWorkshopRepository } from "./monthly-material-category-workshop.repository";
 import {
-  buildAbnormalFlags,
   buildMonthlyReportStockScopeWhere,
   loadSalesOrderSourceMap,
   resolveMonthlyReportStockScopeCode,
@@ -208,6 +208,11 @@ export class MonthlyMaterialCategoryRepository {
         line.quantity,
         line.unitPrice,
       );
+      const lineUnitPrice = resolveMaterialCategoryUnitPrice({
+        amount: lineAmount,
+        quantity: line.quantity,
+        fallbackUnitPrice: line.unitPrice,
+      });
       const categoryPath = parseMaterialCategoryPathSnapshot(
         line.materialCategoryPathSnapshot,
         {
@@ -259,18 +264,14 @@ export class MonthlyMaterialCategoryRepository {
         categoryName: leafCategory.categoryName,
         categoryPath,
         quantity: line.quantity,
+        unitPrice: lineUnitPrice,
         amount: lineAmount,
         cost: lineAmount,
+        salesUnitPrice: null,
+        salesAmount: null,
         salesProjectId: null,
         salesProjectCode: null,
         salesProjectName: null,
-        abnormalFlags: buildAbnormalFlags(
-          {
-            bizDate: line.order.bizDate,
-            createdAt: line.order.createdAt,
-          },
-          this.appConfigService.businessTimezone,
-        ),
         sourceBizDate: null,
         sourceDocumentNo: null,
       } satisfies MonthlyMaterialCategoryEntry;
@@ -282,11 +283,21 @@ export class MonthlyMaterialCategoryRepository {
         line.quantity,
         line.unitPrice,
       );
+      const salesUnitPrice = resolveMaterialCategoryUnitPrice({
+        amount: lineAmount,
+        quantity: line.quantity,
+        fallbackUnitPrice: line.unitPrice,
+      });
       const lineCost = resolveMaterialCategorySalesCostAmount({
         lineCostAmount: line.costAmount,
         inventoryCostAmount: salesCostAmountByLineId.get(line.id),
         quantity: line.quantity,
         selectedUnitCost: line.selectedUnitCost,
+      });
+      const lineUnitPrice = resolveMaterialCategoryUnitPrice({
+        amount: lineCost,
+        quantity: line.quantity,
+        fallbackUnitPrice: line.selectedUnitCost,
       });
       const sourceReference = resolveSourceReference(
         line.order.bizDate,
@@ -348,19 +359,14 @@ export class MonthlyMaterialCategoryRepository {
         categoryName: leafCategory.categoryName,
         categoryPath,
         quantity: line.quantity,
+        unitPrice: lineUnitPrice,
         amount: lineAmount,
         cost: lineCost,
+        salesUnitPrice,
+        salesAmount: lineAmount,
         salesProjectId: line.salesProjectId ?? null,
         salesProjectCode: line.salesProjectCodeSnapshot ?? null,
         salesProjectName: line.salesProjectNameSnapshot ?? null,
-        abnormalFlags: buildAbnormalFlags(
-          {
-            bizDate: line.order.bizDate,
-            createdAt: line.order.createdAt,
-            sourceBizDate: sourceReference.sourceBizDate,
-          },
-          this.appConfigService.businessTimezone,
-        ),
         sourceBizDate: sourceReference.sourceBizDate,
         sourceDocumentNo: sourceReference.sourceDocumentNo,
       } satisfies MonthlyMaterialCategoryEntry;
