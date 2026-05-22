@@ -23,7 +23,10 @@ describe("RbacSeedRepairRepository", () => {
       path: "/entry-auth",
       routeName: "InboundPermissions",
     });
-    entryOrder.menuName = "普通入库";
+    entryOrder.menuName = "验收入库";
+    requireMenuFixture(state, 3111).menuName = "验收入库新增";
+    requireMenuFixture(state, 3112).menuName = "验收入库修改";
+    requireMenuFixture(state, 3113).menuName = "验收入库作废";
     onlineUsers.parentId = 2900;
     pickOrder.orderNum = 1;
     returnOrder.orderNum = 2;
@@ -42,7 +45,10 @@ describe("RbacSeedRepairRepository", () => {
       path: "/entry",
       routeName: "InboundBusiness",
     });
-    expect(requireMenuFixture(state, 3110).menuName).toBe("验收入库");
+    expect(requireMenuFixture(state, 3110).menuName).toBe("验收单");
+    expect(requireMenuFixture(state, 3111).menuName).toBe("验收单新增");
+    expect(requireMenuFixture(state, 3112).menuName).toBe("验收单修改");
+    expect(requireMenuFixture(state, 3113).menuName).toBe("验收单作废");
     expect(requireMenuFixture(state, 3210).orderNum).toBe(10);
     expect(requireMenuFixture(state, 3220).orderNum).toBe(30);
     expect(requireMenuFixture(state, 3230).orderNum).toBe(50);

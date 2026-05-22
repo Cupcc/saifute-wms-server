@@ -55,7 +55,7 @@ function buildDependencies(): OutboundDependencySnapshot {
     defaultWorkshop: {
       targetId: 7000,
       workshopCode: "WS-LEGACY-DEFAULT",
-      workshopName: "历史默认车间",
+      workshopName: "默认车间",
     },
     personnelByNormalizedName: new Map([
       [

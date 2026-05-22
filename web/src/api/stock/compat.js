@@ -266,6 +266,13 @@ export async function listInventoryLogs(query = {}) {
       operationType: query.relatedOrderType
         ? LEGACY_OPERATION_TYPE_MAP[Number(query.relatedOrderType)]
         : undefined,
+      activeOnly:
+        typeof query.activeOnly === "boolean"
+          ? query.activeOnly
+          : query.relatedOrderNo
+            ? undefined
+            : true,
+      sortOrder: query.relatedOrderNo ? "asc" : "desc",
       occurredAtFrom: query.params?.startRelatedOrderDate,
       occurredAtTo: query.params?.endRelatedOrderDate,
       limit,

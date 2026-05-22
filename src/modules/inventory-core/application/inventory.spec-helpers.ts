@@ -31,6 +31,8 @@ export const mockLog = {
   changeQty: 50,
   beforeQty: 100,
   afterQty: 150,
+  unitCost: 12.34,
+  costAmount: 617,
   operatorId: "1",
   occurredAt: new Date(),
   reversalOfLogId: null,

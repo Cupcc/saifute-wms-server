@@ -40,6 +40,8 @@ describe("InventoryService", () => {
     changeQty: 50,
     beforeQty: 100,
     afterQty: 150,
+    unitCost: 12.34,
+    costAmount: 617,
     operatorId: "1",
     occurredAt: new Date(),
     reversalOfLogId: null,
@@ -213,6 +215,8 @@ describe("InventoryService", () => {
       operationType: InventoryOperationType.REVERSAL_OUT,
       beforeQty: 150,
       afterQty: 100,
+      unitCost: 12.34,
+      costAmount: 617,
       reversalOfLogId: 1,
       idempotencyKey: "reverse-key",
       note: "逆操作: 原流水 1",
@@ -278,5 +282,106 @@ describe("InventoryService", () => {
     expect(Number(result.beforeQty)).toBe(150);
     expect(Number(result.afterQty)).toBe(100);
     expect(result.reversalOfLogId).toBe(1);
+    expect(mockTx.inventoryLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          unitCost: 12.34,
+          costAmount: 617,
+        }),
+      }),
+    );
+  });
+
+  it("should preserve cost fields when reversing an outbound log", async () => {
+    const outboundLog = {
+      ...mockLog,
+      direction: StockDirection.OUT,
+      operationType: InventoryOperationType.PICK_OUT,
+      beforeQty: 135,
+      afterQty: 105,
+      changeQty: 30,
+      unitCost: 11.95,
+      costAmount: 358.5,
+    };
+    const reversedLog = {
+      ...outboundLog,
+      id: 2,
+      direction: StockDirection.IN,
+      operationType: InventoryOperationType.REVERSAL_IN,
+      beforeQty: 105,
+      afterQty: 135,
+      reversalOfLogId: 1,
+      idempotencyKey: "reverse-outbound-key",
+      note: "逆操作: 原流水 1",
+    };
+    const mockTx = {
+      inventoryBalance: {
+        findUnique: jest.fn().mockResolvedValue({
+          ...mockBalance,
+          quantityOnHand: 105,
+        }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      inventoryLog: {
+        create: jest.fn().mockResolvedValue(reversedLog),
+      },
+    };
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        InventoryService,
+        {
+          provide: MasterDataService,
+          useValue: {
+            getMaterialById: jest.fn().mockResolvedValue({ id: 10 }),
+            getWorkshopById: jest.fn().mockResolvedValue({ id: 20 }),
+          },
+        },
+        {
+          provide: PrismaService,
+          useValue: {
+            runInTransaction: jest.fn((_tx, handler) => handler(mockTx)),
+          },
+        },
+        {
+          provide: InventoryRepository,
+          useValue: {
+            runInTransaction: jest.fn((_tx, handler) => handler(mockTx)),
+            lockSourceLog: jest.fn().mockResolvedValue(undefined),
+            findLogByIdempotencyKey: jest.fn().mockResolvedValue(null),
+            findLogById: jest.fn().mockResolvedValue(outboundLog),
+            findReversalLogBySourceLogId: jest.fn().mockResolvedValue(null),
+          },
+        },
+        {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
+          provide: StockScopeCompatibilityService,
+          useFactory: createStockScopeCompatibilityServiceMock,
+        },
+      ],
+    }).compile();
+
+    const service = moduleRef.get(InventoryService);
+    const result = await service.reverseStock({
+      logIdToReverse: 1,
+      idempotencyKey: "reverse-outbound-key",
+    });
+
+    expect(result.direction).toBe(StockDirection.IN);
+    expect(result.operationType).toBe(InventoryOperationType.REVERSAL_IN);
+    expect(Number(result.beforeQty)).toBe(105);
+    expect(Number(result.afterQty)).toBe(135);
+    expect(result.reversalOfLogId).toBe(1);
+    expect(mockTx.inventoryLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          unitCost: 11.95,
+          costAmount: 358.5,
+        }),
+      }),
+    );
   });
 });

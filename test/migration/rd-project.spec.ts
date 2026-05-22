@@ -59,7 +59,7 @@ function buildDependencies(): RdProjectDependencySnapshot {
     defaultWorkshop: {
       targetId: 7000,
       workshopCode: "WS-LEGACY-DEFAULT",
-      workshopName: "历史默认车间",
+      workshopName: "默认车间",
     },
     personnelByNormalizedName: new Map([
       [
@@ -363,7 +363,7 @@ describe("rd-project migration transformer — three-state model", () => {
     expect(primaryProject?.target.managerPersonnelId).toBe(610);
     expect(primaryProject?.target.managerNameSnapshot).toBe("王工");
     expect(primaryProject?.target.workshopId).toBe(7000);
-    expect(primaryProject?.target.workshopNameSnapshot).toBe("历史默认车间");
+    expect(primaryProject?.target.workshopNameSnapshot).toBe("默认车间");
     expect(primaryProject?.target.auditStatusSnapshot).toBe("NOT_REQUIRED");
     expect(primaryProject?.target.inventoryEffectStatus).toBe("POSTED");
     expect(primaryProject?.target.totalQty).toBe("8.500000");
@@ -1370,7 +1370,7 @@ describe("rd-project cutover readiness — structural exclusion sign-off", () =>
       },
       context: {
         defaultWorkshopCode: "WS-LEGACY-DEFAULT",
-        defaultWorkshopName: "历史默认车间",
+        defaultWorkshopName: "默认车间",
         blockedMaterialLegacyIds: [],
         batch1Baseline: {
           expectedMapCounts: {
