@@ -38,6 +38,11 @@
             @keyup.enter="handleSearch"
           />
         </el-form-item>
+        <el-form-item label="历史">
+          <el-checkbox v-model="filters.includeReversedHistory">
+            显示已冲回历史
+          </el-checkbox>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
@@ -103,6 +108,7 @@ const materialOptions = ref([]);
 const filters = ref({
   materialId: null,
   businessDocumentType: "",
+  includeReversedHistory: false,
 });
 
 const workshopLabel = computed(
@@ -136,6 +142,7 @@ async function loadRows() {
     const response = await listRdInventoryLogs({
       materialId: filters.value.materialId || undefined,
       businessDocumentType: filters.value.businessDocumentType || undefined,
+      activeOnly: filters.value.includeReversedHistory ? undefined : true,
       limit: pageSize.value,
       offset: (pageNum.value - 1) * pageSize.value,
     });
@@ -155,6 +162,7 @@ function handleReset() {
   filters.value = {
     materialId: null,
     businessDocumentType: "",
+    includeReversedHistory: false,
   };
   pageNum.value = 1;
   loadRows();

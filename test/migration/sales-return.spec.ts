@@ -155,7 +155,7 @@ function buildDependencies(): SalesReturnDependencySnapshot {
         {
           targetId: 1,
           workshopCode: "WS-LEGACY-DEFAULT",
-          workshopName: "历史默认车间",
+          workshopName: "默认车间",
         },
       ],
       [
@@ -658,7 +658,7 @@ describe("sales-return migration transformer (formal-row-first)", () => {
       (record) => record.legacyId === 24,
     );
     expect(admitted24?.target.workshopId).toBe(1);
-    expect(admitted24?.target.workshopNameSnapshot).toBe("历史默认车间");
+    expect(admitted24?.target.workshopNameSnapshot).toBe("默认车间");
   });
 
   it("should use source_id to anchor candidate outbound order and narrow to one resolved line", () => {

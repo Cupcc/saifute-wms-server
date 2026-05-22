@@ -66,7 +66,7 @@ function buildDependencies(): WorkshopReturnDependencySnapshot {
         {
           targetId: 1,
           workshopCode: "WS-LEGACY-DEFAULT",
-          workshopName: "历史默认车间",
+          workshopName: "默认车间",
         },
       ],
       [
@@ -731,7 +731,7 @@ describe("workshop-return transformer (formal-row-first)", () => {
     expect(plan.admittedOrders).toHaveLength(1);
     const order = requireDefined(plan.admittedOrders[0]);
     expect(order.target.workshopId).toBe(1);
-    expect(order.target.workshopNameSnapshot).toBe("历史默认车间");
+    expect(order.target.workshopNameSnapshot).toBe("默认车间");
   });
 
   it("should still admit header with the frozen default workshop when no workshopLegacyId and no pick line resolves", () => {

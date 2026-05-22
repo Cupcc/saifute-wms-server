@@ -113,6 +113,7 @@ describe("RbacService", () => {
         "StockScrapDetail",
       ]),
     );
+    expect(findRouteByName(routes, "EntryOrder")?.meta?.title).toBe("验收单");
   });
 
   it("should only return rd console routes for rd users", async () => {

@@ -57,14 +57,14 @@ const SEEDED_DISPLAY_ROUTE_NAMES = [
 ] as const;
 
 const LEGACY_MENU_NAMES_BY_ROUTE_NAME = new Map<string, Set<string>>([
-  ["EntryOrder", new Set(["普通入库"])],
+  ["EntryOrder", new Set(["普通入库", "验收入库"])],
   ["EntryIntoOrder", new Set(["生产入库"])],
 ]);
 
 const LEGACY_MENU_NAMES_BY_MENU_ID = new Map<number, Set<string>>([
-  [3111, new Set(["普通入库新增"])],
-  [3112, new Set(["普通入库修改"])],
-  [3113, new Set(["普通入库作废"])],
+  [3111, new Set(["普通入库新增", "验收入库新增"])],
+  [3112, new Set(["普通入库修改", "验收入库修改"])],
+  [3113, new Set(["普通入库作废", "验收入库作废"])],
   [3121, new Set(["生产入库新增"])],
   [3122, new Set(["生产入库修改"])],
   [3123, new Set(["生产入库作废"])],

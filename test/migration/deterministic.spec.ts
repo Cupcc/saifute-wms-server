@@ -50,7 +50,7 @@ describe("migration deterministic helpers", () => {
     );
     expect(buildLegacyWorkshopCode(8)).toBe("WS-LEGACY-8");
     expect(DEFAULT_WORKSHOP_CODE).toBe("WS-LEGACY-DEFAULT");
-    expect(DEFAULT_WORKSHOP_NAME).toBe("历史默认车间");
+    expect(DEFAULT_WORKSHOP_NAME).toBe("默认车间");
   });
 
   it("should avoid collisions with existing legacy-style rewritten codes", () => {

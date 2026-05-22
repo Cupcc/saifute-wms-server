@@ -1694,7 +1694,7 @@ export function createSystemManagementSeedState(): SystemManagementState {
     {
       menuId: 3110,
       parentId: 3100,
-      menuName: "验收入库",
+      menuName: "验收单",
       orderNum: 10,
       path: "order",
       component: "entry/order/index",
@@ -1711,7 +1711,7 @@ export function createSystemManagementSeedState(): SystemManagementState {
     {
       menuId: 3111,
       parentId: 3110,
-      menuName: "验收入库新增",
+      menuName: "验收单新增",
       orderNum: 1,
       path: "",
       component: "",
@@ -1728,7 +1728,7 @@ export function createSystemManagementSeedState(): SystemManagementState {
     {
       menuId: 3112,
       parentId: 3110,
-      menuName: "验收入库修改",
+      menuName: "验收单修改",
       orderNum: 2,
       path: "",
       component: "",
@@ -1745,7 +1745,7 @@ export function createSystemManagementSeedState(): SystemManagementState {
     {
       menuId: 3113,
       parentId: 3110,
-      menuName: "验收入库作废",
+      menuName: "验收单作废",
       orderNum: 3,
       path: "",
       component: "",

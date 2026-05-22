@@ -189,7 +189,7 @@ describe("master-data migration transformer", () => {
 
     expect(plan.migrationBatch).toBe("batch1-master-data");
     expect(plan.records.workshop[0]?.isSyntheticDefault).toBe(true);
-    expect(plan.records.workshop[0]?.target.workshopName).toBe("历史默认车间");
+    expect(plan.records.workshop[0]?.target.workshopName).toBe("默认车间");
     expect(plan.records.workshop[1]?.target.workshopName).toBe("装备车间");
 
     expect(plan.records.supplier[0]?.target.supplierCode).toBe("SUP-LEGACY-5");

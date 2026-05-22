@@ -63,7 +63,7 @@ function buildDependencies(): WorkshopPickDependencySnapshot {
     defaultWorkshop: {
       targetId: 7000,
       workshopCode: "WS-LEGACY-DEFAULT",
-      workshopName: "历史默认车间",
+      workshopName: "默认车间",
     },
     personnelByNormalizedName: new Map([
       [
@@ -424,7 +424,7 @@ describe("workshop-pick migration transformer", () => {
     expect(fallbackOrder?.target.handlerPersonnelId).toBeNull();
     expect(fallbackOrder?.target.handlerNameSnapshot).toBe("李四");
     expect(fallbackOrder?.target.workshopId).toBe(7000);
-    expect(fallbackOrder?.target.workshopNameSnapshot).toBe("历史默认车间");
+    expect(fallbackOrder?.target.workshopNameSnapshot).toBe("默认车间");
     expect(fallbackOrder?.target.totalAmount).toBe("5.00");
     expect(
       plan.warnings.some(

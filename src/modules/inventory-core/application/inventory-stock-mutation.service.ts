@@ -258,6 +258,8 @@ export class InventoryStockMutationService {
             changeQty,
             beforeQty,
             afterQty,
+            unitCost: sourceLog.unitCost,
+            costAmount: sourceLog.costAmount,
             operatorId: sourceLog.operatorId,
             reversalOfLogId: sourceLog.id,
             idempotencyKey: cmd.idempotencyKey,

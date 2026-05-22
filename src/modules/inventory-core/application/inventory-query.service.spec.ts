@@ -225,6 +225,69 @@ describe("InventoryService", () => {
     );
   });
 
+  it("passes log filters to repository when listing logs", async () => {
+    const findLogs = jest.fn().mockResolvedValue({ items: [], total: 0 });
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        InventoryService,
+        InventoryQueryService,
+        {
+          provide: MasterDataService,
+          useValue: {},
+        },
+        {
+          provide: PrismaService,
+          useValue: {},
+        },
+        {
+          provide: InventoryRepository,
+          useValue: {
+            findLogs,
+          },
+        },
+        {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
+          provide: StockScopeCompatibilityService,
+          useValue: {
+            ...createStockScopeCompatibilityServiceMock(),
+            resolveOptional: jest.fn().mockResolvedValue({
+              stockScope: "MAIN",
+              stockScopeId: 1,
+              stockScopeName: "主仓",
+            }),
+          },
+        },
+      ],
+    }).compile();
+
+    const service = moduleRef.get(InventoryService);
+
+    await service.listLogs({
+      stockScope: "MAIN",
+      businessDocumentNumber: "LL20260507004",
+      limit: 20,
+      offset: 0,
+    });
+
+    expect(findLogs).toHaveBeenCalledWith({
+      materialId: undefined,
+      stockScopeIds: [1],
+      workshopId: undefined,
+      businessDocumentId: undefined,
+      businessDocumentType: undefined,
+      businessDocumentNumber: "LL20260507004",
+      operationType: undefined,
+      bizDateFrom: undefined,
+      bizDateTo: undefined,
+      limit: 20,
+      offset: 0,
+    });
+  });
+
   it("should pass inventory balance filters to repository", async () => {
     const findBalances = jest.fn().mockResolvedValue({
       items: [

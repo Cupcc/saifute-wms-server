@@ -23,7 +23,7 @@
     },
     "blockedMaterialLegacyIds": [],
     "defaultWorkshopCode": "WS-LEGACY-DEFAULT",
-    "defaultWorkshopName": "历史默认车间"
+    "defaultWorkshopName": "默认车间"
   },
   "counts": {
     "lines": {

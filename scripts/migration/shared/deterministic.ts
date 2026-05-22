@@ -1,5 +1,5 @@
 export const DEFAULT_WORKSHOP_CODE = "WS-LEGACY-DEFAULT";
-export const DEFAULT_WORKSHOP_NAME = "历史默认车间";
+export const DEFAULT_WORKSHOP_NAME = "默认车间";
 
 export interface DeterministicCodeCandidate {
   legacyId: number;

@@ -65,7 +65,7 @@ function buildDependencies(): StockInDependencySnapshot {
     defaultWorkshop: {
       targetId: 2000,
       workshopCode: "WS-LEGACY-DEFAULT",
-      workshopName: "历史默认车间",
+      workshopName: "默认车间",
     },
     personnelByNormalizedName: new Map([
       [
@@ -355,7 +355,7 @@ describe("stock-in migration transformer", () => {
     expect(inboundOrder?.target.documentNo).toBe("YS001");
     expect(inboundOrder?.target.orderType).toBe("ACCEPTANCE");
     expect(inboundOrder?.target.workshopId).toBe(2000);
-    expect(inboundOrder?.target.workshopNameSnapshot).toBe("历史默认车间");
+    expect(inboundOrder?.target.workshopNameSnapshot).toBe("默认车间");
     expect(inboundOrder?.target.supplierId).toBe(320);
     expect(inboundOrder?.target.handlerPersonnelId).toBe(410);
     expect(inboundOrder?.target.auditStatusSnapshot).toBe("APPROVED");

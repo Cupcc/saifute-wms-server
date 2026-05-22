@@ -5,7 +5,7 @@
         <div class="page-header">
           <div>
             <div class="page-title">库存日志</div>
-            <div class="page-subtitle">只展示真实库存流水，不再兼容旧库存日志字段</div>
+            <div class="page-subtitle">完整库存流水</div>
           </div>
         </div>
       </template>
@@ -193,7 +193,16 @@
 
         <el-table-column label="操作类型" min-width="130" align="center" show-overflow-tooltip>
           <template #default="{ row }">
-            <div>{{ getOperationTypeLabel(row.operationType) }}</div>
+            <el-tooltip
+              v-if="getReversalRevisionTooltip(row)"
+              :content="getReversalRevisionTooltip(row)"
+              placement="top"
+            >
+              <div class="revision-reversal-label">
+                {{ getOperationTypeLabel(row.operationType) }}
+              </div>
+            </el-tooltip>
+            <div v-else>{{ getOperationTypeLabel(row.operationType) }}</div>
             <div class="subtext">{{ row.operationType || "-" }}</div>
           </template>
         </el-table-column>
@@ -451,6 +460,34 @@ function getOperationTypeLabel(value) {
     value ||
     "-"
   );
+}
+
+function getReversalRevisionTooltip(row) {
+  if (!String(row?.operationType || "").startsWith("REVERSAL_")) {
+    return "";
+  }
+
+  const revisionNumber = getWorkshopMaterialRevisionNumber(row);
+  if (!revisionNumber || revisionNumber <= 1) {
+    return "";
+  }
+
+  return `第${revisionNumber - 1}次改单：冲回旧流水`;
+}
+
+function getWorkshopMaterialRevisionNumber(row) {
+  if (row?.businessDocumentType !== "WorkshopMaterialOrder") {
+    return null;
+  }
+
+  const key = String(row.idempotencyKey || "");
+  const reversalMatch = key.match(/(?:^|:)r(\d+)(?=:|$)/);
+  if (reversalMatch) {
+    return Number(reversalMatch[1]);
+  }
+
+  const repostMatch = key.match(/(?:^|:)rev:(\d+):line(?=:|$)/);
+  return repostMatch ? Number(repostMatch[1]) : null;
 }
 
 function getBusinessModuleLabel(value) {
@@ -1202,6 +1239,11 @@ onMounted(() => {
   max-width: 100%;
   padding: 0;
   vertical-align: baseline;
+}
+
+.revision-reversal-label {
+  color: var(--el-color-warning);
+  cursor: help;
 }
 
 :deep(.document-detail-table .is-related-document-line > td.el-table__cell),
