@@ -37,10 +37,14 @@ describe("MasterDataMaterialsRepository", () => {
         specModel: { contains: "6205" },
         categoryId: 3,
         unitCode: { contains: "PCS" },
-        OR: [
-          { materialCode: { contains: "通用" } },
-          { materialName: { contains: "通用" } },
-          { specModel: { contains: "通用" } },
+        AND: [
+          {
+            OR: [
+              { materialCode: { contains: "通用" } },
+              { materialName: { contains: "通用" } },
+              { specModel: { contains: "通用" } },
+            ],
+          },
         ],
       }),
     );
@@ -79,5 +83,66 @@ describe("MasterDataMaterialsRepository", () => {
       "bg3",
       "bg24",
     ]);
+  });
+
+  it("matches multi-token material keywords across code, name, and spec", async () => {
+    const $queryRaw = jest.fn().mockResolvedValue([{ id: 951 }]);
+    const findMany = jest.fn().mockResolvedValue([
+      {
+        id: 951,
+        materialCode: "zjq176",
+        materialName: "包装箱",
+        specModel: "ZH30X(T)/ZH30X",
+      },
+    ]);
+    const count = jest.fn().mockResolvedValue(1);
+    const repository = new MasterDataMaterialsRepository({
+      $queryRaw,
+      material: {
+        findMany,
+        count,
+      },
+    } as unknown as PrismaService);
+
+    const result = await repository.findMaterials({
+      keyword: "zjq176 包装箱",
+      limit: 20,
+      offset: 0,
+      status: "ACTIVE",
+    });
+
+    expect(count.mock.calls[0][0].where).toEqual({
+      status: "ACTIVE",
+      AND: [
+        {
+          OR: [
+            { materialCode: { contains: "zjq176" } },
+            { materialName: { contains: "zjq176" } },
+            { specModel: { contains: "zjq176" } },
+          ],
+        },
+        {
+          OR: [
+            { materialCode: { contains: "包装箱" } },
+            { materialName: { contains: "包装箱" } },
+            { specModel: { contains: "包装箱" } },
+          ],
+        },
+      ],
+    });
+
+    const [query] = $queryRaw.mock.calls[0] as [Prisma.Sql];
+    expect(query.values).toEqual([
+      "ACTIVE",
+      "%zjq176%",
+      "%zjq176%",
+      "%zjq176%",
+      "%包装箱%",
+      "%包装箱%",
+      "%包装箱%",
+      20,
+      0,
+    ]);
+    expect(result.items[0].materialCode).toBe("zjq176");
   });
 });

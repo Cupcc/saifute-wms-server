@@ -164,7 +164,13 @@ export function mapStockScope(item) {
 }
 
 export async function fetchMaterialInventoryMap(query = {}, limit = 50) {
-  const keyword = pickKeyword(query, ["materialCode", "materialName"]);
+  const keyword = pickKeyword(query, [
+    "keyword",
+    "materialCode",
+    "materialName",
+    "specification",
+    "specModel",
+  ]);
   const response = await request({
     url: "/api/reporting/inventory-summary",
     method: "get",

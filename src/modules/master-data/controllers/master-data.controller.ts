@@ -12,6 +12,7 @@ import {
 } from "@nestjs/common";
 import { CurrentUser } from "../../../shared/decorators/current-user.decorator";
 import { Permissions } from "../../../shared/decorators/permissions.decorator";
+import { AuditLog } from "../../audit-log/decorators/audit-log.decorator";
 import type { SessionUserSnapshot } from "../../session/domain/user-session";
 import { MasterDataService } from "../application/master-data.service";
 import { CreateCustomerDto } from "../dto/create-customer.dto";
@@ -256,6 +257,7 @@ export class MasterDataController {
   }
 
   @Permissions("master:personnel:create")
+  @AuditLog({ title: "新增人员", action: "CREATE_PERSONNEL" })
   @Post("personnel")
   async createPersonnel(
     @Body() dto: CreatePersonnelDto,
@@ -265,6 +267,7 @@ export class MasterDataController {
   }
 
   @Permissions("master:personnel:update")
+  @AuditLog({ title: "更新人员", action: "UPDATE_PERSONNEL" })
   @Patch("personnel/:id")
   async updatePersonnel(
     @Param("id", ParseIntPipe) id: number,
@@ -275,6 +278,7 @@ export class MasterDataController {
   }
 
   @Permissions("master:personnel:deactivate")
+  @AuditLog({ title: "停用人员", action: "DEACTIVATE_PERSONNEL" })
   @Patch("personnel/:id/deactivate")
   async deactivatePersonnel(
     @Param("id", ParseIntPipe) id: number,

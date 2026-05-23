@@ -1,5 +1,6 @@
 import { ForbiddenException, UnauthorizedException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { AUDIT_LOG_METADATA_KEY } from "../../audit-log/decorators/audit-log.decorator";
 import type { SessionUserSnapshot } from "../../session/domain/user-session";
 import { MasterDataService } from "../application/master-data.service";
 import { MasterDataController } from "./master-data.controller";
@@ -299,6 +300,30 @@ describe("MasterDataController", () => {
   });
 
   // ─── Personnel (F5) ─────────────────────────────────────────────────────────
+
+  it("marks personnel write actions for operation audit", () => {
+    expect(
+      Reflect.getMetadata(AUDIT_LOG_METADATA_KEY, controller.createPersonnel),
+    ).toEqual({
+      title: "新增人员",
+      action: "CREATE_PERSONNEL",
+    });
+    expect(
+      Reflect.getMetadata(AUDIT_LOG_METADATA_KEY, controller.updatePersonnel),
+    ).toEqual({
+      title: "更新人员",
+      action: "UPDATE_PERSONNEL",
+    });
+    expect(
+      Reflect.getMetadata(
+        AUDIT_LOG_METADATA_KEY,
+        controller.deactivatePersonnel,
+      ),
+    ).toEqual({
+      title: "停用人员",
+      action: "DEACTIVATE_PERSONNEL",
+    });
+  });
 
   it("creates personnel with the current username", async () => {
     await controller.createPersonnel(

@@ -374,11 +374,17 @@ export class MasterDataSuggestionsRepository {
   ): Promise<string[]> {
     return this.mergeSuggestionSources(
       [
-        this.createDistinctStringSource(
-          this.prisma.personnel,
-          "personnelName",
-          limit,
-        ),
+        {
+          field: "personnelName",
+          load: () =>
+            this.prisma.personnel.findMany({
+              where: { status: "ACTIVE" },
+              select: { personnelName: true },
+              distinct: ["personnelName"],
+              orderBy: { personnelName: "asc" },
+              take: limit,
+            }),
+        },
         this.createDistinctStringSource(
           this.prisma.stockInOrder,
           "handlerNameSnapshot",

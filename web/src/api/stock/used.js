@@ -1,4 +1,57 @@
-import { listInventorySourceUsages, unsupportedStockAction } from "./compat";
+import request from "@/utils/request";
+
+function buildPageQuery(query = {}) {
+  const pageNum = Number(query.pageNum) > 0 ? Number(query.pageNum) : 1;
+  const pageSize = Number(query.pageSize) > 0 ? Number(query.pageSize) : 30;
+  return {
+    limit: pageSize,
+    offset: (pageNum - 1) * pageSize,
+  };
+}
+
+async function listInventorySourceUsages(query = {}) {
+  const { limit, offset } = buildPageQuery(query);
+  const response = await request({
+    url: "/api/inventory/source-usages",
+    method: "get",
+    params: {
+      materialId: query.materialId,
+      limit,
+      offset,
+    },
+  });
+
+  const items = Array.isArray(response.data?.items) ? response.data.items : [];
+  const rows = items.map((item) => {
+    const material = item.material ?? {};
+    return {
+      usedId: item.id,
+      materialId: item.materialId,
+      materialCode: material.materialCode,
+      materialName: material.materialName,
+      specification: material.specModel ?? "",
+      sourceLogId: item.sourceLogId,
+      useQty: Number(item.allocatedQty ?? 0),
+      allocatedQty: Number(item.allocatedQty ?? 0),
+      releasedQty: Number(item.releasedQty ?? 0),
+      unitPrice: 0,
+      consumerDocumentType: item.consumerDocumentType,
+      consumerDocumentId: item.consumerDocumentId,
+      consumerLineId: item.consumerLineId,
+      status: item.status,
+    };
+  });
+
+  return {
+    rows,
+    total: Number(response.data?.total || 0),
+    data: rows,
+  };
+}
+
+function unsupportedStockAction(message) {
+  return Promise.reject(new Error(message));
+}
 
 // 查询库存使用情况列表
 export function listUsed(query) {
