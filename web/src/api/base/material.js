@@ -46,12 +46,19 @@ export function listMaterial(query = {}) {
 // 查询物料列表（支持按编码或名称模糊搜索）
 export async function listMaterialByCodeOrName(query = {}) {
   const { limit, offset } = buildPageQuery(query);
+  const keyword = pickKeyword(query, [
+    "keyword",
+    "materialCode",
+    "materialName",
+    "specification",
+    "specModel",
+  ]);
   const [materialResponse, inventoryMap] = await Promise.all([
     request({
       url: "/api/master-data/materials",
       method: "get",
       params: {
-        keyword: pickKeyword(query, ["materialCode", "materialName"]),
+        keyword,
         limit,
         offset,
       },

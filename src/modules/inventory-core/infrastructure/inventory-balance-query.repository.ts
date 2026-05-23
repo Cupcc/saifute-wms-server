@@ -15,6 +15,13 @@ export type FindInventoryBalancesParams = {
   offset: number;
 };
 
+function splitSearchTokens(keyword?: string): string[] {
+  return (keyword ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter((token) => token.length > 0);
+}
+
 export class InventoryBalanceQueryRepository {
   constructor(private readonly prisma: PrismaService) {}
 
@@ -60,13 +67,15 @@ export class InventoryBalanceQueryRepository {
     categoryIds?: number[];
   }): Prisma.MaterialWhereInput | undefined {
     const materialWhere: Prisma.MaterialWhereInput = {};
-    const keyword = params.keyword?.trim();
-    if (keyword) {
-      materialWhere.OR = [
-        { materialCode: { contains: keyword } },
-        { materialName: { contains: keyword } },
-        { specModel: { contains: keyword } },
-      ];
+    const keywordTokens = splitSearchTokens(params.keyword);
+    if (keywordTokens.length > 0) {
+      materialWhere.AND = keywordTokens.map((token) => ({
+        OR: [
+          { materialCode: { contains: token } },
+          { materialName: { contains: token } },
+          { specModel: { contains: token } },
+        ],
+      }));
     }
     if (params.categoryIds?.length === 1) {
       materialWhere.categoryId = params.categoryIds[0];
@@ -115,9 +124,9 @@ export class InventoryBalanceQueryRepository {
       );
     }
 
-    const keyword = params.keyword?.trim();
-    if (keyword) {
-      const keywordPattern = `%${keyword}%`;
+    const keywordTokens = splitSearchTokens(params.keyword);
+    for (const token of keywordTokens) {
+      const keywordPattern = `%${token}%`;
       conditions.push(Prisma.sql`(
         material.material_code LIKE ${keywordPattern}
         OR material.material_name LIKE ${keywordPattern}

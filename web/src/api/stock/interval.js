@@ -1,9 +1,12 @@
 import request from "@/utils/request";
-import { unsupportedStockAction } from "./compat";
 
 const BUSINESS_DOCUMENT_TYPE_MAP = {
   4: "SalesStockOrder",
 };
+
+function unsupportedStockAction(message) {
+  return Promise.reject(new Error(message));
+}
 
 function isSupportedIntervalOrderType(orderType) {
   return (

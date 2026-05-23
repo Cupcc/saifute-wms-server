@@ -19,6 +19,13 @@ type FindMaterialsParams = {
   status?: Prisma.MaterialWhereInput["status"];
 };
 
+function splitSearchTokens(keyword?: string): string[] {
+  return (keyword ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter((token) => token.length > 0);
+}
+
 export class MasterDataMaterialsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
@@ -103,12 +110,15 @@ export class MasterDataMaterialsRepository {
     if (params.status) {
       where.status = params.status;
     }
-    if (params.keyword) {
-      where.OR = [
-        { materialCode: { contains: params.keyword } },
-        { materialName: { contains: params.keyword } },
-        { specModel: { contains: params.keyword } },
-      ];
+    const keywordTokens = splitSearchTokens(params.keyword);
+    if (keywordTokens.length > 0) {
+      where.AND = keywordTokens.map((token) => ({
+        OR: [
+          { materialCode: { contains: token } },
+          { materialName: { contains: token } },
+          { specModel: { contains: token } },
+        ],
+      }));
     }
     if (params.materialCode) {
       where.materialCode = { contains: params.materialCode };
@@ -162,8 +172,9 @@ export class MasterDataMaterialsRepository {
     if (params.status) {
       conditions.push(Prisma.sql`status = ${params.status}`);
     }
-    if (params.keyword) {
-      const keyword = `%${params.keyword}%`;
+    const keywordTokens = splitSearchTokens(params.keyword);
+    for (const token of keywordTokens) {
+      const keyword = `%${token}%`;
       conditions.push(Prisma.sql`(
         material_code LIKE ${keyword}
         OR material_name LIKE ${keyword}
