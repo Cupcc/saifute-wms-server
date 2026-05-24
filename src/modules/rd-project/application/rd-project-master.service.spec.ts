@@ -1,18 +1,17 @@
-import { ConflictException } from "@nestjs/common";
 import {
-  Prisma,
-  RdProjectMaterialActionType,
   DocumentLifecycleStatus,
   InventoryEffectStatus,
+  Prisma,
+  RdProjectMaterialActionType,
 } from "../../../../generated/prisma/client";
-import { RdProjectRepository } from "../infrastructure/rd-project.repository";
-import { RdProjectService } from "./rd-project.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { RdProcurementRequestService } from "../../rd-subwarehouse/application/rd-procurement-request.service";
+import { RdProjectRepository } from "../infrastructure/rd-project.repository";
+import { RdProjectService } from "./rd-project.service";
 import {
   baseProject,
-  stockScope,
   setupRdProjectTestModule,
+  stockScope,
 } from "./rd-project.spec-helpers";
 
 describe("RdProjectService — project master", () => {
@@ -39,7 +38,7 @@ describe("RdProjectService — project master", () => {
     repository.createProjectTarget.mockResolvedValue({
       id: 5001,
       targetType: "RD_PROJECT",
-      targetCode: "PRJ-001",
+      targetCode: "__PENDING_rd_project",
       targetName: "RD Project A",
       sourceDocumentType: "RdProject",
       sourceDocumentId: 1,
@@ -51,11 +50,14 @@ describe("RdProjectService — project master", () => {
       updatedAt: new Date(),
     } as never);
     repository.attachProjectTargetToProject.mockResolvedValue({} as never);
-    repository.findProjectById.mockResolvedValue(baseProject as never);
+    repository.findProjectById.mockResolvedValue({
+      ...baseProject,
+      projectCode: "XMBH-5001",
+      projectTargetId: 5001,
+    } as never);
 
     const result = await service.createProject(
       {
-        projectCode: "PRJ-001",
         projectName: "RD Project A",
         bizDate: "2026-04-01",
         workshopId: 1,
@@ -70,26 +72,81 @@ describe("RdProjectService — project master", () => {
       "1",
     );
 
-    expect(repository.createProject).toHaveBeenCalled();
+    expect(repository.createProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projectCode: expect.stringMatching(/^__PENDING_rd_project_/),
+      }),
+      expect.any(Array),
+      expect.anything(),
+    );
+    expect(repository.updateProject).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        projectCode: "XMBH-5001",
+      }),
+      expect.anything(),
+    );
+    expect(repository.updateProjectTarget).toHaveBeenCalledWith(
+      5001,
+      expect.objectContaining({
+        targetCode: "XMBH-5001",
+      }),
+      expect.anything(),
+    );
     expect(inventoryService.settleConsumerOut).not.toHaveBeenCalled();
+    expect(result.projectCode).toBe("XMBH-5001");
     expect(result.summary.plannedQty.toString()).toBe("100");
     expect(result.summary.plannedAmount.toString()).toBe("1000");
   });
 
-  it("rejects duplicate project codes", async () => {
+  it("ignores client-submitted project codes when creating", async () => {
     repository.findProjectByCode.mockResolvedValue(baseProject as never);
+    repository.createProject.mockResolvedValue({
+      ...baseProject,
+      projectTargetId: null,
+    } as never);
+    repository.findProjectTargetBySource.mockResolvedValue(null);
+    repository.createProjectTarget.mockResolvedValue({
+      id: 5001,
+      targetType: "RD_PROJECT",
+      targetCode: "__PENDING_rd_project",
+      targetName: "Duplicate",
+      sourceDocumentType: "RdProject",
+      sourceDocumentId: 1,
+      isSystemDefault: false,
+      remark: null,
+      createdBy: "1",
+      createdAt: new Date(),
+      updatedBy: "1",
+      updatedAt: new Date(),
+    } as never);
+    repository.attachProjectTargetToProject.mockResolvedValue({} as never);
+    repository.findProjectById.mockResolvedValue({
+      ...baseProject,
+      projectCode: "XMBH-5001",
+      projectName: "Duplicate",
+      projectTargetId: 5001,
+    } as never);
 
-    await expect(
-      service.createProject(
-        {
-          projectCode: "PRJ-001",
-          projectName: "Duplicate",
-          bizDate: "2026-04-01",
-          workshopId: 1,
-        },
-        "1",
-      ),
-    ).rejects.toThrow(ConflictException);
+    const result = await service.createProject(
+      {
+        projectCode: "PRJ-001",
+        projectName: "Duplicate",
+        bizDate: "2026-04-01",
+        workshopId: 1,
+      },
+      "1",
+    );
+
+    expect(repository.findProjectByCode).not.toHaveBeenCalled();
+    expect(repository.createProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projectCode: expect.stringMatching(/^__PENDING_rd_project_/),
+      }),
+      expect.any(Array),
+      expect.anything(),
+    );
+    expect(result.projectCode).toBe("XMBH-5001");
   });
 
   it("builds ledger using BOM, legacy consumption, actions, stock, and replenishment", async () => {

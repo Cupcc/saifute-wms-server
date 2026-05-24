@@ -354,7 +354,7 @@ describe("rd-project migration transformer — three-state model", () => {
     const primaryProject = plan.migratedProjects.find(
       (record) => record.legacyId === 10,
     );
-    expect(primaryProject?.target.projectCode).toBe("PRJ-LEGACY-10");
+    expect(primaryProject?.target.projectCode).toBe("XMBH-10");
     expect(primaryProject?.target.bizDate).toBe("2026-01-02");
     expect(primaryProject?.target.customerId).toBe(5201);
     expect(primaryProject?.target.customerCodeSnapshot).toBe("CUS-201");
@@ -462,7 +462,7 @@ describe("rd-project migration transformer — three-state model", () => {
 
     const pending13 = plan.pendingProjects.find((p) => p.legacyId === 13);
     expect(pending13).toBeDefined();
-    expect(pending13?.targetProjectCodeCandidate).toBe("PRJ-LEGACY-13");
+    expect(pending13?.targetProjectCodeCandidate).toBe("XMBH-13");
     expect(pending13?.pendingLineCount).toBe(1);
     expect(pending13?.resolvedLineCount).toBe(0);
     expect(pending13?.pendingLines).toHaveLength(1);
@@ -494,7 +494,7 @@ describe("rd-project migration transformer — three-state model", () => {
 
     const migrated14 = plan.migratedProjects.find((p) => p.legacyId === 14);
     expect(migrated14).toBeDefined();
-    expect(migrated14?.target.projectCode).toBe("PRJ-LEGACY-14");
+    expect(migrated14?.target.projectCode).toBe("XMBH-14");
     expect(migrated14?.lines).toHaveLength(1);
     expect(migrated14?.lines[0]?.target.materialId).toBeNull();
     expect(migrated14?.lines[0]?.target.materialNameSnapshot).toBe("缺料");
@@ -857,7 +857,7 @@ describe("rd-project migration transformer — three-state model", () => {
     expect(plan.excludedProjects).toHaveLength(0);
 
     const migratedProject = plan.migratedProjects[0];
-    expect(migratedProject?.target.projectCode).toBe("PRJ-LEGACY-60");
+    expect(migratedProject?.target.projectCode).toBe("XMBH-60");
     expect(migratedProject?.lines).toHaveLength(1);
     expect(migratedProject?.lines[0]?.target.materialId).toBe(1701);
     expect(migratedProject?.lines[0]?.target.materialCodeSnapshot).toBe(
@@ -1302,7 +1302,7 @@ describe("rd-project cutover readiness — structural exclusion sign-off", () =>
     const pendingProjects = Array.from({ length: pendingCount }, (_, i) => ({
       legacyTable: "saifute_composite_product" as const,
       legacyId: 200 + i,
-      targetProjectCodeCandidate: `PRJ-LEGACY-${200 + i}`,
+      targetProjectCodeCandidate: `XMBH-${200 + i}`,
       resolvedLineCount: 0,
       pendingLineCount: 1,
       pendingLines: [
@@ -1327,7 +1327,7 @@ describe("rd-project cutover readiness — structural exclusion sign-off", () =>
         legacyTable: "saifute_composite_product" as const,
         legacyId: 200 + i,
         targetTable: "rd_project" as const,
-        targetCode: `PRJ-LEGACY-${200 + i}`,
+        targetCode: `XMBH-${200 + i}`,
         payloadKind: "pending-material-resolution-summary" as const,
         archiveReason: "stub",
         payload: {
@@ -1335,7 +1335,7 @@ describe("rd-project cutover readiness — structural exclusion sign-off", () =>
           pendingLineCount: 1,
           resolvedLineCount: 0,
           totalLineCount: 1,
-          targetProjectCodeCandidate: `PRJ-LEGACY-${200 + i}`,
+          targetProjectCodeCandidate: `XMBH-${200 + i}`,
           projectName: null,
           pendingLinesEvidence: [],
         },
@@ -1462,7 +1462,7 @@ describe("rd-project cutover readiness — structural exclusion sign-off", () =>
       pendingLineCount: 1,
       resolvedLineCount: 2,
       totalLineCount: 3,
-      targetProjectCodeCandidate: "PRJ-LEGACY-200",
+      targetProjectCodeCandidate: "XMBH-200",
       projectName: null,
       pendingLinesEvidence: [],
     };
@@ -1482,7 +1482,7 @@ describe("rd-project cutover readiness — structural exclusion sign-off", () =>
         legacyTable: "saifute_composite_product",
         legacyId: 300,
         targetTable: "rd_project",
-        targetCode: "PRJ-LEGACY-300",
+        targetCode: "XMBH-300",
         target: {} as never,
         lines: [{} as never, {} as never],
         archivedPayload: {} as never,
@@ -1517,7 +1517,7 @@ describe("rd-project cutover readiness — structural exclusion sign-off", () =>
         legacyTable: "saifute_composite_product",
         legacyId: 301,
         targetTable: "rd_project",
-        targetCode: "PRJ-LEGACY-301",
+        targetCode: "XMBH-301",
         target: {} as never,
         lines: [{} as never, {} as never, {} as never],
         archivedPayload: {} as never,

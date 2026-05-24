@@ -115,7 +115,8 @@
             <el-form-item label="项目编码">
               <el-input
                 v-model="projectForm.projectCode"
-                :disabled="Boolean(projectForm.id)"
+                disabled
+                placeholder="保存后自动生成: XMBH-顺序ID"
               />
             </el-form-item>
           </el-col>
@@ -611,7 +612,7 @@ import {
 } from "@/api/rd-subwarehouse";
 import useUserStore from "@/store/modules/user";
 import { confirmDocumentSave } from "@/utils/documentConfirm";
-import { formatDateOnly, generateRdDocumentNo } from "@/utils/rd-documents";
+import { formatDateOnly } from "@/utils/rd-documents";
 
 const userStore = useUserStore();
 
@@ -704,7 +705,7 @@ function createEmptyBomLine() {
 function createEmptyProjectForm() {
   return {
     id: null,
-    projectCode: generateRdDocumentNo("RDPRJ"),
+    projectCode: "",
     projectName: "",
     bizDate: formatDateOnly(),
     workshopId: userStore.workshopScope?.workshopId || null,
@@ -909,7 +910,11 @@ function resetDetailState() {
 }
 
 function validateProjectForm() {
-  if (!projectForm.value.projectCode || !projectForm.value.projectName || !projectForm.value.bizDate) {
+  if (
+    (projectForm.value.id && !projectForm.value.projectCode) ||
+    !projectForm.value.projectName ||
+    !projectForm.value.bizDate
+  ) {
     ElMessage.error("请填写完整的研发项目头信息");
     return false;
   }
@@ -946,7 +951,6 @@ async function submitProject() {
   projectSubmitting.value = true;
   try {
     const payload = {
-      projectCode: projectForm.value.projectCode,
       projectName: projectForm.value.projectName,
       bizDate: projectForm.value.bizDate,
       workshopId: projectForm.value.workshopId,
@@ -960,6 +964,9 @@ async function submitProject() {
           remark: line.remark || undefined,
         })),
     };
+    if (projectForm.value.id) {
+      payload.projectCode = projectForm.value.projectCode;
+    }
 
     if (projectForm.value.id) {
       await updateRdProject(projectForm.value.id, payload);

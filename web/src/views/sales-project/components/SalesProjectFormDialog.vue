@@ -19,7 +19,8 @@
               <el-input
                 v-model="projectForm.salesProjectCode"
                 maxlength="64"
-                placeholder="请输入项目编码"
+                :disabled="!projectForm.projectId"
+                placeholder="保存后自动生成: XMBH-顺序ID"
               />
             </el-form-item>
           </el-col>
@@ -222,9 +223,6 @@ const dialogTitle = computed(() =>
 const projectForm = reactive(buildEmptyProjectForm());
 
 const projectFormRules = {
-  salesProjectCode: [
-    { required: true, message: "项目编码不能为空", trigger: "blur" },
-  ],
   salesProjectName: [
     { required: true, message: "项目名称不能为空", trigger: "blur" },
   ],
@@ -342,8 +340,7 @@ async function validateProjectForm() {
 }
 
 function buildProjectPayload() {
-  return {
-    salesProjectCode: projectForm.salesProjectCode,
+  const payload = {
     salesProjectName: projectForm.salesProjectName,
     bizDate: projectForm.bizDate,
     customerId: projectForm.customerId,
@@ -351,6 +348,10 @@ function buildProjectPayload() {
     workshopId: projectForm.workshopId,
     remark: projectForm.remark,
   };
+  if (projectForm.projectId) {
+    payload.salesProjectCode = projectForm.salesProjectCode;
+  }
+  return payload;
 }
 
 async function initializeDialog() {

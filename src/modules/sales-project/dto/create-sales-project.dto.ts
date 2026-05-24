@@ -14,9 +14,9 @@ import { SalesProjectMaterialLineDto } from "./sales-project-material-line.dto";
 
 export class CreateSalesProjectDto {
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @MaxLength(64)
-  salesProjectCode!: string;
+  salesProjectCode?: string;
 
   @IsString()
   @IsNotEmpty()
