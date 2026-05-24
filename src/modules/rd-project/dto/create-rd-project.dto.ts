@@ -14,9 +14,9 @@ import { RdProjectBomLineDto } from "./rd-project-bom-line.dto";
 
 export class CreateRdProjectDto {
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @MaxLength(64)
-  projectCode!: string;
+  projectCode?: string;
 
   @IsString()
   @IsNotEmpty()

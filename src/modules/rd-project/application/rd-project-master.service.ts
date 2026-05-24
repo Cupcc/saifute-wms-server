@@ -18,6 +18,10 @@ import {
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
 import {
+  buildPendingProjectCode,
+  buildProjectCode,
+} from "../../../shared/common/project-code.util";
+import {
   FIFO_SOURCE_OPERATION_TYPES,
   InventoryService,
 } from "../../inventory-core/application/inventory.service";
@@ -29,12 +33,13 @@ import type { CreateRdProjectMaterialActionDto } from "../dto/create-rd-project-
 import type { QueryRdProjectDto } from "../dto/query-rd-project.dto";
 import type { QueryRdProjectMaterialActionDto } from "../dto/query-rd-project-material-action.dto";
 import type { UpdateRdProjectDto } from "../dto/update-rd-project.dto";
+import { RdProjectRepository } from "../infrastructure/rd-project.repository";
 import {
+  ensureProjectTarget as ensureSharedProjectTarget,
   RD_PROJECT_ACTION_DOCUMENT_TYPE,
   RD_PROJECT_DOCUMENT_TYPE,
-  ensureProjectTarget as ensureSharedProjectTarget,
 } from "./rd-project.shared";
-import { RdProjectRepository } from "../infrastructure/rd-project.repository";
+
 const BUSINESS_MODULE = "rd-project";
 const RD_PROJECT_STOCK_SCOPE: StockScopeCode = "RD_SUB";
 const RD_PROJECT_LABEL = "研发项目";
@@ -95,6 +100,7 @@ function replenishmentStatusLabel(params: {
   }
   return "待补货";
 }
+
 import { RdProjectViewService } from "./rd-project-view.service";
 @Injectable()
 export class RdProjectMasterService {
@@ -130,10 +136,6 @@ export class RdProjectMasterService {
     dto: CreateRdProjectDto & { stockScope?: StockScopeCode },
     createdBy?: string,
   ) {
-    const existing = await this.repository.findProjectByCode(dto.projectCode);
-    if (existing) {
-      throw new ConflictException(`研发项目编码已存在: ${dto.projectCode}`);
-    }
     await this.validateMasterData(dto);
     const bizDate = new Date(dto.bizDate);
     const customerSnapshot = dto.customerId
@@ -151,7 +153,10 @@ export class RdProjectMasterService {
     const stockScopeRecord = await this.masterDataService.getStockScopeByCode(
       RD_PROJECT_STOCK_SCOPE,
     );
-    const bomLines = await this.viewService.buildBomLines(dto.bomLines ?? [], createdBy);
+    const bomLines = await this.viewService.buildBomLines(
+      dto.bomLines ?? [],
+      createdBy,
+    );
     const totalQty = bomLines.reduce(
       (sum, line) => sum.add(line.quantity),
       new PrismaNamespace.Decimal(0),
@@ -161,9 +166,10 @@ export class RdProjectMasterService {
       new PrismaNamespace.Decimal(0),
     );
     return this.repository.runInTransaction(async (tx) => {
+      const pendingProjectCode = buildPendingProjectCode("rd_project");
       const project = await this.repository.createProject(
         {
-          projectCode: dto.projectCode,
+          projectCode: pendingProjectCode,
           projectName: dto.projectName,
           bizDate,
           customerId: dto.customerId,
@@ -187,12 +193,30 @@ export class RdProjectMasterService {
         bomLines,
         tx,
       );
-      await ensureSharedProjectTarget({
+      const projectTargetId = await ensureSharedProjectTarget({
         project,
         updatedBy: createdBy,
         repository: this.repository,
         tx,
       });
+      const generatedProjectCode = buildProjectCode(projectTargetId);
+      await this.repository.updateProject(
+        project.id,
+        {
+          projectCode: generatedProjectCode,
+          updatedBy: createdBy,
+        },
+        tx,
+      );
+      await this.repository.updateProjectTarget(
+        projectTargetId,
+        {
+          targetCode: generatedProjectCode,
+          targetName: project.projectName,
+          updatedBy: createdBy,
+        },
+        tx,
+      );
       const latest = await this.repository.findProjectById(project.id, tx);
       if (!latest) {
         throw new NotFoundException(`${RD_PROJECT_LABEL}不存在: ${project.id}`);

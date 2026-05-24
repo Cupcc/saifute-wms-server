@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException } from "@nestjs/common";
+import { BadRequestException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import {
   AuditStatusSnapshot,
@@ -183,7 +183,7 @@ describe("SalesProjectService", () => {
     repository.createProjectTarget.mockResolvedValue({
       id: 5001,
       targetType: "SALES_PROJECT",
-      targetCode: "SP-001",
+      targetCode: "__PENDING_sales_project",
       targetName: "Sales Project A",
       sourceDocumentType: "SalesProject",
       sourceDocumentId: 1,
@@ -195,7 +195,11 @@ describe("SalesProjectService", () => {
       updatedAt: new Date(),
     } as never);
     repository.attachProjectTargetToProject.mockResolvedValue({} as never);
-    repository.findProjectById.mockResolvedValue(baseProject as never);
+    repository.findProjectById.mockResolvedValue({
+      ...baseProject,
+      salesProjectCode: "XMBH-5001",
+      projectTargetId: 5001,
+    } as never);
     repository.findEffectiveShipmentLinesByProjectId.mockResolvedValue([]);
     inventoryService.listAttributedQuantitySnapshots.mockResolvedValue(
       new Map(),
@@ -204,7 +208,6 @@ describe("SalesProjectService", () => {
 
     const result = await service.createProject(
       {
-        salesProjectCode: "SP-001",
         salesProjectName: "Sales Project A",
         bizDate: "2026-04-10",
         customerId: 10,
@@ -221,8 +224,29 @@ describe("SalesProjectService", () => {
       "1",
     );
 
-    expect(repository.createProject).toHaveBeenCalled();
+    expect(repository.createProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        salesProjectCode: expect.stringMatching(/^__PENDING_sales_project_/),
+      }),
+      expect.any(Array),
+      expect.anything(),
+    );
     expect(repository.createProjectTarget).toHaveBeenCalled();
+    expect(repository.updateProject).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({
+        salesProjectCode: "XMBH-5001",
+      }),
+      expect.anything(),
+    );
+    expect(repository.updateProjectTarget).toHaveBeenCalledWith(
+      5001,
+      expect.objectContaining({
+        targetCode: "XMBH-5001",
+      }),
+      expect.anything(),
+    );
+    expect(result.salesProjectCode).toBe("XMBH-5001");
     expect(result.summary.materialLineCount).toBe(1);
     expect(result.summary.materialKindCount).toBe(1);
     expect(result.summary.totalCurrentInventoryQty.toString()).toBe("0");
@@ -455,20 +479,55 @@ describe("SalesProjectService", () => {
     ).toBe("0");
   });
 
-  it("rejects duplicate project codes", async () => {
+  it("ignores client-submitted project codes when creating", async () => {
     repository.findProjectByCode.mockResolvedValue(baseProject as never);
+    repository.createProject.mockResolvedValue({
+      ...baseProject,
+      projectTargetId: null,
+    } as never);
+    repository.findProjectTargetBySource.mockResolvedValue(null);
+    repository.createProjectTarget.mockResolvedValue({
+      id: 5001,
+      targetType: "SALES_PROJECT",
+      targetCode: "__PENDING_sales_project",
+      targetName: "Duplicate",
+      sourceDocumentType: "SalesProject",
+      sourceDocumentId: 1,
+      isSystemDefault: false,
+      remark: null,
+      createdBy: "1",
+      createdAt: new Date(),
+      updatedBy: "1",
+      updatedAt: new Date(),
+    } as never);
+    repository.attachProjectTargetToProject.mockResolvedValue({} as never);
+    repository.findProjectById.mockResolvedValue({
+      ...baseProject,
+      salesProjectCode: "XMBH-5001",
+      salesProjectName: "Duplicate",
+      projectTargetId: 5001,
+    } as never);
+    repository.findEffectiveShipmentLinesByProjectId.mockResolvedValue([]);
 
-    await expect(
-      service.createProject(
-        {
-          salesProjectCode: "SP-001",
-          salesProjectName: "Duplicate",
-          bizDate: "2026-04-10",
-          workshopId: 1,
-        },
-        "1",
-      ),
-    ).rejects.toThrow(ConflictException);
+    const result = await service.createProject(
+      {
+        salesProjectCode: "SP-001",
+        salesProjectName: "Duplicate",
+        bizDate: "2026-04-10",
+        workshopId: 1,
+      },
+      "1",
+    );
+
+    expect(repository.findProjectByCode).not.toHaveBeenCalled();
+    expect(repository.createProject).toHaveBeenCalledWith(
+      expect.objectContaining({
+        salesProjectCode: expect.stringMatching(/^__PENDING_sales_project_/),
+      }),
+      expect.any(Array),
+      expect.anything(),
+    );
+    expect(result.salesProjectCode).toBe("XMBH-5001");
   });
 
   it("rejects voided project references unless explicitly allowed", async () => {

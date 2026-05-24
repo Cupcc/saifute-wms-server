@@ -7,6 +7,10 @@ import {
   DocumentLifecycleStatus,
   Prisma,
 } from "../../../../generated/prisma/client";
+import {
+  buildPendingProjectCode,
+  buildProjectCode,
+} from "../../../shared/common/project-code.util";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import type { CreateSalesProjectDto } from "../dto/create-sales-project.dto";
 import type { QuerySalesProjectDto } from "../dto/query-sales-project.dto";
@@ -57,7 +61,6 @@ export class SalesProjectLifecycleService {
 
   async createProject(dto: CreateSalesProjectDto, createdBy?: string) {
     await this.validateProjectMasterData(dto);
-    await this.assertProjectCodeAvailable(dto.salesProjectCode);
 
     const stockScope = await this.masterDataService.getStockScopeByCode(
       SALES_PROJECT_STOCK_SCOPE,
@@ -83,9 +86,10 @@ export class SalesProjectLifecycleService {
     );
 
     return this.repository.runInTransaction(async (tx) => {
+      const pendingProjectCode = buildPendingProjectCode("sales_project");
       const project = await this.repository.createProject(
         {
-          salesProjectCode: dto.salesProjectCode,
+          salesProjectCode: pendingProjectCode,
           salesProjectName: dto.salesProjectName,
           bizDate: new Date(dto.bizDate),
           customerId: dto.customerId,
@@ -111,12 +115,30 @@ export class SalesProjectLifecycleService {
         tx,
       );
 
-      await ensureSalesProjectTarget({
+      const projectTargetId = await ensureSalesProjectTarget({
         project,
         updatedBy: createdBy,
         repository: this.repository,
         tx,
       });
+      const generatedProjectCode = buildProjectCode(projectTargetId);
+      await this.repository.updateProject(
+        project.id,
+        {
+          salesProjectCode: generatedProjectCode,
+          updatedBy: createdBy,
+        },
+        tx,
+      );
+      await this.repository.updateProjectTarget(
+        projectTargetId,
+        {
+          targetCode: generatedProjectCode,
+          targetName: project.salesProjectName,
+          updatedBy: createdBy,
+        },
+        tx,
+      );
 
       const latest = await this.materialView.requireProject(project.id, tx);
       return this.materialView.buildProjectView(latest, tx);

@@ -95,6 +95,8 @@
     "migration:stock-scope-phase2:execute": "bun --env-file .env.dev scripts/migration/stock-scope-phase2/migrate.ts --execute",
     "migration:stock-scope-phase2:seed-rehearsal": "bun --env-file .env.dev scripts/migration/stock-scope-phase2/seed-rehearsal.ts",
     "migration:stock-scope-phase2:validate": "bun --env-file .env.dev scripts/migration/stock-scope-phase2/validate.ts",
+    "migration:project-code-prefix:dry-run": "bun --env-file .env.dev scripts/migration/project-code-prefix-backfill.ts",
+    "migration:project-code-prefix:execute": "bun --env-file .env.dev scripts/migration/project-code-prefix-backfill.ts --execute",
     "migration:typecheck": "tsc -p tsconfig.migration.json --noEmit",
     "prisma:rebuild:collation": "bun --env-file .env.dev ./scripts/rebuild-collation.mjs",
     "prisma:generate": "prisma generate",
