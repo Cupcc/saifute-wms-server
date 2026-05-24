@@ -4,25 +4,25 @@
 
 - Scope:
   - 以新确认业务规则为准，补齐 `MAIN -> RD_SUB` 交接、`RD_SUB` 在库归属、研发项目统计与月度报表之间的统一归因合同。
-  - 本轮仅做 durable planning；不实现源码，不执行 migration/reset；shared truth 已由 parent 在同轮同步到 requirement / acceptance docs，本 task doc 继续冻结编码与 QA handoff。
-  - 执行范围预期覆盖 `rd-subwarehouse`、`rd-project`、`inventory-core`、`reporting`、`prisma/schema.prisma`、migration/reset-seed strategy、focused tests 与 acceptance planning。
+  - 本 task 已完成实现与 full acceptance；shared truth 已同步到 requirement / acceptance docs，本 task doc 继续作为归档基线保留。
+  - 执行范围覆盖 `rd-subwarehouse`、`rd-project`、`inventory-core`、`reporting`、`prisma/schema.prisma`、migration/reset-seed strategy、focused tests 与 acceptance planning。
 - Related requirement: `docs/requirements/domain/rd-subwarehouse.md (F6)`; `docs/requirements/domain/rd-project-management.md (F5)`; `docs/requirements/domain/inventory-core-module.md (F6)`; `docs/requirements/domain/monthly-reporting.md (F8)`
-- Status: `planned`
-- Review status: `not-reviewed`
+- Status: `accepted`
+- Review status: `accepted`
 - Delivery mode: `standard`
 - Acceptance mode: `full`
-- Acceptance status: `not-assessed`
+- Acceptance status: `accepted`
 - Complete test report required: `yes`
-- Lifecycle disposition: `active`
+- Lifecycle disposition: `retained-completed`
 - Planner: `saifute-planner`
 - Coder: `parent-orchestrator`
 - Reviewer: `saifute-code-reviewer`
 - Acceptance QA: `saifute-acceptance-qa`
-- Last updated: `2026-04-14`
+- Last updated: `2026-05-24`
 - Related checklist: `-`
 - Related acceptance spec: `docs/acceptance-tests/specs/monthly-reporting.md`; `docs/acceptance-tests/specs/rd-project.md`; `docs/acceptance-tests/specs/rd-subwarehouse.md`
 - Related acceptance case: `docs/acceptance-tests/cases/rd-subwarehouse.json`
-- Related acceptance run: (optional)
+- Related acceptance run: `docs/acceptance-tests/runs/run-20260414-1620-rd-sub-project-attribution-and-reporting-alignment.md`
 - Related files:
   - `docs/requirements/domain/monthly-reporting.md`
   - `docs/requirements/domain/rd-project-management.md`
@@ -333,15 +333,12 @@
 ## Review Log
 
 - Validation results:
-  - `planning only`
+  - `accepted`; see complete test report `docs/acceptance-tests/runs/run-20260414-1620-rd-sub-project-attribution-and-reporting-alignment.md`
 - Findings:
-  - current repo already exposes the central drift:
-    - `inventory_balance` unique key is still `materialId + stockScopeId`
-    - `inventory_log` already has `projectTargetId`
-    - `rd-project` writes project-attributed inventory facts
-    - `rd-handoff` and `monthly-reporting` still reflect the older split model
+  - no blocking review findings remain in this task archive.
+  - the original drift has been closed: `RD handoff` now carries project attribution, `inventory_log.projectTargetId` is used as the attribution fact, and monthly reporting can explain `MAIN` / `RD_SUB` / 研发项目 viewpoints from attributed facts.
 - Follow-up action:
-  - downstream coder executes this plan as one slice against the updated shared truth
+  - no implementation follow-up remains for this task; future changes should treat this archive as the accepted baseline.
 
 ## Acceptance
 
@@ -377,12 +374,11 @@
 ## Final Status
 
 - Outcome:
-  - `new active planning handoff created`
+  - `accepted and retained-completed`
 - Requirement alignment:
-  - aligned to the new confirmed business rule and the synced shared truth across requirement / acceptance docs
+  - aligned to the confirmed business rule and the synced shared truth across requirement / acceptance docs
 - Residual risks or testing gaps:
-  - acceptance structure已 formalize，但 still lacks implementation evidence, focused runs, and browser walkthrough
-  - historical or dirty local data may block clean verification until reset/reseed or backfill is executed
-- Directory disposition after completion: keep `active` while the task is still open; once it is no longer active, set this to `retained-completed` or `cleanup-candidate`, then sync `docs/tasks/TASK_CENTER.md`
+  - `rd-operator` 浏览器直连 `/rd/monthly-reporting` 的页面壳层权限提示仍建议后续单独补 smoke；本 task 已用管理员页面 + RD 作用域 live API 作为验收主证据。
+- Directory disposition after completion: `retained-completed`; synced in `docs/tasks/TASK_CENTER.md`
 - Next action:
-  - assign single-writer implementation, then run reviewer and acceptance-qa against the execution evidence
+  - none for this task
