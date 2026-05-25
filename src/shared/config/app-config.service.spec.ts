@@ -82,8 +82,10 @@ describe("AppConfigService", () => {
     expect(productionService.swaggerEnabled).toBe(false);
     expect(productionService.logLevel).toBe("info");
     expect(productionService.httpTrustProxy).toBe(false);
+    expect(productionService.sessionTtlSeconds).toBe(604800);
+    expect(productionService.sessionMaxTtlSeconds).toBe(2592000);
     expect(productionService.jwtRefreshSecret).toBe("dev-secret:refresh");
-    expect(productionService.jwtRefreshExpiresInSeconds).toBe(28800);
+    expect(productionService.jwtRefreshExpiresInSeconds).toBe(2592000);
   });
 
   it("falls back to UPLOAD_ROOT_PATH when FILE_STORAGE_ROOT_PATH is absent", () => {
