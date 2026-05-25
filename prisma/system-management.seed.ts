@@ -135,6 +135,7 @@ const PROCUREMENT_PERMISSION_PRESET = [
   "inbound:order:list",
 ];
 
+export const RD_OPERATOR_ROLE_KEY = "rd-operator";
 export const FINANCE_ACCOUNTANT_ROLE_KEY = "finance-accountant";
 
 export const FINANCE_ACCOUNTANT_PERMISSION_PRESET = [
@@ -178,7 +179,7 @@ export const FINANCE_ACCOUNTANT_PERMISSION_PRESET = [
 // 这些只用于首次初始化默认角色授权；运行态权限真源仍由角色菜单关系承接。
 const DEFAULT_ROLE_PERMISSION_ASSIGNMENTS: Record<string, string[]> = {
   "warehouse-manager": WAREHOUSE_MANAGER_PERMISSION_PRESET,
-  "rd-operator": RD_OPERATOR_PERMISSION_PRESET,
+  [RD_OPERATOR_ROLE_KEY]: RD_OPERATOR_PERMISSION_PRESET,
   procurement: PROCUREMENT_PERMISSION_PRESET,
   [FINANCE_ACCOUNTANT_ROLE_KEY]: FINANCE_ACCOUNTANT_PERMISSION_PRESET,
 };
@@ -249,15 +250,6 @@ export function createSystemManagementSeedState(): SystemManagementState {
       postSort: 3,
       status: "0",
       remark: "采购执行岗位",
-      createdAt: "2026-03-01T09:00:00.000Z",
-    },
-    {
-      postId: 4,
-      postCode: "RD_SUBWAREHOUSE",
-      postName: "研发小仓管理员",
-      postSort: 4,
-      status: "0",
-      remark: "研发小仓专属岗位",
       createdAt: "2026-03-01T09:00:00.000Z",
     },
   ];
@@ -3272,7 +3264,7 @@ export function createSystemManagementSeedState(): SystemManagementState {
     {
       roleId: 3,
       roleName: "研发小仓管理员",
-      roleKey: "rd-operator",
+      roleKey: RD_OPERATOR_ROLE_KEY,
       roleSort: 3,
       status: "0",
       dataScope: "3",
@@ -3786,7 +3778,7 @@ export function createSystemManagementSeedState(): SystemManagementState {
       deleted: false,
       remark: "研发小仓专属账号",
       createdAt: "2026-03-01T09:40:00.000Z",
-      postIds: [4],
+      postIds: [],
       roleIds: [3],
       passwordHash: hashText("rd123456"),
       consoleMode: "rd-subwarehouse",

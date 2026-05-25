@@ -6,6 +6,7 @@ import {
 import {
   FINANCE_ACCOUNTANT_PERMISSION_PRESET,
   FINANCE_ACCOUNTANT_ROLE_KEY,
+  RD_OPERATOR_ROLE_KEY,
 } from "../../../../prisma/system-management.seed";
 import { RbacRuntimeRepository } from "../infrastructure/rbac-runtime.repository";
 
@@ -37,11 +38,12 @@ export class SystemManagementBootstrapService
           await this.rbacRepository.flushPersistence();
         }
         const repairedSeedRoles = await this.rbacRepository.ensureSeedRoles([
+          RD_OPERATOR_ROLE_KEY,
           FINANCE_ACCOUNTANT_ROLE_KEY,
         ]);
         const repairedRdSeedDrift =
           await this.rbacRepository.ensureSeedPermissionMenus(
-            ["rd-operator"],
+            [RD_OPERATOR_ROLE_KEY],
             ["reporting:monthly-reporting:view", "reporting:export"],
           );
         const repairedFinanceSeedDrift = repairedSeedRoles
@@ -51,7 +53,7 @@ export class SystemManagementBootstrapService
             )
           : false;
         const syncedSeedRoles = await this.rbacRepository.syncSeedRoleMenus([
-          "rd-operator",
+          RD_OPERATOR_ROLE_KEY,
         ]);
         if (
           repairedMenuDisplayMetadata ||
