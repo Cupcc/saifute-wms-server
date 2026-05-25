@@ -77,10 +77,10 @@ export class AppConfigService {
 
     this.jwtSecret = this.readString("JWT_SECRET", "dev-secret");
     this.jwtExpiresInSeconds = this.readNumber("JWT_EXPIRES_IN_SECONDS", 3600);
-    this.sessionTtlSeconds = this.readNumber("SESSION_TTL_SECONDS", 3600);
+    this.sessionTtlSeconds = this.readNumber("SESSION_TTL_SECONDS", 604800);
     this.sessionMaxTtlSeconds = this.readNumber(
       "SESSION_MAX_TTL_SECONDS",
-      28800,
+      2592000,
     );
     this.sessionRefreshThresholdSeconds = this.readNumber(
       "SESSION_REFRESH_THRESHOLD_SECONDS",
