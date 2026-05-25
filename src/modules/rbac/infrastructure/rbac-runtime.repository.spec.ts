@@ -168,6 +168,80 @@ describe("RbacRuntimeRepository", () => {
     );
   });
 
+  it("binds manually created RD operators to the RD subwarehouse console", async () => {
+    const created = await repository.createUser({
+      userName: "rd-manual",
+      nickName: "手动研发小仓账号",
+      deptId: 100,
+      postIds: [],
+      roleIds: [3],
+      status: "0",
+    });
+
+    const user = await repository.findUserById(created.userId);
+
+    expect(user).toMatchObject({
+      consoleMode: "rd-subwarehouse",
+      stockScope: {
+        mode: "FIXED",
+        stockScope: "RD_SUB",
+        stockScopeName: "研发小仓",
+      },
+    });
+    expect(user?.permissions).toContain("rd:workbench:view");
+  });
+
+  it("does not bind RD console scope from non-RD role assignment", async () => {
+    const created = await repository.createUser({
+      userName: "rd-no-role",
+      nickName: "未授权研发小仓账号",
+      deptId: 100,
+      postIds: [],
+      roleIds: [2],
+      status: "0",
+    });
+
+    const user = await repository.findUserById(created.userId);
+
+    expect(user?.consoleMode).toBe("default");
+    expect(user?.stockScope).toMatchObject({
+      mode: "ALL",
+      stockScope: null,
+      stockScopeName: null,
+    });
+  });
+
+  it("updates console scope when admin grants or removes the RD operator role", async () => {
+    const created = await repository.createUser({
+      userName: "rd-auth-manual",
+      nickName: "授权研发小仓账号",
+      deptId: 300,
+      postIds: [2],
+      roleIds: [2],
+      status: "0",
+    });
+
+    await repository.updateUserRoles(created.userId, [3]);
+
+    const rdUser = await repository.findUserById(created.userId);
+    expect(rdUser?.consoleMode).toBe("rd-subwarehouse");
+    expect(rdUser?.stockScope).toMatchObject({
+      mode: "FIXED",
+      stockScope: "RD_SUB",
+      stockScopeName: "研发小仓",
+    });
+
+    await repository.updateUserRoles(created.userId, [2]);
+
+    const warehouseUser = await repository.findUserById(created.userId);
+    expect(warehouseUser?.consoleMode).toBe("default");
+    expect(warehouseUser?.stockScope).toMatchObject({
+      mode: "ALL",
+      stockScope: null,
+      stockScopeName: null,
+    });
+  });
+
   it("recomputes role permissions from menu assignments", async () => {
     await repository.updateRole({
       roleId: 2,

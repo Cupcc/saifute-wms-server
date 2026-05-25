@@ -1,4 +1,7 @@
-import { FINANCE_ACCOUNTANT_ROLE_KEY } from "../../../../prisma/system-management.seed";
+import {
+  FINANCE_ACCOUNTANT_ROLE_KEY,
+  RD_OPERATOR_ROLE_KEY,
+} from "../../../../prisma/system-management.seed";
 import { RbacRuntimeRepository } from "../infrastructure/rbac-runtime.repository";
 import { SystemManagementBootstrapService } from "./system-management-bootstrap.service";
 
@@ -32,17 +35,18 @@ describe("SystemManagementBootstrapService", () => {
     await bootstrapService.onApplicationBootstrap();
 
     expect(runtimeRepository.ensureSeedRoles).toHaveBeenCalledWith([
+      RD_OPERATOR_ROLE_KEY,
       FINANCE_ACCOUNTANT_ROLE_KEY,
     ]);
     expect(runtimeRepository.ensureSeedPermissionMenus).toHaveBeenCalledTimes(
       1,
     );
     expect(runtimeRepository.ensureSeedPermissionMenus).toHaveBeenCalledWith(
-      ["rd-operator"],
+      [RD_OPERATOR_ROLE_KEY],
       ["reporting:monthly-reporting:view", "reporting:export"],
     );
     expect(runtimeRepository.syncSeedRoleMenus).toHaveBeenCalledWith([
-      "rd-operator",
+      RD_OPERATOR_ROLE_KEY,
     ]);
   });
 });

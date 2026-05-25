@@ -3,11 +3,10 @@ import {
   compareHash,
   hashText,
 } from "../../../shared/common/security/hash.util";
-import type {
-  ManagedUserRecord,
-  RbacUserRecord,
-} from "../domain/rbac.types";
+import type { ManagedUserRecord, RbacUserRecord } from "../domain/rbac.types";
 import { RbacState } from "./rbac-state";
+
+const RD_OPERATOR_ROLE_KEY = "rd-operator";
 
 @Injectable()
 export class RbacUserRepository {
@@ -92,7 +91,9 @@ export class RbacUserRepository {
       throw new Error("用户名不能为空");
     }
     if (
-      this.state.users.some((item) => !item.deleted && item.userName === userName)
+      this.state.users.some(
+        (item) => !item.deleted && item.userName === userName,
+      )
     ) {
       throw new Error("用户名称已存在");
     }
@@ -126,6 +127,7 @@ export class RbacUserRepository {
       },
       extraPermissions: [],
     };
+    this.syncUserConsoleScope(user);
     this.state.users.push(user);
     return this.toUserRow(user);
   }
@@ -154,6 +156,7 @@ export class RbacUserRepository {
     user.remark = String(data.remark ?? user.remark);
     user.postIds = this.state.normalizeNumberList(data.postIds);
     user.roleIds = this.state.normalizeNumberList(data.roleIds);
+    this.syncUserConsoleScope(user);
     return this.toUserRow(user);
   }
 
@@ -242,6 +245,7 @@ export class RbacUserRepository {
   updateUserRoles(userId: number, roleIds: number[]) {
     const user = this.requireUser(userId);
     user.roleIds = [...new Set(roleIds)];
+    this.syncUserConsoleScope(user);
   }
 
   findUserIdsByRoleIds(roleIds: number[]) {
@@ -311,7 +315,8 @@ export class RbacUserRepository {
   private getRoleKeys(roleIds: number[]) {
     return roleIds
       .map(
-        (roleId) => this.state.roles.find((role) => role.roleId === roleId)?.roleKey,
+        (roleId) =>
+          this.state.roles.find((role) => role.roleId === roleId)?.roleKey,
       )
       .filter((roleKey): roleKey is string => Boolean(roleKey));
   }
@@ -335,7 +340,8 @@ export class RbacUserRepository {
       }
       return role.menuIds
         .map(
-          (menuId) => this.state.menus.find((menu) => menu.menuId === menuId)?.perms,
+          (menuId) =>
+            this.state.menus.find((menu) => menu.menuId === menuId)?.perms,
         )
         .filter((permission): permission is string => Boolean(permission));
     });
@@ -351,6 +357,32 @@ export class RbacUserRepository {
       throw new Error(`用户不存在: ${userId}`);
     }
     return user;
+  }
+
+  private syncUserConsoleScope(user: ManagedUserRecord) {
+    if (this.hasRdSubwarehouseAssignment(user)) {
+      user.consoleMode = "rd-subwarehouse";
+      user.stockScope = {
+        mode: "FIXED",
+        stockScope: "RD_SUB",
+        stockScopeName: "研发小仓",
+      };
+      return;
+    }
+
+    user.consoleMode = "default";
+    user.stockScope = {
+      mode: "ALL",
+      stockScope: null,
+      stockScopeName: null,
+    };
+  }
+
+  private hasRdSubwarehouseAssignment(user: ManagedUserRecord) {
+    return user.roleIds.some((roleId) => {
+      const role = this.state.roles.find((item) => item.roleId === roleId);
+      return role?.roleKey === RD_OPERATOR_ROLE_KEY;
+    });
   }
 
   private toUserRow(user: ManagedUserRecord) {
