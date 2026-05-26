@@ -117,7 +117,7 @@ const dashboard = ref({
 });
 
 const workshopLabel = computed(
-  () => userStore.stockScope?.stockScopeName || "未绑定研发小仓",
+  () => userStore.stockScope?.stockScopeName || "研发小仓",
 );
 
 const consoleLabel = computed(() =>

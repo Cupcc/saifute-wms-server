@@ -283,7 +283,7 @@ const filters = ref({
 const form = ref(createEmptyForm());
 
 const workshopLabel = computed(
-  () => userStore.stockScope?.stockScopeName || "未绑定研发小仓",
+  () => userStore.stockScope?.stockScopeName || "研发小仓",
 );
 const formRules = {
   bizDate: [{ required: true, message: "请选择业务日期", trigger: "change" }],
