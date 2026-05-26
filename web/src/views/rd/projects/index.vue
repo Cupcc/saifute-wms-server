@@ -10,7 +10,7 @@
           </p>
         </div>
         <div class="hero-badges">
-          <el-tag effect="dark" type="success">{{ workshopLabel }}</el-tag>
+          <el-tag effect="dark" type="success">{{ rdProjectScopeLabel }}</el-tag>
           <el-tag effect="plain" type="info">固定仓别 {{ stockScopeLabel }}</el-tag>
         </div>
       </div>
@@ -116,7 +116,7 @@
               <el-input
                 v-model="projectForm.projectCode"
                 disabled
-                placeholder="保存后自动生成: XMBH-顺序ID"
+                placeholder="保存后自动生成: YFXMBH-顺序ID"
               />
             </el-form-item>
           </el-col>
@@ -650,8 +650,9 @@ const actionForm = ref(createEmptyActionForm());
 const stockScopeLabel = computed(
   () => userStore.stockScope?.stockScopeName || "研发小仓",
 );
+const rdProjectScopeLabel = computed(() => "研发项目专属");
 const workshopLabel = computed(
-  () => userStore.workshopScope?.workshopName || "未绑定车间",
+  () => userStore.workshopScope?.workshopName || "",
 );
 
 const returnSourceOptions = computed(() =>

@@ -9,7 +9,7 @@ import {
 } from "../../../../generated/prisma/client";
 import {
   buildPendingProjectCode,
-  buildProjectCode,
+  buildSalesProjectCode,
 } from "../../../shared/common/project-code.util";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import type { CreateSalesProjectDto } from "../dto/create-sales-project.dto";
@@ -121,7 +121,7 @@ export class SalesProjectLifecycleService {
         repository: this.repository,
         tx,
       });
-      const generatedProjectCode = buildProjectCode(projectTargetId);
+      const generatedProjectCode = buildSalesProjectCode(projectTargetId);
       await this.repository.updateProject(
         project.id,
         {

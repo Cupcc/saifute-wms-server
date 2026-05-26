@@ -52,7 +52,7 @@ describe("RdProjectService — project master", () => {
     repository.attachProjectTargetToProject.mockResolvedValue({} as never);
     repository.findProjectById.mockResolvedValue({
       ...baseProject,
-      projectCode: "XMBH-5001",
+      projectCode: "YFXMBH-5001",
       projectTargetId: 5001,
     } as never);
 
@@ -82,19 +82,19 @@ describe("RdProjectService — project master", () => {
     expect(repository.updateProject).toHaveBeenCalledWith(
       1,
       expect.objectContaining({
-        projectCode: "XMBH-5001",
+        projectCode: "YFXMBH-5001",
       }),
       expect.anything(),
     );
     expect(repository.updateProjectTarget).toHaveBeenCalledWith(
       5001,
       expect.objectContaining({
-        targetCode: "XMBH-5001",
+        targetCode: "YFXMBH-5001",
       }),
       expect.anything(),
     );
     expect(inventoryService.settleConsumerOut).not.toHaveBeenCalled();
-    expect(result.projectCode).toBe("XMBH-5001");
+    expect(result.projectCode).toBe("YFXMBH-5001");
     expect(result.summary.plannedQty.toString()).toBe("100");
     expect(result.summary.plannedAmount.toString()).toBe("1000");
   });
@@ -123,7 +123,7 @@ describe("RdProjectService — project master", () => {
     repository.attachProjectTargetToProject.mockResolvedValue({} as never);
     repository.findProjectById.mockResolvedValue({
       ...baseProject,
-      projectCode: "XMBH-5001",
+      projectCode: "YFXMBH-5001",
       projectName: "Duplicate",
       projectTargetId: 5001,
     } as never);
@@ -146,7 +146,7 @@ describe("RdProjectService — project master", () => {
       expect.any(Array),
       expect.anything(),
     );
-    expect(result.projectCode).toBe("XMBH-5001");
+    expect(result.projectCode).toBe("YFXMBH-5001");
   });
 
   it("builds ledger using BOM, legacy consumption, actions, stock, and replenishment", async () => {

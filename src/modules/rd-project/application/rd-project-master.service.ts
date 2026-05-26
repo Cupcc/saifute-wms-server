@@ -19,7 +19,7 @@ import {
 } from "../../../shared/common/document-number.util";
 import {
   buildPendingProjectCode,
-  buildProjectCode,
+  buildRdProjectCode,
 } from "../../../shared/common/project-code.util";
 import {
   FIFO_SOURCE_OPERATION_TYPES,
@@ -199,7 +199,7 @@ export class RdProjectMasterService {
         repository: this.repository,
         tx,
       });
-      const generatedProjectCode = buildProjectCode(projectTargetId);
+      const generatedProjectCode = buildRdProjectCode(projectTargetId);
       await this.repository.updateProject(
         project.id,
         {

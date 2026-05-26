@@ -288,7 +288,7 @@ function normalizePositiveLegacyId(
 }
 
 function buildRdProjectCode(legacyId: number): string {
-  return `XMBH-${legacyId}`;
+  return `YFXMBH-${legacyId}`;
 }
 
 function resolveBizDate(project: LegacyRdProjectRow): string | null {
