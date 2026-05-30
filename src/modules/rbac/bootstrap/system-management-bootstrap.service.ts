@@ -4,6 +4,9 @@ import {
   type OnApplicationBootstrap,
 } from "@nestjs/common";
 import {
+  DATABASE_BACKUP_COMMAND_CONFIG_KEY,
+  DATABASE_BACKUP_DIRECTORY_CONFIG_KEY,
+  DATABASE_BACKUP_RETENTION_FULL_COUNT_CONFIG_KEY,
   FINANCE_ACCOUNTANT_PERMISSION_PRESET,
   FINANCE_ACCOUNTANT_ROLE_KEY,
   RD_OPERATOR_ROLE_KEY,
@@ -31,6 +34,11 @@ export class SystemManagementBootstrapService
 
     if (hasAnyNormalizedData) {
       await this.rbacRepository.loadFromNormalizedTables();
+      const repairedSeedConfigs = await this.rbacRepository.ensureSeedConfigs([
+        DATABASE_BACKUP_DIRECTORY_CONFIG_KEY,
+        DATABASE_BACKUP_COMMAND_CONFIG_KEY,
+        DATABASE_BACKUP_RETENTION_FULL_COUNT_CONFIG_KEY,
+      ]);
       if (normalizedBaseCounts.users > 0) {
         const repairedMenuDisplayMetadata =
           await this.rbacRepository.repairSeedMenuDisplayMetadata();
@@ -56,6 +64,7 @@ export class SystemManagementBootstrapService
           RD_OPERATOR_ROLE_KEY,
         ]);
         if (
+          repairedSeedConfigs ||
           repairedMenuDisplayMetadata ||
           repairedSeedRoles ||
           repairedRdSeedDrift ||
@@ -67,6 +76,9 @@ export class SystemManagementBootstrapService
             "Repaired seed menu metadata and permission drift for system management baseline",
           );
         }
+      }
+      if (normalizedBaseCounts.users === 0 && repairedSeedConfigs) {
+        await this.rbacRepository.flushPersistence();
       }
       if (normalizedBaseCounts.users === 0) {
         this.logger.warn(

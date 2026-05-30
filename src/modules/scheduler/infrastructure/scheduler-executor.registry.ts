@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { ReportingService } from "../../reporting/application/reporting.service";
+import { DatabaseBackupService } from "./database-backup.service";
 
 export interface SchedulerExecutorDefinition {
   invokeTarget: string;
@@ -13,7 +14,10 @@ export interface SchedulerExecutorResult {
 
 @Injectable()
 export class SchedulerExecutorRegistry {
-  constructor(private readonly reportingService: ReportingService) {}
+  constructor(
+    private readonly reportingService: ReportingService,
+    private readonly databaseBackupService: DatabaseBackupService,
+  ) {}
 
   listExecutors(): SchedulerExecutorDefinition[] {
     return [
@@ -25,6 +29,11 @@ export class SchedulerExecutorRegistry {
         invokeTarget: "reporting.home-dashboard",
         description:
           "Refresh the reporting home dashboard read model snapshot.",
+      },
+      {
+        invokeTarget: "database.full-backup",
+        description:
+          "Create a full MySQL backup for the configured WMS database and prune backups using system-config values.",
       },
     ];
   }
@@ -49,6 +58,21 @@ export class SchedulerExecutorRegistry {
         return {
           summary: "Reporting home dashboard refreshed.",
           payload: dashboard,
+        };
+      }
+      case "database.full-backup": {
+        const backup = await this.databaseBackupService.createFullBackup();
+        return {
+          summary: "Database full backup completed.",
+          payload: {
+            databaseName: backup.databaseName,
+            backupPath: backup.backupPath,
+            checksumPath: backup.checksumPath,
+            sha256: backup.sha256,
+            sizeBytes: backup.sizeBytes,
+            retainedBackups: backup.retainedBackups,
+            deletedBackups: backup.deletedBackups,
+          },
         };
       }
       default:

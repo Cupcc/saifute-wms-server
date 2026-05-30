@@ -26,6 +26,9 @@ describe("AppConfigService", () => {
         FILE_STORAGE_PUBLIC_PREFIX: "profile/",
         FILE_STORAGE_ALLOWED_EXTENSIONS: " JPG, .Pdf ,png ",
         BUSINESS_TIMEZONE: "Asia/Tokyo",
+        DATABASE_BACKUP_DIR: "storage/db-dumps",
+        DATABASE_BACKUP_COMMAND: "/opt/homebrew/bin/mysqldump",
+        DATABASE_BACKUP_RETENTION_FULL_COUNT: "3",
         LOG_DIR: "logs/custom",
         AI_ASSISTANT_API_KEY: " secret ",
       }),
@@ -49,6 +52,11 @@ describe("AppConfigService", () => {
     expect(service.fileAllowedExtensions).toEqual([".jpg", ".pdf", ".png"]);
     expect(service.businessTimezone).toBe("Asia/Tokyo");
     expect(service.schedulerTimezone).toBe("Asia/Tokyo");
+    expect(service.databaseBackupDefaultDirectory).toBe("storage/db-dumps");
+    expect(service.databaseBackupDefaultCommand).toBe(
+      "/opt/homebrew/bin/mysqldump",
+    );
+    expect(service.databaseBackupDefaultRetentionFullCount).toBe(2);
     expect(service.logLevel).toBe("debug");
     expect(service.logDirPath).toBe(path.resolve(process.cwd(), "logs/custom"));
     expect(service.aiAssistantApiKey).toBe("secret");
@@ -82,6 +90,8 @@ describe("AppConfigService", () => {
     expect(productionService.swaggerEnabled).toBe(false);
     expect(productionService.logLevel).toBe("info");
     expect(productionService.httpTrustProxy).toBe(false);
+    expect(productionService.databaseBackupDefaultEnabled).toBe(true);
+    expect(productionService.databaseBackupDefaultRetentionFullCount).toBe(2);
     expect(productionService.sessionTtlSeconds).toBe(604800);
     expect(productionService.sessionMaxTtlSeconds).toBe(2592000);
     expect(productionService.jwtRefreshSecret).toBe("dev-secret:refresh");

@@ -1,3 +1,8 @@
+import {
+  DATABASE_BACKUP_COMMAND_CONFIG_KEY,
+  DATABASE_BACKUP_DIRECTORY_CONFIG_KEY,
+  DATABASE_BACKUP_RETENTION_FULL_COUNT_CONFIG_KEY,
+} from "../../../../prisma/system-management.seed";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { RedisStoreService } from "../../../shared/redis/redis-store.service";
 import { SystemManagementBootstrapService } from "../bootstrap/system-management-bootstrap.service";
@@ -500,6 +505,35 @@ describe("RbacRuntimeRepository", () => {
     const zeroCount = jest.fn().mockResolvedValue(0);
     const oneCount = jest.fn().mockResolvedValue(1);
     const emptyFindMany = jest.fn().mockResolvedValue([]);
+    const configFindMany = jest.fn().mockResolvedValue([
+      {
+        configId: 3,
+        configName: "数据库全量备份目录",
+        configKey: DATABASE_BACKUP_DIRECTORY_CONFIG_KEY,
+        configValue: "storage/database-backups",
+        configType: "Y",
+        remark: "",
+        createdAt: new Date("2026-03-01T09:00:00.000Z"),
+      },
+      {
+        configId: 4,
+        configName: "数据库全量备份命令",
+        configKey: DATABASE_BACKUP_COMMAND_CONFIG_KEY,
+        configValue: "mysqldump",
+        configType: "Y",
+        remark: "",
+        createdAt: new Date("2026-03-01T09:00:00.000Z"),
+      },
+      {
+        configId: 5,
+        configName: "数据库全量备份保留份数",
+        configKey: DATABASE_BACKUP_RETENTION_FULL_COUNT_CONFIG_KEY,
+        configValue: "2",
+        configType: "Y",
+        remark: "",
+        createdAt: new Date("2026-03-01T09:00:00.000Z"),
+      },
+    ]);
     const modelStub = {
       count: zeroCount,
       findMany: emptyFindMany,
@@ -522,7 +556,11 @@ describe("RbacRuntimeRepository", () => {
       sysRole: modelStub,
       sysDictType: modelStub,
       sysDictData: modelStub,
-      sysConfig: modelStub,
+      sysConfig: {
+        ...modelStub,
+        count: oneCount,
+        findMany: configFindMany,
+      },
       sysNotice: modelStub,
       sysUserRole: modelStub,
       sysUserPost: modelStub,

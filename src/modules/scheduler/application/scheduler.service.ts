@@ -28,6 +28,13 @@ import {
 } from "../infrastructure/scheduler-executor.registry";
 
 const MAX_EXECUTION_MESSAGE_LENGTH = 4000;
+const DATABASE_BACKUP_JOB_NAME = "每周数据库全量备份";
+const DATABASE_BACKUP_INVOKE_TARGET = "database.full-backup";
+const DATABASE_BACKUP_CRON_EXPRESSION = "0 30 2 * * 0";
+const DATABASE_BACKUP_JOB_REMARK =
+  "每周日 02:30 执行数据库全量备份；目录、命令、保留份数通过系统参数维护。";
+const DATABASE_BACKUP_LEGACY_JOB_REMARK =
+  "每周日 02:30 执行数据库全量备份；默认保留最近 2 个全量备份，可通过 DATABASE_BACKUP_RETENTION_FULL_COUNT 调整。";
 
 @Injectable()
 export class SchedulerService
@@ -55,6 +62,8 @@ export class SchedulerService
       return;
     }
 
+    await this.ensureDefaultDatabaseBackupJob();
+
     const jobs = await this.schedulerRepository.listActiveJobs();
     for (const job of jobs) {
       if (this.shouldRunMisfireCatchUp(job)) {
@@ -62,6 +71,45 @@ export class SchedulerService
       }
       await this.syncRuntimeJob(job);
     }
+  }
+
+  private async ensureDefaultDatabaseBackupJob(): Promise<void> {
+    const existingByInvokeTarget =
+      await this.schedulerRepository.findJobByInvokeTarget(
+        DATABASE_BACKUP_INVOKE_TARGET,
+      );
+    if (existingByInvokeTarget) {
+      if (
+        !existingByInvokeTarget.remark ||
+        existingByInvokeTarget.remark === DATABASE_BACKUP_LEGACY_JOB_REMARK
+      ) {
+        await this.schedulerRepository.updateJob(existingByInvokeTarget.id, {
+          remark: DATABASE_BACKUP_JOB_REMARK,
+        });
+      }
+      return;
+    }
+
+    const existingByName = await this.schedulerRepository.findJobByName(
+      DATABASE_BACKUP_JOB_NAME,
+    );
+    if (existingByName) {
+      return;
+    }
+
+    await this.schedulerRepository.createJob({
+      jobName: DATABASE_BACKUP_JOB_NAME,
+      invokeTarget: DATABASE_BACKUP_INVOKE_TARGET,
+      cronExpression: DATABASE_BACKUP_CRON_EXPRESSION,
+      concurrencyPolicy: SchedulerConcurrencyPolicy.FORBID,
+      misfirePolicy: SchedulerMisfirePolicy.SKIP,
+      remark: DATABASE_BACKUP_JOB_REMARK,
+      status: this.appConfigService.databaseBackupDefaultEnabled
+        ? SchedulerJobStatus.ACTIVE
+        : SchedulerJobStatus.PAUSED,
+      createdBy: "system-bootstrap",
+      updatedBy: "system-bootstrap",
+    });
   }
 
   async listJobs(query: QuerySchedulerJobsDto) {

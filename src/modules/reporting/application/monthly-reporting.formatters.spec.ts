@@ -33,7 +33,7 @@ describe("monthly-reporting formatters", () => {
           [
             "001",
             "1002",
-            "3.00",
+            "3",
             "4.17",
             "12.50",
             "5.20",
@@ -48,7 +48,7 @@ describe("monthly-reporting formatters", () => {
     expect(workbook).toContain('<Data ss:Type="String">001</Data>');
     expect(workbook).toContain('<Data ss:Type="String">1002</Data>');
     expect(workbook).toContain(
-      '<Cell ss:StyleID="NumberDecimal2"><Data ss:Type="Number">3.00</Data></Cell>',
+      '<Cell ss:StyleID="NumberInteger"><Data ss:Type="Number">3</Data></Cell>',
     );
     expect(workbook).toContain(
       '<Cell ss:StyleID="NumberDecimal2"><Data ss:Type="Number">12.50</Data></Cell>',

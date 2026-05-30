@@ -579,11 +579,11 @@ describe("Batch D slice acceptance (e2e)", () => {
         lineCount: 2,
         openingAmount: "140.0000",
         closingAmount: "176.0000",
-        acceptanceInboundQuantity: "3.00",
+        acceptanceInboundQuantity: "3",
         acceptanceInboundAmount: "30.0000",
-        salesReturnQuantity: "1.00",
+        salesReturnQuantity: "1",
         salesReturnAmount: "8.0000",
-        netQuantity: "4.00",
+        netQuantity: "4",
         netAmount: "36.0000",
       },
     });
@@ -595,9 +595,9 @@ describe("Batch D slice acceptance (e2e)", () => {
         categoryName: "化工",
         openingAmount: "140.0000",
         closingAmount: "176.0000",
-        acceptanceInboundQuantity: "3.00",
+        acceptanceInboundQuantity: "3",
         acceptanceInboundAmount: "30.0000",
-        salesReturnQuantity: "1.00",
+        salesReturnQuantity: "1",
         salesReturnAmount: "8.0000",
       }),
     ]);
@@ -618,26 +618,26 @@ describe("Batch D slice acceptance (e2e)", () => {
         categoryName: "化工",
         materialCode: "M-RAW-001",
         materialName: "原料 A",
-        openingQuantity: "12.00",
+        openingQuantity: "12",
         openingAmount: "120.0000",
-        inQuantity: "3.00",
-        netQuantity: "3.00",
-        closingQuantity: "15.00",
+        inQuantity: "3",
+        netQuantity: "3",
+        closingQuantity: "15",
         closingAmount: "150.0000",
-        acceptanceInboundQuantity: "3.00",
+        acceptanceInboundQuantity: "3",
         acceptanceInboundAmount: "30.0000",
       }),
       expect.objectContaining({
         categoryNodeKey: "11:CHEM:化工",
         materialCode: "M-RAW-002",
         materialName: "原料 B",
-        openingQuantity: "2.00",
+        openingQuantity: "2",
         openingAmount: "20.0000",
-        inQuantity: "1.00",
-        netQuantity: "1.00",
-        closingQuantity: "3.00",
+        inQuantity: "1",
+        netQuantity: "1",
+        closingQuantity: "3",
         closingAmount: "26.0000",
-        salesReturnQuantity: "1.00",
+        salesReturnQuantity: "1",
         salesReturnAmount: "8.0000",
       }),
     ]);
@@ -775,7 +775,19 @@ describe("Batch D slice acceptance (e2e)", () => {
       .get("/api/scheduler/jobs")
       .set("Authorization", `Bearer ${token}`)
       .expect(200);
-    expect(jobsResponse.body.data.total).toBe(1);
+    expect(jobsResponse.body.data.total).toBe(2);
+    expect(jobsResponse.body.data.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          jobName: "Noop smoke job",
+          invokeTarget: "system.noop",
+        }),
+        expect.objectContaining({
+          jobName: "每周数据库全量备份",
+          invokeTarget: "database.full-backup",
+        }),
+      ]),
+    );
   });
 
   it("should reject unsupported scheduler invoke targets", async () => {

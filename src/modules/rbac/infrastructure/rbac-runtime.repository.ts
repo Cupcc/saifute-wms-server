@@ -55,6 +55,14 @@ export class RbacRuntimeRepository {
       this.seedRepairRepo.syncSeedRoleMenus(roleKeys),
     );
   }
+  async ensureSeedConfigs(configKeys: string[]): Promise<boolean> {
+    await this.persistenceRepo.loadRuntimeState();
+    const changed = this.seedRepairRepo.ensureSeedConfigs(configKeys);
+    if (changed) {
+      this.persistenceRepo.queuePersistence();
+    }
+    return changed;
+  }
   async repairSeedMenuDisplayMetadata(): Promise<boolean> {
     return this.mutateState(() =>
       this.seedRepairRepo.repairSeedMenuDisplayMetadata(),

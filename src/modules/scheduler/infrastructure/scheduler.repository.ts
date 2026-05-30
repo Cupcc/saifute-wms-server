@@ -72,6 +72,15 @@ export class SchedulerRepository {
     });
   }
 
+  async findJobByInvokeTarget(
+    invokeTarget: string,
+  ): Promise<SchedulerJob | null> {
+    return this.prisma.schedulerJob.findFirst({
+      where: { invokeTarget },
+      orderBy: [{ id: "asc" }],
+    });
+  }
+
   async createJob(data: Prisma.SchedulerJobUncheckedCreateInput) {
     return this.prisma.schedulerJob.create({ data });
   }

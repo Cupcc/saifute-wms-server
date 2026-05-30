@@ -39,6 +39,10 @@ export class AppConfigService {
   readonly businessTimezone: string;
   readonly schedulerEnabled: boolean;
   readonly schedulerTimezone: string;
+  readonly databaseBackupDefaultEnabled: boolean;
+  readonly databaseBackupDefaultDirectory: string;
+  readonly databaseBackupDefaultCommand: string;
+  readonly databaseBackupDefaultRetentionFullCount: number;
   readonly logLevel: string;
   readonly logDirPath: string;
   readonly aiAssistantEnabled: boolean;
@@ -140,6 +144,22 @@ export class AppConfigService {
     this.schedulerTimezone = this.readString(
       "SCHEDULER_TIMEZONE",
       this.businessTimezone,
+    );
+    this.databaseBackupDefaultEnabled = this.readBoolean(
+      "DATABASE_BACKUP_ENABLED",
+      true,
+    );
+    this.databaseBackupDefaultDirectory = this.readString(
+      "DATABASE_BACKUP_DIR",
+      "storage/database-backups",
+    );
+    this.databaseBackupDefaultCommand = this.readString(
+      "DATABASE_BACKUP_COMMAND",
+      "mysqldump",
+    );
+    this.databaseBackupDefaultRetentionFullCount = Math.min(
+      2,
+      Math.max(1, this.readNumber("DATABASE_BACKUP_RETENTION_FULL_COUNT", 2)),
     );
 
     this.logLevel = this.readString(

@@ -413,32 +413,14 @@
         >
           <el-table-column prop="categoryCode" label="分类编码" min-width="80" />
           <el-table-column prop="categoryName" label="分类名称" min-width="100" />
-          <el-table-column prop="lineCount" label="单据行数" min-width="80" />
-          <el-table-column prop="documentCount" label="单据数" min-width="80" />
           <el-table-column prop="openingQuantity" label="月初库存数量" min-width="130" />
           <el-table-column prop="openingAmount" label="月初库存金额" min-width="140" />
-          <el-table-column prop="netQuantity" label="库存净发生数量" min-width="150" />
-          <el-table-column prop="netAmount" label="库存净发生金额" min-width="150" />
+          <el-table-column prop="netProductionQuantity" label="净生产数量" min-width="120" />
+          <el-table-column prop="netProductionAmount" label="净生产金额" min-width="140" />
+          <el-table-column prop="netSalesQuantity" label="净销售数量" min-width="120" />
+          <el-table-column prop="netSalesAmount" label="净销售金额" min-width="140" />
           <el-table-column prop="closingQuantity" label="月末库存数量" min-width="130" />
           <el-table-column prop="closingAmount" label="月末库存金额" min-width="140" />
-          <el-table-column prop="acceptanceInboundQuantity" label="验收入库数量" min-width="120" />
-          <el-table-column prop="acceptanceInboundAmount" label="验收入库金额" min-width="140" />
-          <el-table-column prop="productionReceiptQuantity" label="生产入库数量" min-width="120" />
-          <el-table-column prop="productionReceiptAmount" label="生产入库金额" min-width="140" />
-          <el-table-column prop="supplierReturnQuantity" label="退给厂家数量" min-width="120" />
-          <el-table-column prop="supplierReturnAmount" label="退给厂家金额" min-width="140" />
-          <el-table-column prop="workshopPickQuantity" label="车间领料数量" min-width="120" />
-          <el-table-column prop="workshopPickAmount" label="车间领料金额" min-width="140" />
-          <el-table-column prop="workshopReturnQuantity" label="车间退料数量" min-width="120" />
-          <el-table-column prop="workshopReturnAmount" label="车间退料金额" min-width="140" />
-          <el-table-column prop="workshopNetUsedQuantity" label="车间净使用数量" min-width="130" />
-          <el-table-column prop="workshopNetUsedAmount" label="车间净使用金额" min-width="150" />
-          <el-table-column prop="salesOutboundQuantity" label="销售出库数量" min-width="120" />
-          <el-table-column prop="salesOutboundSalesAmount" label="销售出库销售价金额" min-width="170" />
-          <el-table-column prop="salesOutboundCostAmount" label="销售出库成本价金额" min-width="170" />
-          <el-table-column prop="salesReturnQuantity" label="销售退货数量" min-width="120" />
-          <el-table-column prop="salesReturnSalesAmount" label="销售退货销售价金额" min-width="170" />
-          <el-table-column prop="salesReturnCostAmount" label="销售退货成本价金额" min-width="170" />
         </el-table>
       </el-card>
 
@@ -983,13 +965,27 @@ const WORKSHOP_USAGE_COUNT_TOTAL_KEYS = new Set([
   "lineCount",
   "documentCount",
 ]);
-const WORKSHOP_USAGE_DECIMAL_TOTAL_KEYS = new Set([
+const WORKSHOP_USAGE_QUANTITY_TOTAL_KEYS = new Set([
   "pickQuantity",
-  "pickAmount",
   "returnQuantity",
-  "returnAmount",
   "netUsedQuantity",
+]);
+const WORKSHOP_USAGE_AMOUNT_TOTAL_KEYS = new Set([
+  "pickAmount",
+  "returnAmount",
   "netUsedAmount",
+]);
+const MATERIAL_CATEGORY_QUANTITY_TOTAL_KEYS = new Set([
+  "openingQuantity",
+  "netQuantity",
+  "closingQuantity",
+  "netProductionQuantity",
+  "netSalesQuantity",
+  "acceptanceInboundQuantity",
+  "productionReceiptQuantity",
+  "supplierReturnQuantity",
+  "salesOutboundQuantity",
+  "salesReturnQuantity",
 ]);
 const MATERIAL_CATEGORY_TOTAL_KEYS = new Set([
   "lineCount",
@@ -1000,18 +996,16 @@ const MATERIAL_CATEGORY_TOTAL_KEYS = new Set([
   "netAmount",
   "closingQuantity",
   "closingAmount",
+  "netProductionQuantity",
+  "netProductionAmount",
+  "netSalesQuantity",
+  "netSalesAmount",
   "acceptanceInboundQuantity",
   "acceptanceInboundAmount",
   "productionReceiptQuantity",
   "productionReceiptAmount",
   "supplierReturnQuantity",
   "supplierReturnAmount",
-  "workshopPickQuantity",
-  "workshopPickAmount",
-  "workshopReturnQuantity",
-  "workshopReturnAmount",
-  "workshopNetUsedQuantity",
-  "workshopNetUsedAmount",
   "salesOutboundQuantity",
   "salesOutboundSalesAmount",
   "salesOutboundCostAmount",
@@ -1024,11 +1018,11 @@ function createEmptyDomainSummary() {
   return {
     domainCount: 0,
     documentCount: 0,
-    totalInQuantity: "0.00",
+    totalInQuantity: "0",
     totalInAmount: "0.00",
-    totalOutQuantity: "0.00",
+    totalOutQuantity: "0",
     totalOutAmount: "0.00",
-    netQuantity: "0.00",
+    netQuantity: "0",
     netAmount: "0.00",
   };
 }
@@ -1038,31 +1032,35 @@ function createEmptyMaterialCategorySummary() {
     categoryCount: 0,
     lineCount: 0,
     documentCount: 0,
-    acceptanceInboundQuantity: "0.00",
+    acceptanceInboundQuantity: "0",
     acceptanceInboundAmount: "0.00",
-    productionReceiptQuantity: "0.00",
+    productionReceiptQuantity: "0",
     productionReceiptAmount: "0.00",
-    supplierReturnQuantity: "0.00",
+    supplierReturnQuantity: "0",
     supplierReturnAmount: "0.00",
-    workshopPickQuantity: "0.00",
+    netProductionQuantity: "0",
+    netProductionAmount: "0.00",
+    workshopPickQuantity: "0",
     workshopPickAmount: "0.00",
-    workshopReturnQuantity: "0.00",
+    workshopReturnQuantity: "0",
     workshopReturnAmount: "0.00",
-    workshopNetUsedQuantity: "0.00",
+    workshopNetUsedQuantity: "0",
     workshopNetUsedAmount: "0.00",
-    salesOutboundQuantity: "0.00",
+    salesOutboundQuantity: "0",
     salesOutboundAmount: "0.00",
     salesOutboundSalesAmount: "0.00",
     salesOutboundCostAmount: "0.00",
-    salesReturnQuantity: "0.00",
+    salesReturnQuantity: "0",
     salesReturnAmount: "0.00",
     salesReturnSalesAmount: "0.00",
     salesReturnCostAmount: "0.00",
-    netQuantity: "0.00",
+    netSalesQuantity: "0",
+    netSalesAmount: "0.00",
+    netQuantity: "0",
     netAmount: "0.00",
-    openingQuantity: "0.00",
+    openingQuantity: "0",
     openingAmount: "0.00",
-    closingQuantity: "0.00",
+    closingQuantity: "0",
     closingAmount: "0.00",
   };
 }
@@ -1131,7 +1129,11 @@ function getWorkshopUsageSummaries({ columns, data }) {
       return sumSummaryRows(data, property);
     }
 
-    if (WORKSHOP_USAGE_DECIMAL_TOTAL_KEYS.has(property)) {
+    if (WORKSHOP_USAGE_QUANTITY_TOTAL_KEYS.has(property)) {
+      return sumSummaryRows(data, property).toFixed(0);
+    }
+
+    if (WORKSHOP_USAGE_AMOUNT_TOTAL_KEYS.has(property)) {
       return sumSummaryRows(data, property).toFixed(2);
     }
 
@@ -1142,7 +1144,8 @@ function getWorkshopUsageSummaries({ columns, data }) {
 function getCategorySummaries({ columns }) {
   return buildSummaryCells(columns, (property) =>
     MATERIAL_CATEGORY_TOTAL_KEYS.has(property)
-      ? (summary.value[property] ?? "0.00")
+      ? (summary.value[property] ??
+        (MATERIAL_CATEGORY_QUANTITY_TOTAL_KEYS.has(property) ? "0" : "0.00"))
       : "",
   );
 }

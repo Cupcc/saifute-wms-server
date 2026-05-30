@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { createSystemManagementSeedState } from "../../../../prisma/system-management.seed";
 import type {
+  ManagedConfigRecord,
   ManagedMenuRecord,
   ManagedRoleRecord,
 } from "../domain/rbac.types";
@@ -294,6 +295,33 @@ export class RbacSeedRepairRepository {
     return changed;
   }
 
+  ensureSeedConfigs(configKeys: string[]): boolean {
+    const seedState = createSystemManagementSeedState();
+    const requiredConfigKeys = new Set(configKeys.filter(Boolean));
+    if (requiredConfigKeys.size === 0) {
+      return false;
+    }
+
+    let changed = false;
+    for (const seedConfig of seedState.configs) {
+      if (!requiredConfigKeys.has(seedConfig.configKey)) {
+        continue;
+      }
+
+      const currentConfig = this.state.configs.find(
+        (config) => config.configKey === seedConfig.configKey,
+      );
+      if (currentConfig) {
+        continue;
+      }
+
+      this.state.configs.push(this.createConfigDefinition(seedConfig));
+      changed = true;
+    }
+
+    return changed;
+  }
+
   private createRoleDefinitionForCurrentMenus(
     seedRole: ManagedRoleRecord,
     roleId: number,
@@ -303,6 +331,16 @@ export class RbacSeedRepairRepository {
       ...seedRole,
       roleId,
       menuIds: seedRole.menuIds.filter((menuId) => currentMenuIds.has(menuId)),
+    };
+  }
+
+  private createConfigDefinition(
+    seedConfig: ManagedConfigRecord,
+  ): ManagedConfigRecord {
+    const nextConfigId = this.state.nextId(this.state.configs, "configId");
+    return {
+      ...seedConfig,
+      configId: nextConfigId,
     };
   }
 

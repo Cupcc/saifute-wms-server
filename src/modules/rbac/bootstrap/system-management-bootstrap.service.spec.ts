@@ -1,4 +1,7 @@
 import {
+  DATABASE_BACKUP_COMMAND_CONFIG_KEY,
+  DATABASE_BACKUP_DIRECTORY_CONFIG_KEY,
+  DATABASE_BACKUP_RETENTION_FULL_COUNT_CONFIG_KEY,
   FINANCE_ACCOUNTANT_ROLE_KEY,
   RD_OPERATOR_ROLE_KEY,
 } from "../../../../prisma/system-management.seed";
@@ -21,6 +24,7 @@ describe("SystemManagementBootstrapService", () => {
         notices: 1,
       }),
       loadFromNormalizedTables: jest.fn().mockResolvedValue(undefined),
+      ensureSeedConfigs: jest.fn().mockResolvedValue(false),
       repairSeedMenuDisplayMetadata: jest.fn().mockResolvedValue(false),
       flushPersistence: jest.fn().mockResolvedValue(undefined),
       ensureSeedRoles: jest.fn().mockResolvedValue(false),
@@ -34,6 +38,11 @@ describe("SystemManagementBootstrapService", () => {
 
     await bootstrapService.onApplicationBootstrap();
 
+    expect(runtimeRepository.ensureSeedConfigs).toHaveBeenCalledWith([
+      DATABASE_BACKUP_DIRECTORY_CONFIG_KEY,
+      DATABASE_BACKUP_COMMAND_CONFIG_KEY,
+      DATABASE_BACKUP_RETENTION_FULL_COUNT_CONFIG_KEY,
+    ]);
     expect(runtimeRepository.ensureSeedRoles).toHaveBeenCalledWith([
       RD_OPERATOR_ROLE_KEY,
       FINANCE_ACCOUNTANT_ROLE_KEY,
