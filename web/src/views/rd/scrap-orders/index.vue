@@ -169,7 +169,7 @@
               <el-input-number
                 v-model="row.unitPrice"
                 :min="0"
-                :precision="2"
+                :precision="4"
                 controls-position="right"
                 style="width: 100%"
               />
@@ -327,7 +327,7 @@ function formatQty(value) {
 function calculateLineAmount(row) {
   const quantity = Number(row.quantity || 0);
   const unitPrice = Number(row.unitPrice || 0);
-  return (quantity * unitPrice).toFixed(2);
+  return (quantity * unitPrice).toFixed(4);
 }
 
 async function searchMaterials(keyword) {

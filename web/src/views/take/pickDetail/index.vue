@@ -151,6 +151,7 @@ import { listNoPage } from "@/api/take/pickDetail";
 import { useDict } from "@/utils/dict";
 
 const { proxy } = getCurrentInstance();
+const MONEY_PRECISION = 4;
 // 获取物料分类字典数据
 const { saifute_material_category } = useDict("saifute_material_category");
 const pickDetailList = ref([]);
@@ -174,8 +175,7 @@ const totalMoney = computed(() => {
     (sum, item) => sum + Number(item.amount),
     0,
   );
-  // 浮点累加会产生 34249.2299999 等误差，按分取整再转回元并保留两位小数
-  return (Math.round(total * 100) / 100).toFixed(2);
+  return total.toFixed(MONEY_PRECISION);
 });
 const { queryParams } = toRefs(data);
 
@@ -359,7 +359,7 @@ function getSummaries(param) {
               return prev;
             }
           }, 0)
-          .toFixed(2);
+          .toFixed(MONEY_PRECISION);
       } else {
         sums[index] = "N/A";
       }

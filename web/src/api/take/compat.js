@@ -41,6 +41,7 @@ const MODE_CONFIG = {
 };
 
 const RETURN_SOURCE_TYPE = "1";
+const MONEY_PRECISION = 4;
 
 function buildPageQuery(query = {}) {
   const pageNum = Number(query.pageNum) > 0 ? Number(query.pageNum) : 1;
@@ -69,7 +70,7 @@ function toDecimalString(value) {
 
 function normalizeMoneyValue(value) {
   const parsed = toNumber(value);
-  return Number(parsed.toFixed(2));
+  return Number(parsed.toFixed(MONEY_PRECISION));
 }
 
 function toAuditStatus(status) {
@@ -235,7 +236,7 @@ function mapOrder(
     updateBy: order.updatedBy ?? "",
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
-    totalAmount: toNumber(order.totalAmount).toFixed(2),
+    totalAmount: toNumber(order.totalAmount).toFixed(MONEY_PRECISION),
     totalQty: toNumber(order.totalQty),
     auditStatus: toAuditStatus(order.auditStatusSnapshot),
     auditor: audit?.decidedBy ?? null,

@@ -29,17 +29,17 @@ export class CreateOutboundOrderLineDto {
   quantity!: string;
 
   @IsString()
-  @Matches(/^\d+(\.\d{1,2})?$/, {
+  @Matches(/^\d+(\.\d{1,4})?$/, {
     message:
-      "selectedUnitCost must be a non-negative decimal string with up to 2 decimals",
+      "selectedUnitCost must be a non-negative decimal string with up to 4 decimals",
   })
   selectedUnitCost!: string;
 
   @IsString()
   @IsOptional()
-  @Matches(/^\d+(\.\d{1,2})?$/, {
+  @Matches(/^\d+(\.\d{1,4})?$/, {
     message:
-      "unitPrice must be a non-negative decimal string with up to 2 decimals",
+      "unitPrice must be a non-negative decimal string with up to 4 decimals",
   })
   unitPrice?: string;
 

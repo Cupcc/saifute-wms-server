@@ -4,6 +4,11 @@ import { AppConfigService } from "../../../shared/config/app-config.service";
 import { StockScopeCompatibilityService } from "../../inventory-core/application/stock-scope-compatibility.service";
 import type { StockScopeCode } from "../../session/domain/user-session";
 import {
+  resolveDateRange,
+  resolveTodayRange,
+  toDateOnly,
+} from "../domain/reporting-date.util";
+import {
   ExportReportDto,
   type QueryInventorySummaryDto,
   type QueryMaterialCategorySummaryDto,
@@ -11,11 +16,6 @@ import {
   ReportingExportType,
   ReportingTrendType,
 } from "../dto/query-reporting.dto";
-import {
-  resolveDateRange,
-  resolveTodayRange,
-  toDateOnly,
-} from "../domain/reporting-date.util";
 import { HomeMetricsRepository } from "../infrastructure/home-metrics.repository";
 import {
   type InventoryBalanceSnapshot,
@@ -68,9 +68,13 @@ export class ReportingService {
     const inventoryProjection = await this.loadInventoryProjection({
       stockScope,
     });
-    const metrics = await this.homeMetricsRepository.getHomeMetrics(start, end, {
-      stockScope,
-    });
+    const metrics = await this.homeMetricsRepository.getHomeMetrics(
+      start,
+      end,
+      {
+        stockScope,
+      },
+    );
 
     return {
       generatedAt: new Date().toISOString(),
@@ -182,7 +186,7 @@ export class ReportingService {
         materialCount: item.materialIds.size,
         inventoryRecordCount: item.inventoryRecordCount,
         lowStockCount: item.lowStockCount,
-        totalInventoryValue: item.totalInventoryValue.toFixed(2),
+        totalInventoryValue: item.totalInventoryValue.toFixed(4),
       }))
       .sort((left, right) =>
         new Prisma.Decimal(right.totalInventoryValue).cmp(
@@ -264,7 +268,7 @@ export class ReportingService {
           trendType: item.trendType,
           documentCount: item.documentCount,
           totalQty: item.totalQty.toFixed(6),
-          totalAmount: item.totalAmount.toFixed(2),
+          totalAmount: item.totalAmount.toFixed(4),
         })),
     };
   }
@@ -431,7 +435,7 @@ export class ReportingService {
       activeMaterialCount: materialIdsWithStock.size,
       inventoryRecordCount: snapshots.length,
       lowStockCount,
-      totalInventoryValue: totalInventoryValue.toFixed(2),
+      totalInventoryValue: totalInventoryValue.toFixed(4),
     };
   }
 
@@ -444,7 +448,7 @@ export class ReportingService {
   }
 
   private toMoneyString(value: Prisma.Decimal | null | undefined) {
-    return new Prisma.Decimal(value ?? 0).toFixed(2);
+    return new Prisma.Decimal(value ?? 0).toFixed(4);
   }
 
   private async resolveInventoryStockScopeIds(stockScope?: StockScopeCode) {

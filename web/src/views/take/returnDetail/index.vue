@@ -275,6 +275,8 @@ function searchWorkshop(query) {
 }
 
 /** 合计行计算 */
+const MONEY_PRECISION = 4;
+
 function getSummaries(param) {
   const { columns, data } = param;
   const sums = [];
@@ -309,7 +311,7 @@ function getSummaries(param) {
             return prev;
           }
         }, 0)
-        .toFixed(2);
+        .toFixed(MONEY_PRECISION);
     } else {
       sums[index] = "";
     }
@@ -322,7 +324,7 @@ function resolveLineAmount(row) {
   const quantity = Number(row?.returnQty);
   const unitPrice = Number(row?.unitPrice);
   if (Number.isFinite(quantity) && Number.isFinite(unitPrice)) {
-    return Number((quantity * unitPrice).toFixed(2));
+    return Number((quantity * unitPrice).toFixed(MONEY_PRECISION));
   }
   const directAmount = Number(row?.amount);
   if (Number.isFinite(directAmount)) return directAmount;
@@ -331,7 +333,7 @@ function resolveLineAmount(row) {
 
 function formatLineAmount(row) {
   const amount = resolveLineAmount(row);
-  return Number.isFinite(amount) ? amount.toFixed(2) : "0.00";
+  return Number.isFinite(amount) ? amount.toFixed(MONEY_PRECISION) : "0.0000";
 }
 
 /** 搜索按钮操作 */

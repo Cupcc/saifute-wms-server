@@ -205,7 +205,7 @@
                 type="date"
                 value-format="YYYY-MM-DD"
                 placeholder="请选择验收日期"
-                :disabled="form.inboundId != null">
+                :disabled="isView">
               </el-date-picker>
             </el-form-item>
           </el-col>
@@ -213,7 +213,7 @@
         <el-row>
           <el-col :span="12">
 	          <el-form-item label="经办人" prop="attn">
-		          <combo-input v-model="form.attn" scope="personnel" field="personnelName" placeholder="请选择或输入经办人" :disabled="form.inboundId != null" />
+		          <combo-input v-model="form.attn" scope="personnel" field="personnelName" placeholder="请选择或输入经办人" :disabled="isView" />
 	          </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -228,7 +228,7 @@
 			          :remote-method="searchWorkshopForForm"
 			          :loading="workshopLoadingForForm"
 			          style="width: 100%"
-			          :disabled="form.inboundId != null">
+			          :disabled="isView">
 			          <el-option
 				          v-for="item in workshopOptionsForForm"
 				          :key="item.workshopId"
@@ -251,7 +251,7 @@
                 :remote-method="searchSalesProjectForForm"
                 :loading="salesProjectLoadingForForm"
                 style="width: 100%"
-                :disabled="form.inboundId != null"
+                :disabled="isView"
                 @change="handleSalesProjectChange"
               >
                 <el-option
@@ -298,7 +298,7 @@
 	      <el-row>
 		      <el-col :span="12">
 			      <el-form-item label="备注" prop="remark">
-				      <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" :disabled="form.inboundId != null"/>
+				      <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" :disabled="isView"/>
 			      </el-form-item>
 		      </el-col>
 	      </el-row>
@@ -321,7 +321,7 @@
                 :remote-method="searchMaterialForDetail"
                 :loading="materialLoading"
                 style="width: 100%"
-                :disabled="form.inboundId != null"
+                :disabled="isView"
                 @change="(val) => handleMaterialChange(val, scope.$index)">
                 <el-option
                   v-for="item in materialOptions"
@@ -340,7 +340,7 @@
               <el-input
                 v-model="scope.row.materialName"
                 placeholder="新物料名称"
-                :disabled="form.inboundId != null || isExistingMaterialRow(scope.row)"
+                :disabled="isView || isExistingMaterialRow(scope.row)"
               />
             </template>
           </el-table-column>
@@ -349,7 +349,7 @@
               <el-input
                 v-model="scope.row.specModel"
                 placeholder="规格型号"
-                :disabled="form.inboundId != null || isExistingMaterialRow(scope.row)"
+                :disabled="isView || isExistingMaterialRow(scope.row)"
               />
             </template>
           </el-table-column>
@@ -358,40 +358,40 @@
               <el-input
                 v-model="scope.row.unitCode"
                 placeholder="单位"
-                :disabled="form.inboundId != null || isExistingMaterialRow(scope.row)"
+                :disabled="isView || isExistingMaterialRow(scope.row)"
               />
             </template>
           </el-table-column>
           <el-table-column label="验收数量" prop="quantity">
             <template #default="scope">
-              <el-input-number v-model="scope.row.quantity" placeholder="验收数量" controls-position="right" :disabled="form.inboundId != null" style="width: 100%" @change="calculateTotalAmount" />
+              <el-input-number v-model="scope.row.quantity" placeholder="验收数量" controls-position="right" :disabled="isView" style="width: 100%" @change="calculateTotalAmount" />
             </template>
           </el-table-column>
           <el-table-column label="单价" prop="unitPrice">
             <template #default="scope">
-              <el-input-number v-model="scope.row.unitPrice" :min="0" placeholder="单价" controls-position="right" style="width: 100%" @change="calculateTotalAmount" />
+              <el-input-number v-model="scope.row.unitPrice" :min="0" :precision="MONEY_PRECISION" placeholder="单价" controls-position="right" style="width: 100%" @change="calculateTotalAmount" />
             </template>
           </el-table-column>
           <el-table-column label="含税价" prop="taxPrice">
             <template #default="scope">
-              <el-input-number v-model="scope.row.taxPrice" :min="0" placeholder="含税价" controls-position="right" style="width: 100%" @change="calculateTotalAmount" />
+              <el-input-number v-model="scope.row.taxPrice" :min="0" :precision="MONEY_PRECISION" placeholder="含税价" controls-position="right" style="width: 100%" @change="calculateTotalAmount" />
             </template>
           </el-table-column>
           <el-table-column label="备注" prop="remark">
             <template #default="scope">
               <el-input v-model="scope.row.remark"
-                        type="textarea" :autosize="{ minRows: 1 }" placeholder="请输入备注" :disabled="form.inboundId != null" />
+                        type="textarea" :autosize="{ minRows: 1 }" placeholder="请输入备注" :disabled="isView" />
             </template>
           </el-table-column>
           <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
             <template #default="scope">
-              <el-button link type="primary" icon="Delete" @click="removeDetailItem(scope.$index)" :disabled="form.inboundId != null">删除</el-button>
+              <el-button link type="primary" icon="Delete" @click="removeDetailItem(scope.$index)" :disabled="isView">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
       </div>
 	    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-right: 20px">
-		    <el-button type="primary" plain icon="Plus" @click="addDetailItem" :disabled="form.inboundId != null">添加明细</el-button>
+		    <el-button type="primary" plain icon="Plus" @click="addDetailItem" :disabled="isView">添加明细</el-button>
 		    <span>合计金额: {{ form.totalAmount }}</span>
 	    </div>
       </div>
@@ -645,6 +645,7 @@ const multiple = ref(true);
 const total = ref(0);
 const title = ref("");
 const isView = ref(false);
+const MONEY_PRECISION = 4;
 const abandonOpen = ref(false);
 const dateRange = ref([]);
 const supplierOptions = ref([]);
@@ -1168,13 +1169,15 @@ function calculateTotalAmount() {
   let total = 0;
   detailList.value.forEach((item) => {
     if (item.quantity && item.unitPrice) {
-      item.amount = Number((item.quantity * item.unitPrice).toFixed(2));
+      item.amount = Number(
+        (item.quantity * item.unitPrice).toFixed(MONEY_PRECISION),
+      );
       total += item.amount;
     } else {
       item.amount = 0;
     }
   });
-  form.value.totalAmount = total.toFixed(2);
+  form.value.totalAmount = total.toFixed(MONEY_PRECISION);
 }
 
 // 多选框选中数据

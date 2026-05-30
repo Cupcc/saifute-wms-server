@@ -175,7 +175,7 @@
             <el-input-number
               v-model="row.unitPrice"
               :min="0"
-              :precision="2"
+              :precision="4"
               controls-position="right"
               style="width: 100%"
               @change="calculateTotalAmount"
@@ -225,8 +225,12 @@
 </template>
 
 <script setup name="SalesProjectAcceptanceOrderDialog">
-import { formatAmount } from "../shared";
 import { useSalesProjectAcceptanceOrderDialog } from "./useSalesProjectAcceptanceOrderDialog";
+
+function formatAmount(value) {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed.toFixed(4) : "0.0000";
+}
 
 const props = defineProps({
   modelValue: {

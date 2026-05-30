@@ -28,6 +28,9 @@ const MODE_CONFIG = {
     detailIdKey: "detailId",
   },
 };
+
+const MONEY_PRECISION = 4;
+
 function buildPageQuery(query = {}) {
   const pageNum = Number(query.pageNum) > 0 ? Number(query.pageNum) : 1;
   const pageSize = Number(query.pageSize) > 0 ? Number(query.pageSize) : 30;
@@ -81,6 +84,19 @@ function toDecimalString(value) {
   return String(value);
 }
 
+function toMoneyNumber(value) {
+  const number = Number(value ?? 0);
+  if (!Number.isFinite(number)) {
+    return 0;
+  }
+
+  return Number(number.toFixed(MONEY_PRECISION));
+}
+
+function toMoneyDisplayString(value) {
+  return toMoneyNumber(value).toFixed(MONEY_PRECISION);
+}
+
 function normalizeText(value) {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
 }
@@ -97,9 +113,9 @@ function toAuditStatus(status) {
 
 function mapInboundLine(line, config, order, audit = null) {
   const quantity = Number(line.quantity ?? 0);
-  const unitPrice = Number(line.unitPrice ?? 0);
+  const unitPrice = toMoneyNumber(line.unitPrice ?? 0);
   const taxPrice = unitPrice;
-  const amount = Number(line.amount ?? quantity * unitPrice);
+  const amount = toMoneyNumber(line.amount ?? quantity * unitPrice);
 
   return {
     [config.detailIdKey]: line.id,
@@ -152,7 +168,7 @@ function mapInboundOrder(order, config, audit = null) {
     workshopId: order.workshopId,
     workshopName: order.workshopNameSnapshot ?? "",
     attn: order.handlerNameSnapshot ?? "",
-    totalAmount: Number(order.totalAmount ?? 0).toFixed(2),
+    totalAmount: toMoneyDisplayString(order.totalAmount ?? 0),
     totalQty: Number(order.totalQty ?? 0),
     remark: order.remark ?? "",
     createBy: order.createdBy ?? "",
@@ -221,6 +237,10 @@ function buildInboundPayload(
   isUpdate,
 ) {
   const lines = Array.isArray(data.details) ? data.details : [];
+  const buildLinePayload = isUpdate
+    ? buildUpdateInboundLinePayload
+    : buildCreateInboundLinePayload;
+
   return {
     ...(isUpdate ? {} : { orderType: config.orderType }),
     bizDate: data[config.dateKey],
@@ -237,19 +257,35 @@ function buildInboundPayload(
     workshopId: data.workshopId,
     salesProjectId: data.salesProjectId,
     remark: data.remark,
-    lines: lines.map((line) => ({
-      ...(line[config.detailIdKey] ? { id: line[config.detailIdKey] } : {}),
-      ...(typeof line.materialId === "number" ? { materialId: line.materialId } : {}),
-      materialCode: line.materialCode,
-      materialName:
-        line.materialName ||
-        (typeof line.materialId === "string" ? line.materialId : undefined),
-      specModel: line.specModel ?? line.specification,
-      unitCode: line.unitCode,
-      quantity: toDecimalString(line.quantity),
-      unitPrice: toDecimalString(line.unitPrice),
-      remark: line.remark,
-    })),
+    lines: lines.map((line) => buildLinePayload(line, config)),
+  };
+}
+
+function buildBaseInboundLinePayload(line) {
+  return {
+    ...(typeof line.materialId === "number" ? { materialId: line.materialId } : {}),
+    quantity: toDecimalString(line.quantity),
+    unitPrice: toDecimalString(line.unitPrice),
+    remark: line.remark,
+  };
+}
+
+function buildCreateInboundLinePayload(line, config) {
+  return {
+    ...buildBaseInboundLinePayload(line),
+    materialCode: line.materialCode,
+    materialName:
+      line.materialName ||
+      (typeof line.materialId === "string" ? line.materialId : undefined),
+    specModel: line.specModel ?? line.specification,
+    unitCode: line.unitCode,
+  };
+}
+
+function buildUpdateInboundLinePayload(line, config) {
+  return {
+    ...(line[config.detailIdKey] ? { id: line[config.detailIdKey] } : {}),
+    ...buildBaseInboundLinePayload(line),
   };
 }
 

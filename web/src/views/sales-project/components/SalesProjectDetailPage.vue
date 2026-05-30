@@ -287,7 +287,7 @@
           <el-input
             v-model="selectMaterialForm.unitPrice"
             placeholder="0"
-            @input="normalizeDecimalField(selectMaterialForm, 'unitPrice', 2)"
+            @input="normalizeDecimalField(selectMaterialForm, 'unitPrice', 4)"
           />
         </el-form-item>
         <el-form-item label="备注">

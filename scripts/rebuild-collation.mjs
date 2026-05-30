@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { existsSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import * as mariadb from "mariadb";
@@ -31,6 +32,7 @@ if (!database) {
 }
 
 const requestedCollation = process.argv[2] ?? DEFAULT_COLLATION;
+const requiredRebuildConfirmation = `DROP DATABASE ${database}`;
 
 if (!requestedCollation.startsWith(`${DEFAULT_CHARACTER_SET}_`)) {
   throw new Error(
@@ -85,6 +87,59 @@ function buildSchemaSql(targetCollation) {
     .trim();
 }
 
+function assertRebuildConfirmed({ tableCount, totalRows }) {
+  if (process.env.DATABASE_REBUILD_CONFIRM !== requiredRebuildConfirmation) {
+    throw new Error(
+      [
+        `Refusing to rebuild database ${database}.`,
+        "This command drops and recreates the whole DATABASE_URL database.",
+        `To run it intentionally, set DATABASE_REBUILD_CONFIRM=${JSON.stringify(requiredRebuildConfirmation)}.`,
+      ].join("\n"),
+    );
+  }
+
+  if (tableCount === 0 && totalRows === 0) {
+    return;
+  }
+
+  const backupPath = process.env.DATABASE_REBUILD_BACKUP_PATH?.trim();
+
+  if (!backupPath) {
+    throw new Error(
+      [
+        `Refusing to rebuild populated database ${database}.`,
+        `Current database has ${tableCount} tables and approximately ${totalRows} rows.`,
+        "Set DATABASE_REBUILD_BACKUP_PATH to an existing SQL backup before rebuilding.",
+      ].join("\n"),
+    );
+  }
+
+  if (!existsSync(backupPath) || !statSync(backupPath).isFile()) {
+    throw new Error(
+      `DATABASE_REBUILD_BACKUP_PATH does not point to an existing file: ${backupPath}`,
+    );
+  }
+}
+
+async function readDatabaseFootprint(connection, databaseName) {
+  const rows = await connection.query(
+    `
+      SELECT
+        COUNT(*) AS tableCount,
+        COALESCE(SUM(table_rows), 0) AS totalRows
+      FROM information_schema.tables
+      WHERE table_schema = ?
+    `,
+    [databaseName],
+  );
+  const row = rows[0] ?? {};
+
+  return {
+    tableCount: Number(row.tableCount ?? 0),
+    totalRows: Number(row.totalRows ?? 0),
+  };
+}
+
 const migrationSql = buildSchemaSql(requestedCollation);
 
 const connectionConfig = {
@@ -111,6 +166,12 @@ try {
       `Collation ${requestedCollation} is not supported by the current MySQL server.`,
     );
   }
+
+  const databaseFootprint = await readDatabaseFootprint(
+    adminConnection,
+    database,
+  );
+  assertRebuildConfirmed(databaseFootprint);
 
   await adminConnection.query(
     `DROP DATABASE IF EXISTS ${quoteIdentifier(database)};`,

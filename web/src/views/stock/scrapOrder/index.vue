@@ -261,7 +261,7 @@
             </el-table-column>
             <el-table-column label="预估损失" prop="estimatedLoss">
               <template #default="scope">
-                <el-input-number v-model="scope.row.estimatedLoss" placeholder="预估损失" :min="0" controls-position="right" style="width: 100%" :disabled="isView" />
+                <el-input-number v-model="scope.row.estimatedLoss" :precision="4" placeholder="预估损失" :min="0" controls-position="right" style="width: 100%" :disabled="isView" />
               </template>
             </el-table-column>
             <el-table-column label="备注" prop="remark">

@@ -530,7 +530,7 @@ function formatNumber(value) {
 
 function formatAmount(value) {
   const parsed = Number(value ?? 0);
-  return Number.isFinite(parsed) ? parsed.toFixed(2) : "0.00";
+  return Number.isFinite(parsed) ? parsed.toFixed(4) : "0.0000";
 }
 
 void [

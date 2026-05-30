@@ -331,7 +331,7 @@
               <el-input
                 v-model="row.selectedUnitCost"
                 placeholder="成本价"
-                @input="normalizeDecimalField(row, 'selectedUnitCost', 2)"
+                @input="normalizeDecimalField(row, 'selectedUnitCost', 4)"
               />
             </template>
           </el-table-column>
@@ -358,7 +358,7 @@
               <el-input
                 v-model="row.unitPrice"
                 placeholder="销售单价"
-                @input="normalizeDecimalField(row, 'unitPrice', 2)"
+                @input="normalizeDecimalField(row, 'unitPrice', 4)"
               />
             </template>
           </el-table-column>
@@ -1212,7 +1212,12 @@ function computeLineAmount(row) {
 
 function formatAmount(value) {
   const parsed = Number(value ?? 0);
-  return Number.isFinite(parsed) ? parsed.toFixed(2) : "0.00";
+  return Number.isFinite(parsed) ? parsed.toFixed(4) : "0.0000";
+}
+
+function formatCostAmount(value) {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed.toFixed(4) : "0.0000";
 }
 
 function getSelectedPriceLayer(row) {
@@ -1263,7 +1268,7 @@ function formatQuantityDisplay(value) {
 }
 
 function formatPriceLayerLabel(item) {
-  const unitCost = formatAmount(item?.unitCost);
+  const unitCost = formatCostAmount(item?.unitCost);
   const availableQty = formatQuantityDisplay(item?.availableQty);
   return `${unitCost} / 可用 ${availableQty}`;
 }
@@ -1608,6 +1613,7 @@ void [
   normalizeDecimalField,
   computeLineAmount,
   formatAmount,
+  formatCostAmount,
   searchCustomers,
   searchPersonnelOptions,
   searchWorkshops,

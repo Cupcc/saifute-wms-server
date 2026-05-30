@@ -138,9 +138,9 @@ describe("ReportingService", () => {
     expect(result.inventory.activeMaterialCount).toBe(2);
     expect(result.inventory.inventoryRecordCount).toBe(2);
     expect(result.inventory.lowStockCount).toBe(1);
-    expect(result.inventory.totalInventoryValue).toBe("100.50");
+    expect(result.inventory.totalInventoryValue).toBe("100.5000");
     expect(result.todayDocuments.inboundCount).toBe(4);
-    expect(result.cumulativeDocuments.inbound.totalAmount).toBe("1200.50");
+    expect(result.cumulativeDocuments.inbound.totalAmount).toBe("1200.5000");
     expect(homeMetricsRepository.getHomeMetrics).toHaveBeenCalledWith(
       expect.any(Date),
       expect.any(Date),
@@ -224,8 +224,8 @@ describe("ReportingService", () => {
     expect(result.items[0]?.materialCount).toBe(2);
     expect(result.items[0]?.inventoryRecordCount).toBe(2);
     expect(result.items[0]?.lowStockCount).toBe(1);
-    expect(result.items[0]?.totalInventoryValue).toBe("150.00");
-    expect(result.summary.totalInventoryValue).toBe("150.00");
+    expect(result.items[0]?.totalInventoryValue).toBe("150.0000");
+    expect(result.summary.totalInventoryValue).toBe("150.0000");
   });
 
   it("should honor trend time boundaries and filters", async () => {

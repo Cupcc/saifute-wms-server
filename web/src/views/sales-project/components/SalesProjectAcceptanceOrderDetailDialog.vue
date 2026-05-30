@@ -68,7 +68,12 @@
 
 <script setup name="SalesProjectAcceptanceOrderDetailDialog">
 import { computed } from "vue";
-import { formatAmount, formatDate, formatNumber } from "../shared";
+import { formatDate, formatNumber } from "../shared";
+
+function formatAmount(value) {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed.toFixed(4) : "0.0000";
+}
 
 const props = defineProps({
   modelValue: {

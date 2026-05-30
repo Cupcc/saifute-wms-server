@@ -1088,7 +1088,7 @@ function formatMoney(value) {
 
   return numericValue.toLocaleString("zh-CN", {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 4,
   });
 }
 

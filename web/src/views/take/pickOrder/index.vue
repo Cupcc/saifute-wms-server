@@ -439,6 +439,7 @@ import { formatDateToYYYYMMDD, generateOrderNo } from "@/utils/orderNumber";
 import request from "@/utils/request";
 
 const { proxy } = getCurrentInstance();
+const MONEY_PRECISION = 4;
 
 const pickOrderList = ref([]);
 const open = ref(false);
@@ -609,7 +610,7 @@ function reset() {
     createdAt: null,
     updateBy: null,
     updatedAt: null,
-    totalAmount: "0.00",
+    totalAmount: "0.0000",
     details: [],
   };
   proxy.resetForm("pickOrderRef");
@@ -1064,7 +1065,7 @@ function formatMoneyDisplay(value) {
     return "-";
   }
   const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed.toFixed(2) : "-";
+  return Number.isFinite(parsed) ? parsed.toFixed(MONEY_PRECISION) : "-";
 }
 
 function toInputString(value) {
@@ -1083,7 +1084,7 @@ function updateLineAmount(row) {
   const unitPrice = Number(row.unitPrice ?? 0);
   row.amount =
     row.selectedUnitCost && quantity > 0 && Number.isFinite(unitPrice)
-      ? Number((quantity * unitPrice).toFixed(2))
+      ? Number((quantity * unitPrice).toFixed(MONEY_PRECISION))
       : null;
 }
 

@@ -189,8 +189,8 @@ describe("MonthlyReportDomainSummaryService", () => {
       workshopId: 10,
     });
     expect(result.summary.documentCount).toBe(3);
-    expect(result.summary.totalOutAmount).toBe("120.00");
-    expect(result.summary.totalInAmount).toBe("20.00");
+    expect(result.summary.totalOutAmount).toBe("120.0000");
+    expect(result.summary.totalInAmount).toBe("20.0000");
     expect(result.summary).not.toHaveProperty("totalCost");
     expect(result.domains.map((item) => item.domainLabel)).toEqual([
       "销售",
@@ -198,15 +198,15 @@ describe("MonthlyReportDomainSummaryService", () => {
     ]);
     expect(result.domains[0]).toMatchObject({
       salesOutboundQuantity: "10.00",
-      salesOutboundSalesAmount: "100.00",
-      salesOutboundCostAmount: "70.00",
+      salesOutboundSalesAmount: "100.0000",
+      salesOutboundCostAmount: "70.0000",
       salesReturnQuantity: "2.00",
-      salesReturnSalesAmount: "20.00",
-      salesReturnCostAmount: "14.00",
+      salesReturnSalesAmount: "20.0000",
+      salesReturnCostAmount: "14.0000",
       netSalesQuantity: "8.00",
-      netSalesAmount: "80.00",
-      netCostAmount: "56.00",
-      salesGrossProfitAmount: "24.00",
+      netSalesAmount: "80.0000",
+      netCostAmount: "56.0000",
+      salesGrossProfitAmount: "24.0000",
     });
     expect(result.domains[0]).not.toHaveProperty("totalCost");
     expect(result.domains[1]).toMatchObject({
@@ -219,11 +219,11 @@ describe("MonthlyReportDomainSummaryService", () => {
       expect.arrayContaining([
         expect.objectContaining({
           documentTypeLabel: "RD 交接单",
-          totalOutAmount: "20.00",
+          totalOutAmount: "20.0000",
         }),
         expect.objectContaining({
           documentTypeLabel: "销售出库单",
-          totalOutAmount: "100.00",
+          totalOutAmount: "100.0000",
         }),
       ]),
     );
@@ -231,12 +231,12 @@ describe("MonthlyReportDomainSummaryService", () => {
     expect(result.salesProjectItems[0]).toMatchObject({
       salesProjectCode: "SP-101",
       salesProjectName: "项目A",
-      salesOutboundSalesAmount: "100.00",
-      salesOutboundCostAmount: "70.00",
-      salesReturnSalesAmount: "20.00",
-      salesReturnCostAmount: "14.00",
-      netSalesAmount: "80.00",
-      netCostAmount: "56.00",
+      salesOutboundSalesAmount: "100.0000",
+      salesOutboundCostAmount: "70.0000",
+      salesReturnSalesAmount: "20.0000",
+      salesReturnCostAmount: "14.0000",
+      netSalesAmount: "80.0000",
+      netCostAmount: "56.0000",
     });
     expect(result.salesProjectItems[0]).not.toHaveProperty("totalCost");
     expect(result.documentTypeCatalog).toEqual(
@@ -288,21 +288,21 @@ describe("MonthlyReportDomainSummaryService", () => {
       yearMonth: "2026-03",
     });
 
-    expect(result.summary.totalInAmount).toBe("0.00");
-    expect(result.summary.totalOutAmount).toBe("0.00");
-    expect(result.summary.netAmount).toBe("0.00");
+    expect(result.summary.totalInAmount).toBe("0.0000");
+    expect(result.summary.totalOutAmount).toBe("0.0000");
+    expect(result.summary.netAmount).toBe("0.0000");
     expect(result.domains).toEqual([
       expect.objectContaining({
         domainLabel: "研发项目",
-        totalInAmount: "0.00",
-        totalOutAmount: "0.00",
+        totalInAmount: "0.0000",
+        totalOutAmount: "0.0000",
       }),
     ]);
     expect(result.rdProjectItems).toEqual([
       expect.objectContaining({
         rdProjectCode: "TEST-RDP-001",
-        handoffInAmount: "900.00",
-        netAmount: "900.00",
+        handoffInAmount: "900.0000",
+        netAmount: "900.0000",
       }),
     ]);
   });
@@ -380,9 +380,9 @@ describe("MonthlyReportDomainSummaryService", () => {
       expect.objectContaining({
         workshopId: null,
         workshopName: "未区分车间",
-        pickAmount: "30.00",
-        returnAmount: "8.00",
-        netAmount: "-22.00",
+        pickAmount: "30.0000",
+        returnAmount: "8.0000",
+        netAmount: "-22.0000",
       }),
     ]);
     expect(details.items).toEqual(

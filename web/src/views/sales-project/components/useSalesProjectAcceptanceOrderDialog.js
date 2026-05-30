@@ -10,6 +10,8 @@ import { mergeMaterialOptions } from "@/utils/materialOptions";
 import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
 import { toInputString } from "../shared";
 
+const MONEY_PRECISION = 4;
+
 export function useSalesProjectAcceptanceOrderDialog(props, emit) {
   const { proxy } = getCurrentInstance();
   const userStore = useUserStore();
@@ -158,10 +160,10 @@ export function useSalesProjectAcceptanceOrderDialog(props, emit) {
     for (const line of detailList.value) {
       const quantity = Number(line.quantity || 0);
       const unitPrice = Number(line.unitPrice || 0);
-      line.amount = Number((quantity * unitPrice).toFixed(2));
+      line.amount = Number((quantity * unitPrice).toFixed(MONEY_PRECISION));
       total += line.amount;
     }
-    form.value.totalAmount = total.toFixed(2);
+    form.value.totalAmount = total.toFixed(MONEY_PRECISION);
   }
 
   function submitForm() {
@@ -262,7 +264,7 @@ function createForm() {
     salesProjectName: null,
     workshopId: null,
     attn: null,
-    totalAmount: "0.00",
+    totalAmount: "0.0000",
     remark: "",
     details: [],
   };
