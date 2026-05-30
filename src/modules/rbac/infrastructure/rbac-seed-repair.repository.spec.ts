@@ -1,4 +1,9 @@
-import { FINANCE_ACCOUNTANT_ROLE_KEY } from "../../../../prisma/system-management.seed";
+import {
+  DATABASE_BACKUP_COMMAND_CONFIG_KEY,
+  DATABASE_BACKUP_DIRECTORY_CONFIG_KEY,
+  DATABASE_BACKUP_RETENTION_FULL_COUNT_CONFIG_KEY,
+  FINANCE_ACCOUNTANT_ROLE_KEY,
+} from "../../../../prisma/system-management.seed";
 import { RbacSeedRepairRepository } from "./rbac-seed-repair.repository";
 import { RbacState } from "./rbac-state";
 
@@ -141,6 +146,58 @@ describe("RbacSeedRepairRepository", () => {
       remark: "管理员已调整",
       createdAt: "2026-05-21T00:00:00.000Z",
       menuIds: [customMenu.menuId],
+    });
+  });
+
+  it("recreates missing seeded backup configs without overwriting existing values", () => {
+    const state = new RbacState();
+    const repository = new RbacSeedRepairRepository(state);
+    const existingDirectoryConfig = state.configs.find(
+      (config) => config.configKey === DATABASE_BACKUP_DIRECTORY_CONFIG_KEY,
+    );
+
+    if (!existingDirectoryConfig) {
+      throw new Error("Expected backup directory config seed fixture to exist");
+    }
+
+    const expectedRetentionValue = state.configs.find(
+      (config) =>
+        config.configKey === DATABASE_BACKUP_RETENTION_FULL_COUNT_CONFIG_KEY,
+    )?.configValue;
+    if (!expectedRetentionValue) {
+      throw new Error("Expected backup retention config seed fixture to exist");
+    }
+
+    existingDirectoryConfig.configValue = "/custom/backup-dir";
+    state.configs = state.configs.filter(
+      (config) =>
+        config.configKey !== DATABASE_BACKUP_COMMAND_CONFIG_KEY &&
+        config.configKey !== DATABASE_BACKUP_RETENTION_FULL_COUNT_CONFIG_KEY,
+    );
+
+    expect(
+      repository.ensureSeedConfigs([
+        DATABASE_BACKUP_DIRECTORY_CONFIG_KEY,
+        DATABASE_BACKUP_COMMAND_CONFIG_KEY,
+        DATABASE_BACKUP_RETENTION_FULL_COUNT_CONFIG_KEY,
+      ]),
+    ).toBe(true);
+
+    expect(existingDirectoryConfig.configValue).toBe("/custom/backup-dir");
+    expect(
+      state.configs.find(
+        (config) => config.configKey === DATABASE_BACKUP_COMMAND_CONFIG_KEY,
+      ),
+    ).toMatchObject({
+      configName: "数据库全量备份命令",
+    });
+    expect(
+      state.configs.find(
+        (config) =>
+          config.configKey === DATABASE_BACKUP_RETENTION_FULL_COUNT_CONFIG_KEY,
+      ),
+    ).toMatchObject({
+      configValue: expectedRetentionValue,
     });
   });
 });

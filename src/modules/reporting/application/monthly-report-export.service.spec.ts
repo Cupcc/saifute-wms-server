@@ -309,7 +309,7 @@ describe("MonthlyReportExportService", () => {
     expect(exportResult.content).toContain("库存净发生金额");
     expect(exportResult.content).toContain("100.00");
     expect(exportResult.content).toContain("108.00");
-    expect(exportResult.content).toContain("3.00");
+    expect(exportResult.content).toContain('<Data ss:Type="Number">3</Data>');
     expect(exportResult.content).not.toContain("3.000000");
     expect(exportResult.content).not.toContain("总成本");
     expect(exportResult.content).not.toContain("分类路径");
@@ -320,15 +320,27 @@ describe("MonthlyReportExportService", () => {
     expect(exportResult.content).not.toContain("异常标识");
     expect(exportResult.content).toContain("XSTH-001");
 
-    expectLabelsInOrder(extractWorksheet(exportResult.content, "分类汇总"), [
-      "单据数",
+    const categorySheet = extractWorksheet(exportResult.content, "分类汇总");
+    expect(categorySheet).not.toContain("单据行数");
+    expect(categorySheet).not.toContain("单据数");
+    expect(categorySheet).not.toContain("验收入库数量");
+    expect(categorySheet).not.toContain("生产入库数量");
+    expect(categorySheet).not.toContain("退给厂家数量");
+    expect(categorySheet).not.toContain("销售出库数量");
+    expect(categorySheet).not.toContain("销售退货数量");
+    expect(categorySheet).not.toContain("库存净发生数量");
+    expect(categorySheet).not.toContain("车间领料数量");
+    expect(categorySheet).not.toContain("车间退料数量");
+    expect(categorySheet).not.toContain("车间净使用数量");
+    expectLabelsInOrder(categorySheet, [
       "月初库存数量",
       "月初库存金额",
-      "库存净发生数量",
-      "库存净发生金额",
+      "净生产数量",
+      "净生产金额",
+      "净销售数量",
+      "净销售金额",
       "月末库存数量",
       "月末库存金额",
-      "验收入库数量",
     ]);
     expectLabelsInOrder(extractWorksheet(exportResult.content, "物料汇总"), [
       "单据数",
@@ -402,7 +414,7 @@ describe("MonthlyReportExportService", () => {
     expect(result.content).toContain("RDH-002");
     expect(result.content).toContain("项目交接入数量");
     expect(result.content).toContain("项目交接入金额");
-    expect(result.content).toContain('<Data ss:Type="Number">1.00</Data>');
+    expect(result.content).toContain('<Data ss:Type="Number">1</Data>');
     expect(result.content).not.toContain("1.000000");
     expect(result.content).not.toContain("交接金额");
     expect(result.content).not.toContain("主仓到RD交接汇总");
@@ -423,7 +435,7 @@ describe("MonthlyReportExportService", () => {
     const documentTypeSheet = extractWorksheet(result.content, "单据类型汇总");
 
     expect(documentTypeSheet).toContain("销售退货单");
-    expect(documentTypeSheet).toContain('<Data ss:Type="Number">0.00</Data>');
+    expect(documentTypeSheet).toContain('<Data ss:Type="Number">0</Data>');
     expect(documentTypeSheet).not.toContain("销售出库单");
   });
 

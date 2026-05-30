@@ -313,7 +313,7 @@ export function formatDecimal(value: Prisma.Decimal | string | number) {
 }
 
 export function formatQuantity(value: Prisma.Decimal | string | number) {
-  return new Prisma.Decimal(value).toFixed(2);
+  return new Prisma.Decimal(value).toFixed(0);
 }
 
 export function formatMoney(value: Prisma.Decimal | string | number) {

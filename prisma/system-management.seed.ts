@@ -137,6 +137,26 @@ const PROCUREMENT_PERMISSION_PRESET = [
 
 export const RD_OPERATOR_ROLE_KEY = "rd-operator";
 export const FINANCE_ACCOUNTANT_ROLE_KEY = "finance-accountant";
+export const DATABASE_BACKUP_DIRECTORY_CONFIG_KEY =
+  "sys.backup.database.full.directory";
+export const DATABASE_BACKUP_COMMAND_CONFIG_KEY =
+  "sys.backup.database.full.command";
+export const DATABASE_BACKUP_RETENTION_FULL_COUNT_CONFIG_KEY =
+  "sys.backup.database.full.retentionCount";
+
+function readSeedString(key: string, fallback: string): string {
+  const value = process.env[key]?.trim();
+  return value ? value : fallback;
+}
+
+function readSeedDatabaseBackupRetentionCount(): string {
+  const parsed = Number(process.env.DATABASE_BACKUP_RETENTION_FULL_COUNT ?? "");
+  if (!Number.isFinite(parsed)) {
+    return "2";
+  }
+
+  return String(Math.min(2, Math.max(1, Math.trunc(parsed))));
+}
 
 export const FINANCE_ACCOUNTANT_PERMISSION_PRESET = [
   "dashboard:view",
@@ -3511,6 +3531,36 @@ export function createSystemManagementSeedState(): SystemManagementState {
       configValue: "Saifute WMS",
       configType: "N",
       remark: "前端展示标题",
+      createdAt: "2026-03-01T09:00:00.000Z",
+    },
+    {
+      configId: 3,
+      configName: "数据库全量备份目录",
+      configKey: DATABASE_BACKUP_DIRECTORY_CONFIG_KEY,
+      configValue: readSeedString(
+        "DATABASE_BACKUP_DIR",
+        "storage/database-backups",
+      ),
+      configType: "Y",
+      remark: "WMS 定时任务全量备份输出目录，支持相对路径。",
+      createdAt: "2026-03-01T09:00:00.000Z",
+    },
+    {
+      configId: 4,
+      configName: "数据库全量备份命令",
+      configKey: DATABASE_BACKUP_COMMAND_CONFIG_KEY,
+      configValue: readSeedString("DATABASE_BACKUP_COMMAND", "mysqldump"),
+      configType: "Y",
+      remark: "WMS 定时任务全量备份使用的数据库导出命令。",
+      createdAt: "2026-03-01T09:00:00.000Z",
+    },
+    {
+      configId: 5,
+      configName: "数据库全量备份保留份数",
+      configKey: DATABASE_BACKUP_RETENTION_FULL_COUNT_CONFIG_KEY,
+      configValue: readSeedDatabaseBackupRetentionCount(),
+      configType: "Y",
+      remark: "WMS 定时任务最多保留的全量备份份数，当前实现上限为 2。",
       createdAt: "2026-03-01T09:00:00.000Z",
     },
   ];

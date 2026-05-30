@@ -99,7 +99,7 @@ describe("MonthlyReportDomainAggregatorService", () => {
     });
   });
 
-  it("formats ordinary monthly report aggregate quantities with two decimals", () => {
+  it("formats ordinary monthly report aggregate quantities as integers", () => {
     const workshopItems = service.buildWorkshopItems([
       createEntry({
         topicKey: MonthlyReportingTopicKey.WORKSHOP_PICK,
@@ -129,13 +129,13 @@ describe("MonthlyReportDomainAggregatorService", () => {
     ]);
 
     expect(workshopItems[0]).toMatchObject({
-      pickQuantity: "3.00",
-      returnQuantity: "1.20",
-      netQuantity: "-1.80",
+      pickQuantity: "3",
+      returnQuantity: "1",
+      netQuantity: "-2",
     });
     expect(rdProjectItems[0]).toMatchObject({
-      handoffInQuantity: "1.23",
-      netQuantity: "1.23",
+      handoffInQuantity: "1",
+      netQuantity: "1",
     });
   });
 });

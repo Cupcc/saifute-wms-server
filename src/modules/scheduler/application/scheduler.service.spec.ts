@@ -34,6 +34,7 @@ describe("SchedulerService", () => {
       findJobs: jest.fn(),
       findJobLogs: jest.fn(),
       findJobByName: jest.fn(),
+      findJobByInvokeTarget: jest.fn().mockResolvedValue(null),
       findJobById: jest.fn(),
       createJob: jest.fn(),
       updateJob: jest.fn().mockResolvedValue(undefined),
@@ -59,6 +60,7 @@ describe("SchedulerService", () => {
           useValue: {
             schedulerEnabled: true,
             schedulerTimezone: "Asia/Shanghai",
+            databaseBackupDefaultEnabled: true,
           },
         },
         {
@@ -110,6 +112,27 @@ describe("SchedulerService", () => {
       ).toHaveBeenCalledWith("system.noop");
       expect(harness.schedulerRepository.createJobLog).toHaveBeenCalled();
       expect(harness.schedulerRegistry.addCronJob).toHaveBeenCalled();
+    } finally {
+      await harness.moduleRef.close();
+    }
+  });
+
+  it("creates the default weekly database backup job on bootstrap", async () => {
+    const harness = await createHarness([]);
+
+    try {
+      await harness.service.onApplicationBootstrap();
+
+      expect(harness.schedulerRepository.createJob).toHaveBeenCalledWith(
+        expect.objectContaining({
+          jobName: "每周数据库全量备份",
+          invokeTarget: "database.full-backup",
+          cronExpression: "0 30 2 * * 0",
+          concurrencyPolicy: SchedulerConcurrencyPolicy.FORBID,
+          misfirePolicy: SchedulerMisfirePolicy.SKIP,
+          status: SchedulerJobStatus.ACTIVE,
+        }),
+      );
     } finally {
       await harness.moduleRef.close();
     }

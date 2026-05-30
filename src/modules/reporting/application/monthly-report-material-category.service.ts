@@ -48,6 +48,8 @@ export interface MonthlyReportMaterialCategorySummaryTotals {
   productionReceiptAmount: string;
   supplierReturnQuantity: string;
   supplierReturnAmount: string;
+  netProductionQuantity: string;
+  netProductionAmount: string;
   workshopPickQuantity: string;
   workshopPickAmount: string;
   workshopReturnQuantity: string;
@@ -62,6 +64,8 @@ export interface MonthlyReportMaterialCategorySummaryTotals {
   salesReturnAmount: string;
   salesReturnSalesAmount: string;
   salesReturnCostAmount: string;
+  netSalesQuantity: string;
+  netSalesAmount: string;
   netQuantity: string;
   netAmount: string;
   openingQuantity: string;
@@ -83,6 +87,8 @@ export interface MonthlyReportMaterialCategorySummaryItem {
   productionReceiptAmount: string;
   supplierReturnQuantity: string;
   supplierReturnAmount: string;
+  netProductionQuantity: string;
+  netProductionAmount: string;
   workshopPickQuantity: string;
   workshopPickAmount: string;
   workshopReturnQuantity: string;
@@ -97,6 +103,8 @@ export interface MonthlyReportMaterialCategorySummaryItem {
   salesReturnAmount: string;
   salesReturnSalesAmount: string;
   salesReturnCostAmount: string;
+  netSalesQuantity: string;
+  netSalesAmount: string;
   netQuantity: string;
   netAmount: string;
   openingQuantity: string;
@@ -136,6 +144,8 @@ export interface MonthlyReportMaterialSummaryItem {
   productionReceiptAmount: string;
   supplierReturnQuantity: string;
   supplierReturnAmount: string;
+  netProductionQuantity: string;
+  netProductionAmount: string;
   workshopPickQuantity: string;
   workshopPickAmount: string;
   workshopReturnQuantity: string;
@@ -150,6 +160,8 @@ export interface MonthlyReportMaterialSummaryItem {
   salesReturnAmount: string;
   salesReturnSalesAmount: string;
   salesReturnCostAmount: string;
+  netSalesQuantity: string;
+  netSalesAmount: string;
   netAmount: string;
 }
 
@@ -414,6 +426,12 @@ export class MonthlyReportMaterialCategoryService {
     const supplierReturnAmount = sumDecimals(
       supplierReturnEntries.map((entry) => entry.amount),
     );
+    const netProductionQuantity = acceptanceInboundQuantity
+      .add(productionReceiptQuantity)
+      .sub(supplierReturnQuantity);
+    const netProductionAmount = acceptanceInboundAmount
+      .add(productionReceiptAmount)
+      .sub(supplierReturnAmount);
     const workshopPickQuantity = sumDecimals(
       workshopPickEntries.map((entry) => entry.quantity),
     );
@@ -444,6 +462,8 @@ export class MonthlyReportMaterialCategoryService {
     const salesReturnCostAmount = sumDecimals(
       salesReturnEntries.map((entry) => entry.cost),
     );
+    const netSalesQuantity = salesOutboundQuantity.sub(salesReturnQuantity);
+    const netSalesAmount = salesOutboundAmount.sub(salesReturnAmount);
     return {
       lineCount: entries.length,
       documentCount: documentKeys.size,
@@ -453,6 +473,8 @@ export class MonthlyReportMaterialCategoryService {
       productionReceiptAmount: formatMoney(productionReceiptAmount),
       supplierReturnQuantity: formatQuantity(supplierReturnQuantity),
       supplierReturnAmount: formatMoney(supplierReturnAmount),
+      netProductionQuantity: formatQuantity(netProductionQuantity),
+      netProductionAmount: formatMoney(netProductionAmount),
       workshopPickQuantity: formatQuantity(workshopPickQuantity),
       workshopPickAmount: formatMoney(workshopPickAmount),
       workshopReturnQuantity: formatQuantity(workshopReturnQuantity),
@@ -471,6 +493,8 @@ export class MonthlyReportMaterialCategoryService {
       salesReturnAmount: formatMoney(salesReturnAmount),
       salesReturnSalesAmount: formatMoney(salesReturnAmount),
       salesReturnCostAmount: formatMoney(salesReturnCostAmount),
+      netSalesQuantity: formatQuantity(netSalesQuantity),
+      netSalesAmount: formatMoney(netSalesAmount),
       ...buildMonthlyMaterialCategoryBalanceTotals(balanceSnapshots),
     };
   }

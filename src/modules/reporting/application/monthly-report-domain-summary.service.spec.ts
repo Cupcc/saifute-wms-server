@@ -197,13 +197,13 @@ describe("MonthlyReportDomainSummaryService", () => {
       "研发项目",
     ]);
     expect(result.domains[0]).toMatchObject({
-      salesOutboundQuantity: "10.00",
+      salesOutboundQuantity: "10",
       salesOutboundSalesAmount: "100.0000",
       salesOutboundCostAmount: "70.0000",
-      salesReturnQuantity: "2.00",
+      salesReturnQuantity: "2",
       salesReturnSalesAmount: "20.0000",
       salesReturnCostAmount: "14.0000",
-      netSalesQuantity: "8.00",
+      netSalesQuantity: "8",
       netSalesAmount: "80.0000",
       netCostAmount: "56.0000",
       salesGrossProfitAmount: "24.0000",

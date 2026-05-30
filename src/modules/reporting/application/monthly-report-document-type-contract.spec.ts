@@ -151,13 +151,13 @@ describe("Monthly report document type contract", () => {
         expect.objectContaining({
           topicKey: MonthlyReportingTopicKey.SALES_OUTBOUND,
           documentCount: 1,
-          totalOutQuantity: "10.00",
+          totalOutQuantity: "10",
         }),
         expect.objectContaining({
           topicKey: MonthlyReportingTopicKey.SALES_RETURN,
           documentCount: 0,
-          totalInQuantity: "0.00",
-          totalOutQuantity: "0.00",
+          totalInQuantity: "0",
+          totalOutQuantity: "0",
         }),
       ]),
     );
