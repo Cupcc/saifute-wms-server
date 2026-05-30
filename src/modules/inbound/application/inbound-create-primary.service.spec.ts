@@ -408,7 +408,17 @@ describe("InboundService", () => {
 
   it("should pass unit cost snapshot from inbound line price to increaseStock", async () => {
     (repository.findOrderByDocumentNo as jest.Mock).mockResolvedValue(null);
-    (repository.createOrder as jest.Mock).mockResolvedValue(mockOrder);
+    (repository.createOrder as jest.Mock).mockResolvedValue({
+      ...mockOrder,
+      lines: [
+        {
+          ...mockOrder.lines[0],
+          quantity: new Prisma.Decimal("3"),
+          unitPrice: new Prisma.Decimal("10.1234"),
+          amount: new Prisma.Decimal("30.3702"),
+        },
+      ],
+    });
 
     const dto = {
       documentNo: "SI-001",
@@ -417,15 +427,15 @@ describe("InboundService", () => {
       supplierId: 10,
       handlerPersonnelId: 20,
       workshopId: 1,
-      lines: [{ materialId: 100, quantity: "100", unitPrice: "10" }],
+      lines: [{ materialId: 100, quantity: "3", unitPrice: "10.1234" }],
     };
 
     await service.createOrder(dto, "1");
 
     expect(inventoryService.increaseStock).toHaveBeenCalledWith(
       expect.objectContaining({
-        unitCost: expect.any(Prisma.Decimal),
-        costAmount: expect.any(Prisma.Decimal),
+        unitCost: new Prisma.Decimal("10.1234"),
+        costAmount: new Prisma.Decimal("30.3702"),
       }),
       expect.anything(),
     );

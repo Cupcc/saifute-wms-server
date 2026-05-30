@@ -164,6 +164,93 @@ describe("InventoryService", () => {
     expect(Number(log.afterQty)).toBe(150);
   });
 
+  it("should validate newly created material through the caller transaction", async () => {
+    const mockTx = {
+      material: {
+        findUnique: jest.fn().mockResolvedValue({ id: 10 }),
+      },
+      workshop: {
+        findUnique: jest.fn().mockResolvedValue({ id: 20 }),
+      },
+      inventoryBalance: {
+        findUnique: jest.fn().mockResolvedValue(mockBalance),
+        create: jest.fn().mockResolvedValue(mockBalance),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      inventoryLog: {
+        create: jest.fn().mockResolvedValue(mockLog),
+        findFirst: jest.fn().mockResolvedValue(null),
+      },
+    };
+    const masterDataService = {
+      getMaterialById: jest.fn(() => {
+        throw new Error("material lookup should use the caller transaction");
+      }),
+      getWorkshopById: jest.fn(() => {
+        throw new Error("workshop lookup should use the caller transaction");
+      }),
+    };
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        InventoryService,
+        {
+          provide: MasterDataService,
+          useValue: masterDataService,
+        },
+        {
+          provide: PrismaService,
+          useValue: {
+            runInTransaction: jest.fn((_tx, handler) => handler(mockTx)),
+          },
+        },
+        {
+          provide: InventoryRepository,
+          useValue: {
+            runInTransaction: jest.fn((_tx, handler) => handler(mockTx)),
+            findLogByIdempotencyKey: jest.fn().mockResolvedValue(null),
+            findLogById: jest.fn(),
+            findReversalLogBySourceLogId: jest.fn(),
+          },
+        },
+        {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
+          provide: StockScopeCompatibilityService,
+          useFactory: createStockScopeCompatibilityServiceMock,
+        },
+      ],
+    }).compile();
+
+    const service = moduleRef.get(InventoryService);
+    const log = await service.increaseStock(
+      {
+        materialId: 10,
+        workshopId: 20,
+        bizDate: new Date("2026-04-09"),
+        quantity: 50,
+        operationType: InventoryOperationType.ACCEPTANCE_IN,
+        businessModule: "inbound",
+        businessDocumentType: "StockInOrder",
+        businessDocumentId: 100,
+        businessDocumentNumber: "SI-001",
+        idempotencyKey: "new-material-in-transaction",
+        operatorId: "1",
+      },
+      mockTx as unknown as Prisma.TransactionClient,
+    );
+
+    expect(log).toBeDefined();
+    expect(mockTx.material.findUnique).toHaveBeenCalledWith({
+      where: { id: 10 },
+      select: { id: true },
+    });
+    expect(masterDataService.getMaterialById).not.toHaveBeenCalled();
+    expect(masterDataService.getWorkshopById).not.toHaveBeenCalled();
+  });
+
   it("should throw when increaseStock loses optimistic lock on balance update", async () => {
     const mockTx = {
       inventoryBalance: {

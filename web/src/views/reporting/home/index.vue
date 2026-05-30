@@ -227,7 +227,7 @@ const trendSummary = computed(() => {
   return {
     documentCount,
     totalQty: totalQty.toFixed(6),
-    totalAmount: totalAmount.toFixed(2),
+    totalAmount: totalAmount.toFixed(4),
   };
 });
 

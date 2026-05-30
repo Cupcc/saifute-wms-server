@@ -311,7 +311,7 @@
 					</el-table-column>
 					<el-table-column label="单价" prop="unitPrice">
 						<template #default="scope">
-							<el-input-number v-model="scope.row.unitPrice" :min="0" placeholder="单价" controls-position="right" :disabled="isView" style="width: 100%" @change="calculateTotalAmount" />
+							<el-input-number v-model="scope.row.unitPrice" :min="0" :precision="4" placeholder="单价" controls-position="right" :disabled="isView" style="width: 100%" @change="calculateTotalAmount" />
 						</template>
 					</el-table-column>
 					<el-table-column label="金额" prop="amount">
@@ -549,6 +549,7 @@ const abandonOpen = ref(false);
 const isView = ref(false);
 
 const username = computed(() => useUserStore().name);
+const MONEY_PRECISION = 4;
 
 // 领料单相关
 const pickOrderOpen = ref(false);
@@ -952,23 +953,25 @@ function calculateTotalAmount() {
     item.amount = resolveLineAmount(item);
     total += item.amount;
   });
-  form.value.totalAmount = total.toFixed(2);
+  form.value.totalAmount = total.toFixed(MONEY_PRECISION);
 }
 
 function resolveLineAmount(row) {
   const quantity = Number(row?.returnQty);
   const unitPrice = Number(row?.unitPrice);
   if (Number.isFinite(quantity) && Number.isFinite(unitPrice)) {
-    return Number((quantity * unitPrice).toFixed(2));
+    return Number((quantity * unitPrice).toFixed(MONEY_PRECISION));
   }
   const directAmount = Number(row?.amount);
   if (Number.isFinite(directAmount)) return directAmount;
   const calculated = Number(row?.returnQty ?? 0) * Number(row?.unitPrice ?? 0);
-  return Number.isFinite(calculated) ? Number(calculated.toFixed(2)) : 0;
+  return Number.isFinite(calculated)
+    ? Number(calculated.toFixed(MONEY_PRECISION))
+    : 0;
 }
 
 function formatLineAmount(row) {
-  return resolveLineAmount(row).toFixed(2);
+  return resolveLineAmount(row).toFixed(MONEY_PRECISION);
 }
 
 /** 查看详情 */

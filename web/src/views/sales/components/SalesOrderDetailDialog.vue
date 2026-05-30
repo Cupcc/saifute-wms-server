@@ -88,7 +88,7 @@
         </el-table-column>
         <el-table-column label="成本价层" prop="selectedUnitCost" width="110" align="right">
           <template #default="scope">
-            {{ formatAmount(scope.row.selectedUnitCost) }}
+            {{ formatCostAmount(scope.row.selectedUnitCost) }}
           </template>
         </el-table-column>
         <el-table-column label="数量" prop="quantity" width="100" align="right">
@@ -108,7 +108,7 @@
         </el-table-column>
         <el-table-column label="成本金额" prop="costAmount" width="110" align="right">
           <template #default="scope">
-            {{ formatAmount(scope.row.costAmount) }}
+            {{ formatCostAmount(scope.row.costAmount) }}
           </template>
         </el-table-column>
         <el-table-column label="编号" min-width="180" show-overflow-tooltip>
@@ -215,7 +215,12 @@ function formatNumber(value) {
 
 function formatAmount(value) {
   const parsed = Number(value ?? 0);
-  return Number.isFinite(parsed) ? parsed.toFixed(2) : "0.00";
+  return Number.isFinite(parsed) ? parsed.toFixed(4) : "0.0000";
+}
+
+function formatCostAmount(value) {
+  const parsed = Number(value ?? 0);
+  return Number.isFinite(parsed) ? parsed.toFixed(4) : "0.0000";
 }
 
 function formatFactoryNumber(row) {
@@ -235,6 +240,7 @@ void [
   formatDateTime,
   formatNumber,
   formatAmount,
+  formatCostAmount,
   formatFactoryNumber,
 ];
 </script>

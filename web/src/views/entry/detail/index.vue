@@ -198,6 +198,7 @@ const title = ref("");
 const total = ref(0);
 // 设置默认日期为当天
 const today = new Date().toISOString().slice(0, 10);
+const MONEY_PRECISION = 4;
 const dateRange = ref([today, today]);
 const materialLoading = ref(false);
 const materialOptions = ref([]);
@@ -338,7 +339,7 @@ function getSummaries(param) {
               return prev;
             }
           }, 0)
-          .toFixed(2);
+          .toFixed(MONEY_PRECISION);
       } else {
         sums[index] = "N/A";
       }
@@ -399,7 +400,9 @@ function getList() {
           const amount =
             item.amount ??
             (item.quantity && item.unitPrice
-              ? Number((item.quantity * item.unitPrice).toFixed(2))
+              ? Number(
+                  (item.quantity * item.unitPrice).toFixed(MONEY_PRECISION),
+                )
               : 0);
           return {
             ...item,

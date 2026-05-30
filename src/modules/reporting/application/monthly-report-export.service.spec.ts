@@ -482,10 +482,14 @@ describe("MonthlyReportExportService", () => {
       "净成本价金额",
     ]);
     expect(salesProjectSheet).toContain("销售项目 A");
-    expect(domainSheet).toContain('<Data ss:Type="Number">80.00</Data>');
-    expect(domainSheet).toContain('<Data ss:Type="Number">56.00</Data>');
-    expect(domainSheet).toContain('<Data ss:Type="Number">24.00</Data>');
-    expect(salesProjectSheet).toContain('<Data ss:Type="Number">80.00</Data>');
-    expect(salesProjectSheet).toContain('<Data ss:Type="Number">56.00</Data>');
+    expect(domainSheet).toContain('<Data ss:Type="Number">80.0000</Data>');
+    expect(domainSheet).toContain('<Data ss:Type="Number">56.0000</Data>');
+    expect(domainSheet).toContain('<Data ss:Type="Number">24.0000</Data>');
+    expect(salesProjectSheet).toContain(
+      '<Data ss:Type="Number">80.0000</Data>',
+    );
+    expect(salesProjectSheet).toContain(
+      '<Data ss:Type="Number">56.0000</Data>',
+    );
   });
 });

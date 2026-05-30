@@ -45,7 +45,7 @@ export class InventoryStockMutationService {
       stockScope: cmd.stockScope,
       workshopId: cmd.workshopId,
     });
-    await this.ensureMasterDataExists(cmd.materialId, cmd.workshopId);
+    await this.ensureMasterDataExists(cmd.materialId, cmd.workshopId, tx);
 
     try {
       return await this.withTransaction(tx, async (db) => {
@@ -125,7 +125,7 @@ export class InventoryStockMutationService {
       stockScope: cmd.stockScope,
       workshopId: cmd.workshopId,
     });
-    await this.ensureMasterDataExists(cmd.materialId, cmd.workshopId);
+    await this.ensureMasterDataExists(cmd.materialId, cmd.workshopId, tx);
 
     try {
       return await this.withTransaction(tx, async (db) => {
@@ -448,7 +448,29 @@ export class InventoryStockMutationService {
   private async ensureMasterDataExists(
     materialId: number,
     workshopId?: number | null,
+    tx?: Prisma.TransactionClient,
   ) {
+    if (tx) {
+      const material = await tx.material.findUnique({
+        where: { id: materialId },
+        select: { id: true },
+      });
+      if (!material) {
+        throw new NotFoundException(`物料不存在: ${materialId}`);
+      }
+
+      if (workshopId) {
+        const workshop = await tx.workshop.findUnique({
+          where: { id: workshopId },
+          select: { id: true },
+        });
+        if (!workshop) {
+          throw new NotFoundException(`车间不存在: ${workshopId}`);
+        }
+      }
+      return;
+    }
+
     await this.masterDataService.getMaterialById(materialId);
     if (workshopId) {
       await this.masterDataService.getWorkshopById(workshopId);

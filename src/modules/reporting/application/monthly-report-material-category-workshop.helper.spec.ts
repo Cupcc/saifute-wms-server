@@ -77,11 +77,11 @@ describe("buildMonthlyMaterialCategoryWorkshopUsageItems", () => {
         lineCount: 2,
         documentCount: 2,
         pickQuantity: "2.00",
-        pickAmount: "20.00",
+        pickAmount: "20.0000",
         returnQuantity: "0.50",
-        returnAmount: "5.00",
+        returnAmount: "5.0000",
         netUsedQuantity: "1.50",
-        netUsedAmount: "15.00",
+        netUsedAmount: "15.0000",
       }),
     ]);
   });

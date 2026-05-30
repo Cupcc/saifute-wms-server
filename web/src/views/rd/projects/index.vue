@@ -225,7 +225,7 @@
               <el-input-number
                 v-model="row.unitPrice"
                 :min="0"
-                :precision="2"
+                :precision="4"
                 controls-position="right"
                 style="width: 100%"
               />
@@ -565,7 +565,7 @@
               <el-input-number
                 v-model="row.unitPrice"
                 :min="0"
-                :precision="2"
+                :precision="4"
                 controls-position="right"
                 :disabled="actionForm.actionType === 'RETURN'"
                 style="width: 100%"
@@ -753,9 +753,9 @@ function formatDecimal(value) {
 
 function formatCurrency(value) {
   if (value == null || value === "") {
-    return "0.00";
+    return "0.0000";
   }
-  return Number(value).toFixed(2);
+  return Number(value).toFixed(4);
 }
 
 function calculateLineAmount(row) {

@@ -75,11 +75,11 @@ function buildWorkshopUsageTotalRow(
     sumWorkshopUsageItems(items, "lineCount"),
     sumWorkshopUsageItems(items, "documentCount"),
     sumWorkshopUsageItems(items, "pickQuantity").toFixed(2),
-    sumWorkshopUsageItems(items, "pickAmount").toFixed(2),
+    sumWorkshopUsageItems(items, "pickAmount").toFixed(4),
     sumWorkshopUsageItems(items, "returnQuantity").toFixed(2),
-    sumWorkshopUsageItems(items, "returnAmount").toFixed(2),
+    sumWorkshopUsageItems(items, "returnAmount").toFixed(4),
     sumWorkshopUsageItems(items, "netUsedQuantity").toFixed(2),
-    sumWorkshopUsageItems(items, "netUsedAmount").toFixed(2),
+    sumWorkshopUsageItems(items, "netUsedAmount").toFixed(4),
   ]);
 }
 

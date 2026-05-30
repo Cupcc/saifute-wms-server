@@ -194,7 +194,7 @@
                 type="date"
                 value-format="YYYY-MM-DD"
                 placeholder="请选择入库日期"
-                :disabled="form.intoId != null">
+                :disabled="isView">
               </el-date-picker>
             </el-form-item>
           </el-col>
@@ -211,7 +211,7 @@
 			          :remote-method="searchWorkshopForForm"
 			          :loading="workshopLoadingForForm"
 			          style="width: 100%"
-			          :disabled="form.intoId != null"
+			          :disabled="isView"
 			          @change="handleWorkshopChange">
 			          <el-option
 				          v-for="item in workshopOptions"
@@ -225,7 +225,7 @@
           </el-col>
           <el-col :span="12">
 	          <el-form-item label="经办人" prop="attn">
-		          <combo-input v-model="form.attn" scope="personnel" field="personnelName" placeholder="请选择或输入经办人" :disabled="form.intoId != null" />
+		          <combo-input v-model="form.attn" scope="personnel" field="personnelName" placeholder="请选择或输入经办人" :disabled="isView" />
 	          </el-form-item>
           </el-col>
         </el-row>
@@ -237,7 +237,7 @@
           </el-col>
         </el-row>
         <el-form-item label="备注" prop="remark">
-          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" :disabled="form.intoId != null"/>
+          <el-input v-model="form.remark" type="textarea" placeholder="请输入内容" :disabled="isView"/>
         </el-form-item>
       </el-form>
       
@@ -256,7 +256,7 @@
                 :remote-method="(query) => searchMaterialForDetail(query, scope.$index)"
                 :loading="materialLoading"
                 style="width: 100%"
-                :disabled="form.intoId != null"
+                :disabled="isView"
                 @change="(val) => handleMaterialChange(val, scope.$index)">
                 <el-option
                   v-for="item in materialOptions"
@@ -276,36 +276,36 @@
 				        v-model="scope.row.interval"
 				        type="textarea" :autosize="{ minRows: 1 }"
 				        placeholder="请输入生产编号"
-				        :disabled="form.intoId != null"
+				        :disabled="isView"
 				        @change="handleIntervalInput(scope.row)"
 			        />
 		        </template>
 	        </el-table-column>
           <el-table-column label="入库数量" prop="quantity">
             <template #default="scope">
-              <el-input-number v-model="scope.row.quantity" placeholder="入库数量" controls-position="right" :disabled="form.intoId != null" style="width: 100%" @change="calculateTotalAmount" />
+              <el-input-number v-model="scope.row.quantity" placeholder="入库数量" controls-position="right" :disabled="isView" style="width: 100%" @change="calculateTotalAmount" />
             </template>
           </el-table-column>
           <el-table-column label="单价" prop="unitPrice">
             <template #default="scope">
-              <el-input-number v-model="scope.row.unitPrice" :min="0" placeholder="单价" controls-position="right" style="width: 100%" @change="calculateTotalAmount" />
+              <el-input-number v-model="scope.row.unitPrice" :min="0" :precision="MONEY_PRECISION" placeholder="单价" controls-position="right" style="width: 100%" @change="calculateTotalAmount" />
             </template>
           </el-table-column>
           <el-table-column label="备注" prop="remark">
             <template #default="scope">
               <el-input v-model="scope.row.remark"
-                        type="textarea" :autosize="{ minRows: 1 }" placeholder="请输入备注" :disabled="form.intoId != null" />
+                        type="textarea" :autosize="{ minRows: 1 }" placeholder="请输入备注" :disabled="isView" />
             </template>
           </el-table-column>
           <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
             <template #default="scope">
-              <el-button link type="primary" icon="Delete" @click="removeDetailItem(scope.$index)" :disabled="form.intoId != null">删除</el-button>
+              <el-button link type="primary" icon="Delete" @click="removeDetailItem(scope.$index)" :disabled="isView">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
       </div>
 	    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-right: 20px">
-	      <el-button type="primary" plain icon="Plus" @click="addDetailItem" :disabled="form.intoId != null">添加明细</el-button>
+	      <el-button type="primary" plain icon="Plus" @click="addDetailItem" :disabled="isView">添加明细</el-button>
         <span>合计金额: {{ form.totalAmount }}</span>
       </div>
       </div>
@@ -463,6 +463,7 @@ const multiple = ref(true);
 const total = ref(0);
 const title = ref("");
 const isView = ref(false);
+const MONEY_PRECISION = 4;
 const abandonOpen = ref(false);
 const dateRange = ref([]);
 const workshopOptions = ref([]);
@@ -809,13 +810,15 @@ function calculateTotalAmount() {
   let total = 0;
   detailList.value.forEach((item) => {
     if (item.quantity && item.unitPrice) {
-      item.amount = Number((item.quantity * item.unitPrice).toFixed(2));
+      item.amount = Number(
+        (item.quantity * item.unitPrice).toFixed(MONEY_PRECISION),
+      );
       total += item.amount;
     } else {
       item.amount = 0;
     }
   });
-  form.value.totalAmount = total.toFixed(2);
+  form.value.totalAmount = total.toFixed(MONEY_PRECISION);
 }
 
 // 多选框选中数据

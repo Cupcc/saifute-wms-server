@@ -39,7 +39,7 @@ const entryTotal = computed(() => {
       const amount = (item.quantity || 0) * (item.unitPrice || 0);
       return sum + amount;
     }, 0)
-    .toFixed(2);
+    .toFixed(4);
 });
 
 const projectTotal = computed(() => {
@@ -48,13 +48,13 @@ const projectTotal = computed(() => {
       const amount = (item.quantity || 0) * (item.unitPrice || 0);
       return sum + amount;
     }, 0)
-    .toFixed(2);
+    .toFixed(4);
 });
 
 const grandTotal = computed(() => {
   return (
     parseFloat(entryTotal.value) + parseFloat(projectTotal.value)
-  ).toFixed(2);
+  ).toFixed(4);
 });
 
 // 搜索供应商
@@ -111,7 +111,7 @@ async function fetchData() {
     if (entryRes.data && Array.isArray(entryRes.data)) {
       entryDetailList.value = entryRes.data.map((item) => ({
         ...item,
-        amount: ((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2),
+        amount: ((item.quantity || 0) * (item.unitPrice || 0)).toFixed(4),
       }));
     } else {
       entryDetailList.value = [];
@@ -121,12 +121,12 @@ async function fetchData() {
     if (projectRes.rows && Array.isArray(projectRes.rows)) {
       projectMaterialList.value = projectRes.rows.map((item) => ({
         ...item,
-        amount: ((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2),
+        amount: ((item.quantity || 0) * (item.unitPrice || 0)).toFixed(4),
       }));
     } else if (projectRes.data && Array.isArray(projectRes.data)) {
       projectMaterialList.value = projectRes.data.map((item) => ({
         ...item,
-        amount: ((item.quantity || 0) * (item.unitPrice || 0)).toFixed(2),
+        amount: ((item.quantity || 0) * (item.unitPrice || 0)).toFixed(4),
       }));
     } else {
       projectMaterialList.value = [];

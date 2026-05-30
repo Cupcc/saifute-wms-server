@@ -92,10 +92,10 @@ describe("MonthlyReportDomainAggregatorService", () => {
       "SP-900",
     ]);
     expect(salesProjectItems[0]).toMatchObject({
-      salesOutboundSalesAmount: "1000.00",
-      salesOutboundCostAmount: "700.00",
-      netSalesAmount: "1000.00",
-      netCostAmount: "700.00",
+      salesOutboundSalesAmount: "1000.0000",
+      salesOutboundCostAmount: "700.0000",
+      netSalesAmount: "1000.0000",
+      netCostAmount: "700.0000",
     });
   });
 

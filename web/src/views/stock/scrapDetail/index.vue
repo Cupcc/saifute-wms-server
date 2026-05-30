@@ -275,18 +275,20 @@ function compareScrapDateRows(left, right) {
   return Number(left?.detailId ?? 0) - Number(right?.detailId ?? 0);
 }
 
+const MONEY_PRECISION = 4;
+
 function resolveLineAmount(row) {
   const quantity = Number(row?.scrapQty);
   const unitPrice = Number(row?.unitPrice);
   if (Number.isFinite(quantity) && Number.isFinite(unitPrice)) {
-    return Number((quantity * unitPrice).toFixed(2));
+    return Number((quantity * unitPrice).toFixed(MONEY_PRECISION));
   }
   const amount = Number(row?.estimatedLoss ?? row?.amount);
   return Number.isFinite(amount) ? amount : 0;
 }
 
 function formatLineAmount(row) {
-  return resolveLineAmount(row).toFixed(2);
+  return resolveLineAmount(row).toFixed(MONEY_PRECISION);
 }
 
 getList();

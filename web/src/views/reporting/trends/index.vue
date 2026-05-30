@@ -95,11 +95,11 @@ const summary = computed(() =>
       ).toFixed(6),
       totalAmount: (
         Number(accumulator.totalAmount) + Number(item.totalAmount || 0)
-      ).toFixed(2),
+      ).toFixed(4),
     }),
     {
       totalQty: "0.000000",
-      totalAmount: "0.00",
+      totalAmount: "0.0000",
     },
   ),
 );
