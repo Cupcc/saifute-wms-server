@@ -61,6 +61,8 @@ cp .env.example .env.dev
 - `REDIS_HOST` / `REDIS_PORT`：Redis 连接
 - `PORT`：后端服务端口，默认 `3000`
 
+`.env.example` 以生产安全默认值为主。本地开发建议把 `.env.dev` 中的 `NODE_ENV` 改为 `development`，需要本地 Swagger 时再设置 `SWAGGER_ENABLED=true`。
+
 不要把真实账号、密码、生产库连接或敏感环境变量提交到仓库。
 
 ### 3. 启动后端
@@ -92,7 +94,9 @@ bun run dev:web
 ```bash
 bun run dev                 # 本地开发启动
 bun run build               # 构建后端
+bun run build:prod          # 使用 .env.prod 生成 Prisma Client 并构建后端
 bun run start               # 启动已构建产物
+bun run start:prod          # 使用 .env.prod 启动已构建后端
 bun run typecheck           # TypeScript 类型检查
 bun run test                # Jest 测试
 bun run verify              # typecheck + test
@@ -109,6 +113,31 @@ bun --cwd web dev           # 前端开发服务
 bun --cwd web build:stage   # staging 构建
 bun --cwd web build:prod    # production 构建
 ```
+
+## 生产部署
+
+后端生产环境建议使用独立的 `.env.prod`：
+
+```bash
+cp .env.example .env.prod
+bun install
+bun run build:prod
+bun run start:prod
+```
+
+`bun install` 默认会安装 `dependencies` 和 `devDependencies`，构建阶段需要完整依赖来执行 Prisma Client 生成和 NestJS 编译。
+
+部署前必须替换 `.env.prod` 中的占位值，重点确认：
+
+- `NODE_ENV=production`
+- `DATABASE_URL` 指向生产目标库
+- `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` 指向生产 Redis
+- `JWT_SECRET` 和 `JWT_REFRESH_SECRET` 使用不同的强随机值
+- `SWAGGER_ENABLED=false`，如需开放文档应只放在可信内网
+- `FILE_STORAGE_ROOT_PATH`、`LOG_DIR`、`DATABASE_BACKUP_DIR` 指向生产服务器上的持久化目录
+- 反向代理后面部署时按实际代理层数设置 `HTTP_TRUST_PROXY`
+
+前端生产构建使用 `web/.env.production`，当前 `VITE_APP_BASE_API=/prod-api`。如果通过 Nginx 部署，需要把 `/prod-api/` 反向代理到后端服务根路径，使前端请求 `/prod-api/api/...` 到达后端 `/api/...`，文件访问 `/prod-api/profile/...` 到达后端 `/profile/...`。
 
 ### 文档检索
 
