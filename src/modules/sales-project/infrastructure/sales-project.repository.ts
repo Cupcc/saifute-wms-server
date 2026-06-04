@@ -6,9 +6,11 @@ import {
   SalesStockOrderType,
   StockInOrderType,
 } from "../../../../generated/prisma/client";
+import { SALES_PROJECT_CODE_PREFIX } from "../../../shared/common/project-code.util";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 
 type DbClient = Prisma.TransactionClient | PrismaService;
+type MaxSequenceRow = { maxSequence: bigint | number | string | null };
 
 @Injectable()
 export class SalesProjectRepository {
@@ -96,6 +98,26 @@ export class SalesProjectRepository {
         materialLines: { orderBy: { lineNo: "asc" } },
       },
     });
+  }
+
+  async findMaxSalesProjectCodeSequence(db?: DbClient) {
+    const prefix = `${SALES_PROJECT_CODE_PREFIX}-`;
+    const pattern = `^${prefix}[0-9]+$`;
+    const sequenceStart = prefix.length + 1;
+    const rows = await this.db(db).$queryRaw<MaxSequenceRow[]>`
+      SELECT COALESCE(MAX(sequence_no), 0) AS maxSequence
+      FROM (
+        SELECT CAST(SUBSTRING(sales_project_code, ${sequenceStart}) AS UNSIGNED) AS sequence_no
+        FROM sales_project
+        WHERE sales_project_code REGEXP ${pattern}
+        UNION ALL
+        SELECT CAST(SUBSTRING(target_code, ${sequenceStart}) AS UNSIGNED) AS sequence_no
+        FROM project_target
+        WHERE target_code REGEXP ${pattern}
+      ) AS project_codes
+    `;
+
+    return Number(rows[0]?.maxSequence ?? 0);
   }
 
   async findProjectsByIds(projectIds: number[], db?: DbClient) {
