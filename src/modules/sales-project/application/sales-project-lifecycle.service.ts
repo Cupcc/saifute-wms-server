@@ -10,6 +10,7 @@ import {
 import {
   buildPendingProjectCode,
   buildSalesProjectCode,
+  isProjectCodeUniqueConflict,
 } from "../../../shared/common/project-code.util";
 import { MasterDataService } from "../../master-data/application/master-data.service";
 import type { CreateSalesProjectDto } from "../dto/create-sales-project.dto";
@@ -23,6 +24,8 @@ import {
   toDecimal,
 } from "./sales-project.shared";
 import { SalesProjectMaterialViewService } from "./sales-project-material-view.service";
+
+const MAX_PROJECT_CODE_GENERATION_ATTEMPTS = 999;
 
 @Injectable()
 export class SalesProjectLifecycleService {
@@ -121,22 +124,10 @@ export class SalesProjectLifecycleService {
         repository: this.repository,
         tx,
       });
-      const generatedProjectCode = buildSalesProjectCode(projectTargetId);
-      await this.repository.updateProject(
-        project.id,
-        {
-          salesProjectCode: generatedProjectCode,
-          updatedBy: createdBy,
-        },
-        tx,
-      );
-      await this.repository.updateProjectTarget(
+      await this.assignGeneratedProjectCode(
+        project,
         projectTargetId,
-        {
-          targetCode: generatedProjectCode,
-          targetName: project.salesProjectName,
-          updatedBy: createdBy,
-        },
+        createdBy,
         tx,
       );
 
@@ -289,6 +280,60 @@ export class SalesProjectLifecycleService {
       const latest = await this.materialView.requireProject(id, tx);
       return this.materialView.buildProjectView(latest, tx);
     });
+  }
+
+  private async assignGeneratedProjectCode(
+    project: { id: number; salesProjectName: string },
+    projectTargetId: number,
+    updatedBy: string | undefined,
+    tx: Prisma.TransactionClient,
+  ) {
+    const maxSequence =
+      await this.repository.findMaxSalesProjectCodeSequence(tx);
+    let projectCodeConflict = false;
+
+    for (
+      let attempt = 0;
+      attempt < MAX_PROJECT_CODE_GENERATION_ATTEMPTS;
+      attempt++
+    ) {
+      const generatedProjectCode = buildSalesProjectCode(
+        maxSequence + attempt + 1,
+      );
+
+      try {
+        await this.repository.updateProject(
+          project.id,
+          {
+            salesProjectCode: generatedProjectCode,
+            updatedBy,
+          },
+          tx,
+        );
+        await this.repository.updateProjectTarget(
+          projectTargetId,
+          {
+            targetCode: generatedProjectCode,
+            targetName: project.salesProjectName,
+            updatedBy,
+          },
+          tx,
+        );
+        return;
+      } catch (error) {
+        if (!isProjectCodeUniqueConflict(error)) {
+          throw error;
+        }
+        projectCodeConflict = true;
+      }
+    }
+
+    if (projectCodeConflict) {
+      throw new ConflictException(`${SALES_PROJECT_LABEL}编码冲突，请稍后重试`);
+    }
+    throw new ConflictException(
+      `${SALES_PROJECT_LABEL}编码生成失败，请稍后重试`,
+    );
   }
 
   private async validateProjectMasterData(dto: {

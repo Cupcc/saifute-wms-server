@@ -100,6 +100,7 @@ describe("SalesProjectService", () => {
             findProjects: jest.fn(),
             findProjectById: jest.fn(),
             findProjectByCode: jest.fn(),
+            findMaxSalesProjectCodeSequence: jest.fn().mockResolvedValue(5000),
             findProjectsByIds: jest.fn(),
             createProject: jest.fn(),
             updateProject: jest.fn(),
@@ -528,6 +529,77 @@ describe("SalesProjectService", () => {
       expect.anything(),
     );
     expect(result.salesProjectCode).toBe("XMBH-5001");
+  });
+
+  it("retries generated sales project codes that are already occupied", async () => {
+    const duplicateProjectCodeError = new Prisma.PrismaClientKnownRequestError(
+      "duplicate",
+      {
+        code: "P2002",
+        clientVersion: "test",
+        meta: { target: ["salesProjectCode"] },
+      },
+    );
+
+    repository.findMaxSalesProjectCodeSequence.mockResolvedValue(36);
+    repository.createProject.mockResolvedValue({
+      ...baseProject,
+      projectTargetId: null,
+    } as never);
+    repository.findProjectTargetBySource.mockResolvedValue(null);
+    repository.createProjectTarget.mockResolvedValue({
+      id: 5001,
+      targetType: "SALES_PROJECT",
+      targetCode: "__PENDING_sales_project",
+      targetName: "Retry Project",
+      sourceDocumentType: "SalesProject",
+      sourceDocumentId: 1,
+      isSystemDefault: false,
+      remark: null,
+      createdBy: "1",
+      createdAt: new Date(),
+      updatedBy: "1",
+      updatedAt: new Date(),
+    } as never);
+    repository.updateProject
+      .mockRejectedValueOnce(duplicateProjectCodeError)
+      .mockResolvedValueOnce({} as never);
+    repository.attachProjectTargetToProject.mockResolvedValue({} as never);
+    repository.findProjectById.mockResolvedValue({
+      ...baseProject,
+      salesProjectCode: "XMBH-38",
+      salesProjectName: "Retry Project",
+      projectTargetId: 5001,
+    } as never);
+    repository.findEffectiveShipmentLinesByProjectId.mockResolvedValue([]);
+
+    const result = await service.createProject(
+      {
+        salesProjectName: "Retry Project",
+        bizDate: "2026-04-10",
+        workshopId: 1,
+      },
+      "1",
+    );
+
+    expect(repository.updateProject).toHaveBeenNthCalledWith(
+      1,
+      1,
+      expect.objectContaining({ salesProjectCode: "XMBH-37" }),
+      expect.anything(),
+    );
+    expect(repository.updateProject).toHaveBeenNthCalledWith(
+      2,
+      1,
+      expect.objectContaining({ salesProjectCode: "XMBH-38" }),
+      expect.anything(),
+    );
+    expect(repository.updateProjectTarget).toHaveBeenCalledWith(
+      5001,
+      expect.objectContaining({ targetCode: "XMBH-38" }),
+      expect.anything(),
+    );
+    expect(result.salesProjectCode).toBe("XMBH-38");
   });
 
   it("rejects voided project references unless explicitly allowed", async () => {
