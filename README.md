@@ -116,28 +116,41 @@ bun --cwd web build:prod    # production 构建
 
 ## 生产部署
 
-后端生产环境建议使用独立的 `.env.prod`：
+当前生产部署形态（赛福特内网 Mac mini，局域网使用）：
+
+- **单进程同源**：一个 Bun 进程在 `:90` 上同时伏服前端 SPA（`web/dist`）和后端 API（`/api`），无需 Nginx。
+- **独立部署目录**：运行产物放在 `/Users/sft/Projects/saifute-wms-deploy`（不含源码，只含 `dist/`、`generated/`、`node_modules/`、`.env.prod`、`web/dist/`、`storage/`、`logs/`）。
+- **开机自启动**：由 macOS launchd 管理（`~/Library/LaunchAgents/com.saifute.wms.plist`），崩溃自动拉起。
+- **复用现有数据**：当前复用 `.env.dev` 的同一个数据库与 Redis（未做迁移）。
+
+> 完整的运维操作（启停/重启、改端口、重新部署、排障、备份）见 **`docs/playbooks/deployment/playbook.md`**（部署目录 `运维手册.md` 有一份随部署同步的拷贝）。本节只给出构建与关键配置约定。
+
+### 构建
 
 ```bash
-cp .env.example .env.prod
-bun install
-bun run build:prod
-bun run start:prod
+bun install                 # 构建期需要完整依赖（含 devDependencies）
+bun run build:prod          # 后端：生成 Prisma Client + 编译到 dist/
+bun --cwd web build:prod    # 前端：vite 构建到 web/dist/
 ```
 
-`bun install` 默认会安装 `dependencies` 和 `devDependencies`，构建阶段需要完整依赖来执行 Prisma Client 生成和 NestJS 编译。
+### 前端同源约定
 
-部署前必须替换 `.env.prod` 中的占位值，重点确认：
+前端生产构建使用 `web/.env.production`，**`VITE_APP_BASE_API=''`（空）**。因为前端 API 调用的 URL 自带 `/api` 前缀，同源部署时请求 `/api/...` 与文件 `/profile/...` 会直接命中后端，无需反向代理重写。后端通过 `WEB_DIST_PATH`（默认 `web/dist`）伏服前端，并对 history 路由做 `index.html` 回退。
+
+### `.env.prod` 关键配置
+
+部署前确认（占位值必须替换）：
 
 - `NODE_ENV=production`
+- `PORT`：服务端口（当前生产为 `90`）
 - `DATABASE_URL` 指向生产目标库
-- `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` 指向生产 Redis
-- `JWT_SECRET` 和 `JWT_REFRESH_SECRET` 使用不同的强随机值
+- `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` / `REDIS_DB` 指向生产 Redis
+- `JWT_SECRET` 和 `JWT_REFRESH_SECRET`（跨实例复用同一密钥可保持登录态不失效）
+- `CAPTCHA_ENABLED`：内网可关
 - `SWAGGER_ENABLED=false`，如需开放文档应只放在可信内网
-- `FILE_STORAGE_ROOT_PATH`、`LOG_DIR`、`DATABASE_BACKUP_DIR` 指向生产服务器上的持久化目录
+- `FILE_STORAGE_ROOT_PATH`、`LOG_DIR`、`DATABASE_BACKUP_DIR` 指向部署目录下的持久化目录
 - 反向代理后面部署时按实际代理层数设置 `HTTP_TRUST_PROXY`
-
-前端生产构建使用 `web/.env.production`，当前 `VITE_APP_BASE_API=/prod-api`。如果通过 Nginx 部署，需要把 `/prod-api/` 反向代理到后端服务根路径，使前端请求 `/prod-api/api/...` 到达后端 `/api/...`，文件访问 `/prod-api/profile/...` 到达后端 `/profile/...`。
+- `LEGACY_DATABASE_URL` 仅迁移脚本使用，运行时不读，生产可省略
 
 ### 文档检索
 
