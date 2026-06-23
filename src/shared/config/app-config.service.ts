@@ -36,6 +36,7 @@ export class AppConfigService {
   readonly profilePublicPrefix: string;
   readonly fileUploadMaxSizeBytes: number;
   readonly fileAllowedExtensions: ReadonlyArray<string>;
+  readonly webDistPath: string;
   readonly businessTimezone: string;
   readonly schedulerEnabled: boolean;
   readonly schedulerTimezone: string;
@@ -134,6 +135,10 @@ export class AppConfigService {
         const normalized = item.toLowerCase();
         return normalized.startsWith(".") ? normalized : `.${normalized}`;
       },
+    );
+
+    this.webDistPath = this.resolvePath(
+      this.readString("WEB_DIST_PATH", "web/dist"),
     );
 
     this.businessTimezone = this.readString(

@@ -2,6 +2,7 @@ import { type LoggerService, ValidationPipe } from "@nestjs/common";
 import type { NestExpressApplication } from "@nestjs/platform-express";
 import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
 import { WINSTON_MODULE_NEST_PROVIDER } from "nest-winston";
+import { registerWebAppStaticAssets } from "./bootstrap/web-app-static-assets";
 import { registerFileStorageStaticAssets } from "./modules/file-storage/infrastructure/file-storage-static-assets";
 import { applyOpenApiContractPolicies } from "./shared/api-docs";
 import { HttpExceptionFilter } from "./shared/common/filters/http-exception.filter";
@@ -27,6 +28,7 @@ export async function setupApp(
   app.useGlobalFilters(new HttpExceptionFilter(exceptionLogger));
   app.useGlobalInterceptors(app.get(ResponseEnvelopeInterceptor));
   await registerFileStorageStaticAssets(app, appConfigService);
+  registerWebAppStaticAssets(app, appConfigService);
 
   return appConfigService;
 }
