@@ -177,6 +177,7 @@ logs-dev
 storage/
 .cursor/hooks/state/
 .codex/hooks/state/
+.claude/hooks/state/
 
 # Local tooling / one-off counts
 .DS_Store
