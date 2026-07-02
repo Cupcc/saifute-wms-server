@@ -17,7 +17,7 @@
 | 启动命令 | `bun --env-file .env.prod dist/src/main.js` |
 | 端口 | `90`(由 `.env.prod` 的 `PORT` 决定) |
 | 数据库 / Redis | 复用 `.env.dev` 同一套(同机,未做迁移) |
-| 源码工程 | `/Users/sft/Projects/saifute-wms-server-nestjs-fix` |
+| 源码工程 | `/Users/sft/Projects/saifute-wms-server-nestjs` |
 
 ### 部署目录结构
 
@@ -82,9 +82,8 @@ curl -s -o /dev/null -w "API   → %{http_code}\n" http://127.0.0.1:90/api/auth/
 # 1. 确认新端口未占用（换非 90 端口时）
 lsof -nP -iTCP:<新端口> -sTCP:LISTEN
 
-# 2. 改部署目录的 .env.prod（运行时生效的那份）+ 源码工程那份保持一致
+# 2. 改部署目录的 .env.prod（运行时生效的那份）
 sed -i '' 's/^PORT=.*/PORT=<新端口>/' /Users/sft/Projects/saifute-wms-deploy/.env.prod
-sed -i '' 's/^PORT=.*/PORT=<新端口>/' /Users/sft/Projects/saifute-wms-server-nestjs-fix/.env.prod
 
 # 3. 重启
 launchctl kickstart -k gui/$(id -u)/com.saifute.wms
@@ -113,6 +112,8 @@ cd /Users/sft/Projects/saifute-wms-deploy && bash redeploy.sh
 - `mysqldump` 由 plist 的 `PATH`(含 `/opt/homebrew/bin`)提供;换机或 brew 路径变化要同步改 plist。
 
 > ⚠️ 生产与开发共用同一个库,**不要在本机跑任何会清库/重灌的开发脚本**。
+
+- **改了 `prisma/schema.prisma` 必须对运行库执行 `bun run prisma:push`**(在源码工程),否则 schema 与库漂移。2026-07-02 曾因 5 月底的精度改动(`Decimal(18,2)→(18,4)`)只改了 schema 未 push,导致价格层成本匹配失败、出库报"FIFO 可用来源不足"。漂移检查:`bun --env-file .env.dev prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma`。
 
 ---
 
