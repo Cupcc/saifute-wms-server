@@ -415,10 +415,58 @@
           <el-table-column prop="categoryName" label="分类名称" min-width="100" />
           <el-table-column prop="openingQuantity" label="月初库存数量" min-width="130" />
           <el-table-column prop="openingAmount" label="月初库存金额" min-width="140" />
-          <el-table-column prop="netProductionQuantity" label="净生产数量" min-width="120" />
-          <el-table-column prop="netProductionAmount" label="净生产金额" min-width="140" />
-          <el-table-column prop="netSalesQuantity" label="净销售数量" min-width="120" />
-          <el-table-column prop="netSalesAmount" label="净销售金额" min-width="140" />
+          <el-table-column prop="netProductionQuantity" min-width="140">
+            <template #header>
+              <el-tooltip
+                content="统计期内的验收入库数量 + 生产入库数量 - 退给厂家数量。"
+                placement="top"
+              >
+                <span class="metric-header" tabindex="0">
+                  净生产数量
+                  <el-icon class="metric-help-icon"><QuestionFilled /></el-icon>
+                </span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+          <el-table-column prop="netProductionAmount" min-width="160">
+            <template #header>
+              <el-tooltip
+                content="统计期内的验收入库金额 + 生产入库金额 - 退给厂家金额。"
+                placement="top"
+              >
+                <span class="metric-header" tabindex="0">
+                  净生产金额
+                  <el-icon class="metric-help-icon"><QuestionFilled /></el-icon>
+                </span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+          <el-table-column prop="netSalesQuantity" min-width="140">
+            <template #header>
+              <el-tooltip
+                content="统计期内的销售出库数量 - 销售退货数量。"
+                placement="top"
+              >
+                <span class="metric-header" tabindex="0">
+                  净销售数量
+                  <el-icon class="metric-help-icon"><QuestionFilled /></el-icon>
+                </span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+          <el-table-column prop="netSalesAmount" min-width="160">
+            <template #header>
+              <el-tooltip
+                content="统计期内的销售出库销售价金额 - 销售退货销售价金额，不是成本价金额。"
+                placement="top"
+              >
+                <span class="metric-header" tabindex="0">
+                  净销售金额
+                  <el-icon class="metric-help-icon"><QuestionFilled /></el-icon>
+                </span>
+              </el-tooltip>
+            </template>
+          </el-table-column>
           <el-table-column prop="closingQuantity" label="月末库存数量" min-width="130" />
           <el-table-column prop="closingAmount" label="月末库存金额" min-width="140" />
         </el-table>
@@ -1618,6 +1666,19 @@ watch(
     :deep(.el-table__footer-wrapper .cell) {
       font-weight: 700;
     }
+  }
+
+  .metric-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: help;
+  }
+
+  .metric-help-icon {
+    color: #909399;
+    font-size: 14px;
+    flex: 0 0 auto;
   }
 
   .stat-box {
