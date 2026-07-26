@@ -5,9 +5,14 @@ import {
   voidWorkshopOrder,
 } from "@/api/take/compat";
 
+const MAIN_STOCK_SCOPE = "MAIN";
+
 // 查询报废单列表
 export function listScrapOrder(query) {
-  return listWorkshopOrders(query, "scrapOrder");
+  return listWorkshopOrders(
+    { ...query, stockScope: MAIN_STOCK_SCOPE },
+    "scrapOrder",
+  );
 }
 
 // 查询报废单详细
@@ -17,7 +22,10 @@ export function getScrapOrder(scrapId) {
 
 // 新增报废单
 export function addScrapOrder(data) {
-  return submitWorkshopOrder(data, "scrapOrder");
+  return submitWorkshopOrder(
+    { ...data, stockScope: MAIN_STOCK_SCOPE },
+    "scrapOrder",
+  );
 }
 
 // 修改报废单

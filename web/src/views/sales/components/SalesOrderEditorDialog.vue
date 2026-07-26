@@ -461,6 +461,7 @@ import {
   addSalesReturnOrder,
 } from "@/api/sales/salesReturnOrder";
 import { confirmDocumentSave } from "@/utils/documentConfirm";
+import { formatQty } from "@/utils/format";
 import { mergeMaterialOptions } from "@/utils/materialOptions";
 import request from "@/utils/request";
 import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
@@ -1259,17 +1260,9 @@ function getSelectedPriceLayerAvailableQty(row) {
   return originalQuantity > 0 ? originalQuantity : null;
 }
 
-function formatQuantityDisplay(value) {
-  const quantity = Number(value);
-  if (!Number.isFinite(quantity)) {
-    return "-";
-  }
-  return quantity.toFixed(2);
-}
-
 function formatPriceLayerLabel(item) {
   const unitCost = formatCostAmount(item?.unitCost);
-  const availableQty = formatQuantityDisplay(item?.availableQty);
+  const availableQty = formatQty(item?.availableQty);
   return `${unitCost} / 可用 ${availableQty}`;
 }
 
@@ -1494,7 +1487,7 @@ async function validateForm() {
       quantity !== factoryNumberCount
     ) {
       proxy.$modal.msgError(
-        `第 ${index + 1} 行编号数量与出库数量不一致：编号数量${factoryNumberCount}，输入${formatQuantityDisplay(quantity)}`,
+        `第 ${index + 1} 行编号数量与出库数量不一致：编号数量${factoryNumberCount}，输入${formatQty(quantity)}`,
       );
       return false;
     }
@@ -1510,7 +1503,7 @@ async function validateForm() {
       const availableQty = getSelectedPriceLayerAvailableQty(line);
       if (availableQty !== null && quantity > availableQty) {
         proxy.$modal.msgError(
-          `第 ${index + 1} 行所选成本价层可用数量不足：可用${formatQuantityDisplay(availableQty)}，输入${formatQuantityDisplay(quantity)}`,
+          `第 ${index + 1} 行所选成本价层可用数量不足：可用${formatQty(availableQty)}，输入${formatQty(quantity)}`,
         );
         return false;
       }

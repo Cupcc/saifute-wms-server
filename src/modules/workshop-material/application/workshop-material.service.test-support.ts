@@ -3,6 +3,7 @@ import { PrismaService } from "../../../shared/prisma/prisma.service";
 import { ApprovalService } from "../../approval/application/approval.service";
 import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
+import { RdProjectLookupService } from "../../rd-project/application/rd-project-lookup.service";
 import { WorkshopMaterialRepository } from "../infrastructure/workshop-material.repository";
 import { WorkshopMaterialDocumentNumberRepository } from "../infrastructure/workshop-material-document-number.repository";
 import { WorkshopMaterialPickService } from "./workshop-material-pick.service";
@@ -109,6 +110,23 @@ export function createApprovalServiceMock() {
   } as unknown as jest.Mocked<ApprovalService>;
 }
 
+export const mockRdProject = {
+  id: 701,
+  projectCode: "TEST-RDP-001",
+  projectName: "测试研发项目",
+  projectTargetId: 7001,
+  workshopId: 1,
+  lifecycleStatus: "EFFECTIVE" as const,
+};
+
+export function createRdProjectLookupServiceMock() {
+  return {
+    requireEffectiveProjectByCode: jest.fn().mockResolvedValue(mockRdProject),
+    requireEffectiveProjectById: jest.fn().mockResolvedValue(mockRdProject),
+    ensureProjectTarget: jest.fn().mockResolvedValue(7001),
+  } as unknown as jest.Mocked<RdProjectLookupService>;
+}
+
 export type WorkshopMaterialMocks = {
   prisma: ReturnType<typeof createPrismaMock>;
   repository: jest.Mocked<WorkshopMaterialRepository>;
@@ -116,6 +134,7 @@ export type WorkshopMaterialMocks = {
   masterDataService: jest.Mocked<MasterDataService>;
   inventoryService: jest.Mocked<InventoryService>;
   approvalService: jest.Mocked<ApprovalService>;
+  rdProjectLookupService: jest.Mocked<RdProjectLookupService>;
 };
 
 export function createMocks(): WorkshopMaterialMocks {
@@ -126,6 +145,7 @@ export function createMocks(): WorkshopMaterialMocks {
     masterDataService: createMasterDataServiceMock(),
     inventoryService: createInventoryServiceMock(),
     approvalService: createApprovalServiceMock(),
+    rdProjectLookupService: createRdProjectLookupServiceMock(),
   };
 }
 
@@ -158,7 +178,10 @@ export function createReturnService(mocks: WorkshopMaterialMocks) {
 }
 
 export function createScrapService(mocks: WorkshopMaterialMocks) {
-  return new WorkshopMaterialScrapService(createSharedService(mocks));
+  return new WorkshopMaterialScrapService(
+    createSharedService(mocks),
+    mocks.rdProjectLookupService,
+  );
 }
 
 export function applyDefaultMasterDataResponses(mocks: WorkshopMaterialMocks) {

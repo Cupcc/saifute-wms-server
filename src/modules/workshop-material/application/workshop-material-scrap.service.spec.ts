@@ -98,6 +98,9 @@ describe("WorkshopMaterialScrapService", () => {
       const result = await service.createScrapOrder(dto, "1");
 
       expect(result.orderType).toBe(WorkshopMaterialOrderType.SCRAP);
+      expect(mocks.masterDataService.getStockScopeByCode).toHaveBeenCalledWith(
+        "MAIN",
+      );
       expect(mocks.inventoryService.settleConsumerOut).toHaveBeenCalledWith(
         expect.objectContaining({
           operationType: "SCRAP_OUT",
@@ -105,8 +108,153 @@ describe("WorkshopMaterialScrapService", () => {
         expect.anything(),
       );
       expect(
+        mocks.repository.findRdProcurementRequestForScrapSource,
+      ).not.toHaveBeenCalled();
+      expect(
         mocks.approvalService.createOrRefreshApprovalDocument,
       ).not.toHaveBeenCalled();
+    });
+
+    it("should run RD source validation and status linkage when stockScope is RD_SUB", async () => {
+      (
+        mocks.masterDataService.getStockScopeByCode as jest.Mock
+      ).mockResolvedValue({
+        id: 2,
+        scopeCode: "RD_SUB",
+        scopeName: "研发小仓",
+      });
+      (
+        mocks.repository.findRdProcurementRequestForScrapSource as jest.Mock
+      ).mockResolvedValue({
+        lifecycleStatus: DocumentLifecycleStatus.EFFECTIVE,
+        projectCode: "TEST-RDP-001",
+        projectName: "测试研发项目",
+        workshopId: 1,
+        lines: [{ id: 501, materialId: 100 }],
+      });
+
+      const rdScrapOrder = {
+        ...mockPickOrder,
+        id: 4,
+        documentNo: "WM-SCRAP-002",
+        orderType: WorkshopMaterialOrderType.SCRAP,
+        lines: [
+          {
+            ...mockPickOrder.lines[0],
+            id: 40,
+            orderId: 4,
+            quantity: new Prisma.Decimal(10),
+            amount: new Prisma.Decimal(100),
+            sourceDocumentType: "RdProcurementRequest",
+            sourceDocumentId: 9001,
+            sourceDocumentLineId: 501,
+          },
+        ],
+      };
+      (mocks.repository.createOrder as jest.Mock).mockResolvedValue(
+        rdScrapOrder,
+      );
+
+      const statusHistoryCreate = jest.fn().mockResolvedValue({});
+      const tx = {
+        documentRelation: { upsert: jest.fn().mockResolvedValue({}) },
+        documentLineRelation: { upsert: jest.fn().mockResolvedValue({}) },
+        rdMaterialStatusLedger: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: 1,
+            requestLineId: 501,
+            pendingQty: new Prisma.Decimal(0),
+            inProcurementQty: new Prisma.Decimal(0),
+            canceledQty: new Prisma.Decimal(0),
+            acceptedQty: new Prisma.Decimal(0),
+            handedOffQty: new Prisma.Decimal(10),
+            scrappedQty: new Prisma.Decimal(0),
+            returnedQty: new Prisma.Decimal(0),
+          }),
+          updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+        },
+        rdMaterialStatusHistory: {
+          findMany: jest.fn().mockResolvedValue([]),
+          create: statusHistoryCreate,
+        },
+      };
+      (mocks.repository.runInTransaction as jest.Mock).mockImplementation(
+        (handler: (tx: unknown) => Promise<unknown>) => handler(tx),
+      );
+
+      const result = await service.createScrapOrder(
+        {
+          orderType: WorkshopMaterialOrderType.SCRAP,
+          bizDate: "2025-03-14",
+          workshopId: 1,
+          stockScope: "RD_SUB",
+          lines: [
+            {
+              materialId: 100,
+              quantity: "10",
+              sourceDocumentId: 9001,
+              sourceDocumentLineId: 501,
+            },
+          ],
+        },
+        "1",
+      );
+
+      expect(
+        mocks.repository.findRdProcurementRequestForScrapSource,
+      ).toHaveBeenCalledWith(9001);
+      expect(mocks.masterDataService.getStockScopeByCode).toHaveBeenCalledWith(
+        "RD_SUB",
+      );
+      expect(mocks.inventoryService.settleConsumerOut).toHaveBeenCalledWith(
+        expect.objectContaining({
+          stockScope: "RD_SUB",
+          sourceOperationTypes: ["RD_HANDOFF_IN"],
+          projectTargetId: 7001,
+          sourceProjectTargetId: 7001,
+        }),
+        expect.anything(),
+      );
+      expect(
+        mocks.rdProjectLookupService.requireEffectiveProjectByCode,
+      ).toHaveBeenCalledWith("TEST-RDP-001");
+      expect(
+        mocks.rdProjectLookupService.ensureProjectTarget,
+      ).toHaveBeenCalledTimes(1);
+      expect(statusHistoryCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            requestLineId: 501,
+            sourceDocumentId: 4,
+            sourceDocumentLineId: 40,
+          }),
+        }),
+      );
+      expect(result.id).toBe(4);
+    });
+
+    it("should reject RD_SUB scrap lines that are not bound to a procurement request line", async () => {
+      (
+        mocks.masterDataService.getStockScopeByCode as jest.Mock
+      ).mockResolvedValue({
+        id: 2,
+        scopeCode: "RD_SUB",
+        scopeName: "研发小仓",
+      });
+
+      await expect(
+        service.createScrapOrder(
+          {
+            orderType: WorkshopMaterialOrderType.SCRAP,
+            bizDate: "2025-03-14",
+            workshopId: 1,
+            stockScope: "RD_SUB",
+            lines: [{ materialId: 100, quantity: "10" }],
+          },
+          "1",
+        ),
+      ).rejects.toThrow("RD 报废明细必须绑定采购需求行");
+      expect(mocks.repository.createOrder).not.toHaveBeenCalled();
     });
   });
 

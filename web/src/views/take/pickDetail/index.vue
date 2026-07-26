@@ -126,7 +126,7 @@
       <el-table-column sortable show-overflow-tooltip label="规格型号" align="center" prop="specification" v-if="columns[4].visible" />
       <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="quantity" v-if="columns[5].visible">
         <template #default="scope">
-          {{ formatQuantityDisplay(scope.row.quantity) }}
+          {{ formatQty(scope.row.quantity) }}
         </template>
       </el-table-column>
       <el-table-column sortable show-overflow-tooltip label="成本价层" align="center" prop="rawUnitPrice" v-if="columns[6].visible" />
@@ -149,6 +149,7 @@ import { listByNameOrContact } from "@/api/base/workshop.js";
 import { selectSaifuteInventoryListGroupByMaterial } from "@/api/stock/inventory.js";
 import { listNoPage } from "@/api/take/pickDetail";
 import { useDict } from "@/utils/dict";
+import { formatQty } from "@/utils/format";
 
 const { proxy } = getCurrentInstance();
 const MONEY_PRECISION = 4;
@@ -314,14 +315,6 @@ function comparePickDateRows(left, right) {
   return Number(left?.detailId ?? 0) - Number(right?.detailId ?? 0);
 }
 
-function formatQuantityDisplay(value) {
-  const quantity = Number(value);
-  if (!Number.isFinite(quantity)) {
-    return "-";
-  }
-  return quantity.toFixed(2);
-}
-
 /** 合计计算 */
 function getSummaries(param) {
   const { columns, data } = param;
@@ -334,16 +327,16 @@ function getSummaries(param) {
     if (column.property === "quantity") {
       const values = data.map((item) => Number(item.quantity));
       if (!values.every((value) => Number.isNaN(value))) {
-        sums[index] = values
-          .reduce((prev, curr) => {
+        sums[index] = formatQty(
+          values.reduce((prev, curr) => {
             const value = Number(curr);
             if (!Number.isNaN(value)) {
               return prev + curr;
             } else {
               return prev;
             }
-          }, 0)
-          .toFixed(2);
+          }, 0),
+        );
       } else {
         sums[index] = "N/A";
       }

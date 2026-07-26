@@ -9,7 +9,7 @@
 **当前实现**：
 
 - 前端已形成 `default` 与 `rd-subwarehouse` 两种 `consoleMode`，通过 `/rd/*` 路由提供研发小仓专属入口。
-- 会话快照承载 `consoleMode` 与固定 RD 范围约束；当前实现仍以 `workshopScope` / `workshopId` 传递该约束，但目标语义应收敛为 `stockScope = RD_SUB`，避免把车间归属误当成库存池。
+- 会话快照承载 `consoleMode` 与固定 RD 范围约束；当前实现同时携带 `workshopScope` / `workshopId` 与 `stockScope`，目标语义应收敛为 `stockScope = RD_SUB`，避免把车间归属误当成库存池。
 - 后端已新增 `rd-subwarehouse` 独立交接文档：主仓管理员创建 `RD handoff` 业务事实后，系统同事务完成 `main - / RD +` 的 `inventory-core` 过账，并以该文档作为 RD 自动入库结果真源。
 - 已落地的 RD 页面与后端复用关系：
   - `研发工作台`：前端专属入口与导航壳层
@@ -18,12 +18,16 @@
   - `自动入库结果`：读取 `rd-subwarehouse` 自有交接结果，而不再复用 `inbound` 占位语义
   - `研发项目`：当前历史实现由 `rd-project` 承接研发内部项目能力，不代表 `sales-project` 目标语义
   - `本仓报废`：复用 `workshop-material`
+- 研发采购需求、独立物料状态链、小仓盘点 / 调整均已落地：状态链 `待采购 / 采购中 / 取消 / 验收 / 领取 / 报废 / 退回` 由业务事实与手工状态动作（`PROCUREMENT_STARTED` / `ACCEPTANCE_CONFIRMED` / `MANUAL_CANCELLED` / `MANUAL_RETURNED`）共同驱动。
+- `MANUAL_RETURNED`（回写退回）在同一事务内完成库存结转：`RD_SUB` 侧按 `RD_HANDOFF_IN` 来源层 FIFO 出库 `RD_RETURN_OUT`，并保成本回补 `MAIN` 入库 `RD_RETURN_IN`，回补层可被主仓后续消耗。
+- 手工状态动作支持撤销：`POST /rd-subwarehouse/procurement-requests/:id/status-actions/:historyId/reverse`，撤销退回时同步做库存反冲；若 `MAIN` 回补层已被下游占用则拒绝撤销。
+- 主仓→RD 交接单可在前端『RD 交接结果』页面创建 / 作废（权限 `rd:handoff-order:create` / `rd:handoff-order:void`），交接列表按会话库存范围过滤。
 - 当前是"受限子仓模型"首个切片，不是完整开放式多仓，也不是用车间标签冒充小仓库存的简化方案。
 
 **目标范围**：
 
 - 坚持"主仓 + 研发小仓受限协同"，不扩展成通用多仓 / 库位 / 批次架构。
-- 后续切片补齐：研发采购需求与主仓验收联动、研发物料独立状态链、小仓盘点 / 调整。
+- 研发采购需求与主仓验收联动、研发物料独立状态链、小仓盘点 / 调整已交付；后续切片以命名收敛等清理项为主。
 - 库存写入统一经过 `inventory-core`，报表统一在 `reporting` 聚合，本模块只做业务编排，不绕过核心层。
 
 ## 角色与视角架构矩阵
@@ -52,12 +56,13 @@
 
 | 场景 | 当前承载 | 目标承载 | 库存规则 | 说明 |
 |------|----------|----------|----------|------|
-| 研发采购需求录入 | 后续切片 | `rd-subwarehouse` 采购需求编排 | 暂不记库存 | 录入方是小仓管理员，供采购角色接单 |
+| 研发采购需求录入 | `rd-subwarehouse` 采购需求编排 | `rd-subwarehouse` 采购需求编排 | 暂不记库存 | 录入方是小仓管理员，供采购角色接单 |
 | 外部采购到货并验收 | `inbound` | `inbound` + `rd-subwarehouse` 采购信息关联 | 先入主仓 | RD 采购信息只提供关联与追溯，不改变主仓先入账原则 |
 | 主仓到 RD 自动过账 | `rd-subwarehouse` + `inventory-core` | `rd-subwarehouse` 协同编排 + `inventory-core` | 主仓减、小仓增 | 不要求小仓管理员二次确认收货，RD 结果面读取真实交接结果 |
 | RD 内部使用 | 当前实现为 `rd-project` + `inventory-core` | 继续由 `rd-project` 承接研发内部项目语义 | 小仓减 | 不应借用 `sales-project` 语义 |
 | RD 本仓报废 | `workshop-material` + `inventory-core` | 继续由 `workshop-material` 承担 | 小仓减 | 属于小仓内部动作 |
-| RD 盘点 / 调整 | 后续切片 | `rd-subwarehouse` 库存编排 + `inventory-core` | 只调整本小仓 | 属于受限能力，不等于通用全仓盘点框架 |
+| RD 回写退回（`MANUAL_RETURNED`） | `rd-subwarehouse` + `inventory-core` | 继续由 `rd-subwarehouse` 编排 | 小仓减、主仓增 | 同事务完成 `RD_RETURN_OUT` / `RD_RETURN_IN`，成本随来源层保真；动作可撤销，回补层被占用时拒绝 |
+| RD 盘点 / 调整 | `rd-subwarehouse` + `inventory-core` | `rd-subwarehouse` 库存编排 + `inventory-core` | 只调整本小仓 | 属于受限能力，不等于通用全仓盘点框架 |
 | RD 报表 / 查询 | `reporting` 等只读接口复用 | 继续保持只读聚合 | 不产生库存写入 | 查询必须受固定 RD 范围约束；当前实现仍沿用 `workshopScope` 命名 |
 
 ## Domain 规则与约束
@@ -96,9 +101,8 @@
 
 ## 当前缺口 / 后续切片
 
-- 研发采购需求与主仓验收联动尚未落地。
-- 研发采购链路中的独立物料状态流尚未落地。
-- 小仓盘点 / 库存调整尚未落地。
+- 研发采购需求与主仓验收联动（`F3`）、研发采购独立物料状态链（`F4`）、小仓盘点 / 库存调整（`F5`）均已交付（2026-07-09 核对）。
+- 遗留重构：固定 RD 范围约束当前在会话中同时携带 `workshopScope` 与 `stockScope`，`WorkshopScopeService` 仍被约 10 个控制器引用；`workshopScope` → `stockScope` 的命名与语义收敛仍是真实待办。
 
 ## 暂不实现范围
 

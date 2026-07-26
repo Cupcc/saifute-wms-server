@@ -8,12 +8,13 @@ describe("QueryMonthlyReportingDto", () => {
     forbidNonWhitelisted: true,
   });
 
-  it("accepts keyword on monthly reporting summary queries", async () => {
+  it("accepts material filters on monthly reporting summary queries", async () => {
     const result = (await pipe.transform(
       {
         yearMonth: "2026-03",
         viewMode: "MATERIAL_CATEGORY",
         keyword: "化工",
+        materialId: "501",
       },
       {
         type: "query",
@@ -22,5 +23,6 @@ describe("QueryMonthlyReportingDto", () => {
     )) as QueryMonthlyReportingDto;
 
     expect(result.keyword).toBe("化工");
+    expect(result.materialId).toBe(501);
   });
 });

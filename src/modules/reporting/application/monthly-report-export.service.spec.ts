@@ -264,15 +264,31 @@ describe("MonthlyReportExportService", () => {
           sourceBizDate: new Date("2026-02-27T02:00:00.000Z"),
           sourceDocumentNo: "CK-0009",
         }),
+        createMaterialCategoryEntry({
+          documentId: 203,
+          documentNo: "FILTERED-OUT-001",
+          documentLineId: 2003,
+          materialId: 502,
+          materialCode: "M-FILTERED-OUT",
+          materialName: "不应导出的物料 B",
+        }),
       ],
     );
     materialCategoryBalanceRepository.findMonthlyMaterialCategoryBalanceSnapshots.mockResolvedValue(
-      [createBalanceSnapshot()],
+      [
+        createBalanceSnapshot(),
+        createBalanceSnapshot({
+          materialId: 502,
+          materialCode: "M-FILTERED-OUT",
+          materialName: "不应导出的物料 B",
+        }),
+      ],
     );
 
     const exportResult = await service.exportMonthlyReport({
       yearMonth: "2026-03",
       viewMode: MonthlyReportingViewMode.MATERIAL_CATEGORY,
+      materialId: 501,
     });
 
     expect(exportResult.fileName).toBe("物料分类月报-2026-03.xls");
@@ -319,6 +335,8 @@ describe("MonthlyReportExportService", () => {
     expect(exportResult.content).not.toContain("异常单据数");
     expect(exportResult.content).not.toContain("异常标识");
     expect(exportResult.content).toContain("XSTH-001");
+    expect(exportResult.content).not.toContain("FILTERED-OUT-001");
+    expect(exportResult.content).not.toContain("不应导出的物料 B");
 
     const categorySheet = extractWorksheet(exportResult.content, "分类汇总");
     expect(categorySheet).not.toContain("单据行数");
@@ -359,6 +377,37 @@ describe("MonthlyReportExportService", () => {
       "销售价",
       "销售金额",
     ]);
+  });
+
+  it("should exclude balance-only materials from the material-category export", async () => {
+    materialCategoryRepository.findMonthlyMaterialCategoryEntries.mockResolvedValue(
+      [createMaterialCategoryEntry()],
+    );
+    materialCategoryBalanceRepository.findMonthlyMaterialCategoryBalanceSnapshots.mockResolvedValue(
+      [
+        createBalanceSnapshot(),
+        createBalanceSnapshot({
+          materialId: 999,
+          materialCode: "M-BALANCE-ONLY",
+          materialName: "无本月发生物料",
+          openingQuantity: new Prisma.Decimal("98765"),
+          openingAmount: new Prisma.Decimal("98765.43"),
+          closingQuantity: new Prisma.Decimal("87654"),
+          closingAmount: new Prisma.Decimal("87654.32"),
+        }),
+      ],
+    );
+
+    const exportResult = await service.exportMonthlyReport({
+      yearMonth: "2026-03",
+      viewMode: MonthlyReportingViewMode.MATERIAL_CATEGORY,
+    });
+
+    expect(exportResult.content).toContain("原料 A");
+    expect(exportResult.content).not.toContain("M-BALANCE-ONLY");
+    expect(exportResult.content).not.toContain("无本月发生物料");
+    expect(exportResult.content).not.toContain("98765.43");
+    expect(exportResult.content).not.toContain("87654.32");
   });
 
   it("should export excel content using the same filtered contract", async () => {

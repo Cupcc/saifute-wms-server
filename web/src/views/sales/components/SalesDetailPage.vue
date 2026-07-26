@@ -223,7 +223,7 @@
         align="right"
       >
         <template #default="scope">
-          {{ formatNumber(scope.row.quantity) }}
+          {{ formatQty(scope.row.quantity) }}
         </template>
       </el-table-column>
       <el-table-column
@@ -273,6 +273,7 @@ import { listDetail } from "@/api/sales/detail";
 import { getOrder } from "@/api/sales/order";
 import { listSalesReturnDetail } from "@/api/sales/salesReturnDetail";
 import { getSalesReturnOrder } from "@/api/sales/salesReturnOrder";
+import { formatQty } from "@/utils/format";
 import SalesOrderDetailDialog from "./SalesOrderDetailDialog.vue";
 
 const props = defineProps({
@@ -523,11 +524,6 @@ function compareBizDateRows(left, right) {
   return Number(left?.detailId ?? 0) - Number(right?.detailId ?? 0);
 }
 
-function formatNumber(value) {
-  const parsed = Number(value ?? 0);
-  return Number.isFinite(parsed) ? parsed.toFixed(2) : "0.00";
-}
-
 function formatAmount(value) {
   const parsed = Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed.toFixed(4) : "0.0000";
@@ -563,7 +559,6 @@ void [
   searchWorkshop,
   searchMaterial,
   formatDate,
-  formatNumber,
   formatAmount,
 ];
 

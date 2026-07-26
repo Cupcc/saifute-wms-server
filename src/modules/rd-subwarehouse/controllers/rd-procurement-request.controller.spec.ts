@@ -1,7 +1,9 @@
 import { ForbiddenException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
+import { RdMaterialStatusEventType } from "../../../../generated/prisma/client";
 import { WorkshopScopeService } from "../../rbac/application/workshop-scope.service";
 import type { SessionUserSnapshot } from "../../session/domain/user-session";
+import { RdProcurementItemService } from "../application/rd-procurement-item.service";
 import { RdProcurementRequestService } from "../application/rd-procurement-request.service";
 import { RdProcurementRequestController } from "./rd-procurement-request.controller";
 
@@ -51,6 +53,18 @@ describe("RdProcurementRequestController", () => {
       controllers: [RdProcurementRequestController],
       providers: [
         {
+          provide: RdProcurementItemService,
+          useValue: {
+            getSuggestionProjectWorkshopId: jest.fn().mockResolvedValue(6),
+            listMaterialSuggestions: jest
+              .fn()
+              .mockResolvedValue({ items: [], total: 0 }),
+            listAcceptanceMaterialOptions: jest
+              .fn()
+              .mockResolvedValue({ items: [], total: 0 }),
+          },
+        },
+        {
           provide: RdProcurementRequestService,
           useValue: {
             listRequests: jest.fn().mockResolvedValue({ items: [], total: 0 }),
@@ -61,6 +75,12 @@ describe("RdProcurementRequestController", () => {
             createRequest: jest.fn().mockResolvedValue({ id: 1 }),
             voidRequest: jest.fn().mockResolvedValue({ id: 1 }),
             applyStatusAction: jest.fn().mockResolvedValue({ id: 1 }),
+            getStatusActionHistory: jest.fn().mockResolvedValue({
+              id: 501,
+              requestLineId: 11,
+              eventType: RdMaterialStatusEventType.PROCUREMENT_STARTED,
+            }),
+            reverseStatusAction: jest.fn().mockResolvedValue({ id: 1 }),
           },
         },
         {
@@ -168,5 +188,59 @@ describe("RdProcurementRequestController", () => {
       }),
       "operator",
     );
+  });
+
+  it("allows rd users to reverse non-return status histories", async () => {
+    await controller.reverseStatusAction(1, 501, { reason: "误操作" }, rdUser);
+
+    expect(workshopScopeService.assertWorkshopAccess).toHaveBeenCalledWith(
+      rdUser,
+      6,
+    );
+    expect(
+      rdProcurementRequestService.getStatusActionHistory,
+    ).toHaveBeenCalledWith(1, 501);
+    expect(
+      rdProcurementRequestService.reverseStatusAction,
+    ).toHaveBeenCalledWith(1, 501, "误操作", "rd-operator");
+  });
+
+  it("rejects reversing a manual return history for rd daily users", async () => {
+    rdProcurementRequestService.getStatusActionHistory.mockResolvedValueOnce({
+      id: 501,
+      requestLineId: 11,
+      eventType: RdMaterialStatusEventType.MANUAL_RETURNED,
+    } as Awaited<
+      ReturnType<RdProcurementRequestService["getStatusActionHistory"]>
+    >);
+
+    await expect(
+      controller.reverseStatusAction(1, 501, {}, rdUser),
+    ).rejects.toThrow(ForbiddenException);
+
+    expect(
+      rdProcurementRequestService.reverseStatusAction,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("allows main-side users to reverse a manual return history", async () => {
+    rdProcurementRequestService.getStatusActionHistory.mockResolvedValueOnce({
+      id: 501,
+      requestLineId: 11,
+      eventType: RdMaterialStatusEventType.MANUAL_RETURNED,
+    } as Awaited<
+      ReturnType<RdProcurementRequestService["getStatusActionHistory"]>
+    >);
+
+    await controller.reverseStatusAction(
+      1,
+      501,
+      { reason: "退回有误" },
+      mainUser,
+    );
+
+    expect(
+      rdProcurementRequestService.reverseStatusAction,
+    ).toHaveBeenCalledWith(1, 501, "退回有误", "operator");
   });
 });

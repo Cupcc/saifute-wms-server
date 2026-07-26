@@ -34,10 +34,10 @@
           {{ detailData.sourceOutboundOrderId || "-" }}
         </el-descriptions-item>
         <el-descriptions-item v-if="showSourceOutbound" label="总数量">
-          {{ formatNumber(detailData.totalQty) }}
+          {{ formatQty(detailData.totalQty) }}
         </el-descriptions-item>
         <el-descriptions-item v-else label="总数量">
-          {{ formatNumber(detailData.totalQty) }}
+          {{ formatQty(detailData.totalQty) }}
         </el-descriptions-item>
         <el-descriptions-item label="总金额">
           {{ formatAmount(detailData.totalAmount) }}
@@ -93,7 +93,7 @@
         </el-table-column>
         <el-table-column label="数量" prop="quantity" width="100" align="right">
           <template #default="scope">
-            {{ formatNumber(scope.row.quantity) }}
+            {{ formatQty(scope.row.quantity) }}
           </template>
         </el-table-column>
         <el-table-column label="销售单价" prop="unitPrice" width="110" align="right">
@@ -129,6 +129,8 @@
 </template>
 
 <script setup>
+import { formatQty } from "@/utils/format";
+
 defineProps({
   modelValue: {
     type: Boolean,
@@ -208,11 +210,6 @@ function formatDateTime(value) {
   return `${year}-${month}-${day} ${hour}:${minute}:${second}`;
 }
 
-function formatNumber(value) {
-  const parsed = Number(value ?? 0);
-  return Number.isFinite(parsed) ? parsed.toFixed(2) : "0.00";
-}
-
 function formatAmount(value) {
   const parsed = Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed.toFixed(4) : "0.0000";
@@ -238,7 +235,6 @@ void [
   getAuditTagType,
   formatDate,
   formatDateTime,
-  formatNumber,
   formatAmount,
   formatCostAmount,
   formatFactoryNumber,

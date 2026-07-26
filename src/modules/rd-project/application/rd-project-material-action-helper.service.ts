@@ -1,33 +1,17 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { BadRequestException, Injectable } from "@nestjs/common";
 import {
   DocumentLifecycleStatus,
-  InventoryEffectStatus,
-  InventoryOperationType,
   Prisma,
   RdProjectMaterialActionType,
 } from "../../../../generated/prisma/client";
-import {
-  FIFO_SOURCE_OPERATION_TYPES,
-  InventoryService,
-} from "../../inventory-core/application/inventory.service";
+import { InventoryService } from "../../inventory-core/application/inventory.service";
 import { MasterDataService } from "../../master-data/application/master-data.service";
-import type { CreateRdProjectMaterialActionDto } from "../dto/create-rd-project-material-action.dto";
 import type { CreateRdProjectMaterialActionLineDto } from "../dto/create-rd-project-material-action-line.dto";
 import { RdProjectRepository } from "../infrastructure/rd-project.repository";
 import {
-  createProjectActionDocumentNo,
-  ensureProjectTarget,
-  FIXED_RD_PROJECT_STOCK_SCOPE,
+  maxZero,
   RD_PROJECT_ACTION_DOCUMENT_TYPE,
-  RD_PROJECT_ACTION_LABEL,
-  RD_PROJECT_BUSINESS_MODULE,
-  RD_PROJECT_LABEL,
   toDecimal,
-  toProjectInventoryOperationType,
 } from "./rd-project.shared";
 
 type ProjectDetail = NonNullable<
@@ -36,6 +20,10 @@ type ProjectDetail = NonNullable<
 type ProjectActionDetail = NonNullable<
   Awaited<ReturnType<RdProjectRepository["findMaterialActionById"]>>
 >;
+type ActionLineRef = {
+  lineNo: number;
+  materialName: string;
+};
 
 @Injectable()
 export class RdProjectMaterialActionHelperService {
@@ -49,6 +37,7 @@ export class RdProjectMaterialActionHelperService {
     project: ProjectDetail,
     actionType: RdProjectMaterialActionType,
     lines: CreateRdProjectMaterialActionLineDto[],
+    tx?: Prisma.TransactionClient,
   ) {
     const preparedLines = [] as Array<{
       lineNo: number;
@@ -86,30 +75,41 @@ export class RdProjectMaterialActionHelperService {
       let costAmount = quantity.mul(costUnitPrice);
 
       if (actionType === RdProjectMaterialActionType.RETURN) {
+        const lineLabel = `第 ${index + 1} 行（物料 ${material.materialName}）`;
         if (
           line.sourceDocumentType !== RD_PROJECT_ACTION_DOCUMENT_TYPE ||
           !line.sourceDocumentId ||
           !line.sourceDocumentLineId
         ) {
           throw new BadRequestException(
-            "研发项目退料必须关联上游研发项目领料行",
+            `${lineLabel}：退料必须关联上游研发项目领料行`,
           );
         }
 
         const sourceAction = await this.getCachedSourceAction(
           line.sourceDocumentId,
           sourceActionCache,
+          tx,
         );
+        if (!sourceAction) {
+          throw new BadRequestException(
+            `${lineLabel}：退料来源领料动作不存在，请重新选择来源领料`,
+          );
+        }
         if (sourceAction.projectId !== project.id) {
-          throw new BadRequestException("退料来源必须属于当前项目");
+          throw new BadRequestException(
+            `${lineLabel}：退料来源必须属于当前项目`,
+          );
         }
         if (sourceAction.actionType !== RdProjectMaterialActionType.PICK) {
-          throw new BadRequestException("退料来源必须是研发项目领料动作");
+          throw new BadRequestException(
+            `${lineLabel}：退料来源必须是研发项目领料动作`,
+          );
         }
         if (
           sourceAction.lifecycleStatus !== DocumentLifecycleStatus.EFFECTIVE
         ) {
-          throw new BadRequestException("退料来源领料动作已作废");
+          throw new BadRequestException(`${lineLabel}：退料来源领料动作已作废`);
         }
 
         const sourceLine = sourceAction.lines.find(
@@ -117,11 +117,13 @@ export class RdProjectMaterialActionHelperService {
         );
         if (!sourceLine) {
           throw new BadRequestException(
-            `退料来源领料行不存在: ${line.sourceDocumentLineId}`,
+            `${lineLabel}：退料来源领料行不存在，请重新选择来源领料`,
           );
         }
         if (sourceLine.materialId !== material.id) {
-          throw new BadRequestException("退料物料必须与来源领料行一致");
+          throw new BadRequestException(
+            `${lineLabel}：退料物料必须与来源领料行一致`,
+          );
         }
 
         if (!activeReturnedQtyBySource.has(sourceAction.id)) {
@@ -129,6 +131,7 @@ export class RdProjectMaterialActionHelperService {
             sourceAction.id,
             await this.repository.sumActiveReturnedQtyBySourceLine(
               sourceAction.id,
+              tx,
             ),
           );
         }
@@ -145,8 +148,9 @@ export class RdProjectMaterialActionHelperService {
           currentReturned,
         );
         if (nextRequested.gt(maxReturnable)) {
+          const remaining = maxZero(maxReturnable.sub(requestQty));
           throw new BadRequestException(
-            `领料行 ${sourceLine.id} 的累计退料数量超过可退数量`,
+            `${lineLabel}：累计退料数量超过来源领料行可退数量，当前最多还可退 ${remaining.toString()}`,
           );
         }
         requestQtyBySourceLine.set(sourceLine.id, nextRequested);
@@ -178,28 +182,28 @@ export class RdProjectMaterialActionHelperService {
     return preparedLines;
   }
 
-
   private async getCachedSourceAction(
     actionId: number,
     cache: Map<number, ProjectActionDetail>,
+    tx?: Prisma.TransactionClient,
   ) {
     const cached = cache.get(actionId);
     if (cached) {
       return cached;
     }
-    const action = await this.repository.findMaterialActionById(actionId);
+    const action = await this.repository.findMaterialActionById(actionId, tx);
     if (!action) {
-      throw new NotFoundException(`物料动作不存在: ${actionId}`);
+      return null;
     }
     cache.set(actionId, action);
     return action;
   }
 
-
   async releaseSourceUsageForReturnCreation(
     sourceActionId: number,
     sourceLineId: number,
     quantity: Prisma.Decimal,
+    line: ActionLineRef,
     operatorId?: string,
     tx?: Prisma.TransactionClient,
   ) {
@@ -246,18 +250,18 @@ export class RdProjectMaterialActionHelperService {
 
     if (remainingToRelease.gt(0)) {
       throw new BadRequestException(
-        `退料来源库存释放不足: actionId=${sourceActionId}, lineId=${sourceLineId}`,
+        `第 ${line.lineNo} 行（物料 ${line.materialName}）：退料数量超过来源领料行剩余可退数量，请刷新后重试`,
       );
     }
   }
-
 
   async restoreSourceUsageForReturnVoid(
     sourceActionId: number,
     sourceLineId: number,
     quantity: Prisma.Decimal,
-    operatorId?: string,
-    tx?: Prisma.TransactionClient,
+    line: ActionLineRef,
+    operatorId: string | undefined,
+    tx: Prisma.TransactionClient,
   ) {
     const sourceUsages = (
       await this.inventoryService.listSourceUsagesForConsumerLine(
@@ -295,13 +299,34 @@ export class RdProjectMaterialActionHelperService {
         },
         tx,
       );
+      const availableQty = await this.getSourceLogAvailableQty(usage, tx);
+      if (availableQty.lt(0)) {
+        throw new BadRequestException(
+          `第 ${line.lineNo} 行（物料 ${line.materialName}）：退料释放的库存已被再次领用，请先撤销后续领料后再作废退料`,
+        );
+      }
       remainingToRestore = remainingToRestore.sub(toRestore);
     }
 
     if (remainingToRestore.gt(0)) {
       throw new BadRequestException(
-        `退料来源库存恢复不足: actionId=${sourceActionId}, lineId=${sourceLineId}`,
+        `第 ${line.lineNo} 行（物料 ${line.materialName}）：退料对应的库存占用数据异常，无法作废退料`,
       );
     }
+  }
+
+  private async getSourceLogAvailableQty(
+    usage: { sourceLogId: number; sourceLog: { changeQty: Prisma.Decimal } },
+    tx: Prisma.TransactionClient,
+  ) {
+    const totals = await tx.inventorySourceUsage.aggregate({
+      where: { sourceLogId: usage.sourceLogId },
+      _sum: { allocatedQty: true, releasedQty: true },
+    });
+    const allocatedQty = toDecimal(totals._sum.allocatedQty);
+    const releasedQty = toDecimal(totals._sum.releasedQty);
+    return toDecimal(usage.sourceLog.changeQty).sub(
+      allocatedQty.sub(releasedQty),
+    );
   }
 }

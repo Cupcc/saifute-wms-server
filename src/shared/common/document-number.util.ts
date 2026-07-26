@@ -3,6 +3,7 @@ import { Prisma } from "../../../generated/prisma/client";
 
 const DEFAULT_MAX_ATTEMPTS = 999;
 const DAILY_SEQUENCE_MAX = 999;
+const DAILY_SEQUENCE_SUFFIX_PATTERN = /^\d{3}$/;
 
 const FIXED_PREFIX_BY_LEGACY_PREFIX: Record<string, string> = {
   TGC: "TG",
@@ -20,8 +21,8 @@ function padTwo(value: number) {
 }
 
 function datePart(date: Date) {
-  return `${date.getFullYear()}${padTwo(date.getMonth() + 1)}${padTwo(
-    date.getDate(),
+  return `${date.getUTCFullYear()}${padTwo(date.getUTCMonth() + 1)}${padTwo(
+    date.getUTCDate(),
   )}`;
 }
 
@@ -67,6 +68,27 @@ export function buildDashedTimestampDocumentNo(
   attempt = 0,
 ) {
   return buildDailySequenceDocumentNo(prefix, bizDate, attempt + 1);
+}
+
+export function resolveDailyStartAttempt(
+  existingDocumentNos: readonly string[],
+  documentNoStem: string,
+) {
+  let maxSequence = 0;
+  for (const documentNo of existingDocumentNos) {
+    if (!documentNo.startsWith(documentNoStem)) {
+      continue;
+    }
+    const suffix = documentNo.slice(documentNoStem.length);
+    if (!DAILY_SEQUENCE_SUFFIX_PATTERN.test(suffix)) {
+      continue;
+    }
+    const sequence = Number(suffix);
+    if (sequence > maxSequence) {
+      maxSequence = sequence;
+    }
+  }
+  return maxSequence;
 }
 
 function includesDocumentNoTarget(target: string) {
@@ -125,14 +147,25 @@ export function isDocumentNoUniqueConflict(error: unknown) {
   return collectUniqueConflictTargets(error).some(includesDocumentNoTarget);
 }
 
+function normalizeStartAttempt(value: number) {
+  return Number.isInteger(value) && value > 0 ? value : 0;
+}
+
 export async function createWithGeneratedDocumentNo<T>(
   create: (attempt: number) => Promise<T>,
-  maxAttempts = DEFAULT_MAX_ATTEMPTS,
+  options: {
+    maxAttempts?: number;
+    resolveStartAttempt?: () => number | Promise<number>;
+  } = {},
 ) {
+  const maxAttempts = options.maxAttempts ?? DEFAULT_MAX_ATTEMPTS;
+  const startAttempt = normalizeStartAttempt(
+    options.resolveStartAttempt ? await options.resolveStartAttempt() : 0,
+  );
   let documentNoConflict = false;
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+  for (let retry = 0; retry < maxAttempts; retry++) {
     try {
-      return await create(attempt);
+      return await create(startAttempt + retry);
     } catch (error) {
       if (!isDocumentNoUniqueConflict(error)) {
         throw error;

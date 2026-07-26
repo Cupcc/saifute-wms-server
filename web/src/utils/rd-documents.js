@@ -6,19 +6,13 @@ export function formatDateOnly(date = new Date()) {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
-export function generateRdDocumentNo(prefix) {
-  const now = new Date();
-  const timestamp = [
-    now.getFullYear(),
-    pad(now.getMonth() + 1),
-    pad(now.getDate()),
-    pad(now.getHours()),
-    pad(now.getMinutes()),
-    pad(now.getSeconds()),
-  ].join("");
-  const randomSuffix = String(Math.floor(Math.random() * 1000)).padStart(
-    3,
-    "0",
-  );
-  return `${prefix}-${timestamp}-${randomSuffix}`;
+export function formatDateValue(value) {
+  if (!value) {
+    return "-";
+  }
+  if (value instanceof Date) {
+    return formatDateOnly(value);
+  }
+  const match = String(value).match(/^\d{4}-\d{2}-\d{2}/);
+  return match ? match[0] : String(value);
 }

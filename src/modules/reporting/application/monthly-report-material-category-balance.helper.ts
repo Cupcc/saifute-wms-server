@@ -42,6 +42,7 @@ export interface MonthlyMaterialGroup {
 }
 
 interface MonthlyMaterialCategoryBalanceFilter {
+  materialId?: number;
   categoryId?: number;
   categoryNodeKey?: string;
   keyword?: string;
@@ -59,6 +60,9 @@ export function filterMonthlyMaterialCategoryBalanceSnapshots(
 
   return snapshots
     .filter((snapshot) =>
+      query.materialId ? snapshot.materialId === query.materialId : true,
+    )
+    .filter((snapshot) =>
       categoryNodeKey
         ? resolveBalanceCategoryNodeKey(snapshot) === categoryNodeKey
         : query.categoryId
@@ -66,6 +70,17 @@ export function filterMonthlyMaterialCategoryBalanceSnapshots(
           : true,
     )
     .filter((snapshot) => matchesBalanceKeyword(snapshot, query.keyword));
+}
+
+export function filterMonthlyMaterialCategoryBalanceSnapshotsByEntries(
+  snapshots: MonthlyMaterialCategoryBalanceSnapshot[],
+  entries: MonthlyMaterialCategoryEntry[],
+): MonthlyMaterialCategoryBalanceSnapshot[] {
+  const activeMaterialKeys = new Set(entries.map(buildEntryMaterialKey));
+
+  return snapshots.filter((snapshot) =>
+    activeMaterialKeys.has(buildBalanceMaterialKey(snapshot)),
+  );
 }
 
 export function buildMonthlyMaterialCategoryBalanceTotals(
@@ -106,7 +121,6 @@ export function buildMonthlyMaterialCategoryBalanceTotalsByKey(
 
 export function collectMonthlyMaterialCategoryGroups(
   entries: MonthlyMaterialCategoryEntry[],
-  balanceSnapshots: MonthlyMaterialCategoryBalanceSnapshot[] = [],
 ): MonthlyMaterialCategoryGroup[] {
   const grouped = new Map<string, MonthlyMaterialCategoryGroup>();
 
@@ -124,27 +138,11 @@ export function collectMonthlyMaterialCategoryGroups(
     grouped.set(nodeKey, current);
   }
 
-  for (const snapshot of balanceSnapshots) {
-    const nodeKey = resolveBalanceCategoryNodeKey(snapshot);
-    if (grouped.has(nodeKey)) {
-      continue;
-    }
-
-    grouped.set(nodeKey, {
-      nodeKey,
-      categoryId: snapshot.categoryId,
-      categoryCode: snapshot.categoryCode,
-      categoryName: snapshot.categoryName,
-      entries: [],
-    });
-  }
-
   return [...grouped.values()];
 }
 
 export function collectMonthlyMaterialGroups(
   entries: MonthlyMaterialCategoryEntry[],
-  balanceSnapshots: MonthlyMaterialCategoryBalanceSnapshot[] = [],
 ): MonthlyMaterialGroup[] {
   const grouped = new Map<string, MonthlyMaterialGroup>();
 
@@ -167,28 +165,6 @@ export function collectMonthlyMaterialGroups(
     };
     current.entries.push(entry);
     grouped.set(materialKey, current);
-  }
-
-  for (const snapshot of balanceSnapshots) {
-    const categoryNodeKey = resolveBalanceCategoryNodeKey(snapshot);
-    const materialKey = buildBalanceMaterialKey(snapshot);
-    if (grouped.has(materialKey)) {
-      continue;
-    }
-
-    grouped.set(materialKey, {
-      materialKey,
-      categoryNodeKey,
-      categoryId: snapshot.categoryId,
-      categoryCode: snapshot.categoryCode,
-      categoryName: snapshot.categoryName,
-      materialId: snapshot.materialId,
-      materialCode: snapshot.materialCode,
-      materialName: snapshot.materialName,
-      materialSpec: snapshot.materialSpec,
-      unitCode: snapshot.unitCode,
-      entries: [],
-    });
   }
 
   return [...grouped.values()];

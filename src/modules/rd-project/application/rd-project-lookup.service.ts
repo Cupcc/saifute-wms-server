@@ -4,6 +4,7 @@ import {
   type Prisma,
 } from "../../../../generated/prisma/client";
 import type { StockScopeCode } from "../../session/domain/user-session";
+import { RdProjectBomCatalogRepository } from "../infrastructure/rd-project-bom-catalog.repository";
 import { RdProjectPersistenceService } from "../infrastructure/rd-project-persistence.service";
 import { ensureProjectTarget } from "./rd-project.shared";
 
@@ -17,7 +18,10 @@ type RdProjectCodeRecord = NonNullable<
 
 @Injectable()
 export class RdProjectLookupService {
-  constructor(private readonly repository: RdProjectPersistenceService) {}
+  constructor(
+    private readonly repository: RdProjectPersistenceService,
+    private readonly bomCatalogRepository: RdProjectBomCatalogRepository,
+  ) {}
 
   async listEffectiveProjects(params: {
     workshopId?: number;
@@ -55,6 +59,27 @@ export class RdProjectLookupService {
       throw new BadRequestException(`研发项目已失效: ${projectCode}`);
     }
     return project;
+  }
+
+  async listEffectiveBomMaterialSuggestions(params: {
+    currentProjectCode: string;
+    keyword?: string;
+    limit: number;
+    offset: number;
+  }) {
+    await this.requireEffectiveProjectByCode(params.currentProjectCode);
+    return this.bomCatalogRepository.findSuggestions(params);
+  }
+
+  async assertMaterialInEffectiveBomCatalog(materialId: number) {
+    const material =
+      await this.bomCatalogRepository.findCatalogMaterial(materialId);
+    if (!material) {
+      throw new BadRequestException(
+        `所选物料不属于任何有效研发项目 BOM: ${materialId}`,
+      );
+    }
+    return material;
   }
 
   ensureProjectTarget(params: {

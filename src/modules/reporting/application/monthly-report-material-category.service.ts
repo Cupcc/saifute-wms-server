@@ -18,6 +18,7 @@ import {
   compareMaterialItems,
   createEmptyMonthlyMaterialCategoryBalanceTotals,
   filterMonthlyMaterialCategoryBalanceSnapshots,
+  filterMonthlyMaterialCategoryBalanceSnapshotsByEntries,
   resolveBalanceCategoryNodeKey,
 } from "./monthly-report-material-category-balance.helper";
 import {
@@ -165,11 +166,17 @@ export interface MonthlyReportMaterialSummaryItem {
   netAmount: string;
 }
 
+export type MonthlyReportMaterialCatalogItem = Pick<
+  MonthlyReportMaterialSummaryItem,
+  "materialId" | "materialCode" | "materialName" | "materialSpec" | "unitCode"
+>;
+
 export interface MonthlyReportMaterialCategoryFilters {
   viewMode: MonthlyReportingViewMode.MATERIAL_CATEGORY;
   stockScope: StockScopeCode | null;
   workshopId: number | null;
   documentTypeLabel: string | null;
+  materialId: number | null;
   categoryId: number | null;
   categoryNodeKey: string | null;
   keyword: string | null;
@@ -181,6 +188,7 @@ export interface MonthlyReportMaterialCategorySummaryResult {
   viewMode: MonthlyReportingViewMode.MATERIAL_CATEGORY;
   documentTypeCatalog: MonthlyReportDocumentTypeCatalogItem[];
   categoryCatalog: MonthlyReportMaterialCategoryCatalogItem[];
+  materialCatalog: MonthlyReportMaterialCatalogItem[];
   categories: MonthlyReportMaterialCategorySummaryItem[];
   materials: MonthlyReportMaterialSummaryItem[];
   workshops: MonthlyReportMaterialCategoryWorkshopSummaryItem[];
@@ -235,16 +243,15 @@ export class MonthlyReportMaterialCategoryService {
         stockScope: query.stockScope ?? null,
         workshopId: query.workshopId ?? null,
         documentTypeLabel: query.documentTypeLabel?.trim() || null,
+        materialId: query.materialId ?? null,
         categoryId: query.categoryId ?? null,
         categoryNodeKey: query.categoryNodeKey?.trim() || null,
         keyword: query.keyword?.trim() || null,
       },
       documentTypeCatalog:
         this.catalogService.buildMaterialCategoryDocumentTypeCatalog(entries),
-      categoryCatalog: this.buildMaterialCategoryCatalog(
-        entries,
-        balanceSnapshots,
-      ),
+      categoryCatalog: this.buildMaterialCategoryCatalog(entries),
+      materialCatalog: this.buildMaterialCatalog(entries),
       categories: categoryItems,
       materials: materialItems,
       workshops: workshopItems,
@@ -292,9 +299,8 @@ export class MonthlyReportMaterialCategoryService {
 
   buildMaterialCategoryCatalog(
     entries: MonthlyMaterialCategoryEntry[],
-    balanceSnapshots: MonthlyMaterialCategoryBalanceSnapshot[] = [],
   ): MonthlyReportMaterialCategoryCatalogItem[] {
-    return collectMonthlyMaterialCategoryGroups(entries, balanceSnapshots)
+    return collectMonthlyMaterialCategoryGroups(entries)
       .map(({ entries: _entries, ...category }) => category)
       .sort(compareMaterialCategoryItems);
   }
@@ -303,13 +309,18 @@ export class MonthlyReportMaterialCategoryService {
     entries: MonthlyMaterialCategoryEntry[],
     balanceSnapshots: MonthlyMaterialCategoryBalanceSnapshot[] = [],
   ): MonthlyReportMaterialSummaryItem[] {
+    const eligibleBalanceSnapshots =
+      filterMonthlyMaterialCategoryBalanceSnapshotsByEntries(
+        balanceSnapshots,
+        entries,
+      );
     const balanceTotalsByMaterial =
       buildMonthlyMaterialCategoryBalanceTotalsByKey(
-        balanceSnapshots,
+        eligibleBalanceSnapshots,
         buildBalanceMaterialKey,
       );
 
-    return collectMonthlyMaterialGroups(entries, balanceSnapshots)
+    return collectMonthlyMaterialGroups(entries)
       .map((item) => {
         const commonTotals = this.buildCommonMaterialCategoryTotals(
           item.entries,
@@ -348,17 +359,49 @@ export class MonthlyReportMaterialCategoryService {
       .sort(compareMaterialItems);
   }
 
+  private buildMaterialCatalog(
+    entries: MonthlyMaterialCategoryEntry[],
+  ): MonthlyReportMaterialCatalogItem[] {
+    const catalogByMaterialId = new Map<
+      number,
+      MonthlyReportMaterialCatalogItem
+    >();
+    const materialGroups =
+      collectMonthlyMaterialGroups(entries).sort(compareMaterialItems);
+
+    for (const item of materialGroups) {
+      if (catalogByMaterialId.has(item.materialId)) {
+        continue;
+      }
+
+      catalogByMaterialId.set(item.materialId, {
+        materialId: item.materialId,
+        materialCode: item.materialCode,
+        materialName: item.materialName,
+        materialSpec: item.materialSpec,
+        unitCode: item.unitCode,
+      });
+    }
+
+    return [...catalogByMaterialId.values()];
+  }
+
   buildMaterialCategoryItems(
     entries: MonthlyMaterialCategoryEntry[],
     balanceSnapshots: MonthlyMaterialCategoryBalanceSnapshot[] = [],
   ): MonthlyReportMaterialCategorySummaryItem[] {
+    const eligibleBalanceSnapshots =
+      filterMonthlyMaterialCategoryBalanceSnapshotsByEntries(
+        balanceSnapshots,
+        entries,
+      );
     const balanceTotalsByCategory =
       buildMonthlyMaterialCategoryBalanceTotalsByKey(
-        balanceSnapshots,
+        eligibleBalanceSnapshots,
         resolveBalanceCategoryNodeKey,
       );
 
-    return collectMonthlyMaterialCategoryGroups(entries, balanceSnapshots)
+    return collectMonthlyMaterialCategoryGroups(entries)
       .map((item) => {
         return {
           nodeKey: item.nodeKey,
@@ -377,7 +420,13 @@ export class MonthlyReportMaterialCategoryService {
     entries: MonthlyMaterialCategoryEntry[],
     balanceSnapshots: MonthlyMaterialCategoryBalanceSnapshot[] = [],
   ): Omit<MonthlyReportMaterialCategorySummaryTotals, "categoryCount"> {
-    return this.buildCommonMaterialCategoryTotals(entries, balanceSnapshots);
+    return this.buildCommonMaterialCategoryTotals(
+      entries,
+      filterMonthlyMaterialCategoryBalanceSnapshotsByEntries(
+        balanceSnapshots,
+        entries,
+      ),
+    );
   }
 
   private buildCommonMaterialCategoryTotals(

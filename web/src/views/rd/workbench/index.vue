@@ -20,8 +20,10 @@
         </el-col>
         <el-col :xs="24" :sm="12" :lg="6">
           <div class="metric-box">
-            <div class="metric-label">库存货值</div>
-            <div class="metric-value">{{ dashboard.inventory.totalInventoryValue }}</div>
+            <div class="metric-label">库存货值（成本价）</div>
+            <div class="metric-value">
+              {{ formatAmount(dashboard.inventory.totalInventoryValue) }}
+            </div>
           </div>
         </el-col>
         <el-col :xs="24" :sm="12" :lg="6">
@@ -32,7 +34,7 @@
         </el-col>
         <el-col :xs="24" :sm="12" :lg="6">
           <div class="metric-box">
-            <div class="metric-label">今日入库结果</div>
+            <div class="metric-label">今日主仓交接单</div>
             <div class="metric-value">{{ dashboard.todayDocuments.inboundCount }}</div>
           </div>
         </el-col>
@@ -48,20 +50,29 @@
         <el-button @click="goTo('/rd/scrap-orders')">本仓报废</el-button>
         <el-button @click="goTo('/rd/inventory-summary')">查看库存</el-button>
         <el-button @click="goTo('/rd/inventory-logs')">查看流水</el-button>
-        <el-button @click="goTo('/rd/inbound-results')">自动入库结果</el-button>
+        <el-button @click="goTo('/rd/inbound-results')">主仓交接单</el-button>
       </div>
     </el-card>
 
     <el-card shadow="never">
       <template #header>
-        <div class="section-title">最近自动入库结果</div>
+        <div class="section-title">
+          主仓交接单
+          <span class="section-hint">交接确认后自动入库本仓</span>
+        </div>
       </template>
 
       <el-table :data="recentInboundRows" stripe v-loading="loading">
-        <el-table-column prop="documentNo" label="单据编号" min-width="140" />
+        <el-table-column label="单据编号" min-width="140">
+          <template #default="{ row }">
+            <el-link type="primary" @click="goToInboundResult(row.documentNo)">
+              {{ row.documentNo }}
+            </el-link>
+          </template>
+        </el-table-column>
         <el-table-column label="业务日期" min-width="120">
           <template #default="{ row }">
-            {{ formatDate(row.bizDate) }}
+            {{ formatDateValue(row.bizDate) }}
           </template>
         </el-table-column>
         <el-table-column
@@ -69,14 +80,25 @@
           label="来源车间"
           min-width="140"
         />
-        <el-table-column prop="totalQty" label="总数量" min-width="120" />
-        <el-table-column prop="totalAmount" label="总金额" min-width="120" />
+        <el-table-column label="总数量" min-width="120">
+          <template #default="{ row }">
+            {{ formatQty(row.totalQty) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="总金额" min-width="120">
+          <template #default="{ row }">
+            {{ formatAmount(row.totalAmount) }}
+          </template>
+        </el-table-column>
         <el-table-column label="明细数" min-width="100">
           <template #default="{ row }">
             {{ row.lines?.length || 0 }}
           </template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" min-width="180" />
+        <template #empty>
+          <el-empty description="暂无主仓交接单，完成主仓交接后自动生成" />
+        </template>
       </el-table>
 
       <pagination
@@ -96,6 +118,8 @@ import { listRdInboundResults } from "@/api/rd-subwarehouse";
 import { getReportingHome } from "@/api/reporting";
 import router from "@/router";
 import useUserStore from "@/store/modules/user";
+import { formatAmount, formatQty } from "@/utils/format";
+import { formatDateValue } from "@/utils/rd-documents";
 
 const userStore = useUserStore();
 const loading = ref(false);
@@ -124,13 +148,6 @@ const consoleLabel = computed(() =>
   userStore.consoleMode === "rd-subwarehouse" ? "研发小仓模式" : "默认模式",
 );
 
-function formatDate(value) {
-  if (!value) {
-    return "-";
-  }
-  return new Date(value).toLocaleDateString("zh-CN");
-}
-
 function getTodayBusinessDate() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Shanghai",
@@ -148,31 +165,46 @@ function goTo(path) {
   router.push(path);
 }
 
+function goToInboundResult(documentNo) {
+  router.push({ path: "/rd/inbound-results", query: { documentNo } });
+}
+
 async function loadPage() {
   loading.value = true;
   try {
     const today = getTodayBusinessDate();
     const limit = queryParams.value.pageSize;
     const offset = (queryParams.value.pageNum - 1) * limit;
-    const [dashboardResponse, inboundResponse, todayInboundResponse] =
-      await Promise.all([
+    const [dashboardResult, inboundResult, todayInboundResult] =
+      await Promise.allSettled([
         getReportingHome({ stockScope: "RD_SUB" }),
-        listRdInboundResults({ limit, offset }),
+        listRdInboundResults({ lifecycleStatus: "EFFECTIVE", limit, offset }),
         listRdInboundResults({
+          lifecycleStatus: "EFFECTIVE",
           bizDateFrom: today,
           bizDateTo: today,
           limit: 1,
           offset: 0,
         }),
       ]);
-    dashboard.value = {
-      ...(dashboardResponse.data || dashboard.value),
-      todayDocuments: {
-        inboundCount: Number(todayInboundResponse.data?.total || 0),
-      },
-    };
-    recentInboundRows.value = inboundResponse.data?.items || [];
-    recentInboundTotal.value = Number(inboundResponse.data?.total || 0);
+    if (dashboardResult.status === "fulfilled" && dashboardResult.value.data) {
+      dashboard.value = {
+        ...dashboard.value,
+        ...dashboardResult.value.data,
+        todayDocuments: dashboard.value.todayDocuments,
+      };
+    }
+    if (todayInboundResult.status === "fulfilled") {
+      dashboard.value.todayDocuments = {
+        inboundCount: Number(todayInboundResult.value.data?.total || 0),
+      };
+    }
+    if (inboundResult.status === "fulfilled") {
+      recentInboundRows.value = inboundResult.value.data?.items || [];
+      recentInboundTotal.value = Number(inboundResult.value.data?.total || 0);
+    }
+  } catch {
+    // 局部失败已由 allSettled 兜底，这里避免未处理的异常中断页面
   } finally {
     loading.value = false;
   }
@@ -238,5 +270,12 @@ onMounted(() => {
 .section-title {
   font-size: 16px;
   font-weight: 600;
+}
+
+.section-hint {
+  margin-left: 8px;
+  color: #909399;
+  font-size: 13px;
+  font-weight: 400;
 }
 </style>

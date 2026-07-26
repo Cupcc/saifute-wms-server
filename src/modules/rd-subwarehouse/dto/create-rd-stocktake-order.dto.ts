@@ -5,7 +5,6 @@ import {
   IsArray,
   IsDateString,
   IsInt,
-  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
@@ -20,7 +19,7 @@ export class CreateRdStocktakeOrderDto {
   @MaxLength(64)
   documentNo?: string;
 
-  @IsDateString()
+  @IsDateString({ strict: true })
   bizDate!: string;
 
   @IsInt()

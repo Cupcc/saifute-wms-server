@@ -39,7 +39,15 @@ export type RdScrapRequestCache = Map<
   number,
   {
     lifecycleStatus: DocumentLifecycleStatus;
-    lines: Array<{ id: number; materialId: number }>;
+    projectCode: string;
+    projectName: string;
+    workshopId: number;
+    lines: Array<{
+      id: number;
+      lineNo: number;
+      materialId: number | null;
+      materialNameSnapshot: string;
+    }>;
   } | null
 >;
 
@@ -448,6 +456,11 @@ export class WorkshopMaterialSharedService {
     );
     if (!requestLine) {
       throw new BadRequestException("RD 报废来源采购行不存在");
+    }
+    if (requestLine.materialId == null) {
+      throw new BadRequestException(
+        `第 ${requestLine.lineNo} 行采购品项“${requestLine.materialNameSnapshot}”尚未登记验收并绑定物料，不能报废`,
+      );
     }
     if (requestLine.materialId !== materialId) {
       throw new BadRequestException("RD 报废物料必须与采购需求行一致");

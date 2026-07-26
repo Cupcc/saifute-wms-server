@@ -158,7 +158,7 @@
               <el-input-number
                 v-model="row.quantity"
                 :min="0.000001"
-                :precision="6"
+                :precision="2"
                 controls-position="right"
                 style="width: 100%"
               />
@@ -260,6 +260,7 @@ import {
 } from "@/api/rd-subwarehouse";
 import useUserStore from "@/store/modules/user";
 import { confirmDocumentSave } from "@/utils/documentConfirm";
+import { formatQty } from "@/utils/format";
 import { formatDateOnly } from "@/utils/rd-documents";
 
 const userStore = useUserStore();
@@ -320,10 +321,6 @@ function formatDate(value) {
   return new Date(value).toLocaleDateString("zh-CN");
 }
 
-function formatQty(value) {
-  return Number(value || 0).toFixed(6);
-}
-
 function calculateLineAmount(row) {
   const quantity = Number(row.quantity || 0);
   const unitPrice = Number(row.unitPrice || 0);
@@ -349,23 +346,27 @@ async function searchProcurementSources(keyword) {
   try {
     const response = await listRdProcurementRequests({
       keyword: keyword || undefined,
-      documentNo: keyword || undefined,
-      projectCode: keyword || undefined,
       limit: 20,
       offset: 0,
     });
     const requests = response.data?.items || [];
     procurementSourceOptions.value = requests.flatMap((request) =>
       (request.lines || [])
-        .filter((line) => Number(line.statusLedger?.handedOffQty || 0) > 0)
+        .filter(
+          (line) =>
+            Number(line.statusLedger?.handedOffQty || 0) > 0 &&
+            line.materialId != null,
+        )
         .map((line) => ({
           key: `${request.id}:${line.id}`,
           requestId: request.id,
           requestLineId: line.id,
           materialId: line.materialId,
-          materialCode: line.materialCodeSnapshot,
-          materialName: line.materialNameSnapshot,
-          label: `${request.documentNo} / 行${line.lineNo} / ${line.materialCodeSnapshot} ${line.materialNameSnapshot} / 可报废 ${formatQty(line.statusLedger?.handedOffQty)}`,
+          materialCode:
+            line.material?.materialCode || line.materialCodeSnapshot || "",
+          materialName:
+            line.material?.materialName || line.materialNameSnapshot || "",
+          label: `${request.documentNo} / 行${line.lineNo} / ${line.material?.materialCode || line.materialCodeSnapshot || ""} ${line.material?.materialName || line.materialNameSnapshot} / 可报废 ${formatQty(line.statusLedger?.handedOffQty)}`,
         })),
     );
   } finally {

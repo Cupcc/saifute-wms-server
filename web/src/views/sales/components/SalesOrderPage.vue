@@ -218,7 +218,7 @@
         align="right"
       >
         <template #default="{ row }">
-          {{ formatNumber(row.totalQty) }}
+          {{ formatQty(row.totalQty) }}
         </template>
       </el-table-column>
       <el-table-column
@@ -325,6 +325,7 @@ import {
   listSalesReturnOrder,
   voidSalesReturnOrder,
 } from "@/api/sales/salesReturnOrder";
+import { formatQty } from "@/utils/format";
 import SalesOrderDetailDialog from "./SalesOrderDetailDialog.vue";
 import SalesOrderEditorDialog from "./SalesOrderEditorDialog.vue";
 
@@ -665,11 +666,6 @@ function compareBizDateRows(left, right) {
   return Number(left?.orderId ?? 0) - Number(right?.orderId ?? 0);
 }
 
-function formatNumber(value) {
-  const parsed = Number(value ?? 0);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 function formatAmount(value) {
   const parsed = Number(value ?? 0);
   return Number.isFinite(parsed) ? parsed.toFixed(4) : "0.0000";
@@ -722,7 +718,6 @@ void [
   getAuditText,
   getAuditTagType,
   formatDate,
-  formatNumber,
   formatAmount,
 ];
 

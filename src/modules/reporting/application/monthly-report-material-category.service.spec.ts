@@ -317,6 +317,75 @@ describe("MonthlyReportMaterialCategoryService", () => {
       expect(item).not.toHaveProperty("totalCost");
   });
 
+  it("should exclude balance-only materials from the monthly report", async () => {
+    materialCategoryRepository.findMonthlyMaterialCategoryEntries.mockResolvedValue(
+      [createMaterialCategoryEntry()],
+    );
+    materialCategoryBalanceRepository.findMonthlyMaterialCategoryBalanceSnapshots.mockResolvedValue(
+      [
+        createBalanceSnapshot(),
+        createBalanceSnapshot({
+          materialId: 601,
+          materialCode: "M-BALANCE-ONLY-SAME-CATEGORY",
+          materialName: "同分类无本月发生物料",
+          openingQuantity: new Prisma.Decimal("7"),
+          openingAmount: new Prisma.Decimal("70"),
+          closingQuantity: new Prisma.Decimal("7"),
+          closingAmount: new Prisma.Decimal("36"),
+        }),
+        createBalanceSnapshot({
+          materialId: 701,
+          materialCode: "M-BALANCE-ONLY-OTHER-CATEGORY",
+          materialName: "其他分类无本月发生物料",
+          categoryId: 22,
+          categoryCode: "MET",
+          categoryName: "金属",
+          openingQuantity: new Prisma.Decimal("9"),
+          openingAmount: new Prisma.Decimal("900"),
+          closingQuantity: new Prisma.Decimal("12"),
+          closingAmount: new Prisma.Decimal("1200"),
+        }),
+      ],
+    );
+
+    const result = await service.getMaterialCategorySummary({
+      yearMonth: "2026-03",
+      viewMode: MonthlyReportingViewMode.MATERIAL_CATEGORY,
+    });
+
+    expect(result.summary).toMatchObject({
+      categoryCount: 1,
+      lineCount: 1,
+      openingQuantity: "10",
+      openingAmount: "100.0000",
+      closingQuantity: "15",
+      closingAmount: "180.0000",
+    });
+    expect(result.categories).toEqual([
+      expect.objectContaining({
+        nodeKey: "11:CHEM:化工",
+        lineCount: 1,
+        openingAmount: "100.0000",
+        closingAmount: "180.0000",
+      }),
+    ]);
+    expect(result.materials).toEqual([
+      expect.objectContaining({
+        materialId: 501,
+        materialCode: "M-RAW-001",
+        lineCount: 1,
+        openingAmount: "100.0000",
+        closingAmount: "180.0000",
+      }),
+    ]);
+    expect(result.categoryCatalog).toEqual([
+      expect.objectContaining({ nodeKey: "11:CHEM:化工" }),
+    ]);
+    expect(result.materialCatalog).toEqual([
+      expect.objectContaining({ materialId: 501, materialCode: "M-RAW-001" }),
+    ]);
+  });
+
   it("should keep the category selector catalog stable when one category is filtered", async () => {
     materialCategoryRepository.findMonthlyMaterialCategoryEntries.mockResolvedValue(
       [
@@ -367,6 +436,81 @@ describe("MonthlyReportMaterialCategoryService", () => {
         }),
       ]),
     );
+  });
+
+  it("should filter entries and balance snapshots by material while keeping the material catalog stable", async () => {
+    materialCategoryRepository.findMonthlyMaterialCategoryEntries.mockResolvedValue(
+      [
+        createMaterialCategoryEntry(),
+        createMaterialCategoryEntry({
+          documentId: 302,
+          documentNo: "YS-302",
+          documentLineId: 3002,
+          materialId: 601,
+          materialCode: "M-RAW-002",
+          materialName: "原料 B",
+          materialSpec: "10kg",
+          quantity: new Prisma.Decimal("4"),
+          amount: new Prisma.Decimal("80"),
+          cost: new Prisma.Decimal("80"),
+        }),
+      ],
+    );
+    materialCategoryBalanceRepository.findMonthlyMaterialCategoryBalanceSnapshots.mockResolvedValue(
+      [
+        createBalanceSnapshot(),
+        createBalanceSnapshot({
+          materialId: 601,
+          materialCode: "M-RAW-002",
+          materialName: "原料 B",
+          materialSpec: "10kg",
+          openingQuantity: new Prisma.Decimal("7"),
+          openingAmount: new Prisma.Decimal("70"),
+          closingQuantity: new Prisma.Decimal("11"),
+          closingAmount: new Prisma.Decimal("150"),
+        }),
+      ],
+    );
+
+    const result = await service.getMaterialCategorySummary({
+      yearMonth: "2026-03",
+      viewMode: MonthlyReportingViewMode.MATERIAL_CATEGORY,
+      materialId: 601,
+    });
+
+    expect(result.filters.materialId).toBe(601);
+    expect(result.summary).toMatchObject({
+      categoryCount: 1,
+      lineCount: 1,
+      openingQuantity: "7",
+      closingQuantity: "11",
+      acceptanceInboundAmount: "80.0000",
+    });
+    expect(result.materials).toEqual([
+      expect.objectContaining({
+        materialId: 601,
+        materialCode: "M-RAW-002",
+        materialName: "原料 B",
+      }),
+    ]);
+    expect(result.materialCatalog).toEqual([
+      expect.objectContaining({ materialId: 501, materialName: "原料 A" }),
+      expect.objectContaining({ materialId: 601, materialName: "原料 B" }),
+    ]);
+
+    const details = await service.getMaterialCategoryDocuments({
+      yearMonth: "2026-03",
+      viewMode: MonthlyReportingViewMode.MATERIAL_CATEGORY,
+      materialId: 601,
+    });
+
+    expect(details.total).toBe(1);
+    expect(details.items).toEqual([
+      expect.objectContaining({
+        materialCode: "M-RAW-002",
+        materialName: "原料 B",
+      }),
+    ]);
   });
 
   it("should expose material-category line details filtered by keyword", async () => {

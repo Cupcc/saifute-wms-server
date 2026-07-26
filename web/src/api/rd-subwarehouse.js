@@ -25,14 +25,6 @@ export function listRdInventoryLogs(params = {}) {
   });
 }
 
-export function listRdInventoryBalances(params = {}) {
-  return request({
-    url: "/api/inventory/balances",
-    method: "get",
-    params: withRdStockScope(params),
-  });
-}
-
 export function listRdInboundResults(params = {}) {
   return request({
     url: "/api/rd-subwarehouse/handoff-orders",
@@ -41,9 +33,48 @@ export function listRdInboundResults(params = {}) {
   });
 }
 
+export function getRdHandoffOrder(orderId) {
+  return request({
+    url: `/api/rd-subwarehouse/handoff-orders/${orderId}`,
+    method: "get",
+  });
+}
+
+export function createRdHandoffOrder(data) {
+  return request({
+    url: "/api/rd-subwarehouse/handoff-orders",
+    method: "post",
+    data,
+  });
+}
+
+export function voidRdHandoffOrder(orderId, data) {
+  return request({
+    url: `/api/rd-subwarehouse/handoff-orders/${orderId}/void`,
+    method: "post",
+    data,
+  });
+}
+
 export function listRdProcurementRequests(params = {}) {
   return request({
     url: "/api/rd-subwarehouse/procurement-requests",
+    method: "get",
+    params,
+  });
+}
+
+export function listRdProcurementMaterialSuggestions(params = {}) {
+  return request({
+    url: "/api/rd-subwarehouse/procurement-requests/material-suggestions",
+    method: "get",
+    params,
+  });
+}
+
+export function listRdAcceptanceMaterialOptions(params = {}) {
+  return request({
+    url: "/api/rd-subwarehouse/procurement-requests/acceptance-material-options",
     method: "get",
     params,
   });
@@ -75,6 +106,14 @@ export function voidRdProcurementRequest(requestId, data) {
 export function applyRdProcurementStatusAction(requestId, data) {
   return request({
     url: `/api/rd-subwarehouse/procurement-requests/${requestId}/status-actions`,
+    method: "post",
+    data,
+  });
+}
+
+export function reverseRdProcurementStatusAction(requestId, historyId, data) {
+  return request({
+    url: `/api/rd-subwarehouse/procurement-requests/${requestId}/status-actions/${historyId}/reverse`,
     method: "post",
     data,
   });
@@ -119,10 +158,18 @@ export function voidRdProject(projectId, data) {
   });
 }
 
-export function listRdProjectMaterialActions(projectId) {
+export function listRdProjectChangeLogs(projectId) {
+  return request({
+    url: `/api/rd-projects/${projectId}/change-logs`,
+    method: "get",
+  });
+}
+
+export function listRdProjectMaterialActions(projectId, params = {}) {
   return request({
     url: `/api/rd-projects/${projectId}/material-actions`,
     method: "get",
+    params,
   });
 }
 
@@ -153,7 +200,7 @@ export function listRdScrapOrders(params = {}) {
   return request({
     url: "/api/workshop-material/scrap-orders",
     method: "get",
-    params,
+    params: withRdStockScope(params),
   });
 }
 
@@ -168,7 +215,10 @@ export function createRdScrapOrder(data) {
   return request({
     url: "/api/workshop-material/scrap-orders",
     method: "post",
-    data,
+    data: {
+      ...data,
+      stockScope: RD_STOCK_SCOPE,
+    },
   });
 }
 

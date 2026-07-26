@@ -45,7 +45,7 @@ describe("RdHandoffController", () => {
     workshopScopeService = moduleRef.get(WorkshopScopeService);
   });
 
-  it("resolves the RD workshop scope when listing orders", async () => {
+  it("filters the list by the user's bound stock scope", async () => {
     await controller.listOrders(
       { targetWorkshopId: 999, limit: 10, offset: 0 },
       undefined,
@@ -60,6 +60,18 @@ describe("RdHandoffController", () => {
         limit: 10,
         offset: 0,
       }),
+      2,
+    );
+  });
+
+  it("passes no scope filter when the user is unbound", async () => {
+    workshopScopeService.getResolvedStockScope.mockResolvedValueOnce(null);
+
+    await controller.listOrders({ limit: 10, offset: 0 }, undefined);
+
+    expect(rdHandoffService.listOrders).toHaveBeenCalledWith(
+      expect.objectContaining({ limit: 10, offset: 0 }),
+      undefined,
     );
   });
 

@@ -374,6 +374,7 @@ function buildWorkshopPayload(data, mode = "pickOrder", handlerPersonnelId) {
     bizDate: data[config.dateKey],
     handlerPersonnelId,
     ...(isUpdate ? {} : { handlerName }),
+    ...(data.stockScope ? { stockScope: data.stockScope } : {}),
     workshopId: data.workshopId,
     remark: data.remark,
     lines: lines.map((line) => buildLinePayload(line, mode, data)),
@@ -397,6 +398,7 @@ async function listOrdersInternal(query = {}, mode = "pickOrder") {
     sourceId: query.sourceId,
     sourceType: query.sourceType,
     workshopId: query.workshopId,
+    stockScope: query.stockScope,
     bizDateFrom,
     bizDateTo,
   };

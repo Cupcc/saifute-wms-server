@@ -205,7 +205,7 @@
               <el-input-number
                 v-model="row.countedQty"
                 :min="0"
-                :precision="6"
+                :precision="2"
                 controls-position="right"
                 style="width: 100%"
               />
@@ -322,6 +322,7 @@ import {
 } from "@/api/rd-subwarehouse";
 import useUserStore from "@/store/modules/user";
 import { confirmDocumentSave } from "@/utils/documentConfirm";
+import { formatQty } from "@/utils/format";
 import { formatDateOnly } from "@/utils/rd-documents";
 
 const userStore = useUserStore();
@@ -381,10 +382,6 @@ function formatDate(value) {
   return new Date(value).toLocaleDateString("zh-CN");
 }
 
-function formatQty(value) {
-  return Number(value || 0).toFixed(6);
-}
-
 function formatProjectLabel(project) {
   if (!project) {
     return "-";
@@ -396,7 +393,7 @@ function formatProjectLabel(project) {
 
 function formatSignedQty(value) {
   const amount = Number(value || 0);
-  return `${amount > 0 ? "+" : ""}${amount.toFixed(6)}`;
+  return `${amount > 0 ? "+" : ""}${formatQty(amount)}`;
 }
 
 function getAdjustmentQty(row) {

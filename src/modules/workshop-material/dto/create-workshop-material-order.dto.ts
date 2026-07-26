@@ -4,8 +4,8 @@ import {
   IsArray,
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
-  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
@@ -41,6 +41,10 @@ export class CreateWorkshopMaterialOrderDto {
   @IsOptional()
   @Min(1)
   workshopId?: number;
+
+  @IsOptional()
+  @IsIn(["MAIN", "RD_SUB"])
+  stockScope?: "MAIN" | "RD_SUB";
 
   @IsString()
   @IsOptional()

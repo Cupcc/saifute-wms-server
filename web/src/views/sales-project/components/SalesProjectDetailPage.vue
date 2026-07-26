@@ -176,27 +176,27 @@
             </el-table-column>
             <el-table-column label="项目库存" width="110" align="right">
               <template #default="{ row }">
-                {{ formatNumber(row.currentInventoryQty) }}
+                {{ formatQty(row.currentInventoryQty) }}
               </template>
             </el-table-column>
             <el-table-column label="价层可用" width="110" align="right">
               <template #default="{ row }">
-                {{ formatNumber(row.priceLayerAvailableQty) }}
+                {{ formatQty(row.priceLayerAvailableQty) }}
               </template>
             </el-table-column>
             <el-table-column label="累计出库" width="110" align="right">
               <template #default="{ row }">
-                {{ formatNumber(row.outboundQty) }}
+                {{ formatQty(row.outboundQty) }}
               </template>
             </el-table-column>
             <el-table-column label="累计退货" width="110" align="right">
               <template #default="{ row }">
-                {{ formatNumber(row.returnQty) }}
+                {{ formatQty(row.returnQty) }}
               </template>
             </el-table-column>
             <el-table-column label="净发货" width="110" align="right">
               <template #default="{ row }">
-                {{ formatNumber(row.netShipmentQty) }}
+                {{ formatQty(row.netShipmentQty) }}
               </template>
             </el-table-column>
             <el-table-column label="草稿数量" width="140">
@@ -318,10 +318,10 @@ import {
   updateSalesProject,
 } from "@/api/sales-project";
 import SalesOrderEditorDialog from "@/views/sales/components/SalesOrderEditorDialog.vue";
+import { formatQty } from "@/utils/format";
 import {
   buildSalesProjectSummaryCards,
   formatDate,
-  formatNumber,
   toInputString,
 } from "../shared";
 import SalesProjectAcceptanceOrderDetailDialog from "./SalesProjectAcceptanceOrderDetailDialog.vue";

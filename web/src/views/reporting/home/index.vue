@@ -152,6 +152,7 @@ import {
   getReportingHome,
   getTrendSeries,
 } from "@/api/reporting";
+import { formatQty } from "@/utils/format";
 const loading = ref(false);
 
 const dashboard = ref({
@@ -226,7 +227,7 @@ const trendSummary = computed(() => {
 
   return {
     documentCount,
-    totalQty: totalQty.toFixed(6),
+    totalQty: formatQty(totalQty),
     totalAmount: totalAmount.toFixed(4),
   };
 });

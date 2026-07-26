@@ -73,6 +73,8 @@ export const baseProject = {
       quantity: new Prisma.Decimal(100),
       unitPrice: new Prisma.Decimal(10),
       amount: new Prisma.Decimal(1000),
+      manufacturer: null,
+      productLink: null,
       remark: null,
       createdBy: "1",
       createdAt: new Date(),
@@ -182,8 +184,13 @@ export async function setupRdProjectTestModule(): Promise<RdProjectTestContext> 
           attachProjectTargetToProject: jest.fn(),
           hasActiveDownstreamDependencies: jest.fn().mockResolvedValue(false),
           hasEffectiveMaterialActions: jest.fn().mockResolvedValue(false),
-          findMaterialActionsByProjectId: jest.fn().mockResolvedValue([]),
+          findMaterialActionsByProjectId: jest
+            .fn()
+            .mockResolvedValue({ items: [], total: 0 }),
           findMaterialActionById: jest.fn(),
+          findMaterialActionDocumentNosByPrefix: jest
+            .fn()
+            .mockResolvedValue([]),
           createMaterialAction: jest.fn(),
           updateMaterialAction: jest.fn(),
           updateMaterialActionLineCost: jest.fn(),
@@ -191,6 +198,14 @@ export async function setupRdProjectTestModule(): Promise<RdProjectTestContext> 
           sumActiveReturnedQtyBySourceLine: jest
             .fn()
             .mockResolvedValue(new Map()),
+          sumActiveReturnedQtyForSourceActions: jest
+            .fn()
+            .mockResolvedValue(new Map()),
+          sumEffectiveHandoffInByMaterial: jest
+            .fn()
+            .mockResolvedValue(new Map()),
+          appendProjectChangeLog: jest.fn(),
+          findProjectChangeLogs: jest.fn().mockResolvedValue([]),
         },
       },
       {
@@ -206,6 +221,10 @@ export async function setupRdProjectTestModule(): Promise<RdProjectTestContext> 
           getWorkshopById: jest.fn().mockResolvedValue({
             id: 1,
             workshopName: "RD Workshop",
+          }),
+          getWorkshopByName: jest.fn().mockResolvedValue({
+            id: 1,
+            workshopName: "研发技术",
           }),
           getStockScopeByCode: jest.fn().mockResolvedValue(stockScope),
           getCustomerById: jest.fn(),
@@ -223,6 +242,10 @@ export async function setupRdProjectTestModule(): Promise<RdProjectTestContext> 
           reverseStock: jest.fn(),
           getLogsForDocument: jest.fn().mockResolvedValue([]),
           summarizeAttributedQuantities: jest.fn().mockResolvedValue(new Map()),
+          listPriceLayerAvailability: jest.fn().mockResolvedValue([]),
+          listPriceLayerAvailabilityByMaterial: jest
+            .fn()
+            .mockResolvedValue(new Map()),
           getBalanceSnapshot: jest.fn().mockResolvedValue({
             quantityOnHand: new Prisma.Decimal(0),
           }),
@@ -236,6 +259,7 @@ export async function setupRdProjectTestModule(): Promise<RdProjectTestContext> 
             total: 0,
             items: [],
           }),
+          getProjectProcurementProjection: jest.fn().mockResolvedValue([]),
         },
       },
     ],

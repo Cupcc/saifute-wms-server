@@ -14,23 +14,13 @@ import {
 import { CreateRdProcurementRequestLineDto } from "./create-rd-procurement-request-line.dto";
 
 export class CreateRdProcurementRequestDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(64)
-  documentNo?: string;
-
-  @IsDateString()
+  @IsDateString({ strict: true })
   bizDate!: string;
 
   @IsString()
   @IsNotEmpty()
   @MaxLength(64)
   projectCode!: string;
-
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(128)
-  projectName!: string;
 
   @IsInt()
   @IsOptional()
@@ -42,15 +32,15 @@ export class CreateRdProcurementRequestDto {
   @Min(1)
   handlerPersonnelId?: number;
 
-  @IsInt()
-  @IsOptional()
-  @Min(1)
-  workshopId?: number;
-
   @IsString()
   @IsOptional()
   @MaxLength(500)
   remark?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(64)
+  clientRequestId?: string;
 
   @IsArray()
   @ArrayMinSize(1, { message: "lines must have at least one item" })

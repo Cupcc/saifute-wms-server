@@ -75,7 +75,7 @@ export default defineConfig(({ mode, command }) => {
     },
     // vite 相关配置
     server: {
-      port: 90,
+      port: Number(env.VITE_DEV_PORT) || 92,
       host: true,
       allowedHosts: allowedDevServerHosts,
       open: false,

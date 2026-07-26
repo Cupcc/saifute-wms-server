@@ -12,8 +12,10 @@ import {
   StockDirection,
 } from "../../../../generated/prisma/client";
 import {
+  buildDailyDocumentNoStem,
   buildDashedTimestampDocumentNo,
   createWithGeneratedDocumentNo,
+  resolveDailyStartAttempt,
 } from "../../../shared/common/document-number.util";
 import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import {
@@ -36,9 +38,44 @@ import {
   RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE,
   reverseHandoffStatusesForOrder,
 } from "./rd-material-status.helper";
+import { resolveBridgeAllocations } from "./rd-procurement-return.helper";
 
 const DOCUMENT_TYPE = BusinessDocumentType.RdHandoffOrder;
 const BUSINESS_MODULE = "rd-subwarehouse";
+
+type HandoffOrderWithLines = Awaited<
+  ReturnType<RdHandoffRepository["createOrder"]>
+>;
+type HandoffOrderLine = HandoffOrderWithLines["lines"][number];
+
+function isClientRequestIdUniqueConflict(error: unknown) {
+  if (
+    !(error instanceof Prisma.PrismaClientKnownRequestError) ||
+    error.code !== "P2002"
+  ) {
+    return false;
+  }
+  const conflictText =
+    `${JSON.stringify(error.meta ?? {})} ${error.message}`.toLowerCase();
+  return (
+    conflictText.includes("client_request_id") ||
+    conflictText.includes("clientrequestid")
+  );
+}
+
+function wrapHandoffLineError(
+  error: unknown,
+  lineNo: number,
+  materialLabel: string | null,
+): unknown {
+  if (!(error instanceof BadRequestException)) {
+    return error;
+  }
+  const prefix = materialLabel
+    ? `第 ${lineNo} 行 物料 ${materialLabel}`
+    : `第 ${lineNo} 行`;
+  return new BadRequestException(`${prefix}: ${error.message}`);
+}
 
 @Injectable()
 export class RdHandoffService {
@@ -50,18 +87,19 @@ export class RdHandoffService {
     private readonly rdProjectLookupService: RdProjectLookupService,
   ) {}
 
-  async listOrders(query: QueryRdHandoffOrderDto) {
+  async listOrders(query: QueryRdHandoffOrderDto, boundStockScopeId?: number) {
     const limit = Math.min(query.limit ?? 50, 100);
     const offset = query.offset ?? 0;
     return this.repository.findOrders({
       documentNo: query.documentNo,
+      lifecycleStatus: query.lifecycleStatus,
       bizDateFrom: query.bizDateFrom ? new Date(query.bizDateFrom) : undefined,
       bizDateTo: query.bizDateTo ? new Date(query.bizDateTo) : undefined,
       handlerName: query.handlerName,
       materialId: query.materialId,
       materialName: query.materialName,
-      sourceWorkshopId: query.sourceWorkshopId,
       targetWorkshopId: query.targetWorkshopId,
+      boundStockScopeId,
       limit,
       offset,
     });
@@ -76,6 +114,14 @@ export class RdHandoffService {
   }
 
   async createOrder(dto: CreateRdHandoffOrderDto, createdBy?: string) {
+    if (dto.clientRequestId) {
+      const existing = await this.repository.findOrderByClientRequestId(
+        dto.clientRequestId,
+      );
+      if (existing) {
+        return existing;
+      }
+    }
     const [sourceStockScopeRecord, targetStockScopeRecord] = await Promise.all([
       this.masterDataService.getStockScopeByCode("MAIN"),
       this.masterDataService.getStockScopeByCode("RD_SUB"),
@@ -101,61 +147,73 @@ export class RdHandoffService {
     >();
     const linesWithSnapshots = await Promise.all(
       dto.lines.map(async (line, idx) => {
+        const lineNo = idx + 1;
         const material = await this.masterDataService.getMaterialById(
           line.materialId,
         );
-        const sourceRequest = await resolveHandoffSourceRequest(
-          this.rdProcurementRequestRepository,
-          line.sourceDocumentId,
-          requestCache,
-        );
-        const sourceDocumentType =
-          line.sourceDocumentType ?? RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE;
-        if (sourceDocumentType !== RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE) {
-          throw new BadRequestException(
-            "RD 交接明细只能显式关联 RD 采购需求行",
+        const materialLabel = material.materialName || material.materialCode;
+        try {
+          const sourceRequest = await resolveHandoffSourceRequest(
+            this.rdProcurementRequestRepository,
+            line.sourceDocumentId,
+            requestCache,
           );
+          const sourceDocumentType =
+            line.sourceDocumentType ?? RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE;
+          if (sourceDocumentType !== RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE) {
+            throw new BadRequestException(
+              "RD 交接明细只能显式关联 RD 采购需求行",
+            );
+          }
+          if (!line.sourceDocumentLineId) {
+            throw new BadRequestException("RD 交接明细必须绑定采购需求行");
+          }
+          const requestLine = sourceRequest?.lines.find(
+            (item) => item.id === line.sourceDocumentLineId,
+          );
+          if (!requestLine) {
+            throw new BadRequestException("交接来源采购行不存在");
+          }
+          if (requestLine.materialId == null) {
+            throw new BadRequestException(
+              `采购品项“${requestLine.materialNameSnapshot}”尚未登记验收并绑定物料，不能交接`,
+            );
+          }
+          if (requestLine.materialId !== material.id) {
+            throw new BadRequestException("交接物料必须与采购需求行一致");
+          }
+          const rdProject = await resolveHandoffRdProjectForRequest(
+            this.rdProjectLookupService,
+            sourceRequest,
+            projectCache,
+          );
+          const quantity = new Prisma.Decimal(line.quantity);
+          const unitPrice = new Prisma.Decimal(line.unitPrice ?? "0");
+          const amount = quantity.mul(unitPrice);
+          return {
+            lineNo,
+            materialId: material.id,
+            rdProjectId: rdProject.id,
+            rdProjectWorkshopId: rdProject.workshopId,
+            rdProjectWorkshopNameSnapshot:
+              rdProject.workshopNameSnapshot ?? null,
+            materialCodeSnapshot: material.materialCode,
+            materialNameSnapshot: material.materialName,
+            materialSpecSnapshot: material.specModel ?? "",
+            unitCodeSnapshot: material.unitCode,
+            rdProjectCodeSnapshot: rdProject.projectCode,
+            rdProjectNameSnapshot: rdProject.projectName,
+            quantity,
+            unitPrice,
+            amount,
+            sourceDocumentType,
+            sourceDocumentId: sourceRequest?.id,
+            sourceDocumentLineId: requestLine.id,
+            remark: line.remark,
+          };
+        } catch (error) {
+          throw wrapHandoffLineError(error, lineNo, materialLabel);
         }
-        if (!line.sourceDocumentLineId) {
-          throw new BadRequestException("RD 交接明细必须绑定采购需求行");
-        }
-        const requestLine = sourceRequest?.lines.find(
-          (item) => item.id === line.sourceDocumentLineId,
-        );
-        if (!requestLine) {
-          throw new BadRequestException("交接来源采购行不存在");
-        }
-        if (requestLine.materialId !== material.id) {
-          throw new BadRequestException("交接物料必须与采购需求行一致");
-        }
-        const rdProject = await resolveHandoffRdProjectForRequest(
-          this.rdProjectLookupService,
-          sourceRequest,
-          projectCache,
-        );
-        const quantity = new Prisma.Decimal(line.quantity);
-        const unitPrice = new Prisma.Decimal(line.unitPrice ?? "0");
-        const amount = quantity.mul(unitPrice);
-        return {
-          lineNo: idx + 1,
-          materialId: material.id,
-          rdProjectId: rdProject.id,
-          rdProjectWorkshopId: rdProject.workshopId,
-          rdProjectWorkshopNameSnapshot: rdProject.workshopNameSnapshot ?? null,
-          materialCodeSnapshot: material.materialCode,
-          materialNameSnapshot: material.materialName,
-          materialSpecSnapshot: material.specModel ?? "",
-          unitCodeSnapshot: material.unitCode,
-          rdProjectCodeSnapshot: rdProject.projectCode,
-          rdProjectNameSnapshot: rdProject.projectName,
-          quantity,
-          unitPrice,
-          amount,
-          sourceDocumentType,
-          sourceDocumentId: sourceRequest?.id,
-          sourceDocumentLineId: requestLine.id,
-          remark: line.remark,
-        };
       }),
     );
 
@@ -184,7 +242,7 @@ export class RdHandoffService {
         ? (distinctTargetWorkshops[0]?.[1] ?? targetStockScopeRecord.scopeName)
         : targetStockScopeRecord.scopeName;
 
-    return createWithGeneratedDocumentNo((attempt) => {
+    const persistOrder = (attempt: number) => {
       const documentNo = buildDashedTimestampDocumentNo("RH", bizDate, attempt);
       return this.repository.runInTransaction(async (tx) => {
         const projectTargetIdByProjectId = new Map<number, number>();
@@ -204,6 +262,7 @@ export class RdHandoffService {
             totalQty,
             totalAmount,
             remark: dto.remark,
+            clientRequestId: dto.clientRequestId,
             createdBy,
             updatedBy: createdBy,
           },
@@ -226,118 +285,38 @@ export class RdHandoffService {
         const mainSourceTypes = FIFO_SOURCE_OPERATION_TYPES.filter(
           (t) => t !== "RD_HANDOFF_IN",
         );
+        let settledTotalAmount = new Prisma.Decimal(0);
         for (const line of order.lines) {
-          if (!line.rdProjectId) {
-            throw new BadRequestException("RD 交接明细缺少研发项目归属");
-          }
-          let projectTargetId = projectTargetIdByProjectId.get(
-            line.rdProjectId,
-          );
-          if (projectTargetId == null) {
-            const currentProject =
-              await this.rdProjectLookupService.requireEffectiveProjectById(
-                line.rdProjectId,
-                tx,
-              );
-            projectTargetId =
-              await this.rdProjectLookupService.ensureProjectTarget({
-                project: currentProject,
-                updatedBy: createdBy,
-                tx,
-              });
-            projectTargetIdByProjectId.set(line.rdProjectId, projectTargetId);
-          }
-
-          // MAIN OUT: settle against MAIN source layers via FIFO.
-          const outSettlement = await this.inventoryService.settleConsumerOut(
-            {
-              materialId: line.materialId,
-              stockScope: "MAIN",
-              bizDate,
-              quantity: line.quantity,
-              operationType: InventoryOperationType.RD_HANDOFF_OUT,
-              businessModule: BUSINESS_MODULE,
-              businessDocumentType: DOCUMENT_TYPE,
-              businessDocumentId: order.id,
-              businessDocumentNumber: order.documentNo,
-              businessDocumentLineId: line.id,
-              projectTargetId,
-              operatorId: createdBy,
-              idempotencyKey: `${DOCUMENT_TYPE}:${order.id}:out:${line.id}`,
-              note: `主仓交接到 RD 小仓 (${line.rdProjectCodeSnapshot ?? "未命名项目"}): ${order.sourceWorkshopNameSnapshot} -> ${order.targetWorkshopNameSnapshot}`,
-              consumerLineId: line.id,
-              sourceOperationTypes: mainSourceTypes,
-            },
-            tx,
-          );
-
-          // RD_SUB IN: create one IN log per FIFO allocation piece to preserve the
-          // original MAIN source layer granularity (cost bridge). Each piece gets its
-          // own deterministic idempotency key so the bridge is idempotent and auditable.
-          // The first piece's log is used as the representative for status-helper mapping.
-          let representativeInLogId: number | undefined;
-          const allocationsToCreate =
-            outSettlement.allocations.length > 0
-              ? outSettlement.allocations
-              : [
-                  // Fallback: single synthetic piece covering the full line qty with
-                  // aggregated cost (only used if FIFO returned empty allocations,
-                  // which should not occur in normal operation).
-                  {
-                    sourceLogId: 0,
-                    allocatedQty: new Prisma.Decimal(line.quantity),
-                    unitCost: outSettlement.settledUnitCost,
-                    costAmount: outSettlement.settledCostAmount,
-                  },
-                ];
-
-          for (const allocation of allocationsToCreate) {
-            const bridgeIdempotencyKey =
-              allocation.sourceLogId > 0
-                ? `${DOCUMENT_TYPE}:${order.id}:in:${line.id}:src:${allocation.sourceLogId}`
-                : `${DOCUMENT_TYPE}:${order.id}:in:${line.id}`;
-
-            const bridgeLog = await this.inventoryService.increaseStock(
+          try {
+            const settledCostAmount = await this.settleOrderLine(
               {
-                materialId: line.materialId,
-                stockScope: "RD_SUB",
+                order,
+                line,
                 bizDate,
-                quantity: allocation.allocatedQty,
-                operationType: InventoryOperationType.RD_HANDOFF_IN,
-                businessModule: BUSINESS_MODULE,
-                businessDocumentType: DOCUMENT_TYPE,
-                businessDocumentId: order.id,
-                businessDocumentNumber: order.documentNo,
-                businessDocumentLineId: line.id,
-                projectTargetId,
-                operatorId: createdBy,
-                idempotencyKey: bridgeIdempotencyKey,
-                note: `主仓交接到 RD 小仓 / ${line.rdProjectCodeSnapshot ?? "未命名项目"} (MAIN 来源层 ${allocation.sourceLogId}): ${order.sourceWorkshopNameSnapshot} -> ${order.targetWorkshopNameSnapshot}`,
-                unitCost: allocation.unitCost,
-                costAmount: allocation.costAmount,
+                projectTargetIdByProjectId,
+                mainSourceTypes,
+                inboundLogIdByLineId,
+                createdBy,
               },
               tx,
             );
-
-            if (representativeInLogId === undefined) {
-              representativeInLogId = bridgeLog.id;
-            }
+            settledTotalAmount = settledTotalAmount.add(settledCostAmount);
+          } catch (error) {
+            throw wrapHandoffLineError(
+              error,
+              line.lineNo,
+              line.materialNameSnapshot || line.materialCodeSnapshot,
+            );
           }
-
-          if (representativeInLogId !== undefined) {
-            inboundLogIdByLineId.set(line.id, representativeInLogId);
-          }
-
-          // Persist aggregated cost snapshot on the handoff order line.
-          await this.repository.updateOrderLineCost(
-            line.id,
-            {
-              costUnitPrice: outSettlement.settledUnitCost,
-              costAmount: outSettlement.settledCostAmount,
-            },
-            tx,
-          );
         }
+
+        // Keep the order-level amount aligned with the settled FIFO cost so
+        // list/detail totals match the posted inventory facts.
+        const settledOrder = await this.repository.updateOrder(
+          order.id,
+          { totalAmount: settledTotalAmount, updatedBy: createdBy },
+          tx,
+        );
 
         await applyHandoffStatusesForOrder(
           {
@@ -350,9 +329,145 @@ export class RdHandoffService {
           tx,
         );
 
-        return order;
+        return settledOrder;
       });
-    });
+    };
+
+    const documentNoStem = buildDailyDocumentNoStem("RH", bizDate);
+    try {
+      return await createWithGeneratedDocumentNo(persistOrder, {
+        resolveStartAttempt: async () =>
+          resolveDailyStartAttempt(
+            await this.repository.findDocumentNosByPrefix(documentNoStem),
+            documentNoStem,
+          ),
+      });
+    } catch (error) {
+      if (dto.clientRequestId && isClientRequestIdUniqueConflict(error)) {
+        const existing = await this.repository.findOrderByClientRequestId(
+          dto.clientRequestId,
+        );
+        if (existing) {
+          return existing;
+        }
+      }
+      throw error;
+    }
+  }
+
+  private async settleOrderLine(
+    params: {
+      order: HandoffOrderWithLines;
+      line: HandoffOrderLine;
+      bizDate: Date;
+      projectTargetIdByProjectId: Map<number, number>;
+      mainSourceTypes: InventoryOperationType[];
+      inboundLogIdByLineId: Map<number, number>;
+      createdBy?: string;
+    },
+    tx: Prisma.TransactionClient,
+  ): Promise<Prisma.Decimal> {
+    const { order, line, bizDate, createdBy } = params;
+    if (!line.rdProjectId) {
+      throw new BadRequestException("RD 交接明细缺少研发项目归属");
+    }
+    let projectTargetId = params.projectTargetIdByProjectId.get(
+      line.rdProjectId,
+    );
+    if (projectTargetId == null) {
+      const currentProject =
+        await this.rdProjectLookupService.requireEffectiveProjectById(
+          line.rdProjectId,
+          tx,
+        );
+      projectTargetId = await this.rdProjectLookupService.ensureProjectTarget({
+        project: currentProject,
+        updatedBy: createdBy,
+        tx,
+      });
+      params.projectTargetIdByProjectId.set(line.rdProjectId, projectTargetId);
+    }
+
+    // MAIN OUT: settle against MAIN source layers via FIFO.
+    const outSettlement = await this.inventoryService.settleConsumerOut(
+      {
+        materialId: line.materialId,
+        stockScope: "MAIN",
+        bizDate,
+        quantity: line.quantity,
+        operationType: InventoryOperationType.RD_HANDOFF_OUT,
+        businessModule: BUSINESS_MODULE,
+        businessDocumentType: DOCUMENT_TYPE,
+        businessDocumentId: order.id,
+        businessDocumentNumber: order.documentNo,
+        businessDocumentLineId: line.id,
+        projectTargetId,
+        operatorId: createdBy,
+        idempotencyKey: `${DOCUMENT_TYPE}:${order.id}:out:${line.id}`,
+        note: `主仓交接到 RD 小仓 (${line.rdProjectCodeSnapshot ?? "未命名项目"}): ${order.sourceWorkshopNameSnapshot} -> ${order.targetWorkshopNameSnapshot}`,
+        consumerLineId: line.id,
+        sourceOperationTypes: params.mainSourceTypes,
+      },
+      tx,
+    );
+
+    // RD_SUB IN: create one IN log per FIFO allocation piece to preserve the
+    // original MAIN source layer granularity (cost bridge). Each piece gets its
+    // own deterministic idempotency key so the bridge is idempotent and auditable.
+    // The first piece's log is used as the representative for status-helper mapping.
+    let representativeInLogId: number | undefined;
+    const allocationsToCreate = resolveBridgeAllocations(
+      outSettlement,
+      line.quantity,
+    );
+
+    for (const allocation of allocationsToCreate) {
+      const bridgeIdempotencyKey =
+        allocation.sourceLogId > 0
+          ? `${DOCUMENT_TYPE}:${order.id}:in:${line.id}:src:${allocation.sourceLogId}`
+          : `${DOCUMENT_TYPE}:${order.id}:in:${line.id}`;
+
+      const bridgeLog = await this.inventoryService.increaseStock(
+        {
+          materialId: line.materialId,
+          stockScope: "RD_SUB",
+          bizDate,
+          quantity: allocation.allocatedQty,
+          operationType: InventoryOperationType.RD_HANDOFF_IN,
+          businessModule: BUSINESS_MODULE,
+          businessDocumentType: DOCUMENT_TYPE,
+          businessDocumentId: order.id,
+          businessDocumentNumber: order.documentNo,
+          businessDocumentLineId: line.id,
+          projectTargetId,
+          operatorId: createdBy,
+          idempotencyKey: bridgeIdempotencyKey,
+          note: `主仓交接到 RD 小仓 / ${line.rdProjectCodeSnapshot ?? "未命名项目"} (MAIN 来源层 ${allocation.sourceLogId}): ${order.sourceWorkshopNameSnapshot} -> ${order.targetWorkshopNameSnapshot}`,
+          unitCost: allocation.unitCost,
+          costAmount: allocation.costAmount,
+        },
+        tx,
+      );
+
+      if (representativeInLogId === undefined) {
+        representativeInLogId = bridgeLog.id;
+      }
+    }
+
+    if (representativeInLogId !== undefined) {
+      params.inboundLogIdByLineId.set(line.id, representativeInLogId);
+    }
+
+    // Persist aggregated cost snapshot on the handoff order line.
+    await this.repository.updateOrderLineCost(
+      line.id,
+      {
+        costUnitPrice: outSettlement.settledUnitCost,
+        costAmount: outSettlement.settledCostAmount,
+      },
+      tx,
+    );
+    return outSettlement.settledCostAmount;
   }
 
   async voidOrder(id: number, voidReason?: string, voidedBy?: string) {

@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import type { Prisma } from "../../../../generated/prisma/client";
+import { Prisma } from "../../../../generated/prisma/client";
 import { PrismaService } from "../../../shared/prisma/prisma.service";
 
 type DbClient = Prisma.TransactionClient | PrismaService;
@@ -10,6 +10,10 @@ export class RdProcurementRequestRepository {
 
   runInTransaction<T>(handler: (tx: Prisma.TransactionClient) => Promise<T>) {
     return this.prisma.runInTransaction(handler);
+  }
+
+  get client(): Prisma.TransactionClient {
+    return this.prisma;
   }
 
   private db(db?: DbClient) {
@@ -23,6 +27,7 @@ export class RdProcurementRequestRepository {
       bizDateFrom?: Date;
       bizDateTo?: Date;
       projectCode?: string;
+      projectCodeExact?: string;
       projectName?: string;
       supplierId?: number;
       handlerName?: string;
@@ -63,7 +68,9 @@ export class RdProcurementRequestRepository {
         where.bizDate.lte = params.bizDateTo;
       }
     }
-    if (params.projectCode) {
+    if (params.projectCodeExact) {
+      where.projectCode = params.projectCodeExact;
+    } else if (params.projectCode) {
       where.projectCode = { contains: params.projectCode };
     }
     if (params.projectName) {
@@ -103,7 +110,7 @@ export class RdProcurementRequestRepository {
         include: {
           lines: {
             orderBy: { lineNo: "asc" },
-            include: { statusLedger: true },
+            include: { material: true, statusLedger: true },
           },
         },
       }),
@@ -120,6 +127,7 @@ export class RdProcurementRequestRepository {
         lines: {
           orderBy: { lineNo: "asc" },
           include: {
+            material: true,
             statusLedger: true,
             statusHistories: {
               orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -136,10 +144,65 @@ export class RdProcurementRequestRepository {
       include: {
         lines: {
           orderBy: { lineNo: "asc" },
-          include: { statusLedger: true },
+          include: { material: true, statusLedger: true },
         },
       },
     });
+  }
+
+  async findRequestByClientRequestId(clientRequestId: string, db?: DbClient) {
+    return this.db(db).rdProcurementRequest.findFirst({
+      where: { clientRequestId, lifecycleStatus: "EFFECTIVE" },
+      include: {
+        lines: {
+          orderBy: { lineNo: "asc" },
+          include: { material: true, statusLedger: true },
+        },
+      },
+    });
+  }
+
+  async findEffectiveProjectProcurementProjection(
+    params: { projectCode: string; workshopId: number },
+    db?: DbClient,
+  ) {
+    return this.db(db).rdProcurementRequest.findMany({
+      where: {
+        lifecycleStatus: "EFFECTIVE",
+        projectCode: params.projectCode,
+        workshopId: params.workshopId,
+      },
+      orderBy: [{ bizDate: "asc" }, { id: "asc" }],
+      select: {
+        id: true,
+        documentNo: true,
+        projectCode: true,
+        lines: {
+          orderBy: { lineNo: "asc" },
+          select: {
+            id: true,
+            lineNo: true,
+            materialId: true,
+            materialCodeSnapshot: true,
+            materialNameSnapshot: true,
+            materialSpecSnapshot: true,
+            unitCodeSnapshot: true,
+            materialBindingSource: true,
+            materialBoundAt: true,
+            materialBoundBy: true,
+            statusLedger: true,
+          },
+        },
+      },
+    });
+  }
+
+  async findDocumentNosByPrefix(prefix: string, db?: DbClient) {
+    const rows = await this.db(db).rdProcurementRequest.findMany({
+      where: { documentNo: { startsWith: prefix } },
+      select: { documentNo: true },
+    });
+    return rows.map((row) => row.documentNo);
   }
 
   async createRequest(
@@ -160,7 +223,7 @@ export class RdProcurementRequestRepository {
       include: {
         lines: {
           orderBy: { lineNo: "asc" },
-          include: { statusLedger: true },
+          include: { material: true, statusLedger: true },
         },
       },
     });
@@ -168,6 +231,86 @@ export class RdProcurementRequestRepository {
       throw new Error("RD procurement request creation failed");
     }
     return result;
+  }
+
+  async findStatusHistoryById(id: number, db?: DbClient) {
+    return this.db(db).rdMaterialStatusHistory.findUnique({
+      where: { id },
+      include: {
+        requestLine: {
+          select: { id: true, requestId: true, materialId: true },
+        },
+      },
+    });
+  }
+
+  async lockRequestLineForUpdate(
+    requestId: number,
+    lineId: number,
+    tx: Prisma.TransactionClient,
+  ) {
+    const lockedRows = await tx.$queryRaw<Array<{ id: number }>>(Prisma.sql`
+      SELECT id
+      FROM rd_procurement_request_line
+      WHERE id = ${lineId}
+        AND request_id = ${requestId}
+      FOR UPDATE
+    `);
+    if (!lockedRows[0]) {
+      return null;
+    }
+    return tx.rdProcurementRequestLine.findUnique({
+      where: { id: lineId },
+      include: {
+        material: true,
+        request: { select: { lifecycleStatus: true } },
+        statusLedger: true,
+      },
+    });
+  }
+
+  async findRequestLineById(id: number, db?: DbClient) {
+    return this.db(db).rdProcurementRequestLine.findUnique({
+      where: { id },
+      include: { material: true, statusLedger: true },
+    });
+  }
+
+  async bindMaterialIfUnbound(
+    params: {
+      requestId: number;
+      lineId: number;
+      materialId: number;
+      materialBoundAt: Date;
+      materialBoundBy?: string;
+    },
+    tx: Prisma.TransactionClient,
+  ) {
+    return tx.rdProcurementRequestLine.updateMany({
+      where: {
+        id: params.lineId,
+        requestId: params.requestId,
+        materialId: null,
+      },
+      data: {
+        materialId: params.materialId,
+        materialBindingSource: "ACCEPTANCE_CONFIRMED",
+        materialBoundAt: params.materialBoundAt,
+        materialBoundBy: params.materialBoundBy ?? null,
+        updatedBy: params.materialBoundBy,
+      },
+    });
+  }
+
+  async linkStatusHistoriesToInventoryLog(
+    historyIds: number[],
+    inventoryLogId: number,
+    db?: DbClient,
+  ) {
+    return this.db(db).rdMaterialStatusHistory.updateMany({
+      where: { id: { in: historyIds } },
+      data: { relatedInventoryLogId: inventoryLogId },
+    });
   }
 
   async updateRequest(
@@ -181,7 +324,7 @@ export class RdProcurementRequestRepository {
       include: {
         lines: {
           orderBy: { lineNo: "asc" },
-          include: { statusLedger: true },
+          include: { material: true, statusLedger: true },
         },
       },
     });

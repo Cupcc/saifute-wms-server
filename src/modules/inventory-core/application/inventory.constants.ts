@@ -9,4 +9,5 @@ export const FIFO_SOURCE_OPERATION_TYPES: InventoryOperationTypeEnum[] = [
   InventoryOperationType.PRODUCTION_RECEIPT_IN,
   InventoryOperationType.PRICE_CORRECTION_IN,
   InventoryOperationType.RD_HANDOFF_IN,
+  InventoryOperationType.RD_RETURN_IN,
 ];

@@ -241,15 +241,42 @@ export class RdProjectRepository {
     });
   }
 
-  async findMaterialActionsByProjectId(projectId: number, db?: DbClient) {
-    return this.db(db).rdProjectMaterialAction.findMany({
-      where: { projectId },
-      orderBy: [{ bizDate: "desc" }, { id: "desc" }],
-      include: {
-        stockScope: true,
-        lines: { orderBy: { lineNo: "asc" } },
-      },
-    });
+  async findMaterialActionsByProjectId(
+    params: {
+      projectId: number;
+      materialId?: number;
+      actionType?: RdProjectMaterialActionType;
+      limit?: number;
+      offset?: number;
+    },
+    db?: DbClient,
+  ) {
+    const where: Prisma.RdProjectMaterialActionWhereInput = {
+      projectId: params.projectId,
+    };
+    if (params.materialId) {
+      where.lines = { some: { materialId: params.materialId } };
+    }
+    if (params.actionType) {
+      where.actionType = params.actionType;
+    }
+
+    const client = this.db(db);
+    const [items, total] = await Promise.all([
+      client.rdProjectMaterialAction.findMany({
+        where,
+        ...(params.limit !== undefined ? { take: params.limit } : {}),
+        ...(params.offset !== undefined ? { skip: params.offset } : {}),
+        orderBy: [{ bizDate: "desc" }, { id: "desc" }],
+        include: {
+          stockScope: true,
+          lines: { orderBy: { lineNo: "asc" } },
+        },
+      }),
+      client.rdProjectMaterialAction.count({ where }),
+    ]);
+
+    return { items, total };
   }
 
   async findMaterialActionById(id: number, db?: DbClient) {
@@ -265,6 +292,32 @@ export class RdProjectRepository {
         lines: { orderBy: { lineNo: "asc" } },
       },
     });
+  }
+
+  async findMaterialActionByClientRequestId(
+    clientRequestId: string,
+    db?: DbClient,
+  ) {
+    return this.db(db).rdProjectMaterialAction.findFirst({
+      where: { clientRequestId, lifecycleStatus: "EFFECTIVE" },
+      include: {
+        rdProject: {
+          include: {
+            stockScope: true,
+          },
+        },
+        stockScope: true,
+        lines: { orderBy: { lineNo: "asc" } },
+      },
+    });
+  }
+
+  async findMaterialActionDocumentNosByPrefix(prefix: string, db?: DbClient) {
+    const rows = await this.db(db).rdProjectMaterialAction.findMany({
+      where: { documentNo: { startsWith: prefix } },
+      select: { documentNo: true },
+    });
+    return rows.map((row) => row.documentNo);
   }
 
   async createMaterialAction(
@@ -372,6 +425,103 @@ export class RdProjectRepository {
     return totals;
   }
 
+  async sumActiveReturnedQtyForSourceActions(
+    actionIds: number[],
+    db?: DbClient,
+  ): Promise<Map<number, Prisma.Decimal>> {
+    if (actionIds.length === 0) {
+      return new Map();
+    }
+    const rows = await this.db(db).rdProjectMaterialActionLine.groupBy({
+      by: ["sourceDocumentLineId"],
+      where: {
+        sourceDocumentType: RD_PROJECT_ACTION_DOCUMENT_TYPE,
+        sourceDocumentId: { in: actionIds },
+        sourceDocumentLineId: { not: null },
+        action: {
+          lifecycleStatus: "EFFECTIVE",
+          actionType: RdProjectMaterialActionType.RETURN,
+        },
+      },
+      _sum: { quantity: true },
+    });
+
+    const totals = new Map<number, Prisma.Decimal>();
+    for (const row of rows) {
+      if (row.sourceDocumentLineId == null) {
+        continue;
+      }
+      totals.set(
+        row.sourceDocumentLineId,
+        new Prisma.Decimal(row._sum.quantity ?? 0),
+      );
+    }
+    return totals;
+  }
+
+  async sumEffectiveHandoffInByMaterial(
+    rdProjectId: number,
+    db?: DbClient,
+  ): Promise<
+    Map<
+      number,
+      {
+        handoffInQty: Prisma.Decimal;
+        handoffInCostAmount: Prisma.Decimal;
+        materialCodeSnapshot: string;
+        materialNameSnapshot: string;
+        materialSpecSnapshot: string | null;
+        unitCodeSnapshot: string;
+      }
+    >
+  > {
+    const rows = await this.db(db).rdHandoffOrderLine.findMany({
+      where: {
+        rdProjectId,
+        order: { lifecycleStatus: "EFFECTIVE" },
+      },
+      select: {
+        materialId: true,
+        quantity: true,
+        costAmount: true,
+        materialCodeSnapshot: true,
+        materialNameSnapshot: true,
+        materialSpecSnapshot: true,
+        unitCodeSnapshot: true,
+      },
+    });
+
+    const totals = new Map<
+      number,
+      {
+        handoffInQty: Prisma.Decimal;
+        handoffInCostAmount: Prisma.Decimal;
+        materialCodeSnapshot: string;
+        materialNameSnapshot: string;
+        materialSpecSnapshot: string | null;
+        unitCodeSnapshot: string;
+      }
+    >();
+    for (const row of rows) {
+      const current = totals.get(row.materialId) ?? {
+        handoffInQty: new Prisma.Decimal(0),
+        handoffInCostAmount: new Prisma.Decimal(0),
+        materialCodeSnapshot: row.materialCodeSnapshot,
+        materialNameSnapshot: row.materialNameSnapshot,
+        materialSpecSnapshot: row.materialSpecSnapshot,
+        unitCodeSnapshot: row.unitCodeSnapshot,
+      };
+      current.handoffInQty = current.handoffInQty.add(
+        new Prisma.Decimal(row.quantity),
+      );
+      current.handoffInCostAmount = current.handoffInCostAmount.add(
+        new Prisma.Decimal(row.costAmount ?? 0),
+      );
+      totals.set(row.materialId, current);
+    }
+    return totals;
+  }
+
   async hasActiveDownstreamDependencies(projectId: number, db?: DbClient) {
     const count = await this.db(db).documentRelation.count({
       where: {
@@ -391,5 +541,21 @@ export class RdProjectRepository {
       },
     });
     return count > 0;
+  }
+
+  async appendProjectChangeLog(
+    data: Prisma.RdProjectChangeLogUncheckedCreateInput,
+    db?: DbClient,
+  ) {
+    return this.db(db).rdProjectChangeLog.create({ data });
+  }
+
+  async findProjectChangeLogs(projectId: number, db?: DbClient) {
+    // ponytail: 固定取最近 200 条，需要翻页时再加 limit/offset
+    return this.db(db).rdProjectChangeLog.findMany({
+      where: { projectId },
+      orderBy: [{ changedAt: "desc" }, { id: "desc" }],
+      take: 200,
+    });
   }
 }

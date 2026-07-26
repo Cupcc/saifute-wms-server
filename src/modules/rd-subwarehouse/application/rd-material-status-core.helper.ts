@@ -11,7 +11,8 @@ export type DecimalLike = Prisma.Decimal | number | string;
 export const RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE =
   BusinessDocumentType.RdProcurementRequest;
 export const STOCK_IN_ORDER_DOCUMENT_TYPE = BusinessDocumentType.StockInOrder;
-export const RD_HANDOFF_ORDER_DOCUMENT_TYPE = BusinessDocumentType.RdHandoffOrder;
+export const RD_HANDOFF_ORDER_DOCUMENT_TYPE =
+  BusinessDocumentType.RdHandoffOrder;
 export const WORKSHOP_MATERIAL_ORDER_DOCUMENT_TYPE =
   BusinessDocumentType.WorkshopMaterialOrder;
 export type LedgerStatusField =
@@ -32,6 +33,15 @@ export const STATUS_FIELD_MAP: Record<RdMaterialStatus, LedgerStatusField> = {
   [RdMaterialStatus.HANDED_OFF]: "handedOffQty",
   [RdMaterialStatus.SCRAPPED]: "scrappedQty",
   [RdMaterialStatus.RETURNED]: "returnedQty",
+};
+export const RD_MATERIAL_STATUS_LABELS: Record<RdMaterialStatus, string> = {
+  [RdMaterialStatus.PENDING_PROCUREMENT]: "待采购",
+  [RdMaterialStatus.IN_PROCUREMENT]: "采购中",
+  [RdMaterialStatus.CANCELLED]: "已取消",
+  [RdMaterialStatus.ACCEPTED]: "已验收",
+  [RdMaterialStatus.HANDED_OFF]: "已领取",
+  [RdMaterialStatus.SCRAPPED]: "已报废",
+  [RdMaterialStatus.RETURNED]: "已退回",
 };
 export interface StatusDocumentRef {
   sourceDocumentType?: string | null;
@@ -346,4 +356,3 @@ export async function ensureStatusLedger(
     },
   });
 }
-

@@ -19,11 +19,11 @@ export class QueryRdProcurementRequestDto {
   @MaxLength(64)
   documentNo?: string;
 
-  @IsDateString()
+  @IsDateString({ strict: true })
   @IsOptional()
   bizDateFrom?: string;
 
-  @IsDateString()
+  @IsDateString({ strict: true })
   @IsOptional()
   bizDateTo?: string;
 
@@ -31,6 +31,11 @@ export class QueryRdProcurementRequestDto {
   @IsOptional()
   @MaxLength(64)
   projectCode?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(64)
+  projectCodeExact?: string;
 
   @IsString()
   @IsOptional()

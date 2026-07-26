@@ -14,16 +14,11 @@ import { RdProjectBomLineDto } from "./rd-project-bom-line.dto";
 
 export class CreateRdProjectDto {
   @IsString()
-  @IsOptional()
-  @MaxLength(64)
-  projectCode?: string;
-
-  @IsString()
   @IsNotEmpty()
   @MaxLength(128)
   projectName!: string;
 
-  @IsDateString()
+  @IsDateString({ strict: true })
   bizDate!: string;
 
   @IsInt()
@@ -40,10 +35,6 @@ export class CreateRdProjectDto {
   @IsOptional()
   @Min(1)
   managerPersonnelId?: number;
-
-  @IsInt()
-  @Min(1)
-  workshopId!: number;
 
   @IsString()
   @IsOptional()

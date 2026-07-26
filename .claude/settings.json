@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bun ./scripts/check-quality-hooks.mjs \"$CLAUDE_FILE_PATH\""
+            "command": "bun \"$CLAUDE_PROJECT_DIR/scripts/check-quality-hooks.mjs\" \"$CLAUDE_FILE_PATH\""
           }
         ]
       }
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/claude-code-hooks/feishu-lifecycle.mjs",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude-code-hooks/feishu-lifecycle.mjs\"",
             "timeout": 10
           }
         ]
@@ -40,7 +40,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/claude-code-hooks/feishu-lifecycle.mjs",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude-code-hooks/feishu-lifecycle.mjs\"",
             "timeout": 15
           }
         ]
@@ -52,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/claude-code-hooks/feishu-lifecycle.mjs",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude-code-hooks/feishu-lifecycle.mjs\"",
             "timeout": 10
           }
         ]
@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/claude-code-hooks/feishu-lifecycle.mjs",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude-code-hooks/feishu-lifecycle.mjs\"",
             "timeout": 15
           }
         ]
@@ -76,7 +76,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node scripts/claude-code-hooks/feishu-lifecycle.mjs",
+            "command": "node \"$CLAUDE_PROJECT_DIR/scripts/claude-code-hooks/feishu-lifecycle.mjs\"",
             "timeout": 10
           }
         ]

@@ -1,6 +1,7 @@
 import { Type } from "class-transformer";
 import {
   IsDateString,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -14,11 +15,15 @@ export class QueryRdHandoffOrderDto {
   @MaxLength(64)
   documentNo?: string;
 
-  @IsDateString()
+  @IsOptional()
+  @IsIn(["EFFECTIVE", "VOIDED"])
+  lifecycleStatus?: "EFFECTIVE" | "VOIDED";
+
+  @IsDateString({ strict: true })
   @IsOptional()
   bizDateFrom?: string;
 
-  @IsDateString()
+  @IsDateString({ strict: true })
   @IsOptional()
   bizDateTo?: string;
 

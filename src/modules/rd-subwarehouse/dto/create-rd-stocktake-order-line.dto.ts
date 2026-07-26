@@ -18,7 +18,7 @@ export class CreateRdStocktakeOrderLineDto {
   rdProjectId!: number;
 
   @IsString()
-  @Matches(/^\d+(\.\d{1,6})?$/, {
+  @Matches(/^\d{1,12}(\.\d{1,6})?$/, {
     message: "countedQty must be a non-negative decimal string",
   })
   countedQty!: string;

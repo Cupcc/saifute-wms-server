@@ -1,14 +1,14 @@
-import { RdMaterialStatus, RdMaterialStatusEventType } from "../../../../generated/prisma/client";
 import {
-  RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE,
+  RdMaterialStatus,
+  RdMaterialStatusEventType,
+} from "../../../../generated/prisma/client";
+import {
   type DbClient,
   type DecimalLike,
   getStatusLedgerProjection,
+  RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE,
 } from "./rd-material-status-core.helper";
-import {
-  reverseStatusHistoriesBySourceDocument,
-  transferStatusQuantity,
-} from "./rd-material-status-operations.helper";
+import { transferStatusQuantity } from "./rd-material-status-operations.helper";
 
 export async function applyProcurementStartedStatus(
   params: {
@@ -175,4 +175,3 @@ export async function applyRequestVoidStatus(
     db,
   );
 }
-

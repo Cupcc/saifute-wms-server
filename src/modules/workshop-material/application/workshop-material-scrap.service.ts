@@ -14,6 +14,8 @@ import {
   FIFO_SOURCE_OPERATION_TYPES,
   InventoryService,
 } from "../../inventory-core/application/inventory.service";
+import { RdProjectLookupService } from "../../rd-project/application/rd-project-lookup.service";
+import { resolveHandoffRdProjectForRequest } from "../../rd-subwarehouse/application/rd-handoff-resolver.helper";
 import {
   applyScrapStatusesForOrder,
   RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE,
@@ -26,12 +28,18 @@ import type { CreateWorkshopMaterialOrderLineDto } from "../dto/create-workshop-
 import type { QueryWorkshopMaterialOrderDto } from "../dto/query-workshop-material-order.dto";
 import type { UpdateWorkshopMaterialOrderDto } from "../dto/update-workshop-material-order.dto";
 import {
+  type RdScrapRequestCache,
   WORKSHOP_MATERIAL_BUSINESS_MODULE,
   WORKSHOP_MATERIAL_DOCUMENT_TYPE,
   type WorkshopMaterialLineWriteData,
   type WorkshopMaterialOrderLineEntity,
   WorkshopMaterialSharedService,
 } from "./workshop-material-shared.service";
+
+type RdProjectByCodeCache = Map<
+  string,
+  Awaited<ReturnType<RdProjectLookupService["requireEffectiveProjectByCode"]>>
+>;
 
 /**
  * Owns the lifecycle (create / update / void / list / read) for SCRAP orders,
@@ -41,7 +49,10 @@ import {
 export class WorkshopMaterialScrapService {
   private readonly orderType = WorkshopMaterialOrderType.SCRAP;
 
-  constructor(private readonly shared: WorkshopMaterialSharedService) {}
+  constructor(
+    private readonly shared: WorkshopMaterialSharedService,
+    private readonly rdProjectLookupService: RdProjectLookupService,
+  ) {}
 
   // ─── Reads ────────────────────────────────────────────────────────────────
 
@@ -164,6 +175,7 @@ export class WorkshopMaterialScrapService {
           idempotencyPrefix: `${WORKSHOP_MATERIAL_DOCUMENT_TYPE}:${order.id}`,
           operatorId: createdBy,
           isRdScrapOrder,
+          requestCache: rdRequestCache,
           tx,
         });
 
@@ -281,6 +293,7 @@ export class WorkshopMaterialScrapService {
         idempotencyPrefix: `${WORKSHOP_MATERIAL_DOCUMENT_TYPE}:${id}:rev:${nextRevision}`,
         operatorId: updatedBy,
         isRdScrapOrder,
+        requestCache: rdRequestCache,
         tx,
       });
 
@@ -413,6 +426,7 @@ export class WorkshopMaterialScrapService {
     idempotencyPrefix: string;
     operatorId?: string;
     isRdScrapOrder: boolean;
+    requestCache: RdScrapRequestCache;
     tx: Prisma.TransactionClient;
   }) {
     const operationType = toOperationType(this.orderType);
@@ -422,9 +436,24 @@ export class WorkshopMaterialScrapService {
         : FIFO_SOURCE_OPERATION_TYPES.filter((t) => t !== "RD_HANDOFF_IN");
 
     const logIdByLineId = new Map<number, number>();
+    const projectCache: RdProjectByCodeCache = new Map();
+    const projectTargetIdByProjectId = new Map<number, number>();
 
     for (const line of params.lines) {
       const lineDto = params.inputLines[line.lineNo - 1];
+      // RD_HANDOFF_IN layers are project-attributed, so RD scrap must settle
+      // with the bound request's project target both as the OUT log
+      // attribution and as the source layer filter.
+      const projectTargetId = params.isRdScrapOrder
+        ? await this.resolveRdScrapProjectTargetId({
+            line,
+            requestCache: params.requestCache,
+            projectCache,
+            projectTargetIdByProjectId,
+            operatorId: params.operatorId,
+            tx: params.tx,
+          })
+        : undefined;
       const settlement = await (
         this.shared.inventoryService as InventoryService
       ).settleConsumerOut(
@@ -444,6 +473,9 @@ export class WorkshopMaterialScrapService {
           consumerLineId: line.id,
           sourceLogId: lineDto?.sourceLogId ?? undefined,
           sourceOperationTypes: sourceTypes,
+          ...(projectTargetId != null
+            ? { projectTargetId, sourceProjectTargetId: projectTargetId }
+            : {}),
         },
         params.tx,
       );
@@ -470,5 +502,62 @@ export class WorkshopMaterialScrapService {
         params.tx,
       );
     }
+  }
+
+  private async resolveRdScrapProjectTargetId(params: {
+    line: WorkshopMaterialOrderLineEntity;
+    requestCache: RdScrapRequestCache;
+    projectCache: RdProjectByCodeCache;
+    projectTargetIdByProjectId: Map<number, number>;
+    operatorId?: string;
+    tx: Prisma.TransactionClient;
+  }): Promise<number> {
+    const requestId = params.line.sourceDocumentId;
+    if (!requestId) {
+      throw new BadRequestException("RD 报废明细必须绑定采购需求行");
+    }
+
+    let request = params.requestCache.get(requestId);
+    if (!request) {
+      request =
+        await this.shared.repository.findRdProcurementRequestForScrapSource(
+          requestId,
+          params.tx,
+        );
+      params.requestCache.set(requestId, request);
+    }
+    if (
+      !request ||
+      request.lifecycleStatus === DocumentLifecycleStatus.VOIDED
+    ) {
+      throw new BadRequestException("RD 报废来源采购需求不存在或已作废");
+    }
+    if (!request.projectCode?.trim()) {
+      throw new BadRequestException(
+        "RD 采购需求缺少研发项目编码，无法执行报废",
+      );
+    }
+
+    const project = await resolveHandoffRdProjectForRequest(
+      this.rdProjectLookupService,
+      request,
+      params.projectCache,
+    );
+
+    let projectTargetId = params.projectTargetIdByProjectId.get(project.id);
+    if (projectTargetId == null) {
+      const currentProject =
+        await this.rdProjectLookupService.requireEffectiveProjectById(
+          project.id,
+          params.tx,
+        );
+      projectTargetId = await this.rdProjectLookupService.ensureProjectTarget({
+        project: currentProject,
+        updatedBy: params.operatorId,
+        tx: params.tx,
+      });
+      params.projectTargetIdByProjectId.set(project.id, projectTargetId);
+    }
+    return projectTargetId;
   }
 }
