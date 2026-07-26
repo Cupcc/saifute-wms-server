@@ -99,3 +99,4 @@
 ### 残余风险
 
 - live browser 未展示非零成本样本，成本数值正确性主要由 service tests 覆盖。
+- `2026-07-09` 复核补记：非零成本样本已在 `docs/acceptance-tests/runs/run-20260414-1620-rd-sub-project-attribution-and-reporting-alignment.md` 中经浏览器验证覆盖；当前仅剩 `F2` 的“补货中”浏览器路径与 `F3` 的浏览器端动作创建两项未获浏览器主证据。

@@ -30,6 +30,7 @@ enum AuditStatusSnapshot {
 }
 
 enum InventoryEffectStatus {
+  NONE
   POSTED
   REVERSED
 }
@@ -55,6 +56,8 @@ enum InventoryOperationType {
   RD_HANDOFF_IN
   RD_STOCKTAKE_IN
   RD_STOCKTAKE_OUT
+  RD_RETURN_OUT
+  RD_RETURN_IN
   REVERSAL_IN
   REVERSAL_OUT
 }
@@ -84,6 +87,12 @@ enum RdMaterialStatusEventType {
   MANUAL_RETURNED
   FACT_ROLLBACK
   REQUEST_VOIDED
+}
+
+enum RdProcurementMaterialBindingSource {
+  BOM_CATALOG
+  ACCEPTANCE_CONFIRMED
+  LEGACY
 }
 
 enum SourceUsageStatus {
@@ -936,7 +945,7 @@ model RdProject {
   projectTargetId       Int?                      @unique @map("project_target_id")
   lifecycleStatus       DocumentLifecycleStatus   @default(EFFECTIVE) @map("lifecycle_status")
   auditStatusSnapshot   AuditStatusSnapshot       @default(NOT_REQUIRED) @map("audit_status_snapshot")
-  inventoryEffectStatus InventoryEffectStatus     @default(POSTED) @map("inventory_effect_status")
+  inventoryEffectStatus InventoryEffectStatus     @default(NONE) @map("inventory_effect_status")
   revisionNo            Int                       @default(1) @map("revision_no")
   customerCodeSnapshot  String?                   @map("customer_code_snapshot") @db.VarChar(64)
   customerNameSnapshot  String?                   @map("customer_name_snapshot") @db.VarChar(128)
@@ -965,6 +974,7 @@ model RdProject {
   materialActions       RdProjectMaterialAction[]
   handoffLines          RdHandoffOrderLine[]
   stocktakeLines        RdStocktakeOrderLine[]
+  changeLogs            RdProjectChangeLog[]
 
   @@index([bizDate])
   @@index([customerId])
@@ -972,6 +982,21 @@ model RdProject {
   @@index([stockScopeId])
   @@index([workshopId])
   @@map("rd_project")
+}
+
+model RdProjectChangeLog {
+  id         Int       @id @default(autoincrement())
+  projectId  Int       @map("project_id")
+  revisionNo Int       @map("revision_no")
+  action     String    @db.VarChar(32)
+  summary    String    @db.VarChar(500)
+  changes    String?   @db.Text
+  changedBy  String?   @map("changed_by") @db.VarChar(64)
+  changedAt  DateTime  @default(now()) @map("changed_at")
+  rdProject  RdProject @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([projectId, changedAt])
+  @@map("rd_project_change_log")
 }
 
 model RdProjectMaterialLine {
@@ -1013,6 +1038,8 @@ model RdProjectBomLine {
   quantity             Decimal   @db.Decimal(18, 6)
   unitPrice            Decimal   @default(0) @map("unit_price") @db.Decimal(18, 4)
   amount               Decimal   @default(0) @db.Decimal(18, 4)
+  manufacturer         String?   @db.VarChar(128)
+  productLink          String?   @map("product_link") @db.VarChar(500)
   remark               String?   @db.VarChar(500)
   createdBy            String?   @map("created_by") @db.VarChar(64)
   createdAt            DateTime  @default(now()) @map("created_at")
@@ -1046,6 +1073,7 @@ model RdProjectMaterialAction {
   createdAt             DateTime                      @default(now()) @map("created_at")
   updatedBy             String?                       @map("updated_by") @db.VarChar(64)
   updatedAt             DateTime                      @updatedAt @map("updated_at")
+  clientRequestId       String?                       @unique @map("client_request_id") @db.VarChar(64)
   rdProject             RdProject                     @relation(fields: [projectId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   stockScope            StockScope?                   @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   workshop              Workshop                      @relation(fields: [workshopId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -1114,6 +1142,7 @@ model RdHandoffOrder {
   createdAt                  DateTime                @default(now()) @map("created_at")
   updatedBy                  String?                 @map("updated_by") @db.VarChar(64)
   updatedAt                  DateTime                @updatedAt @map("updated_at")
+  clientRequestId            String?                 @unique @map("client_request_id") @db.VarChar(64)
   handlerPersonnel           Personnel?              @relation("RdHandoffOrderHandler", fields: [handlerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   sourceStockScope           StockScope?             @relation("RdHandoffSourceStockScope", fields: [sourceStockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   targetStockScope           StockScope?             @relation("RdHandoffTargetStockScope", fields: [targetStockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -1192,6 +1221,7 @@ model RdProcurementRequest {
   createdAt            DateTime                   @default(now()) @map("created_at")
   updatedBy            String?                    @map("updated_by") @db.VarChar(64)
   updatedAt            DateTime                   @updatedAt @map("updated_at")
+  clientRequestId      String?                    @unique @map("client_request_id") @db.VarChar(64)
   supplier             Supplier?                  @relation(fields: [supplierId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   handlerPersonnel     Personnel?                 @relation("RdProcurementRequestHandler", fields: [handlerPersonnelId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   stockScope           StockScope?                @relation(fields: [stockScopeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -1208,30 +1238,34 @@ model RdProcurementRequest {
 }
 
 model RdProcurementRequestLine {
-  id                   Int                       @id @default(autoincrement())
-  requestId            Int                       @map("request_id")
-  lineNo               Int                       @map("line_no")
-  materialId           Int                       @map("material_id")
-  materialCodeSnapshot String                    @map("material_code_snapshot") @db.VarChar(64)
-  materialNameSnapshot String                    @map("material_name_snapshot") @db.VarChar(128)
-  materialSpecSnapshot String?                   @map("material_spec_snapshot") @db.VarChar(128)
-  unitCodeSnapshot     String                    @map("unit_code_snapshot") @db.VarChar(32)
-  quantity             Decimal                   @db.Decimal(18, 6)
-  unitPrice            Decimal                   @default(0) @map("unit_price") @db.Decimal(18, 4)
-  amount               Decimal                   @default(0) @db.Decimal(18, 4)
-  remark               String?                   @db.VarChar(500)
-  createdBy            String?                   @map("created_by") @db.VarChar(64)
-  createdAt            DateTime                  @default(now()) @map("created_at")
-  updatedBy            String?                   @map("updated_by") @db.VarChar(64)
-  updatedAt            DateTime                  @updatedAt @map("updated_at")
-  request              RdProcurementRequest      @relation(fields: [requestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  material             Material                  @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  acceptanceLines      StockInOrderLine[]
-  statusLedger         RdMaterialStatusLedger?
-  statusHistories      RdMaterialStatusHistory[]
+  id                    Int                                    @id @default(autoincrement())
+  requestId             Int                                    @map("request_id")
+  lineNo                Int                                    @map("line_no")
+  materialId            Int?                                   @map("material_id")
+  materialCodeSnapshot  String?                                @map("material_code_snapshot") @db.VarChar(64)
+  materialNameSnapshot  String                                 @map("material_name_snapshot") @db.VarChar(128)
+  materialSpecSnapshot  String?                                @map("material_spec_snapshot") @db.VarChar(128)
+  unitCodeSnapshot      String                                 @map("unit_code_snapshot") @db.VarChar(32)
+  materialBindingSource RdProcurementMaterialBindingSource?    @map("material_binding_source")
+  materialBoundAt       DateTime?                              @map("material_bound_at")
+  materialBoundBy       String?                                @map("material_bound_by") @db.VarChar(64)
+  quantity              Decimal                                @db.Decimal(18, 6)
+  unitPrice             Decimal                                @default(0) @map("unit_price") @db.Decimal(18, 4)
+  amount                Decimal                                @default(0) @db.Decimal(18, 4)
+  remark                String?                                @db.VarChar(500)
+  createdBy             String?                                @map("created_by") @db.VarChar(64)
+  createdAt             DateTime                               @default(now()) @map("created_at")
+  updatedBy             String?                                @map("updated_by") @db.VarChar(64)
+  updatedAt             DateTime                               @updatedAt @map("updated_at")
+  request               RdProcurementRequest                   @relation(fields: [requestId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  material              Material?                              @relation(fields: [materialId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  acceptanceLines       StockInOrderLine[]
+  statusLedger          RdMaterialStatusLedger?
+  statusHistories       RdMaterialStatusHistory[]
 
   @@unique([requestId, lineNo])
   @@index([materialId])
+  @@index([materialBindingSource])
   @@map("rd_procurement_request_line")
 }
 

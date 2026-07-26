@@ -84,6 +84,92 @@ describe("InventoryService", () => {
     );
   });
 
+  it("should aggregate batched price layers per material with one repository call", async () => {
+    const repositoryMock = {
+      findFifoSourceLogsByMaterials: jest.fn().mockResolvedValue([
+        {
+          id: 50,
+          materialId: 10,
+          changeQty: new Prisma.Decimal(10),
+          occurredAt: new Date(),
+          unitCost: new Prisma.Decimal(10),
+          availableQty: new Prisma.Decimal(4),
+        },
+        {
+          id: 51,
+          materialId: 10,
+          changeQty: new Prisma.Decimal(10),
+          occurredAt: new Date(),
+          unitCost: new Prisma.Decimal(10),
+          availableQty: new Prisma.Decimal(6),
+        },
+        {
+          id: 52,
+          materialId: 11,
+          changeQty: new Prisma.Decimal(10),
+          occurredAt: new Date(),
+          unitCost: new Prisma.Decimal(12),
+          availableQty: new Prisma.Decimal(8),
+        },
+      ]),
+    };
+
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        InventoryService,
+        InventoryQueryService,
+        {
+          provide: MasterDataService,
+          useValue: {
+            getMaterialById: jest.fn().mockResolvedValue({ id: 10 }),
+            getWorkshopById: jest.fn().mockResolvedValue({ id: 20 }),
+          },
+        },
+        {
+          provide: PrismaService,
+          useValue: {},
+        },
+        {
+          provide: InventoryRepository,
+          useValue: repositoryMock,
+        },
+        {
+          provide: FactoryNumberRepository,
+          useValue: {},
+        },
+        {
+          provide: StockScopeCompatibilityService,
+          useFactory: createStockScopeCompatibilityServiceMock,
+        },
+      ],
+    }).compile();
+
+    const service = moduleRef.get(InventoryService);
+    const result = await service.listPriceLayerAvailabilityByMaterial({
+      materialIds: [10, 11, 10],
+      workshopId: 20,
+      projectTargetId: 7001,
+    });
+
+    expect(repositoryMock.findFifoSourceLogsByMaterials).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(repositoryMock.findFifoSourceLogsByMaterials).toHaveBeenCalledWith(
+      expect.objectContaining({
+        materialIds: [10, 11],
+        projectTargetId: 7001,
+      }),
+      undefined,
+    );
+    const layersFor10 = result.get(10);
+    expect(layersFor10).toHaveLength(1);
+    expect(layersFor10?.[0].availableQty.toString()).toBe("10");
+    expect(layersFor10?.[0].sourceLogCount).toBe(2);
+    const layersFor11 = result.get(11);
+    expect(layersFor11).toHaveLength(1);
+    expect(layersFor11?.[0].unitCost.toString()).toBe("12");
+  });
+
   // ─── hasUnreleasedAllocations ────────────────────────────────────────────
 
   it("should return true when source log has unreleased allocations", async () => {

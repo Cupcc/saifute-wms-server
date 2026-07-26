@@ -4,6 +4,7 @@ import { MasterDataModule } from "../master-data/master-data.module";
 import { RbacModule } from "../rbac/rbac.module";
 import { RdProjectSharedModule } from "../rd-project/rd-project-shared.module";
 import { RdHandoffService } from "./application/rd-handoff.service";
+import { RdProcurementItemService } from "./application/rd-procurement-item.service";
 import { RdProcurementRequestService } from "./application/rd-procurement-request.service";
 import { RdStocktakeOrderService } from "./application/rd-stocktake-order.service";
 import { RdHandoffController } from "./controllers/rd-handoff.controller";
@@ -28,6 +29,7 @@ import { RdStocktakeOrderRepository } from "./infrastructure/rd-stocktake-order.
   providers: [
     RdHandoffService,
     RdHandoffRepository,
+    RdProcurementItemService,
     RdProcurementRequestService,
     RdProcurementRequestRepository,
     RdStocktakeOrderService,

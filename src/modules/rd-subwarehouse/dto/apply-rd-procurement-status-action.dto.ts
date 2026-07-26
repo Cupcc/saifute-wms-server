@@ -1,4 +1,5 @@
 import {
+  IsDateString,
   IsIn,
   IsInt,
   IsOptional,
@@ -27,11 +28,20 @@ export class ApplyRdProcurementStatusActionDto {
   @Min(1)
   lineId!: number;
 
+  @IsInt()
+  @IsOptional()
+  @Min(1)
+  materialId?: number;
+
   @IsString()
-  @Matches(/^(?!0+(\.0+)?$)\d+(\.\d{1,6})?$/, {
+  @Matches(/^(?!0+(\.0+)?$)\d{1,12}(\.\d{1,6})?$/, {
     message: "quantity must be a positive decimal string",
   })
   quantity!: string;
+
+  @IsDateString({ strict: true })
+  @IsOptional()
+  bizDate?: string;
 
   @IsString()
   @IsOptional()

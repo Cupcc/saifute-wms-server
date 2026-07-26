@@ -95,6 +95,8 @@ const WAREHOUSE_MANAGER_PERMISSION_PRESET = [
   "rd:procurement-request:list",
   "rd:procurement-request:return-action",
   "rd:handoff-order:list",
+  "rd:handoff-order:create",
+  "rd:handoff-order:void",
 ];
 
 const RD_OPERATOR_PERMISSION_PRESET = [

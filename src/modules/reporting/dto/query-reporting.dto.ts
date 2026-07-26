@@ -1,4 +1,4 @@
-import { Transform, Type } from "class-transformer";
+import { Type } from "class-transformer";
 import {
   IsDateString,
   IsEnum,
@@ -229,6 +229,12 @@ export class QueryMonthlyReportingDto {
   @IsInt()
   @Min(1)
   workshopId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  materialId?: number;
 
   @IsOptional()
   @Type(() => Number)

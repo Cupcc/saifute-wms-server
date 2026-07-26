@@ -1,6 +1,7 @@
 <script setup>
 import { getCurrentInstance, onMounted, ref } from "vue";
 import { getInventoryCategoryDetail } from "@/api/report.js";
+import { formatQty } from "@/utils/format";
 import { formatDate } from "@/utils/index.js";
 
 const reportData = ref([]);
@@ -38,7 +39,9 @@ const getSummaries = (param) => {
         }
       }, 0);
 
-      sums[index] = sum.toFixed(2);
+      sums[index] = column.property.endsWith("Quantity")
+        ? formatQty(sum)
+        : sum.toFixed(2);
     }
   });
 

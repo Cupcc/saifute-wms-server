@@ -89,6 +89,42 @@ export const constantRoutes = [
 // 动态路由，基于用户权限动态去加载
 export const dynamicRoutes = [
   {
+    path: "/rd/projects/detail",
+    component: Layout,
+    hidden: true,
+    permissions: ["rd:project:get"],
+    children: [
+      {
+        path: ":projectId(\\d+)",
+        component: () => import("@/views/rd/projects/detail.vue"),
+        name: "RdProjectDetail",
+        meta: {
+          title: "研发项目详情",
+          activeMenu: "/rd/projects",
+          noCache: true,
+        },
+      },
+    ],
+  },
+  {
+    path: "/rd/projects/create",
+    component: Layout,
+    hidden: true,
+    permissions: ["rd:project:create"],
+    children: [
+      {
+        path: "",
+        component: () => import("@/views/rd/projects/detail.vue"),
+        name: "RdProjectCreate",
+        meta: {
+          title: "新增研发项目",
+          activeMenu: "/rd/projects",
+          noCache: true,
+        },
+      },
+    ],
+  },
+  {
     path: "/sales/project/detail",
     component: Layout,
     hidden: true,

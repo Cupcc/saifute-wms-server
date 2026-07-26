@@ -4,7 +4,6 @@ import {
   IsArray,
   IsDateString,
   IsInt,
-  IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
@@ -14,18 +13,8 @@ import {
 import { CreateRdHandoffOrderLineDto } from "./create-rd-handoff-order-line.dto";
 
 export class CreateRdHandoffOrderDto {
-  @IsOptional()
-  @IsString()
-  @MaxLength(64)
-  documentNo?: string;
-
-  @IsDateString()
+  @IsDateString({ strict: true })
   bizDate!: string;
-
-  @IsInt()
-  @IsOptional()
-  @Min(1)
-  sourceWorkshopId?: number;
 
   @IsInt()
   @IsOptional()
@@ -36,6 +25,11 @@ export class CreateRdHandoffOrderDto {
   @IsOptional()
   @MaxLength(500)
   remark?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(64)
+  clientRequestId?: string;
 
   @IsArray()
   @ArrayMinSize(1, { message: "lines must have at least one item" })

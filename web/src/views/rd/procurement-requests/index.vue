@@ -1,12 +1,13 @@
 <template>
-  <div class="app-container">
-    <el-card shadow="never">
+  <div class="app-container procurement-page">
+    <el-card class="procurement-card" shadow="never">
       <template #header>
         <div class="page-header">
           <div>
             <div class="page-title">研发采购需求</div>
             <div class="page-subtitle">
-              先形成 RD 采购真源，研发验收在研发协同内确认，主仓验收单仅记录主仓入库
+              先形成 RD
+              采购真源，研发验收在研发协同内确认，主仓验收单仅记录主仓入库
             </div>
           </div>
           <el-tag type="success">{{ workshopLabel }}</el-tag>
@@ -41,6 +42,25 @@
             @keyup.enter="handleSearch"
           />
         </el-form-item>
+        <el-form-item label="业务日期">
+          <el-date-picker
+            v-model="filters.bizDateRange"
+            type="daterange"
+            value-format="YYYY-MM-DD"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            style="width: 260px"
+          />
+        </el-form-item>
+        <el-form-item label="关键字">
+          <el-input
+            v-model="filters.keyword"
+            clearable
+            placeholder="单号/项目/物料名称"
+            style="width: 220px"
+            @keyup.enter="handleSearch"
+          />
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">查询</el-button>
           <el-button @click="handleReset">重置</el-button>
@@ -53,47 +73,279 @@
         </el-button>
       </div>
 
-      <el-table :data="rows" stripe v-loading="loading">
-        <el-table-column prop="documentNo" label="需求单号" min-width="140">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="openDetail(row.id)">
-              {{ row.documentNo }}
-            </el-button>
-          </template>
-        </el-table-column>
-        <el-table-column prop="projectCode" label="项目编码" min-width="140" />
-        <el-table-column prop="projectName" label="项目名称" min-width="180" />
-        <el-table-column label="业务日期" min-width="120">
-          <template #default="{ row }">
-            {{ formatDate(row.bizDate) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="supplierNameSnapshot" label="供应商" min-width="180" />
-        <el-table-column prop="totalQty" label="总数量" min-width="110" />
-        <el-table-column prop="totalAmount" label="总金额" min-width="110" />
-        <el-table-column label="当前状态链" min-width="260">
-          <template #default="{ row }">
-            <div class="status-tag-wrap">
-              <el-tag
-                v-for="item in buildStatusTags(row.lines || [])"
-                :key="`${row.id}-${item.key}`"
-                :type="item.type"
-                effect="plain"
+      <div ref="tableWrapRef" class="procurement-table-wrap">
+        <el-table
+          :data="rows"
+          row-key="id"
+          height="100%"
+          stripe
+          v-loading="loading"
+          :expand-row-keys="expandedRowKeys"
+          @expand-change="handleExpandChange"
+        >
+          <el-table-column type="expand" width="48">
+            <template #default="{ row }">
+              <div
+                class="expanded-detail"
+                :style="detailViewportStyle"
+                v-loading="detailLoadingId === row.id"
               >
-                {{ item.label }} {{ item.value }}
-              </el-tag>
-              <span v-if="buildStatusTags(row.lines || []).length === 0">-</span>
-            </div>
-          </template>
-        </el-table-column>
-        <el-table-column prop="remark" label="备注" min-width="200" />
-        <el-table-column v-if="canCreate" label="操作" width="120" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="openDetail(row.id)">详情</el-button>
-            <el-button link type="danger" @click="handleVoid(row.id)">作废</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+                <template v-if="detailRows[row.id]">
+                  <el-table
+                    class="detail-table"
+                    :data="detailRows[row.id].lines || []"
+                    stripe
+                    border
+                  >
+                    <el-table-column prop="lineNo" label="行号" width="60" />
+                    <el-table-column label="原始编码" min-width="110">
+                      <template #default="{ row: line }">
+                        {{ line.materialCodeSnapshot || "-" }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column
+                      prop="materialNameSnapshot"
+                      label="物料名称"
+                      min-width="140"
+                    />
+                    <el-table-column
+                      prop="materialSpecSnapshot"
+                      label="规格型号"
+                      min-width="120"
+                    />
+                    <el-table-column label="品项/绑定状态" min-width="170">
+                      <template #default="{ row: line }">
+                        <div class="binding-tag-wrap">
+                          <el-tag
+                            :type="bindingStatusMeta(line).type"
+                            effect="plain"
+                          >
+                            {{ bindingStatusMeta(line).label }}
+                          </el-tag>
+                          <span>{{ bindingSourceLabel(line) }}</span>
+                        </div>
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="最终绑定物料" min-width="210">
+                      <template #default="{ row: line }">
+                        {{ formatBoundMaterial(line) }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="需求数量" min-width="90">
+                      <template #default="{ row: line }">
+                        {{ formatQty(line.quantity) }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column label="当前状态" min-width="280">
+                      <template #default="{ row: line }">
+                        <template
+                          v-for="tags in [buildStatusTags([line])]"
+                          :key="`${line.id}-status-tags`"
+                        >
+                          <div class="status-tag-wrap">
+                            <el-tag
+                              v-for="item in tags"
+                              :key="`${line.id}-${item.key}`"
+                              :type="item.type"
+                              effect="plain"
+                            >
+                              {{ item.label }} {{ item.value }}
+                            </el-tag>
+                            <span v-if="tags.length === 0">-</span>
+                          </div>
+                        </template>
+                      </template>
+                    </el-table-column>
+                    <el-table-column
+                      label="状态操作"
+                      width="320"
+                      fixed="right"
+                      align="right"
+                      header-align="right"
+                    >
+                      <template #default="{ row: line }">
+                        <div class="status-action-wrap">
+                          <el-button
+                            link
+                            type="primary"
+                            v-hasPermi="['rd:procurement-request:status-action']"
+                            :disabled="
+                              Number(line.statusLedger?.pendingQty || 0) <= 0
+                            "
+                            @click="
+                              openStatusAction(
+                                detailRows[row.id],
+                                line,
+                                'PROCUREMENT_STARTED',
+                              )
+                            "
+                          >
+                            执行采购
+                          </el-button>
+                          <el-button
+                            link
+                            type="primary"
+                            v-hasPermi="['rd:procurement-request:status-action']"
+                            :loading="
+                              reversingHistoryId ===
+                              getReversibleProcurementHistory(line)?.id
+                            "
+                            :disabled="!getReversibleProcurementHistory(line)"
+                            @click="
+                              handleReverseProcurement(detailRows[row.id], line)
+                            "
+                          >
+                            取消采购
+                          </el-button>
+                          <el-button
+                            link
+                            type="success"
+                            v-hasPermi="['rd:procurement-request:status-action']"
+                            :disabled="getAcceptableQty(line) <= 0"
+                            @click="
+                              openStatusAction(
+                                detailRows[row.id],
+                                line,
+                                'ACCEPTANCE_CONFIRMED',
+                              )
+                            "
+                          >
+                            验收
+                          </el-button>
+                          <el-button
+                            link
+                            type="warning"
+                            v-hasPermi="['rd:procurement-request:status-action']"
+                            :disabled="getCancelableQty(line) <= 0"
+                            @click="
+                              openStatusAction(
+                                detailRows[row.id],
+                                line,
+                                'MANUAL_CANCELLED',
+                              )
+                            "
+                          >
+                            取消需求
+                          </el-button>
+                          <el-button
+                            link
+                            type="danger"
+                            v-hasPermi="['rd:procurement-request:return-action']"
+                            :disabled="
+                              Number(line.statusLedger?.handedOffQty || 0) <= 0
+                            "
+                            @click="
+                              openStatusAction(
+                                detailRows[row.id],
+                                line,
+                                'MANUAL_RETURNED',
+                              )
+                            "
+                          >
+                            退回
+                          </el-button>
+                        </div>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </template>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="documentNo" label="需求单号" min-width="140">
+            <template #default="{ row }">
+              <el-button
+                link
+                type="primary"
+                :loading="detailLoadingId === row.id"
+                @click="toggleDetail(row)"
+              >
+                {{ row.documentNo }}
+              </el-button>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="projectCode"
+            label="项目编码"
+            min-width="140"
+          />
+          <el-table-column
+            prop="projectName"
+            label="项目名称"
+            min-width="180"
+          />
+          <el-table-column
+            prop="handlerNameSnapshot"
+            label="经办人"
+            min-width="120"
+          >
+            <template #default="{ row }">
+              {{ row.handlerNameSnapshot || "-" }}
+            </template>
+          </el-table-column>
+          <el-table-column label="业务日期" min-width="120">
+            <template #default="{ row }">
+              {{ formatDateValue(row.bizDate) }}
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="supplierNameSnapshot"
+            label="供应商"
+            min-width="180"
+          />
+          <el-table-column label="总数量" min-width="110">
+            <template #default="{ row }">
+              {{ formatQty(row.totalQty) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="总金额" min-width="110">
+            <template #default="{ row }">
+              {{ formatAmount(row.totalAmount) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="当前状态链" min-width="260">
+            <template #default="{ row }">
+              <template
+                v-for="tags in [buildStatusTags(row.lines || [])]"
+                :key="`${row.id}-status-tags`"
+              >
+                <div class="status-tag-wrap">
+                  <el-tag
+                    v-for="item in tags"
+                    :key="`${row.id}-${item.key}`"
+                    :type="item.type"
+                    effect="plain"
+                  >
+                    {{ item.label }} {{ item.value }}
+                  </el-tag>
+                  <span v-if="tags.length === 0">-</span>
+                </div>
+              </template>
+            </template>
+          </el-table-column>
+          <el-table-column prop="remark" label="备注" min-width="200" />
+          <el-table-column label="操作" width="120" fixed="right">
+            <template #default="{ row }">
+              <el-button
+                link
+                type="primary"
+                :loading="detailLoadingId === row.id"
+                @click="toggleDetail(row)"
+              >
+                {{ expandedRowKeys.includes(row.id) ? "收起" : "展开" }}
+              </el-button>
+              <el-button
+                v-if="canCreate"
+                link
+                type="danger"
+                @click="handleVoid(row.id)"
+              >
+                作废
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
 
       <div class="pagination-wrap">
         <el-pagination
@@ -109,7 +361,14 @@
       </div>
     </el-card>
 
-    <el-dialog v-model="createOpen" title="新增研发采购需求" width="1100px">
+    <el-dialog
+      v-model="createOpen"
+      title="新增研发采购需求"
+      width="min(1180px, 96vw)"
+      :close-on-click-modal="false"
+      :close-on-press-escape="!submitting"
+      :before-close="handleCreateDialogBeforeClose"
+    >
       <el-form
         ref="createFormRef"
         :model="form"
@@ -120,7 +379,11 @@
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="需求单号">
-              <el-input v-model="form.documentNo" disabled placeholder="保存后自动生成" />
+              <el-input
+                v-model="form.documentNo"
+                disabled
+                placeholder="保存后自动生成"
+              />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -136,15 +399,34 @@
         </el-row>
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="项目编码" prop="projectCode">
-              <el-input v-model="form.projectCode" placeholder="请输入项目编码" />
+            <el-form-item label="研发项目" prop="projectCode">
+              <el-select
+                v-model="form.projectCode"
+                filterable
+                remote
+                reserve-keyword
+                clearable
+                placeholder="请输入项目编码或名称"
+                :remote-method="searchProjects"
+                :loading="projectLoading"
+                style="width: 100%"
+                @change="handleProjectChange"
+              >
+                <el-option
+                  v-for="item in projectSelectOptions"
+                  :key="item.id"
+                  :label="`${item.projectCode} ${item.projectName}`"
+                  :value="item.projectCode"
+                />
+              </el-select>
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="项目名称" prop="projectName">
+            <el-form-item label="项目名称">
               <el-input
-                v-model="form.projectName"
-                placeholder="请输入项目名称"
+                :model-value="form.projectName"
+                disabled
+                placeholder="选择研发项目后自动带出"
               />
             </el-form-item>
           </el-col>
@@ -202,7 +484,7 @@
         </el-row>
         <el-row :gutter="16">
           <el-col :span="12">
-            <el-form-item label="研发仓别" prop="workshopId">
+            <el-form-item label="研发仓别">
               <el-input :model-value="workshopLabel" disabled />
             </el-form-item>
           </el-col>
@@ -213,204 +495,19 @@
           </el-col>
         </el-row>
 
-        <div class="line-toolbar">
-          <div class="section-title">物料明细</div>
-          <el-button type="primary" plain @click="addLine">添加明细</el-button>
-        </div>
-
-        <el-table :data="form.lines" border stripe>
-          <el-table-column label="物料" min-width="280">
-            <template #default="{ row }">
-              <el-select
-                v-model="row.materialId"
-                filterable
-                remote
-                reserve-keyword
-                clearable
-                placeholder="请输入物料编码或名称"
-                :remote-method="searchMaterials"
-                :loading="materialLoading"
-                style="width: 100%"
-              >
-                <el-option
-                  v-for="item in materialOptions"
-                  :key="item.id"
-                  :label="`${item.materialCode} ${item.materialName}`"
-                  :value="item.id"
-                />
-              </el-select>
-            </template>
-          </el-table-column>
-          <el-table-column label="需求数量" min-width="140">
-            <template #default="{ row }">
-              <el-input-number
-                v-model="row.quantity"
-                :min="0.000001"
-                :precision="6"
-                controls-position="right"
-                style="width: 100%"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column label="参考单价" min-width="140">
-            <template #default="{ row }">
-              <el-input-number
-                v-model="row.unitPrice"
-                :min="0"
-                :precision="4"
-                controls-position="right"
-                style="width: 100%"
-              />
-            </template>
-          </el-table-column>
-          <el-table-column label="金额" min-width="140">
-            <template #default="{ row }">
-              {{ calculateLineAmount(row) }}
-            </template>
-          </el-table-column>
-          <el-table-column label="备注" min-width="180">
-            <template #default="{ row }">
-              <el-input v-model="row.remark" />
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="90">
-            <template #default="{ $index }">
-              <el-button link type="danger" @click="removeLine($index)">删除</el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+        <RdProcurementItemLinesEditor
+          v-model="form.lines"
+          :project-code="form.projectCode"
+        />
       </el-form>
 
       <template #footer>
-        <el-button @click="createOpen = false">取消</el-button>
+        <el-button :disabled="submitting" @click="handleCreateCancel">
+          取消
+        </el-button>
         <el-button type="primary" :loading="submitting" @click="submitCreate">
           提交
         </el-button>
-      </template>
-    </el-dialog>
-
-    <el-dialog v-model="detailOpen" title="研发采购需求详情" width="1100px">
-      <template v-if="detailRow">
-        <el-descriptions :column="2" border class="detail-descriptions">
-          <el-descriptions-item label="需求单号">
-            {{ detailRow.documentNo }}
-          </el-descriptions-item>
-          <el-descriptions-item label="业务日期">
-            {{ formatDate(detailRow.bizDate) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="项目编码">
-            {{ detailRow.projectCode }}
-          </el-descriptions-item>
-          <el-descriptions-item label="项目名称">
-            {{ detailRow.projectName }}
-          </el-descriptions-item>
-          <el-descriptions-item label="供应商">
-            {{ detailRow.supplierNameSnapshot || "-" }}
-          </el-descriptions-item>
-          <el-descriptions-item label="经办人">
-            {{ detailRow.handlerNameSnapshot || "-" }}
-          </el-descriptions-item>
-          <el-descriptions-item label="关联车间">
-            {{ detailRow.workshopNameSnapshot }}
-          </el-descriptions-item>
-          <el-descriptions-item label="总金额">
-            {{ detailRow.totalAmount }}
-          </el-descriptions-item>
-          <el-descriptions-item label="总数量">
-            {{ detailRow.totalQty }}
-          </el-descriptions-item>
-          <el-descriptions-item label="备注" :span="2">
-            {{ detailRow.remark || "-" }}
-          </el-descriptions-item>
-        </el-descriptions>
-
-        <div class="section-title detail-section">需求明细</div>
-        <el-table :data="detailRow.lines || []" stripe>
-          <el-table-column prop="lineNo" label="行号" width="80" />
-          <el-table-column prop="materialCodeSnapshot" label="物料编码" min-width="140" />
-          <el-table-column prop="materialNameSnapshot" label="物料名称" min-width="180" />
-          <el-table-column prop="materialSpecSnapshot" label="规格型号" min-width="140" />
-          <el-table-column prop="quantity" label="需求数量" min-width="100" />
-          <el-table-column prop="unitPrice" label="参考单价" min-width="100" />
-          <el-table-column prop="amount" label="金额" min-width="100" />
-          <el-table-column label="状态分布" min-width="320">
-            <template #default="{ row }">
-              <div class="status-tag-wrap">
-                <el-tag
-                  v-for="item in buildStatusTags([row])"
-                  :key="`${row.id}-${item.key}`"
-                  :type="item.type"
-                  effect="plain"
-                >
-                  {{ item.label }} {{ item.value }}
-                </el-tag>
-                <span v-if="buildStatusTags([row]).length === 0">-</span>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column prop="remark" label="备注" min-width="160" />
-          <el-table-column label="状态动作" min-width="220">
-            <template #default="{ row }">
-              <el-button
-                link
-                type="primary"
-                v-hasPermi="['rd:procurement-request:status-action']"
-                :disabled="Number(row.statusLedger?.pendingQty || 0) <= 0"
-                @click="openStatusAction(row, 'PROCUREMENT_STARTED')"
-              >
-                采购中
-              </el-button>
-              <el-button
-                link
-                type="success"
-                v-hasPermi="['rd:procurement-request:status-action']"
-                :disabled="getAcceptableQty(row) <= 0"
-                @click="openStatusAction(row, 'ACCEPTANCE_CONFIRMED')"
-              >
-                验收
-              </el-button>
-              <el-button
-                link
-                type="warning"
-                v-hasPermi="['rd:procurement-request:status-action']"
-                :disabled="getCancelableQty(row) <= 0"
-                @click="openStatusAction(row, 'MANUAL_CANCELLED')"
-              >
-                取消
-              </el-button>
-              <el-button
-                link
-                type="danger"
-                v-hasPermi="['rd:procurement-request:return-action']"
-                :disabled="Number(row.statusLedger?.handedOffQty || 0) <= 0"
-                @click="openStatusAction(row, 'MANUAL_RETURNED')"
-              >
-                退回
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-
-        <div class="section-title detail-section">状态历史</div>
-        <el-table :data="flattenStatusHistories(detailRow)" stripe>
-          <el-table-column prop="lineNo" label="行号" width="80" />
-          <el-table-column prop="materialName" label="物料" min-width="180" />
-          <el-table-column prop="eventLabel" label="事件" min-width="140" />
-          <el-table-column label="状态迁移" min-width="180">
-            <template #default="{ row }">
-              {{ row.fromStatusLabel || "起点" }} -> {{ row.toStatusLabel }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="quantity" label="数量" min-width="100" />
-          <el-table-column prop="referenceNo" label="Reference" min-width="140" />
-          <el-table-column prop="reason" label="原因" min-width="180" />
-          <el-table-column prop="sourceDocumentNumber" label="来源单号" min-width="140" />
-          <el-table-column label="发生时间" min-width="180">
-            <template #default="{ row }">
-              {{ formatDateTime(row.createdAt) }}
-            </template>
-          </el-table-column>
-        </el-table>
       </template>
     </el-dialog>
 
@@ -418,39 +515,85 @@
       v-model="statusActionOpen"
       :title="statusActionTitle"
       width="520px"
+      :close-on-click-modal="false"
     >
-      <el-form label-width="100px">
+      <el-form
+        ref="statusActionFormRef"
+        :model="statusActionForm"
+        :rules="statusActionRules"
+        label-width="100px"
+      >
         <el-form-item label="物料">
           <el-input :model-value="statusActionForm.materialName" disabled />
         </el-form-item>
+        <el-form-item
+          v-if="statusActionForm.actionType === 'ACCEPTANCE_CONFIRMED'"
+          label="实际物料"
+          prop="materialId"
+        >
+          <RdProcurementAcceptanceBinding
+            v-model="statusActionForm.materialId"
+            :requires-binding="statusActionForm.requiresMaterialBinding"
+            :bound-material="statusActionForm.boundMaterial"
+            :material-code-snapshot="statusActionForm.materialCodeSnapshot"
+            :material-name-snapshot="statusActionForm.materialNameSnapshot"
+            :binding-source="statusActionForm.materialBindingSource"
+          />
+        </el-form-item>
         <el-form-item label="可用数量">
-          <el-input :model-value="formatQty(statusActionForm.availableQty)" disabled />
+          <el-input
+            :model-value="formatQty(statusActionForm.availableQty)"
+            disabled
+          />
+        </el-form-item>
+        <el-form-item
+          v-if="statusActionForm.actionType === 'ACCEPTANCE_CONFIRMED'"
+          label="数量构成"
+        >
+          <span>
+            待采购 {{ formatQty(statusActionForm.pendingQty) }} + 采购中
+            {{ formatQty(statusActionForm.inProcurementQty) }}
+          </span>
+        </el-form-item>
+        <el-form-item label="业务日期" prop="bizDate">
+          <el-date-picker
+            v-model="statusActionForm.bizDate"
+            type="date"
+            value-format="YYYY-MM-DD"
+            style="width: 100%"
+          />
         </el-form-item>
         <el-form-item label="动作数量">
           <el-input-number
             v-model="statusActionForm.quantity"
-            :min="0.000001"
+            :min="0"
             :max="statusActionForm.availableQty || undefined"
-            :precision="6"
+            :precision="2"
             controls-position="right"
             style="width: 100%"
           />
         </el-form-item>
         <el-form-item
           v-if="requiresReference"
-          label="Reference"
+          label="关联单号"
+          prop="referenceNo"
         >
           <el-input
             v-model="statusActionForm.referenceNo"
             :placeholder="
               statusActionForm.actionType === 'ACCEPTANCE_CONFIRMED'
-                ? '可选填写主仓验收单号或追溯 reference'
-                : '请输入真实 reference'
+                ? '可选填写主仓验收单号或追溯单号'
+                : '请输入关联单号'
             "
           />
         </el-form-item>
         <el-form-item
-          :label="statusActionForm.actionType === 'MANUAL_RETURNED' ? '原因' : '说明'"
+          :label="
+            statusActionForm.actionType === 'MANUAL_RETURNED'
+              ? '退回原因'
+              : '说明'
+          "
+          prop="reason"
         >
           <el-input
             v-model="statusActionForm.reason"
@@ -458,7 +601,7 @@
             :rows="3"
             :placeholder="
               statusActionForm.actionType === 'MANUAL_RETURNED'
-                ? '退回必须填写 reason'
+                ? '请输入退回原因'
                 : '可选填写'
             "
           />
@@ -489,70 +632,91 @@
 
 <script setup name="RdProcurementRequestsPage">
 import { ElMessage, ElMessageBox } from "element-plus";
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { listPersonnel } from "@/api/base/personnel";
 import { listSupplierByKeyword } from "@/api/base/supplier";
 import {
   applyRdProcurementStatusAction,
   createRdProcurementRequest,
   getRdProcurementRequest,
-  listRdMaterials,
   listRdProcurementRequests,
+  listRdProjects,
+  reverseRdProcurementStatusAction,
   voidRdProcurementRequest,
 } from "@/api/rd-subwarehouse";
 import useUserStore from "@/store/modules/user";
 import { confirmDocumentSave } from "@/utils/documentConfirm";
-import { formatDateOnly } from "@/utils/rd-documents";
+import { checkPermi } from "@/utils/permission";
+import { formatAmount, formatQty } from "@/utils/format";
+import { formatDateOnly, formatDateValue } from "@/utils/rd-documents";
+import RdProcurementAcceptanceBinding from "./components/RdProcurementAcceptanceBinding.vue";
+import RdProcurementItemLinesEditor from "./components/RdProcurementItemLinesEditor.vue";
 
 const userStore = useUserStore();
 const loading = ref(false);
 const submitting = ref(false);
-const materialLoading = ref(false);
 const supplierLoading = ref(false);
 const personnelLoading = ref(false);
 const rows = ref([]);
 const total = ref(0);
 const pageNum = ref(1);
 const pageSize = ref(10);
-const materialOptions = ref([]);
+const tableWrapRef = ref(null);
+const detailViewportWidth = ref(0);
+let tableWrapResizeObserver;
 const supplierOptions = ref([]);
 const personnelOptions = ref([]);
+const projectSearchResults = ref([]);
+const selectedProjectCache = ref([]);
+const projectLoading = ref(false);
 const createOpen = ref(false);
 const createFormRef = ref();
-const detailOpen = ref(false);
+const createFormSnapshot = ref("");
 const detailRow = ref(null);
+const detailRows = ref({});
+const detailLoadingId = ref(null);
+const expandedRowKeys = ref([]);
+const reversingHistoryId = ref(null);
 const statusActionOpen = ref(false);
 const statusActionSubmitting = ref(false);
+const statusActionFormRef = ref();
 const statusActionForm = ref(createEmptyStatusActionForm());
 const filters = ref({
   documentNo: "",
   projectCode: "",
   projectName: "",
+  bizDateRange: [],
+  keyword: "",
 });
 const form = ref(createEmptyForm());
 
 const workshopLabel = computed(
   () => userStore.stockScope?.stockScopeName || "研发小仓",
 );
-const canCreate = computed(
-  () =>
-    Boolean(userStore.stockScope?.stockScope) &&
-    Boolean(userStore.workshopScope?.workshopId),
-);
+const canCreate = computed(() => checkPermi(["rd:procurement-request:create"]));
+const detailViewportStyle = computed(() => {
+  if (!detailViewportWidth.value) {
+    return undefined;
+  }
+
+  return {
+    width: `${detailViewportWidth.value}px`,
+  };
+});
 const formRules = {
   bizDate: [{ required: true, message: "请选择业务日期", trigger: "change" }],
-  projectCode: [{ required: true, message: "请输入项目编码", trigger: "blur" }],
-  projectName: [{ required: true, message: "请输入项目名称", trigger: "blur" }],
-  workshopId: [{ required: true, message: "当前账号未绑定业务车间", trigger: "change" }],
+  projectCode: [
+    { required: true, message: "请选择研发项目", trigger: "change" },
+  ],
 };
 const statusActionTitle = computed(() => {
   switch (statusActionForm.value.actionType) {
     case "PROCUREMENT_STARTED":
-      return "推进到采购中";
+      return "执行采购";
     case "ACCEPTANCE_CONFIRMED":
       return "登记验收";
     case "MANUAL_CANCELLED":
-      return "回写取消";
+      return "取消需求";
     case "MANUAL_RETURNED":
       return "回写退回";
     default:
@@ -564,12 +728,42 @@ const requiresReference = computed(() =>
     statusActionForm.value.actionType,
   ),
 );
+const statusActionRules = computed(() => {
+  const isReturn = statusActionForm.value.actionType === "MANUAL_RETURNED";
+  const requiresMaterialBinding =
+    statusActionForm.value.actionType === "ACCEPTANCE_CONFIRMED" &&
+    statusActionForm.value.requiresMaterialBinding;
+  return {
+    materialId: requiresMaterialBinding
+      ? [{ required: true, message: "请选择验收后的实际物料", trigger: "change" }]
+      : [],
+    referenceNo: isReturn
+      ? [{ required: true, message: "请输入关联单号", trigger: "blur" }]
+      : [],
+    reason: isReturn
+      ? [{ required: true, message: "请输入退回原因", trigger: "blur" }]
+      : [],
+  };
+});
+const projectSelectOptions = computed(() =>
+  mergeOptionsById(selectedProjectCache.value, projectSearchResults.value),
+);
+
+function mergeOptionsById(cache, results) {
+  const merged = [...cache];
+  for (const item of results) {
+    if (!merged.some((existing) => existing.id === item.id)) {
+      merged.push(item);
+    }
+  }
+  return merged;
+}
 
 function createEmptyForm() {
   return {
     documentNo: "",
+    clientRequestId: createClientRequestId(),
     bizDate: formatDateOnly(),
-    workshopId: userStore.workshopScope?.workshopId || null,
     projectCode: "",
     projectName: "",
     supplierId: null,
@@ -581,8 +775,16 @@ function createEmptyForm() {
 
 function createEmptyLine() {
   return {
+    clientLineId: createClientRequestId(),
     materialId: null,
-    quantity: 1,
+    materialCode: "",
+    materialName: "",
+    specModel: "",
+    unitCode: "",
+    sourceScope: null,
+    sourceProjectCode: "",
+    sourceProjectName: "",
+    quantity: null,
     unitPrice: 0,
     remark: "",
   };
@@ -593,31 +795,65 @@ function createEmptyStatusActionForm() {
     requestId: null,
     lineId: null,
     actionType: "PROCUREMENT_STARTED",
+    materialId: null,
+    requiresMaterialBinding: false,
+    boundMaterial: null,
+    materialBindingSource: "",
+    materialCodeSnapshot: "",
+    materialNameSnapshot: "",
     materialName: "",
     availableQty: 0,
+    pendingQty: 0,
+    inProcurementQty: 0,
     quantity: 0,
+    bizDate: formatDateOnly(),
     referenceNo: "",
     reason: "",
     note: "",
   };
 }
 
-function formatDate(value) {
-  if (!value) {
-    return "-";
+function createClientRequestId() {
+  if (globalThis.crypto?.randomUUID) {
+    return globalThis.crypto.randomUUID();
   }
-  return new Date(value).toLocaleDateString("zh-CN");
+  return `rd-procurement-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-function formatDateTime(value) {
-  if (!value) {
-    return "-";
+function bindingStatusMeta(line) {
+  if (line.materialBindingSource === "BOM_CATALOG") {
+    return { label: "BOM 物料 / 已绑定", type: "success" };
   }
-  return new Date(value).toLocaleString("zh-CN", { hour12: false });
+  if (line.materialBindingSource === "ACCEPTANCE_CONFIRMED") {
+    return { label: "自由品项 / 已绑定", type: "warning" };
+  }
+  if (line.materialBindingSource === "LEGACY") {
+    return { label: "历史绑定", type: "info" };
+  }
+  return { label: "自由品项 / 未绑定", type: "danger" };
 }
 
-function formatQty(value) {
-  return Number(value || 0).toFixed(6);
+function bindingSourceLabel(line) {
+  if (line.materialBindingSource === "BOM_CATALOG") {
+    return "创建时选择 BOM";
+  }
+  if (line.materialBindingSource === "ACCEPTANCE_CONFIRMED") {
+    return "验收时首次绑定";
+  }
+  if (line.materialBindingSource === "LEGACY") {
+    return "存量采购行";
+  }
+  return "需登记验收后绑定";
+}
+
+function formatBoundMaterial(line) {
+  if (!line.materialId) {
+    return "未绑定";
+  }
+  if (line.material) {
+    return `${line.material.materialCode} ${line.material.materialName}`;
+  }
+  return `${line.materialCodeSnapshot || ""} ${line.materialNameSnapshot || ""}`.trim();
 }
 
 function mapStatusLabel(status) {
@@ -644,21 +880,6 @@ function mapStatusTagType(status) {
     RETURNED: "warning",
   };
   return types[status] || "";
-}
-
-function mapEventLabel(eventType) {
-  const labels = {
-    REQUEST_CREATED: "需求创建",
-    PROCUREMENT_STARTED: "推进采购中",
-    MANUAL_CANCELLED: "手工取消",
-    ACCEPTANCE_CONFIRMED: "验收确认",
-    HANDOFF_CONFIRMED: "主仓交接",
-    SCRAP_CONFIRMED: "本仓报废",
-    MANUAL_RETURNED: "手工退回",
-    FACT_ROLLBACK: "事实回滚",
-    REQUEST_VOIDED: "需求作废",
-  };
-  return labels[eventType] || eventType;
 }
 
 function buildStatusTags(lines) {
@@ -689,29 +910,9 @@ function buildStatusTags(lines) {
     .map(([status, value]) => ({
       key: status,
       label: mapStatusLabel(status),
-      value: value.toFixed(6),
+      value: formatQty(value),
       type: mapStatusTagType(status),
     }));
-}
-
-function flattenStatusHistories(request) {
-  return (request?.lines || []).flatMap((line) =>
-    (line.statusHistories || []).map((history) => ({
-      id: history.id,
-      lineNo: line.lineNo,
-      materialName: line.materialNameSnapshot,
-      eventLabel: mapEventLabel(history.eventType),
-      fromStatusLabel: history.fromStatus
-        ? mapStatusLabel(history.fromStatus)
-        : "",
-      toStatusLabel: mapStatusLabel(history.toStatus),
-      quantity: history.quantity,
-      referenceNo: history.referenceNo || "-",
-      reason: history.reason || "-",
-      sourceDocumentNumber: history.sourceDocumentNumber || "-",
-      createdAt: history.createdAt,
-    })),
-  );
 }
 
 function getCancelableQty(line) {
@@ -725,24 +926,24 @@ function getAcceptableQty(line) {
   return getCancelableQty(line);
 }
 
-function calculateLineAmount(row) {
-  const quantity = Number(row.quantity || 0);
-  const unitPrice = Number(row.unitPrice || 0);
-  return (quantity * unitPrice).toFixed(4);
-}
-
-async function searchMaterials(keyword) {
-  materialLoading.value = true;
-  try {
-    const response = await listRdMaterials({
-      keyword: keyword || undefined,
-      limit: 20,
-      offset: 0,
-    });
-    materialOptions.value = response.data?.items || [];
-  } finally {
-    materialLoading.value = false;
+function getReversibleProcurementHistory(line) {
+  const inProcurementQty = Number(line?.statusLedger?.inProcurementQty || 0);
+  if (inProcurementQty <= 0) {
+    return null;
   }
+
+  return (
+    (line.statusHistories || []).find(
+      (history) =>
+        history.eventType === "PROCUREMENT_STARTED" &&
+        history.sourceDocumentType === "RdProcurementRequest" &&
+        history.fromStatus === "PENDING_PROCUREMENT" &&
+        history.toStatus === "IN_PROCUREMENT" &&
+        !history.isReversed &&
+        history.reversalOfHistoryId == null &&
+        Number(history.quantity || 0) <= inProcurementQty,
+    ) || null
+  );
 }
 
 async function searchSuppliers(keyword) {
@@ -750,6 +951,8 @@ async function searchSuppliers(keyword) {
   try {
     const response = await listSupplierByKeyword(keyword || "");
     supplierOptions.value = response.rows || [];
+  } catch {
+    // Interceptor toasts the error.
   } finally {
     supplierLoading.value = false;
   }
@@ -765,6 +968,8 @@ async function searchPersonnelOptions(keyword) {
       pageSize: 50,
     });
     personnelOptions.value = response.rows || [];
+  } catch {
+    // Interceptor toasts the error.
   } finally {
     personnelLoading.value = false;
   }
@@ -773,15 +978,21 @@ async function searchPersonnelOptions(keyword) {
 async function loadRows() {
   loading.value = true;
   try {
+    const [bizDateFrom, bizDateTo] = filters.value.bizDateRange || [];
     const response = await listRdProcurementRequests({
       documentNo: filters.value.documentNo || undefined,
       projectCode: filters.value.projectCode || undefined,
       projectName: filters.value.projectName || undefined,
+      bizDateFrom: bizDateFrom || undefined,
+      bizDateTo: bizDateTo || undefined,
+      keyword: filters.value.keyword || undefined,
       limit: pageSize.value,
       offset: (pageNum.value - 1) * pageSize.value,
     });
     rows.value = response.data?.items || [];
     total.value = response.data?.total || 0;
+  } catch {
+    // Interceptor toasts the error.
   } finally {
     loading.value = false;
   }
@@ -796,6 +1007,8 @@ function handleReset() {
   filters.value.documentNo = "";
   filters.value.projectCode = "";
   filters.value.projectName = "";
+  filters.value.bizDateRange = [];
+  filters.value.keyword = "";
   pageNum.value = 1;
   loadRows();
 }
@@ -811,54 +1024,184 @@ function handleSizeChange(value) {
   loadRows();
 }
 
-function addLine() {
-  form.value.lines.push(createEmptyLine());
-}
-
-function removeLine(index) {
-  form.value.lines.splice(index, 1);
-  if (form.value.lines.length === 0) {
-    form.value.lines.push(createEmptyLine());
-  }
-}
-
 function openCreateDialog() {
   if (!canCreate.value) {
-    ElMessage.error("当前账号未完成研发库存范围或业务车间绑定，无法录入采购需求");
+    ElMessage.error("当前账号没有研发采购需求新增权限");
     return;
   }
   form.value = createEmptyForm();
+  createFormSnapshot.value = JSON.stringify(form.value);
+  selectedProjectCache.value = [];
   createFormRef.value?.clearValidate();
+  searchProjects("");
   createOpen.value = true;
 }
 
-async function openDetail(requestId) {
-  const response = await getRdProcurementRequest(requestId);
-  detailRow.value = response.data || null;
-  detailOpen.value = true;
+function isCreateFormDirty() {
+  return JSON.stringify(form.value) !== createFormSnapshot.value;
 }
 
-function openStatusAction(line, actionType) {
-  const availableQty =
-    actionType === "PROCUREMENT_STARTED"
-      ? Number(line.statusLedger?.pendingQty || 0)
-      : actionType === "ACCEPTANCE_CONFIRMED"
-        ? getAcceptableQty(line)
-      : actionType === "MANUAL_CANCELLED"
-        ? getCancelableQty(line)
-        : Number(line.statusLedger?.handedOffQty || 0);
+async function confirmAbandonCreate() {
+  if (!isCreateFormDirty()) {
+    return true;
+  }
+  try {
+    await ElMessageBox.confirm("表单内容尚未保存，确认关闭？", "关闭确认", {
+      confirmButtonText: "放弃填写",
+      cancelButtonText: "继续填写",
+      type: "warning",
+    });
+    return true;
+  } catch {
+    // User chose to keep editing.
+    return false;
+  }
+}
+
+async function handleCreateDialogBeforeClose(done) {
+  if (submitting.value) {
+    return;
+  }
+  if (await confirmAbandonCreate()) {
+    done();
+  }
+}
+
+async function handleCreateCancel() {
+  if (submitting.value) {
+    return;
+  }
+  if (await confirmAbandonCreate()) {
+    createOpen.value = false;
+  }
+}
+
+async function searchProjects(keyword) {
+  projectLoading.value = true;
+  try {
+    const trimmed = (keyword || "").trim();
+    if (!trimmed) {
+      const response = await listRdProjects({ limit: 20, offset: 0 });
+      projectSearchResults.value = response.data?.items || [];
+      return;
+    }
+    const [byCode, byName] = await Promise.all([
+      listRdProjects({ projectCode: trimmed, limit: 20, offset: 0 }),
+      listRdProjects({ projectName: trimmed, limit: 20, offset: 0 }),
+    ]);
+    projectSearchResults.value = mergeOptionsById(
+      byCode.data?.items || [],
+      byName.data?.items || [],
+    );
+  } catch {
+    // Interceptor toasts the error.
+  } finally {
+    projectLoading.value = false;
+  }
+}
+
+function handleProjectChange(projectCode) {
+  const project = projectSelectOptions.value.find(
+    (item) => item.projectCode === projectCode,
+  );
+  if (project) {
+    selectedProjectCache.value = mergeOptionsById(selectedProjectCache.value, [
+      project,
+    ]);
+  }
+  form.value.projectName = project?.projectName || "";
+  for (const line of form.value.lines) {
+    if (line.materialId) {
+      line.sourceScope =
+        line.sourceProjectCode === projectCode
+          ? "CURRENT_PROJECT"
+          : "OTHER_RD_PROJECT";
+    }
+  }
+}
+
+async function loadDetail(requestId, force = false) {
+  if (
+    (!force && detailRows.value[requestId]) ||
+    detailLoadingId.value === requestId
+  ) {
+    return;
+  }
+  detailLoadingId.value = requestId;
+  try {
+    const response = await getRdProcurementRequest(requestId);
+    const detail = response.data || null;
+    if (detail) {
+      detailRows.value = {
+        ...detailRows.value,
+        [requestId]: detail,
+      };
+      detailRow.value = detail;
+    }
+  } catch {
+    // Interceptor toasts the error.
+  } finally {
+    detailLoadingId.value = null;
+  }
+}
+
+async function toggleDetail(row) {
+  const isExpanded = expandedRowKeys.value.includes(row.id);
+  expandedRowKeys.value = isExpanded ? [] : [row.id];
+  if (!isExpanded) {
+    await loadDetail(row.id, true);
+  }
+}
+
+async function handleExpandChange(row, expandedRows) {
+  const isExpanded = expandedRows.some((item) => item.id === row.id);
+  expandedRowKeys.value = isExpanded ? [row.id] : [];
+  if (isExpanded) {
+    await loadDetail(row.id, true);
+  }
+}
+
+function resolveActionAvailableQty(line, actionType) {
+  switch (actionType) {
+    case "PROCUREMENT_STARTED":
+      return Number(line.statusLedger?.pendingQty || 0);
+    case "ACCEPTANCE_CONFIRMED":
+      return getAcceptableQty(line);
+    case "MANUAL_CANCELLED":
+      return getCancelableQty(line);
+    case "MANUAL_RETURNED":
+      return Number(line.statusLedger?.handedOffQty || 0);
+    default:
+      return 0;
+  }
+}
+
+function openStatusAction(request, line, actionType) {
+  const availableQty = resolveActionAvailableQty(line, actionType);
+  detailRow.value = request;
 
   statusActionForm.value = {
-    requestId: detailRow.value?.id || null,
+    requestId: request.id,
     lineId: line.id,
     actionType,
-    materialName: `${line.materialCodeSnapshot} ${line.materialNameSnapshot}`,
+    materialId: line.materialId,
+    requiresMaterialBinding:
+      actionType === "ACCEPTANCE_CONFIRMED" && line.materialId == null,
+    boundMaterial: line.material || null,
+    materialBindingSource: line.materialBindingSource || "",
+    materialCodeSnapshot: line.materialCodeSnapshot || "",
+    materialNameSnapshot: line.materialNameSnapshot || "",
+    materialName: `${line.materialCodeSnapshot || ""} ${line.materialNameSnapshot}`.trim(),
     availableQty,
+    pendingQty: Number(line.statusLedger?.pendingQty || 0),
+    inProcurementQty: Number(line.statusLedger?.inProcurementQty || 0),
     quantity: availableQty,
+    bizDate: formatDateOnly(),
     referenceNo: "",
     reason: "",
     note: "",
   };
+  statusActionFormRef.value?.clearValidate();
   statusActionOpen.value = true;
 }
 
@@ -874,8 +1217,12 @@ async function validateForm() {
 
   for (let index = 0; index < form.value.lines.length; index += 1) {
     const line = form.value.lines[index];
-    if (!line.materialId) {
-      ElMessage.error(`第 ${index + 1} 行物料不能为空`);
+    if (!line.materialId && !line.materialName?.trim()) {
+      ElMessage.error(`第 ${index + 1} 行品项名称不能为空`);
+      return false;
+    }
+    if (!line.materialId && !line.unitCode?.trim()) {
+      ElMessage.error(`第 ${index + 1} 行自由品项单位不能为空`);
       return false;
     }
     if (!line.quantity || Number(line.quantity) <= 0) {
@@ -898,15 +1245,20 @@ async function submitCreate() {
   submitting.value = true;
   try {
     await createRdProcurementRequest({
+      clientRequestId: form.value.clientRequestId,
       bizDate: form.value.bizDate,
       projectCode: form.value.projectCode,
-      projectName: form.value.projectName,
       supplierId: form.value.supplierId || undefined,
       handlerPersonnelId: form.value.handlerPersonnelId || undefined,
-      workshopId: form.value.workshopId,
       remark: form.value.remark || undefined,
       lines: form.value.lines.map((line) => ({
-        materialId: line.materialId,
+        ...(line.materialId
+          ? { materialId: line.materialId }
+          : {
+              materialName: line.materialName.trim(),
+              specModel: line.specModel?.trim() || undefined,
+              unitCode: line.unitCode.trim(),
+            }),
         quantity: String(line.quantity),
         unitPrice: String(line.unitPrice || 0),
         remark: line.remark || undefined,
@@ -915,12 +1267,15 @@ async function submitCreate() {
     ElMessage.success("研发采购需求已创建");
     createOpen.value = false;
     loadRows();
+  } catch {
+    // Interceptor toasts the error; keep the dialog open for retry.
   } finally {
     submitting.value = false;
   }
 }
 
 async function handleVoid(requestId) {
+  let voidReason = "";
   try {
     const result = await ElMessageBox.prompt(
       "请输入作废原因",
@@ -928,16 +1283,58 @@ async function handleVoid(requestId) {
       {
         confirmButtonText: "确认",
         cancelButtonText: "取消",
-        inputValue: "研发采购需求作废",
+        inputPlaceholder: "可选填写作废原因",
       },
     );
+    voidReason = result.value || "";
+  } catch {
+    // User cancelled.
+    return;
+  }
+
+  try {
     await voidRdProcurementRequest(requestId, {
-      voidReason: result.value,
+      voidReason: voidReason.trim() || undefined,
     });
     ElMessage.success("研发采购需求已作废");
     loadRows();
   } catch {
-    // User cancelled.
+    // Interceptor toasts the error.
+  }
+}
+
+async function handleReverseProcurement(request, line) {
+  const history = getReversibleProcurementHistory(line);
+  if (!history) {
+    ElMessage.warning("当前没有可取消的采购动作");
+    return;
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确认取消本次采购 ${formatQty(history.quantity)}，恢复为待采购状态？`,
+      "取消采购",
+      {
+        confirmButtonText: "确认取消采购",
+        cancelButtonText: "返回",
+        type: "warning",
+      },
+    );
+  } catch {
+    return;
+  }
+
+  reversingHistoryId.value = history.id;
+  try {
+    await reverseRdProcurementStatusAction(request.id, history.id, {
+      reason: "取消采购",
+    });
+    ElMessage.success("采购动作已取消");
+    await Promise.all([loadDetail(request.id, true), loadRows()]);
+  } catch {
+    // Interceptor toasts the error.
+  } finally {
+    reversingHistoryId.value = null;
   }
 }
 
@@ -947,19 +1344,15 @@ async function submitStatusAction() {
     ElMessage.error("状态动作上下文丢失，请重新打开详情");
     return;
   }
+  const valid = await statusActionFormRef.value?.validate().catch(() => false);
+  if (!valid) {
+    return;
+  }
   if (
     quantity <= 0 ||
     quantity > Number(statusActionForm.value.availableQty || 0)
   ) {
     ElMessage.error("动作数量必须大于 0 且不能超过可用数量");
-    return;
-  }
-  if (
-    statusActionForm.value.actionType === "MANUAL_RETURNED" &&
-    (!statusActionForm.value.referenceNo.trim() ||
-      !statusActionForm.value.reason.trim())
-  ) {
-    ElMessage.error("退回动作必须填写 reference 和原因");
     return;
   }
 
@@ -970,27 +1363,81 @@ async function submitStatusAction() {
       {
         actionType: statusActionForm.value.actionType,
         lineId: statusActionForm.value.lineId,
+        ...(statusActionForm.value.actionType === "ACCEPTANCE_CONFIRMED" &&
+        statusActionForm.value.requiresMaterialBinding
+          ? { materialId: statusActionForm.value.materialId }
+          : {}),
         quantity: String(quantity),
+        bizDate: statusActionForm.value.bizDate || undefined,
         referenceNo: statusActionForm.value.referenceNo || undefined,
         reason: statusActionForm.value.reason || undefined,
         note: statusActionForm.value.note || undefined,
       },
     );
-    detailRow.value = response.data || detailRow.value;
+    const detail = response.data || detailRow.value;
+    detailRow.value = detail;
+    if (detail?.id) {
+      detailRows.value = {
+        ...detailRows.value,
+        [detail.id]: detail,
+      };
+    }
     statusActionOpen.value = false;
     ElMessage.success("状态已更新");
     loadRows();
+  } catch (error) {
+    if (error?.response?.status === 409) {
+      ElMessage.warning("该采购行已由其他操作绑定，请刷新后重试");
+    }
   } finally {
     statusActionSubmitting.value = false;
   }
 }
 
+function syncDetailViewportWidth() {
+  detailViewportWidth.value = tableWrapRef.value?.clientWidth || 0;
+}
+
 onMounted(() => {
+  syncDetailViewportWidth();
+  tableWrapResizeObserver = new ResizeObserver(syncDetailViewportWidth);
+  if (tableWrapRef.value) {
+    tableWrapResizeObserver.observe(tableWrapRef.value);
+  }
   loadRows();
+});
+
+onBeforeUnmount(() => {
+  tableWrapResizeObserver?.disconnect();
 });
 </script>
 
 <style scoped lang="scss">
+.procurement-page {
+  box-sizing: border-box;
+  display: flex;
+  height: calc(100vh - 84px);
+  overflow: hidden;
+}
+
+.procurement-card {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.procurement-card :deep(> .el-card__header) {
+  flex: none;
+}
+
+.procurement-card :deep(> .el-card__body) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
 .page-header {
   display: flex;
   align-items: center;
@@ -1010,17 +1457,45 @@ onMounted(() => {
 }
 
 .query-form {
+  flex: none;
   margin-bottom: 16px;
 }
 
 .toolbar {
+  flex: none;
   margin-bottom: 16px;
+}
+
+.procurement-table-wrap {
+  flex: 1;
+  min-height: 0;
 }
 
 .status-tag-wrap {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.status-action-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.status-action-wrap :deep(.el-button + .el-button) {
+  margin-left: 0;
+}
+
+.binding-tag-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
 }
 
 .line-toolbar {
@@ -1030,22 +1505,42 @@ onMounted(() => {
   margin: 8px 0 12px;
 }
 
+.required-column-header::before {
+  content: "*";
+  color: var(--el-color-danger);
+  margin-right: 4px;
+}
+
 .section-title {
   font-size: 15px;
   font-weight: 600;
 }
 
-.detail-section {
-  margin: 18px 0 10px;
-}
-
 .pagination-wrap {
   display: flex;
+  flex: none;
   justify-content: flex-end;
   margin-top: 16px;
 }
 
-.detail-descriptions {
-  margin-bottom: 16px;
+.expanded-detail {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 72px;
+  padding: 12px 0 16px 16px;
+  background: var(--el-fill-color-lighter);
+  overflow: hidden;
 }
+
+.detail-table {
+  width: 100%;
+}
+
+.procurement-table-wrap :deep(.el-table__expanded-cell) {
+  padding: 0;
+}
+
 </style>

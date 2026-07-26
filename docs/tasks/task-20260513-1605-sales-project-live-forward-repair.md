@@ -11,7 +11,7 @@
   - `docs/requirements/domain/sales-project-management.md (F1,F2,F3,F4)`
   - `docs/requirements/domain/inventory-core-module.md (C1,C4,C9)`
   - `docs/architecture/30-java-to-nestjs-data-migration-reference.md`
-- Status: `planned`
+- Status: `completed`
 - Review status: `not-reviewed`
 - Delivery mode: `standard`
 - Acceptance mode: `full`
@@ -22,7 +22,7 @@
 - Coder:
 - Reviewer:
 - Acceptance QA:
-- Last updated: `2026-05-13`
+- Last updated: `2026-07-09`
 - Related checklist:
   - `scripts/migration/reports/rd-project-execute-report.json`
   - `scripts/migration/reports/inventory-replay-execute-report.json`
@@ -70,8 +70,9 @@
 ## Progress Sync
 
 - Phase progress:
-  - `blocked: project acceptance backfill over-scoped`
+  - `executed: 前向修复已于 2026-05-15 在 live 库执行完成；后续过度回填问题由 task-20260515-1626-sales-project-legacy-admission-split-repair.md 拆分承接`
 - Current state:
+  - `2026-07-09` 复核确认：本 task 的前向修复已于 `2026-05-15` 在 live 库执行完成——`rd_project=21` 行全部 `VOIDED` 退出有效运行时，`sales_project*` / `project_target` 已承接真源，live 库 `RdProject / RD_PROJECT_OUT` 库存流水为 `0`；本 doc 原 `Status: planned` 为过期元数据，已更正为 `completed`。
   - 当前 live 目标库是 `.env.dev` 的 `DATABASE_URL=saifute-wms`；它已经承接了上线后新增业务，不能再作为“可重置练习库”处理。
   - 当前 `LEGACY_DATABASE_URL` 只可作为历史证据来源，不能再作为覆盖当前 target DB 的运行真源。
   - `2026-05-15` 复查发现项目验收入库 backfill 口径错误：当前 live 库 `YS-PROJ-*` 已生成 `stock_in_order=21`、`stock_in_order_line=675`、`inventory_log(ACCEPTANCE_IN)=675`，合计 `42568` 件，覆盖了全部 `sales_project_material_line`。
@@ -97,12 +98,11 @@
   - `2026-05-14` shadow 已执行 `sales-project-live-forward-repair:execute -> validate`：`shadow-sales-project-live-forward-repair-execute-report.json` 显示创建 `sales_project=21`、`sales_project_material_line=675`、退役错误 `rd_project=21`、预计替换错误 `RdProject / RD_PROJECT_OUT=673`；`shadow-sales-project-live-forward-repair-validate-report.json` 显示 `valid=true`、`validationErrors=[]`、`wrongProjectCount=0`、`wrongInventoryLogCount=0`。
   - `2026-05-14` shadow 已执行 `inventory-replay:dry-run -> execute -> validate`：dry-run `blockers=[]`，`materialId=185` 的 price layer 由 `StockInOrder:1184:line:2138` 可用 `4` 与 `SalesStockOrder:535:line:684` 释放 `1` 组成，reconciliation 为 `balanceQty=5 / sourceAvailableQty=5 / differenceQty=0`；execute 插入 `inventory_log=4618`、`inventory_source_usage=3045`、`inventory_balance=863`；validate 实际与计划一致且 `validationIssues=[]`。
 - Acceptance state:
-  - `blocked-after-live-overwrite-discovery`
+  - `not-reassessed`（原 `blocked-after-live-overwrite-discovery` 事由已由 `task-20260515-1626-sales-project-legacy-admission-split-repair.md` 承接修复）
 - Blockers:
-  - 当前 live 项目验收入库回填过度：必须先回滚或重建 `YS-PROJ-*` 业务单据及派生库存层，再按采购入项目、已有库存改归属 / 预留分别建模。
-  - 浏览器端带登录态的 `/sales/project/detail/21` 截图验收暂停；当前项目库存读模型建立在过度回填后的派生库存层上，不能签收。
+  - 无（2026-07-09 复核：原“项目验收入库回填过度”阻断已由 `task-20260515-1626-sales-project-legacy-admission-split-repair.md` 拆分修复承接，过度生成的 `YS-PROJ-*` 单据已删除并重建为 accepted-only 口径）。
 - Next step:
-  - 先基于 `live-saifute-wms-before-sales-project-acceptance-backfill-20260515-094401.sql` 或版本化逆向脚本制定恢复方案；恢复后重新按 legacy 来源链拆分项目采购验收与已有库存归属调整 / 预留，不再全量生成 `YS-PROJ-*`。
+  - 无剩余执行动作；`21` 条 `VOIDED` `rd_project` 行的物理硬删按 `[AC-4]` 有意延后，待后续单独确认后再处理。
 
 ## Goal And Acceptance Criteria
 
@@ -385,12 +385,13 @@
 ## Final Status
 
 - Outcome:
-  - `pending`
+  - `executed-completed`：前向修复已于 `2026-05-15` 在 live 库执行完成。`rd_project=21` 行全部 `VOIDED` 退出有效运行时，`sales_project*` / `project_target` / canonical map 已承接这批历史项目真源，live 库 `RdProject / RD_PROJECT_OUT` 库存流水为 `0`（2026-07-09 复核确认）。
 - Requirement alignment:
-  - 目标是把旧销售项目从错误的 `rd-project` 运行时迁正到 `sales-project`，并在当前 live target DB 上收口项目归属正确的库存真相。
+  - 目标是把旧销售项目从错误的 `rd-project` 运行时迁正到 `sales-project`，并在当前 live target DB 上收口项目归属正确的库存真相；该目标已达成。
 - Residual risks or testing gaps:
-  - 当前仍缺 repair execute / validate、项目验收合同和 replay 项目归属支持；正式 execute 前必须先完成 shadow rehearsal。
+  - `21` 条 `VOIDED` `rd_project` 行的物理硬删按 `[AC-4]` 有意延后，须后续单独确认后再执行。
+  - 执行中暴露的项目验收入库回填过度问题已由 `task-20260515-1626-sales-project-legacy-admission-split-repair.md` 拆分承接；本 doc 的 Acceptance Checklist 未逐条回填，如需正式签收应结合该后继任务证据一并评估。
 - Directory disposition after completion:
   - 预计 `retained-completed`；这是 live repair 高风险基线，完成后应归档保留。
 - Next action:
-  - 进入 repair execute / validate 与项目归属合同实现，再产出 shadow rehearsal 入口和报告。
+  - 待用户确认后单独处理 `21` 条 `VOIDED` `rd_project` 的物理清理；其余修复动作已收口。

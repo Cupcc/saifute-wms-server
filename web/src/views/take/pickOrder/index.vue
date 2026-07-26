@@ -364,7 +364,7 @@
                 </el-table-column>
                 <el-table-column label="领料数量" prop="quantity">
                   <template #default="scope">
-                    {{ formatQuantityDisplay(scope.row.quantity) }}
+                    {{ formatQty(scope.row.quantity) }}
                   </template>
                 </el-table-column>
                 <el-table-column label="金额" prop="amount" />
@@ -435,6 +435,7 @@ import {
 } from "@/utils/materialOptions";
 import { confirmDocumentSave } from "@/utils/documentConfirm";
 import { scrollDocumentDialogToBottom } from "@/utils/documentDialogScroll";
+import { formatQty } from "@/utils/format";
 import { formatDateToYYYYMMDD, generateOrderNo } from "@/utils/orderNumber";
 import request from "@/utils/request";
 
@@ -822,7 +823,7 @@ function validatePickDetails() {
     const availableQty = getSelectedPriceLayerAvailableQty(detail);
     if (availableQty !== null && quantity > availableQty) {
       proxy.$modal.msgError(
-        `第${i + 1}行所选成本价层可用数量不足：可用${formatQuantityDisplay(availableQty)}，输入${formatQuantityDisplay(quantity)}`,
+        `第${i + 1}行所选成本价层可用数量不足：可用${formatQty(availableQty)}，输入${formatQty(quantity)}`,
       );
       return false;
     }
@@ -1131,17 +1132,9 @@ function getSelectedPriceLayerAvailableQty(row) {
   return originalQuantity > 0 ? originalQuantity : null;
 }
 
-function formatQuantityDisplay(value) {
-  const quantity = Number(value);
-  if (!Number.isFinite(quantity)) {
-    return "-";
-  }
-  return quantity.toFixed(2);
-}
-
 function formatPriceLayerLabel(item) {
   const unitCost = formatMoneyDisplay(item?.unitCost);
-  const availableQty = formatQuantityDisplay(item?.availableQty);
+  const availableQty = formatQty(item?.availableQty);
   return `${unitCost} / 可用 ${availableQty}`;
 }
 

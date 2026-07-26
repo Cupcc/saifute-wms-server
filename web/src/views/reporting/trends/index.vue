@@ -70,6 +70,7 @@
 <script setup name="ReportingTrendsPage">
 import { computed, onMounted, ref } from "vue";
 import { getTrendSeries } from "@/api/reporting";
+import { formatQty } from "@/utils/format";
 
 const loading = ref(false);
 const rows = ref([]);
@@ -87,22 +88,18 @@ const filters = ref({
   dateRange: getDefaultRange(),
 });
 
-const summary = computed(() =>
-  rows.value.reduce(
-    (accumulator, item) => ({
-      totalQty: (
-        Number(accumulator.totalQty) + Number(item.totalQty || 0)
-      ).toFixed(6),
-      totalAmount: (
-        Number(accumulator.totalAmount) + Number(item.totalAmount || 0)
-      ).toFixed(4),
-    }),
-    {
-      totalQty: "0.000000",
-      totalAmount: "0.0000",
-    },
-  ),
-);
+const summary = computed(() => {
+  let totalQty = 0;
+  let totalAmount = 0;
+  rows.value.forEach((item) => {
+    totalQty += Number(item.totalQty || 0);
+    totalAmount += Number(item.totalAmount || 0);
+  });
+  return {
+    totalQty: formatQty(totalQty),
+    totalAmount: totalAmount.toFixed(4),
+  };
+});
 
 function getDefaultRange() {
   const end = new Date();

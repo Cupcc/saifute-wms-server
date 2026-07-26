@@ -16,13 +16,18 @@ export class CreateRdProjectMaterialActionDto {
   @IsEnum(RdProjectMaterialActionType)
   actionType!: RdProjectMaterialActionType;
 
-  @IsDateString()
+  @IsDateString({ strict: true })
   bizDate!: string;
 
   @IsString()
   @IsOptional()
   @MaxLength(500)
   remark?: string;
+
+  @IsString()
+  @IsOptional()
+  @MaxLength(64)
+  clientRequestId?: string;
 
   @IsArray()
   @ArrayMinSize(1, { message: "lines must have at least one item" })

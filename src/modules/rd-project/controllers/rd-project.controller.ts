@@ -11,6 +11,7 @@ import {
 } from "@nestjs/common";
 import { CurrentUser } from "../../../shared/decorators/current-user.decorator";
 import { Permissions } from "../../../shared/decorators/permissions.decorator";
+import { AuditLog } from "../../audit-log/decorators/audit-log.decorator";
 import { WorkshopScopeService } from "../../rbac/application/workshop-scope.service";
 import type { SessionUserSnapshot } from "../../session/domain/user-session";
 import { RdProjectService } from "../application/rd-project.service";
@@ -18,6 +19,7 @@ import { RdProjectMaterialActionService } from "../application/rd-project-materi
 import { CreateRdProjectDto } from "../dto/create-rd-project.dto";
 import { CreateRdProjectMaterialActionDto } from "../dto/create-rd-project-material-action.dto";
 import { QueryRdProjectDto } from "../dto/query-rd-project.dto";
+import { QueryRdProjectMaterialActionDto } from "../dto/query-rd-project-material-action.dto";
 import { UpdateRdProjectDto } from "../dto/update-rd-project.dto";
 import { VoidRdProjectDto } from "../dto/void-rd-project.dto";
 import { VoidRdProjectMaterialActionDto } from "../dto/void-rd-project-material-action.dto";
@@ -69,20 +71,18 @@ export class RdProjectController {
   }
 
   @Permissions("rd:project:create")
+  @AuditLog({ title: "新增研发项目", action: "CREATE_RD_PROJECT" })
   @Post()
   async createProject(
     @Body() dto: CreateRdProjectDto,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
     await this.assertRdProjectScope(user);
-    const scopedDto = await this.workshopScopeService.applyFixedWorkshopScope(
-      user,
-      dto,
-    );
-    return this.rdProjectService.createProject(scopedDto, user?.username);
+    return this.rdProjectService.createProject(dto, user?.username);
   }
 
   @Permissions("rd:project:update")
+  @AuditLog({ title: "修改研发项目", action: "UPDATE_RD_PROJECT" })
   @Patch(":id")
   async updateProject(
     @Param("id", ParseIntPipe) id: number,
@@ -98,14 +98,11 @@ export class RdProjectController {
       user,
       existingProject.stockScopeId,
     );
-    const scopedDto = await this.workshopScopeService.applyFixedWorkshopScope(
-      user,
-      dto,
-    );
-    return this.rdProjectService.updateProject(id, scopedDto, user?.username);
+    return this.rdProjectService.updateProject(id, dto, user?.username);
   }
 
   @Permissions("rd:project:void")
+  @AuditLog({ title: "作废研发项目", action: "VOID_RD_PROJECT" })
   @Post(":id/void")
   async voidProject(
     @Param("id", ParseIntPipe) id: number,
@@ -147,8 +144,8 @@ export class RdProjectController {
   }
 
   @Permissions("rd:project:get")
-  @Get(":id/material-actions")
-  async listMaterialActions(
+  @Get(":id/change-logs")
+  async listChangeLogs(
     @Param("id", ParseIntPipe) id: number,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
@@ -161,7 +158,26 @@ export class RdProjectController {
       user,
       project.stockScopeId,
     );
-    return this.rdProjectMaterialActionService.listMaterialActions(id);
+    return this.rdProjectService.listChangeLogs(id);
+  }
+
+  @Permissions("rd:project:get")
+  @Get(":id/material-actions")
+  async listMaterialActions(
+    @Param("id", ParseIntPipe) id: number,
+    @Query() query: QueryRdProjectMaterialActionDto,
+    @CurrentUser() user?: SessionUserSnapshot,
+  ) {
+    const project = await this.rdProjectService.getProjectById(id);
+    await this.workshopScopeService.assertWorkshopAccess(
+      user,
+      project.workshopId,
+    );
+    await this.workshopScopeService.assertInventoryStockScopeAccess(
+      user,
+      project.stockScopeId,
+    );
+    return this.rdProjectMaterialActionService.listMaterialActions(id, query);
   }
 
   @Permissions("rd:project:get")
@@ -184,6 +200,10 @@ export class RdProjectController {
   }
 
   @Permissions("rd:project:create")
+  @AuditLog({
+    title: "新增研发项目物料动作",
+    action: "CREATE_RD_PROJECT_MATERIAL_ACTION",
+  })
   @Post(":id/material-actions")
   async createMaterialAction(
     @Param("id", ParseIntPipe) id: number,
@@ -207,6 +227,10 @@ export class RdProjectController {
   }
 
   @Permissions("rd:project:void")
+  @AuditLog({
+    title: "作废研发项目物料动作",
+    action: "VOID_RD_PROJECT_MATERIAL_ACTION",
+  })
   @Post("material-actions/:actionId/void")
   async voidMaterialAction(
     @Param("actionId", ParseIntPipe) actionId: number,

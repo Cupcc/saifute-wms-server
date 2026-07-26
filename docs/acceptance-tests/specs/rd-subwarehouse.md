@@ -54,3 +54,8 @@
 
 - `rd-operator` 浏览器直连 `/rd/monthly-reporting` 本轮未形成稳定主证据：headless smoke 中出现前端权限提示且 summary 未稳定回出 seeded 数据；因此本轮用管理员页面 + RD 作用域 live API 替代。
 - `rd-operator` 浏览器直连 `/rd/monthly-reporting` 的页面壳层权限提示仍建议后续单独补一轮 smoke，但当前 live API 与管理员页面证据已经证明项目化口径本身成立。
+- `2026-07-09` 复核补记：
+  - `F6-BROWSER-1/2/3` 仍为 planned / 未代码化，手工 CDP 证据冻结在 `run-20260414-1620-rd-sub-project-attribution-and-reporting-alignment.md`。
+  - `rd-operator` 直连 `/rd/monthly-reporting` 的 smoke 自 `2026-04-14` 重构以来一直未补。
+  - 旧 run 引用的 fixture 种子脚本 `scripts/dev/reset-and-seed-test-data.ts` 已不存在；后续代码化上述 case 需先建立新的 fixture 路径。
+  - 新增 UI 面待补浏览器验收：交接创建 / 作废（`/rd/inbound-results` 页面）、手工状态动作撤销、项目台账交接入 / 在库成本列。

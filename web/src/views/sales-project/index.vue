@@ -175,7 +175,7 @@
         align="right"
       >
         <template #default="{ row }">
-          {{ formatNumber(row.summary?.totalCurrentInventoryQty) }}
+          {{ formatQty(row.summary?.totalCurrentInventoryQty) }}
         </template>
       </el-table-column>
       <el-table-column
@@ -185,7 +185,7 @@
         align="right"
       >
         <template #default="{ row }">
-          {{ formatNumber(row.summary?.materialKindCount) }}
+          {{ formatQty(row.summary?.materialKindCount) }}
         </template>
       </el-table-column>
       <el-table-column
@@ -195,7 +195,7 @@
         align="right"
       >
         <template #default="{ row }">
-          {{ formatNumber(row.summary?.totalNetShipmentQty) }}
+          {{ formatQty(row.summary?.totalNetShipmentQty) }}
         </template>
       </el-table-column>
       <el-table-column
@@ -261,11 +261,8 @@ import {
   voidSalesProject,
 } from "@/api/sales-project";
 import SalesProjectFormDialog from "./components/SalesProjectFormDialog.vue";
-import {
-  buildSalesProjectDetailPath,
-  formatDate,
-  formatNumber,
-} from "./shared";
+import { formatQty } from "@/utils/format";
+import { buildSalesProjectDetailPath, formatDate } from "./shared";
 
 const router = useRouter();
 const { proxy } = getCurrentInstance();

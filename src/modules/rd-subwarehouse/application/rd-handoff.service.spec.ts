@@ -1,4 +1,4 @@
-import { NotFoundException } from "@nestjs/common";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { Test } from "@nestjs/testing";
 import {
   AuditStatusSnapshot,
@@ -74,6 +74,7 @@ describe("RdHandoffService", () => {
     createdAt: new Date(),
     updatedBy: "1",
     updatedAt: new Date(),
+    clientRequestId: null,
     lines: [
       {
         id: 1,
@@ -122,6 +123,8 @@ describe("RdHandoffService", () => {
             findOrders: jest.fn(),
             findOrderById: jest.fn(),
             findOrderByDocumentNo: jest.fn(),
+            findOrderByClientRequestId: jest.fn(),
+            findDocumentNosByPrefix: jest.fn().mockResolvedValue([]),
             createOrder: jest.fn(),
             updateOrder: jest.fn(),
             updateOrderLineCost: jest.fn().mockResolvedValue({}),
@@ -216,12 +219,11 @@ describe("RdHandoffService", () => {
   it("creates a handoff order and posts source/target inventory", async () => {
     repository.findOrderByDocumentNo.mockResolvedValue(null);
     repository.createOrder.mockResolvedValue(mockOrder);
+    repository.updateOrder.mockResolvedValue(mockOrder);
 
     const result = await service.createOrder(
       {
-        documentNo: "RDH-001",
         bizDate: "2026-03-28",
-        sourceWorkshopId: 1,
         handlerPersonnelId: 20,
         lines: [
           {
@@ -238,6 +240,13 @@ describe("RdHandoffService", () => {
 
     expect(result).toEqual(mockOrder);
     expect(repository.createOrder).toHaveBeenCalled();
+    expect(repository.updateOrder).toHaveBeenCalledWith(
+      mockOrder.id,
+      expect.objectContaining({
+        totalAmount: new Prisma.Decimal(80),
+      }),
+      expect.anything(),
+    );
     expect(inventoryService.settleConsumerOut).toHaveBeenCalledWith(
       expect.objectContaining({
         stockScope: "MAIN",
@@ -266,14 +275,49 @@ describe("RdHandoffService", () => {
     );
   });
 
-  it("ignores source workshop ids and still bridges MAIN to RD_SUB stock", async () => {
+  it("returns the same order for a duplicated clientRequestId without re-posting inventory", async () => {
+    repository.findOrderByClientRequestId
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(mockOrder);
+    repository.createOrder.mockResolvedValue(mockOrder);
+    repository.updateOrder.mockResolvedValue(mockOrder);
+
+    const dto = {
+      bizDate: "2026-03-28",
+      handlerPersonnelId: 20,
+      clientRequestId: "2c4a6e8f-1b3d-4f5a-9c7e-0d2f4a6b8c1e",
+      lines: [
+        {
+          materialId: 100,
+          quantity: "8",
+          unitPrice: "10",
+          sourceDocumentId: 5,
+          sourceDocumentLineId: 501,
+        },
+      ],
+    };
+
+    const first = await service.createOrder(dto, "1");
+    const second = await service.createOrder(dto, "1");
+
+    expect(first).toEqual(mockOrder);
+    expect(second).toEqual(mockOrder);
+    expect(repository.createOrder).toHaveBeenCalledTimes(1);
+    expect(repository.createOrder).toHaveBeenCalledWith(
+      expect.objectContaining({ clientRequestId: dto.clientRequestId }),
+      expect.anything(),
+      expect.anything(),
+    );
+    expect(inventoryService.settleConsumerOut).toHaveBeenCalledTimes(1);
+    expect(inventoryService.increaseStock).toHaveBeenCalledTimes(1);
+  });
+
+  it("persists a null source workshop and bridges MAIN to RD_SUB stock", async () => {
     repository.findOrderByDocumentNo.mockResolvedValue(null);
     repository.createOrder.mockResolvedValue(mockOrder);
 
     await service.createOrder({
-      documentNo: "RDH-002",
       bizDate: "2026-03-28",
-      sourceWorkshopId: 2,
       lines: [
         {
           materialId: 100,
@@ -363,6 +407,45 @@ describe("RdHandoffService", () => {
     expect(repository.findOrders).toHaveBeenCalledWith(
       expect.objectContaining({
         targetWorkshopId: 9,
+        boundStockScopeId: undefined,
+        limit: 10,
+        offset: 0,
+      }),
+    );
+  });
+
+  it("threads the lifecycleStatus filter down to the repository", async () => {
+    repository.findOrders.mockResolvedValue({ items: [], total: 0 });
+
+    await service.listOrders({
+      lifecycleStatus: "VOIDED",
+      limit: 10,
+      offset: 0,
+    });
+
+    expect(repository.findOrders).toHaveBeenCalledWith(
+      expect.objectContaining({ lifecycleStatus: "VOIDED" }),
+    );
+  });
+
+  it("omits the lifecycle filter when lifecycleStatus is absent", async () => {
+    repository.findOrders.mockResolvedValue({ items: [], total: 0 });
+
+    await service.listOrders({ limit: 10, offset: 0 });
+
+    expect(repository.findOrders).toHaveBeenCalledWith(
+      expect.objectContaining({ lifecycleStatus: undefined }),
+    );
+  });
+
+  it("passes the bound stock scope filter down to the repository", async () => {
+    repository.findOrders.mockResolvedValue({ items: [], total: 0 });
+
+    await service.listOrders({ limit: 10, offset: 0 }, 2);
+
+    expect(repository.findOrders).toHaveBeenCalledWith(
+      expect.objectContaining({
+        boundStockScopeId: 2,
         limit: 10,
         offset: 0,
       }),
@@ -401,9 +484,7 @@ describe("RdHandoffService", () => {
 
     await service.createOrder(
       {
-        documentNo: "RDH-003",
         bizDate: "2026-03-28",
-        sourceWorkshopId: 1,
         lines: [
           {
             materialId: 100,
@@ -442,6 +523,60 @@ describe("RdHandoffService", () => {
         projectTargetId: 7001,
       }),
     );
+  });
+
+  it("wraps settlement failures with the line number and material", async () => {
+    repository.findOrderByDocumentNo.mockResolvedValue(null);
+    repository.createOrder.mockResolvedValue(mockOrder);
+    (inventoryService.settleConsumerOut as jest.Mock).mockRejectedValueOnce(
+      new BadRequestException(
+        "FIFO 可用来源库存不足: 缺少 2 个来源层数量，请先确保有足够的入库记录",
+      ),
+    );
+
+    await expect(
+      service.createOrder(
+        {
+          bizDate: "2026-03-28",
+          lines: [
+            {
+              materialId: 100,
+              quantity: "8",
+              sourceDocumentId: 5,
+              sourceDocumentLineId: 501,
+            },
+          ],
+        },
+        "1",
+      ),
+    ).rejects.toThrow("第 1 行 物料 Material A: FIFO 可用来源库存不足");
+  });
+
+  it("wraps source-line mismatches with the line number and material", async () => {
+    (
+      rdProcurementRequestRepository.findRequestById as jest.Mock
+    ).mockResolvedValueOnce({
+      ...mockRequest,
+      lines: [{ ...mockRequest.lines[0], materialId: 999 }],
+    });
+
+    await expect(
+      service.createOrder(
+        {
+          bizDate: "2026-03-28",
+          lines: [
+            {
+              materialId: 100,
+              quantity: "8",
+              sourceDocumentId: 5,
+              sourceDocumentLineId: 501,
+            },
+          ],
+        },
+        "1",
+      ),
+    ).rejects.toThrow("第 1 行 物料 Material A: 交接物料必须与采购需求行一致");
+    expect(repository.createOrder).not.toHaveBeenCalled();
   });
 
   it("blocks void when an RD_SUB IN log has unreleased downstream allocations", async () => {

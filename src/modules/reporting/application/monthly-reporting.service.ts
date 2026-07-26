@@ -39,6 +39,7 @@ export type {
   MonthlyReportMaterialCategoryDetailItem,
 } from "./monthly-report-item-mapper.service";
 export type {
+  MonthlyReportMaterialCatalogItem,
   MonthlyReportMaterialCategoryCatalogItem,
   MonthlyReportMaterialCategoryDocumentsResult,
   MonthlyReportMaterialCategoryFilters,

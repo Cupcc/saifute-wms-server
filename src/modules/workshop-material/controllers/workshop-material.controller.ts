@@ -247,6 +247,7 @@ export class WorkshopMaterialController {
       await this.workshopScopeService.resolveInventoryQueryScope(
         user,
         query.workshopId,
+        query.stockScope,
       );
     return this.workshopMaterialService.listScrapOrders({
       ...query,
@@ -269,6 +270,7 @@ export class WorkshopMaterialController {
       await this.workshopScopeService.resolveInventoryQueryScope(
         user,
         query.workshopId,
+        query.stockScope,
       );
     return this.workshopMaterialService.listScrapOrderLines({
       ...query,
@@ -306,7 +308,11 @@ export class WorkshopMaterialController {
       dto,
     );
     const inventoryScope =
-      await this.workshopScopeService.getResolvedStockScope(user);
+      await this.workshopScopeService.resolveInventoryQueryScope(
+        user,
+        dto.workshopId,
+        dto.stockScope,
+      );
     return this.workshopMaterialService.createScrapOrder(
       {
         ...scopedDto,

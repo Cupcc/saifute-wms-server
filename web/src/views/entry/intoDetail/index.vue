@@ -190,6 +190,7 @@ import {
 } from "@/api/entry/intoDetail";
 import { selectSaifuteInventoryListGroupByMaterial } from "@/api/stock/inventory.js";
 import { confirmDocumentSave } from "@/utils/documentConfirm";
+import { formatQty } from "@/utils/format";
 
 const { proxy } = getCurrentInstance();
 
@@ -317,16 +318,16 @@ function getSummaries(param) {
     if (column.property === "quantity") {
       const values = data.map((item) => Number(item.quantity));
       if (!values.every((value) => Number.isNaN(value))) {
-        sums[index] = values
-          .reduce((prev, curr) => {
+        sums[index] = formatQty(
+          values.reduce((prev, curr) => {
             const value = Number(curr);
             if (!Number.isNaN(value)) {
               return prev + curr;
             } else {
               return prev;
             }
-          }, 0)
-          .toFixed(2);
+          }, 0),
+        );
       } else {
         sums[index] = "N/A";
       }

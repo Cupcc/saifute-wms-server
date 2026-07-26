@@ -126,6 +126,7 @@
 import { listByNameOrContact } from "@/api/base/workshop.js";
 import { selectSaifuteInventoryListGroupByMaterial } from "@/api/stock/inventory.js";
 import { listNoPage } from "@/api/take/returnDetail";
+import { formatQty } from "@/utils/format";
 
 const { proxy } = getCurrentInstance();
 
@@ -287,16 +288,16 @@ function getSummaries(param) {
     }
     if (column.property === "returnQty") {
       const values = data.map((item) => Number(item.returnQty));
-      sums[index] = values
-        .reduce((prev, curr) => {
+      sums[index] = formatQty(
+        values.reduce((prev, curr) => {
           const value = Number(curr);
           if (!isNaN(value)) {
             return prev + curr;
           } else {
             return prev;
           }
-        }, 0)
-        .toFixed(2);
+        }, 0),
+      );
     } else if (column.property === "unitPrice") {
       // 单价不计算合计
       sums[index] = "";

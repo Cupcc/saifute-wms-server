@@ -15,6 +15,14 @@ import type { CreateInboundOrderDto } from "../dto/create-inbound-order.dto";
 import type { UpdateInboundOrderDto } from "../dto/update-inbound-order.dto";
 import { InboundRepository } from "../infrastructure/inbound.repository";
 
+type RdProcurementLineLink = {
+  id: number;
+  lineNo: number;
+  materialId: number | null;
+  materialNameSnapshot: string;
+  quantity: Prisma.Decimal;
+};
+
 @Injectable()
 export class InboundSharedService {
   constructor(
@@ -198,10 +206,7 @@ export class InboundSharedService {
     },
     lineNo: number,
     options?: {
-      rdProcurementLineMap?: Map<
-        number,
-        { id: number; materialId: number; quantity: Prisma.Decimal }
-      > | null;
+      rdProcurementLineMap?: Map<number, RdProcurementLineLink> | null;
       seenRdProcurementLineIds?: Set<number>;
     },
   ) {
@@ -275,7 +280,9 @@ export class InboundSharedService {
           line.id,
           {
             id: line.id,
+            lineNo: line.lineNo,
             materialId: line.materialId,
+            materialNameSnapshot: line.materialNameSnapshot,
             quantity: new Prisma.Decimal(line.quantity),
           },
         ]),
@@ -287,10 +294,7 @@ export class InboundSharedService {
     rdProcurementRequestLineId: number | undefined,
     materialId: number,
     quantity: Prisma.Decimal,
-    rdProcurementLineMap?: Map<
-      number,
-      { id: number; materialId: number; quantity: Prisma.Decimal }
-    > | null,
+    rdProcurementLineMap?: Map<number, RdProcurementLineLink> | null,
     seenRdProcurementLineIds?: Set<number>,
   ) {
     if (!rdProcurementLineMap) {
@@ -315,6 +319,11 @@ export class InboundSharedService {
     if (!requestLine) {
       throw new BadRequestException("存在不属于当前 RD 采购需求的明细关联");
     }
+    if (requestLine.materialId == null) {
+      throw new BadRequestException(
+        `RD 采购需求第 ${requestLine.lineNo} 行品项“${requestLine.materialNameSnapshot}”尚未绑定物料，不能保留历史验收关联`,
+      );
+    }
     if (requestLine.materialId !== materialId) {
       throw new BadRequestException("验收物料必须与 RD 采购需求行一致");
     }
@@ -327,13 +336,7 @@ export class InboundSharedService {
   }
 
   async assertRdProcurementAcceptedQtyWithinLimit(
-    rdProcurementLineMap:
-      | Map<
-          number,
-          { id: number; materialId: number; quantity: Prisma.Decimal }
-        >
-      | null
-      | undefined,
+    rdProcurementLineMap: Map<number, RdProcurementLineLink> | null | undefined,
     lines: Array<{
       rdProcurementRequestLineId: number | null;
       quantity: Prisma.Decimal;

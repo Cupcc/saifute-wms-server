@@ -68,7 +68,7 @@ const SUPPORTED_BACKEND_ROUTE_META = {
     group: "rd",
     path: "workbench",
     component: "rd/workbench/index",
-    visibleInModes: [CONSOLE_MODES.RD],
+    visibleInModes: [CONSOLE_MODES.DEFAULT, CONSOLE_MODES.RD],
     affixInModes: [CONSOLE_MODES.RD],
   },
   RdProcurementRequests: {
@@ -111,7 +111,7 @@ const SUPPORTED_BACKEND_ROUTE_META = {
     group: "rd",
     path: "stocktake-orders",
     component: "rd/stocktake-orders/index",
-    visibleInModes: [CONSOLE_MODES.RD],
+    visibleInModes: [CONSOLE_MODES.DEFAULT, CONSOLE_MODES.RD],
   },
   RdMaterialCategorySummary: {
     group: "rd",

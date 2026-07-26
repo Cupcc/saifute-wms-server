@@ -47,7 +47,7 @@
         <el-table-column label="单位" prop="unitCode" width="80" />
         <el-table-column label="验收数量" prop="quantity" width="110" align="right">
           <template #default="{ row }">
-            {{ formatNumber(row.quantity) }}
+            {{ formatQty(row.quantity) }}
           </template>
         </el-table-column>
         <el-table-column label="单价" prop="unitPrice" width="100" align="right">
@@ -68,7 +68,8 @@
 
 <script setup name="SalesProjectAcceptanceOrderDetailDialog">
 import { computed } from "vue";
-import { formatDate, formatNumber } from "../shared";
+import { formatQty } from "@/utils/format";
+import { formatDate } from "../shared";
 
 function formatAmount(value) {
   const parsed = Number(value ?? 0);

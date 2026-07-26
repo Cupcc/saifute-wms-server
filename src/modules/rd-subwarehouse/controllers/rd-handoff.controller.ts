@@ -30,8 +30,12 @@ export class RdHandoffController {
     @Query() query: QueryRdHandoffOrderDto,
     @CurrentUser() user?: SessionUserSnapshot,
   ) {
-    await this.workshopScopeService.getResolvedStockScope(user);
-    return this.rdHandoffService.listOrders(query);
+    const boundStockScope =
+      await this.workshopScopeService.getResolvedStockScope(user);
+    return this.rdHandoffService.listOrders(
+      query,
+      boundStockScope?.stockScopeId,
+    );
   }
 
   @Permissions("rd:handoff-order:list")

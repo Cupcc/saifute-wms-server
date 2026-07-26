@@ -192,7 +192,7 @@
             @click="handleViewDetail(scope.row)"
             :style="{ color: scope.row.currentQty < 0 ? 'red' : '' }"
           >
-            {{ formatQtyDisplay(scope.row.currentQty) }}
+            {{ formatQty(scope.row.currentQty) }}
           </el-button>
         </template>
       </el-table-column>
@@ -252,7 +252,7 @@
                 {{ materialViewForm.stockScopeName || "-" }}
               </el-descriptions-item>
               <el-descriptions-item label="库存数量">
-                {{ formatQtyDisplay(materialViewForm.currentQty) }}
+                {{ formatQty(materialViewForm.currentQty) }}
               </el-descriptions-item>
             </el-descriptions>
           </el-card>
@@ -282,7 +282,7 @@
                 align="right"
               >
                 <template #default="{ row }">
-                  {{ formatQtyDisplay(row.availableQty) }}
+                  {{ formatQty(row.availableQty) }}
                 </template>
               </el-table-column>
               <el-table-column
@@ -312,6 +312,7 @@ import {
   listInventoryPriceLayers,
 } from "@/api/stock/inventory";
 import { useDict } from "@/utils/dict";
+import { formatQty } from "@/utils/format";
 
 const { proxy } = getCurrentInstance();
 const { saifute_material_category } = useDict("saifute_material_category");
@@ -562,7 +563,7 @@ function getCategoryLabel(value) {
   return category ? category.label : value;
 }
 
-function formatDecimalDisplay(value, maxFractionDigits) {
+function formatMoneyDisplay(value) {
   if (value === null || typeof value === "undefined" || value === "") {
     return "-";
   }
@@ -573,16 +574,8 @@ function formatDecimalDisplay(value, maxFractionDigits) {
   }
 
   return parsed.toLocaleString("zh-CN", {
-    maximumFractionDigits: maxFractionDigits,
+    maximumFractionDigits: 6,
   });
-}
-
-function formatQtyDisplay(value) {
-  return formatDecimalDisplay(value, 6);
-}
-
-function formatMoneyDisplay(value) {
-  return formatDecimalDisplay(value, 6);
 }
 
 getList();

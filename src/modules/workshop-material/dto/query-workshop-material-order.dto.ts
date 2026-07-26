@@ -2,6 +2,7 @@ import { Type } from "class-transformer";
 import {
   IsDateString,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -65,6 +66,10 @@ export class QueryWorkshopMaterialOrderDto {
   @Type(() => Number)
   @Min(1)
   workshopId?: number;
+
+  @IsOptional()
+  @IsIn(["MAIN", "RD_SUB"])
+  stockScope?: "MAIN" | "RD_SUB";
 
   @IsOptional()
   @Type(() => Number)

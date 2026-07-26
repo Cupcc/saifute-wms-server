@@ -527,7 +527,7 @@
         <el-table-column label="规格型号" prop="specification" min-width="120" show-overflow-tooltip />
         <el-table-column label="验收数量" prop="sourceQuantity" width="80" align="right">
           <template #default="scope">
-            {{ formatQuantity(scope.row.sourceQuantity) }}
+            {{ formatQty(scope.row.sourceQuantity) }}
           </template>
         </el-table-column>
         <el-table-column label="已退数量" prop="activeReturnedQty" width="80" align="right" />
@@ -624,6 +624,7 @@ import {
 } from "@/utils/materialOptions";
 import { confirmDocumentSave } from "@/utils/documentConfirm";
 import { scrollDocumentDialogToBottom } from "@/utils/documentDialogScroll";
+import { formatQty } from "@/utils/format";
 import { formatDateToYYYYMMDD } from "@/utils/orderNumber";
 
 const userStore = useUserStore();
@@ -755,16 +756,6 @@ function formatRecordDateTime(value) {
   const minute = String(date.getMinutes()).padStart(2, "0");
   const second = String(date.getSeconds()).padStart(2, "0");
   return `${month}-${day} ${hour}:${minute}:${second}`;
-}
-
-function formatQuantity(value) {
-  const number = Number(value ?? 0);
-  if (!Number.isFinite(number)) {
-    return value ?? "-";
-  }
-  return Number.isInteger(number)
-    ? String(number)
-    : String(Number(number.toFixed(6)));
 }
 
 function toTimestamp(value) {

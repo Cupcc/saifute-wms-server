@@ -142,24 +142,19 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="totalQty" label="总库存" align="center">
+        <el-table-column prop="afterQty" label="变动后总库存" align="center">
           <template #default="{ row }">
-            {{ formatQuantity(row.totalQty ?? row.beforeQty) }}
+            {{ formatQty(row.afterQty) }}
           </template>
         </el-table-column>
-        <el-table-column prop="priceLayerBeforeQty" label="变动前" align="center">
-          <template #default="{ row }">
-            {{ formatOptionalQuantity(row.priceLayerBeforeQty) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="priceLayerChangeQty" label="变动数量" align="center">
+        <el-table-column prop="priceLayerChangeQty" label="当前单价变动数量" align="center">
           <template #default="{ row }">
             <span :class="row.direction === 'IN' ? 'qty-in' : 'qty-out'">
               {{ formatPriceLayerChangeQty(row) }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="priceLayerAfterQty" label="变动后" align="center">
+        <el-table-column prop="priceLayerAfterQty" label="当前单价变动后数量" align="center">
           <template #default="{ row }">
             {{ formatOptionalQuantity(row.priceLayerAfterQty) }}
           </template>
@@ -284,7 +279,7 @@
           <el-table-column label="规格型号" prop="specification" min-width="140" show-overflow-tooltip />
           <el-table-column label="数量" prop="quantity" width="100" align="right">
             <template #default="{ row }">
-              {{ formatQuantity(row.quantity) }}
+              {{ formatQty(row.quantity) }}
             </template>
           </el-table-column>
           <el-table-column label="单价" prop="unitPrice" width="110" align="right">
@@ -341,6 +336,7 @@ import { listLog } from "@/api/stock/log";
 import { getScrapOrder } from "@/api/stock/scrapOrder";
 import { getPickOrder } from "@/api/take/pickOrder";
 import { getReturnOrder } from "@/api/take/returnOrder";
+import { formatQty } from "@/utils/format";
 import request from "@/utils/request";
 
 const stockScopeOptions = [
@@ -1051,29 +1047,14 @@ function formatSignedQuantity(value, direction) {
   if (!hasDisplayValue(value)) {
     return "-";
   }
-  const quantity = formatQuantity(value);
+  const quantity = formatQty(value);
   return direction === "OUT" && !quantity.startsWith("-")
     ? `-${quantity}`
     : quantity;
 }
 
 function formatOptionalQuantity(value) {
-  return hasDisplayValue(value) ? formatQuantity(value) : "-";
-}
-
-function formatQuantity(value) {
-  if (!hasDisplayValue(value)) {
-    return "-";
-  }
-
-  const numericValue = Number(value);
-  if (!Number.isFinite(numericValue)) {
-    return String(value);
-  }
-
-  return numericValue.toLocaleString("zh-CN", {
-    maximumFractionDigits: 6,
-  });
+  return hasDisplayValue(value) ? formatQty(value) : "-";
 }
 
 function formatMoney(value) {

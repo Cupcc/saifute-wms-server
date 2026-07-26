@@ -360,6 +360,69 @@ export class InventoryRepository {
       .filter((log) => log.availableQty.gt(0));
   }
 
+  /**
+   * Batched variant of findFifoSourceLogs: one query for many materials.
+   * Read-only (no locking) — used by aggregate views that need per-material
+   * layer availability without issuing one query per material.
+   */
+  async findFifoSourceLogsByMaterials(
+    params: {
+      materialIds: number[];
+      stockScopeId: number;
+      sourceOperationTypes: InventoryOperationType[];
+      projectTargetId: number | null;
+    },
+    db: InventoryDbClient = this.prisma,
+  ) {
+    if (params.materialIds.length === 0) {
+      return [];
+    }
+
+    const logs = await db.inventoryLog.findMany({
+      where: {
+        materialId: { in: params.materialIds },
+        stockScopeId: params.stockScopeId,
+        direction: StockDirection.IN,
+        OR: [
+          { operationType: { in: params.sourceOperationTypes } },
+          historicalReplayReturnSourceWhere(),
+        ],
+        projectTargetId: params.projectTargetId,
+        reversalOfLogId: null,
+        reversedByLogs: { none: {} },
+      },
+      include: {
+        allocatedSourceUsages: {
+          select: { allocatedQty: true, releasedQty: true },
+        },
+      },
+      orderBy: [{ bizDate: "asc" }, { occurredAt: "asc" }, { id: "asc" }],
+    });
+
+    return logs
+      .map((log) => {
+        const netAllocated = log.allocatedSourceUsages.reduce(
+          (sum, u) =>
+            sum
+              .add(new Prisma.Decimal(u.allocatedQty))
+              .sub(new Prisma.Decimal(u.releasedQty)),
+          new Prisma.Decimal(0),
+        );
+        const availableQty = new Prisma.Decimal(log.changeQty).sub(
+          netAllocated,
+        );
+        return {
+          id: log.id,
+          materialId: log.materialId,
+          changeQty: new Prisma.Decimal(log.changeQty),
+          occurredAt: log.occurredAt,
+          unitCost: log.unitCost ? new Prisma.Decimal(log.unitCost) : null,
+          availableQty,
+        };
+      })
+      .filter((log) => log.availableQty.gt(0));
+  }
+
   async findEffectiveLogsByProjectTarget(
     params: {
       stockScopeId: number;

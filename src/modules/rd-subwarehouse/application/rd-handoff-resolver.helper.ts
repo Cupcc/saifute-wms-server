@@ -48,9 +48,11 @@ export async function resolveHandoffSourceRequest(
 
 export async function resolveHandoffRdProjectForRequest(
   rdProjectLookupService: RdProjectLookupService,
-  request: NonNullable<
-    Awaited<ReturnType<RdProcurementRequestRepository["findRequestById"]>>
-  >,
+  request: {
+    projectCode: string | null;
+    projectName: string | null;
+    workshopId: number;
+  },
   cache: Map<
     string,
     Awaited<ReturnType<RdProjectLookupService["requireEffectiveProjectByCode"]>>

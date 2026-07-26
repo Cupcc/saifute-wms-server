@@ -3,6 +3,7 @@ import { computed, getCurrentInstance, ref } from "vue";
 import { listProductMaterial } from "@/api/article/product";
 import { listSupplierByKeywordIncludingDisabled } from "@/api/base/supplier";
 import { listNoPage } from "@/api/entry/detail";
+import { formatQty } from "@/utils/format";
 import { formatDate } from "@/utils/index.js";
 
 const { proxy } = getCurrentInstance();
@@ -166,7 +167,7 @@ function getEntrySummaries(param) {
         (sum, item) => sum + (Number(item.quantity) || 0),
         0,
       );
-      sums[index] = total.toFixed(2);
+      sums[index] = formatQty(total);
     } else if (column.property === "amount") {
       sums[index] = entryTotal.value;
     } else {
@@ -193,7 +194,7 @@ function getProjectSummaries(param) {
         (sum, item) => sum + (Number(item.quantity) || 0),
         0,
       );
-      sums[index] = total.toFixed(2);
+      sums[index] = formatQty(total);
     } else if (column.property === "amount") {
       sums[index] = projectTotal.value;
     } else {

@@ -543,4 +543,52 @@ describe("InboundService", () => {
       expect.anything(),
     );
   });
+
+  it("should reject a historical RD linkage when its procurement line is still unbound", async () => {
+    const legacyOrder = {
+      ...mockOrder,
+      rdProcurementRequestId: 9,
+      rdProcurementRequestNoSnapshot: "RDPUR-001",
+      rdProcurementProjectCodeSnapshot: "RD-PJT-001",
+      rdProcurementProjectNameSnapshot: "研发治具项目",
+      lines: [
+        {
+          ...mockOrder.lines[0],
+          rdProcurementRequestLineId: 500,
+        },
+      ],
+    };
+    (repository.findOrderById as jest.Mock)
+      .mockResolvedValueOnce(legacyOrder)
+      .mockResolvedValueOnce(legacyOrder);
+    rdProcurementRequestService.getRequestById.mockResolvedValueOnce({
+      ...mockRdProcurementRequest,
+      lines: [
+        {
+          ...mockRdProcurementRequest.lines[0],
+          lineNo: 1,
+          materialId: null,
+          materialNameSnapshot: "一次性定制夹具",
+        },
+      ],
+    } as Awaited<ReturnType<RdProcurementRequestService["getRequestById"]>>);
+
+    await expect(
+      service.updateOrder(
+        1,
+        {
+          lines: [
+            {
+              id: 1,
+              materialId: 100,
+              quantity: "100",
+              unitPrice: "10",
+            },
+          ],
+        },
+        "1",
+      ),
+    ).rejects.toThrow("RD 采购需求第 1 行品项“一次性定制夹具”尚未绑定物料");
+    expect(repository.updateOrderLine).not.toHaveBeenCalled();
+  });
 });

@@ -14,11 +14,11 @@ export class QueryRdStocktakeOrderDto {
   @MaxLength(64)
   documentNo?: string;
 
-  @IsDateString()
+  @IsDateString({ strict: true })
   @IsOptional()
   bizDateFrom?: string;
 
-  @IsDateString()
+  @IsDateString({ strict: true })
   @IsOptional()
   bizDateTo?: string;
 

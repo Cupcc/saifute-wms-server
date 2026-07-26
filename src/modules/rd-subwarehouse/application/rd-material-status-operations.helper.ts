@@ -1,21 +1,68 @@
-import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { Prisma, RdMaterialStatus, RdMaterialStatusEventType } from "../../../../generated/prisma/client";
 import {
-  type DbClient,
-  type ReverseBySourceDocumentInput,
-  type DecimalLike,
-  type ReverseHistoryInput,
-  type TransferStatusQuantityInput,
-  RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE,
-  assertBucketTotalWithinLineQuantity,
-  buildStatusProjection,
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from "@nestjs/common";
+import {
+  Prisma,
+  RdMaterialStatus,
+  RdMaterialStatusEventType,
+} from "../../../../generated/prisma/client";
+import {
   cloneLedgerBuckets,
+  type DbClient,
+  type DecimalLike,
   ensureStatusLedger,
+  type LedgerBucketValues,
+  RD_MATERIAL_STATUS_LABELS,
+  RD_PROCUREMENT_REQUEST_DOCUMENT_TYPE,
+  type ReverseBySourceDocumentInput,
+  type ReverseHistoryInput,
   STATUS_FIELD_MAP,
-  sumBuckets,
+  type TransferStatusQuantityInput,
   toLedgerUpdateData,
   toPositiveDecimal,
 } from "./rd-material-status-core.helper";
+
+async function resolveRequestLineMaterialLabel(
+  requestLineId: number,
+  db: DbClient,
+) {
+  const line = await db.rdProcurementRequestLine.findUnique({
+    where: { id: requestLineId },
+    select: { materialCodeSnapshot: true, materialNameSnapshot: true },
+  });
+  return line?.materialNameSnapshot || line?.materialCodeSnapshot || null;
+}
+
+/**
+ * Optimistic-concurrency write for the status ledger: the update only lands
+ * when every previously-read bucket value is still current, otherwise the
+ * read-modify-write raced a concurrent apply/reverse and must be retried.
+ */
+async function updateLedgerGuarded(
+  ledger: Awaited<ReturnType<typeof ensureStatusLedger>>,
+  nextValues: LedgerBucketValues,
+  operatorId: string | undefined,
+  db: DbClient,
+) {
+  const result = await db.rdMaterialStatusLedger.updateMany({
+    where: {
+      id: ledger.id,
+      pendingQty: ledger.pendingQty,
+      inProcurementQty: ledger.inProcurementQty,
+      canceledQty: ledger.canceledQty,
+      acceptedQty: ledger.acceptedQty,
+      handedOffQty: ledger.handedOffQty,
+      scrappedQty: ledger.scrappedQty,
+      returnedQty: ledger.returnedQty,
+    },
+    data: toLedgerUpdateData(nextValues, operatorId),
+  });
+  if (result.count !== 1) {
+    throw new ConflictException("RD 状态台账并发冲突，请重试");
+  }
+}
 
 function buildHistoryCreateInput(
   input: TransferStatusQuantityInput,
@@ -112,18 +159,22 @@ export async function transferStatusQuantity(
     }
   }
   if (remaining.gt(0)) {
+    const materialLabel = await resolveRequestLineMaterialLabel(
+      input.requestLineId,
+      db,
+    );
     throw new BadRequestException(
-      `RD 状态数量不足，无法推进到 ${input.toStatus}: 还缺 ${remaining.toFixed(6)}`,
+      `${materialLabel ? `物料 ${materialLabel} ` : ""}可转为「${RD_MATERIAL_STATUS_LABELS[input.toStatus]}」的数量不足，还缺 ${remaining.toString()}`,
     );
   }
-  await db.rdMaterialStatusLedger.update({
-    where: { id: ledger.id },
-    data: toLedgerUpdateData(nextValues, input.operatorId),
-  });
+  await updateLedgerGuarded(ledger, nextValues, input.operatorId, db);
+  const createdHistories = [];
   for (const historyInput of historyInputs) {
-    await db.rdMaterialStatusHistory.create({ data: historyInput });
+    createdHistories.push(
+      await db.rdMaterialStatusHistory.create({ data: historyInput }),
+    );
   }
-  return historyInputs;
+  return createdHistories;
 }
 export async function reverseStatusHistory(
   input: ReverseHistoryInput,
@@ -154,16 +205,17 @@ export async function reverseStatusHistory(
   const toField = STATUS_FIELD_MAP[history.toStatus];
   const currentToQty = nextValues[toField];
   if (currentToQty.lt(history.quantity)) {
+    const materialLabel = await resolveRequestLineMaterialLabel(
+      history.requestLineId,
+      db,
+    );
     throw new BadRequestException(
-      `RD 状态回滚失败：${history.toStatus} 当前数量不足 ${history.quantity.toFixed(6)}`,
+      `${materialLabel ? `物料 ${materialLabel} ` : ""}状态回滚失败：「${RD_MATERIAL_STATUS_LABELS[history.toStatus]}」当前数量不足，无法回退 ${history.quantity.toString()}`,
     );
   }
   nextValues[toField] = nextValues[toField].sub(history.quantity);
   nextValues[fromField] = nextValues[fromField].add(history.quantity);
-  await db.rdMaterialStatusLedger.update({
-    where: { id: ledger.id },
-    data: toLedgerUpdateData(nextValues, input.operatorId),
-  });
+  await updateLedgerGuarded(ledger, nextValues, input.operatorId, db);
   await db.rdMaterialStatusHistory.update({
     where: { id: history.id },
     data: {
@@ -230,4 +282,3 @@ export async function reverseStatusHistoriesBySourceDocument(
   }
   return histories.length;
 }
-

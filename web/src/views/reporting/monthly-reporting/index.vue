@@ -100,6 +100,22 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item v-if="isMaterialCategoryView" label="物料">
+          <el-select
+            v-model="filters.materialId"
+            clearable
+            filterable
+            placeholder="全部物料"
+            style="width: 320px"
+          >
+            <el-option
+              v-for="item in materialOptions"
+              :key="item.materialId"
+              :label="formatMaterialOptionLabel(item)"
+              :value="item.materialId"
+            />
+          </el-select>
+        </el-form-item>
         <el-form-item label="单据类型">
           <el-select
             v-model="filters.documentTypeKey"
@@ -176,20 +192,37 @@
         </el-col>
       </el-row>
 
-      <el-row v-else :gutter="16" class="summary-row">
-        <el-col
-          v-for="item in materialCategorySummaryStats"
-          :key="item.key"
-          :xs="24"
-          :sm="12"
-          :lg="4"
+      <template v-else>
+        <div class="summary-visibility-bar">
+          <span class="summary-visibility-tip">汇总方块默认隐藏</span>
+          <el-button
+            text
+            type="primary"
+            :aria-expanded="materialCategorySummaryVisible"
+            @click="toggleMaterialCategorySummary"
+          >
+            {{ materialCategorySummaryVisible ? "隐藏汇总数据" : "显示汇总数据" }}
+          </el-button>
+        </div>
+        <el-row
+          v-if="materialCategorySummaryVisible"
+          :gutter="16"
+          class="summary-row"
         >
-          <div class="stat-box" :class="{ 'danger-box': item.danger }">
-            <div class="stat-label">{{ item.label }}</div>
-            <div class="stat-value">{{ item.value }}</div>
-          </div>
-        </el-col>
-      </el-row>
+          <el-col
+            v-for="item in materialCategorySummaryStats"
+            :key="item.key"
+            :xs="24"
+            :sm="12"
+            :lg="4"
+          >
+            <div class="stat-box" :class="{ 'danger-box': item.danger }">
+              <div class="stat-label">{{ item.label }}</div>
+              <div class="stat-value">{{ item.value }}</div>
+            </div>
+          </el-col>
+        </el-row>
+      </template>
 
       <el-card v-if="!isMaterialCategoryView" shadow="never" class="section-card">
         <template #header>
@@ -612,6 +645,7 @@ import {
   getMonthlyReportingSummary,
 } from "@/api/reporting";
 import useUserStore from "@/store/modules/user";
+import { formatQty } from "@/utils/format";
 
 const DOMAIN_VIEW = "DOMAIN";
 const MATERIAL_CATEGORY_VIEW = "MATERIAL_CATEGORY";
@@ -627,6 +661,7 @@ const router = useRouter();
 const summaryLoading = ref(false);
 const detailLoading = ref(false);
 const exporting = ref(false);
+const materialCategorySummaryVisible = ref(false);
 const pageNum = ref(1);
 const pageSize = ref(10);
 const materialPageNum = ref(1);
@@ -636,6 +671,7 @@ const workshopOptions = ref([]);
 const domainCatalog = ref([]);
 const documentTypeCatalog = ref([]);
 const categoryCatalog = ref([]);
+const materialCatalog = ref([]);
 const domainRows = ref([]);
 const documentTypeRows = ref([]);
 const workshopRows = ref([]);
@@ -866,6 +902,22 @@ const categoryOptions = computed(() => {
     }))
     .sort((left, right) =>
       left.categoryLabel.localeCompare(right.categoryLabel, "zh-Hans-CN"),
+  );
+});
+const materialOptions = computed(() => {
+  const optionsByMaterialId = new Map();
+
+  for (const item of materialCatalog.value) {
+    if (!optionsByMaterialId.has(item.materialId)) {
+      optionsByMaterialId.set(item.materialId, item);
+    }
+  }
+
+  return [...optionsByMaterialId.values()].sort((left, right) =>
+    formatMaterialOptionLabel(left).localeCompare(
+      formatMaterialOptionLabel(right),
+      "zh-Hans-CN",
+    ),
   );
 });
 const filteredMaterialRows = computed(() => {
@@ -1140,6 +1192,7 @@ function createDefaultFilters(viewMode = DOMAIN_VIEW) {
     workshopId: fixedWorkshopId.value,
     domainKey: undefined,
     documentTypeKey: undefined,
+    materialId: undefined,
     categoryNodeKey: undefined,
     keyword: "",
   };
@@ -1178,7 +1231,7 @@ function getWorkshopUsageSummaries({ columns, data }) {
     }
 
     if (WORKSHOP_USAGE_QUANTITY_TOTAL_KEYS.has(property)) {
-      return sumSummaryRows(data, property).toFixed(0);
+      return formatQty(sumSummaryRows(data, property));
     }
 
     if (WORKSHOP_USAGE_AMOUNT_TOTAL_KEYS.has(property)) {
@@ -1214,6 +1267,9 @@ function buildBaseQuery({ useSelectedCategory = false } = {}) {
       ? undefined
       : filters.value.domainKey,
     ...documentTypeQuery,
+    materialId: isMaterialCategoryView.value
+      ? filters.value.materialId
+      : undefined,
     categoryNodeKey: isMaterialCategoryView.value
       ? useSelectedCategory
         ? resolveDetailCategoryNodeKey()
@@ -1279,6 +1335,17 @@ function formatMaterialCategoryLabel(category) {
     : category.categoryName;
 }
 
+function formatMaterialOptionLabel(material) {
+  return [
+    material.materialCode,
+    material.materialName,
+    material.materialSpec,
+    material.unitCode,
+  ]
+    .filter(Boolean)
+    .join(" / ");
+}
+
 async function loadWorkshopOptions() {
   const response = await listWorkshop({
     pageNum: 1,
@@ -1324,6 +1391,7 @@ async function loadSummary() {
       salesProjectRows.value = [];
       rdProjectRows.value = [];
       categoryCatalog.value = data.categoryCatalog || data.categories || [];
+      materialCatalog.value = data.materialCatalog || data.materials || [];
       categoryRows.value = data.categories || [];
       materialRows.value = data.materials || [];
       activeBusinessSummaryTab.value = "";
@@ -1332,6 +1400,7 @@ async function loadSummary() {
 
     domainCatalog.value = data.domainCatalog || [];
     categoryCatalog.value = [];
+    materialCatalog.value = [];
     categoryRows.value = [];
     materialRows.value = [];
     domainRows.value = data.domains || [];
@@ -1373,10 +1442,16 @@ function handleSearch() {
 
 function handleReset() {
   filters.value = createDefaultFilters(resolveRouteViewMode());
+  materialCategorySummaryVisible.value = false;
   selectedCategoryNodeKey.value = undefined;
   pageNum.value = 1;
   resetMaterialPagination();
   loadPage();
+}
+
+function toggleMaterialCategorySummary() {
+  materialCategorySummaryVisible.value =
+    !materialCategorySummaryVisible.value;
 }
 
 function handlePageChange(value) {
@@ -1536,6 +1611,7 @@ async function handleExport() {
 
 function resetFiltersForCurrentRoute() {
   filters.value = createDefaultFilters(resolveRouteViewMode());
+  materialCategorySummaryVisible.value = false;
   selectedCategoryNodeKey.value = undefined;
   pageNum.value = 1;
   resetMaterialPagination();
@@ -1607,6 +1683,20 @@ watch(
 
   .summary-row {
     margin-bottom: 16px;
+  }
+
+  .summary-visibility-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-height: 32px;
+    margin-bottom: 8px;
+  }
+
+  .summary-visibility-tip {
+    color: #909399;
+    font-size: 12px;
   }
 
   .section-card + .section-card {

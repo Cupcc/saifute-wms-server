@@ -3,6 +3,7 @@ import { type StockScopeCode } from "../../session/domain/user-session";
 import type { CreateRdProjectDto } from "../dto/create-rd-project.dto";
 import type { CreateRdProjectMaterialActionDto } from "../dto/create-rd-project-material-action.dto";
 import type { QueryRdProjectDto } from "../dto/query-rd-project.dto";
+import type { QueryRdProjectMaterialActionDto } from "../dto/query-rd-project-material-action.dto";
 import type { UpdateRdProjectDto } from "../dto/update-rd-project.dto";
 import { RdProjectMasterService } from "./rd-project-master.service";
 import { RdProjectMaterialActionService } from "./rd-project-material-action.service";
@@ -38,8 +39,15 @@ export class RdProjectService {
     return this.masterService.listMaterials(projectId);
   }
 
-  listMaterialActions(projectId: number, _query?: unknown) {
-    return this.materialActionService.listMaterialActions(projectId);
+  listChangeLogs(projectId: number) {
+    return this.masterService.listChangeLogs(projectId);
+  }
+
+  listMaterialActions(
+    projectId: number,
+    query?: QueryRdProjectMaterialActionDto,
+  ) {
+    return this.materialActionService.listMaterialActions(projectId, query);
   }
 
   getMaterialActionById(actionId: number) {
@@ -56,9 +64,5 @@ export class RdProjectService {
       dto,
       createdBy,
     );
-  }
-
-  voidMaterialAction(actionId: number, voidedBy?: string) {
-    return this.materialActionService.voidMaterialAction(actionId, voidedBy);
   }
 }

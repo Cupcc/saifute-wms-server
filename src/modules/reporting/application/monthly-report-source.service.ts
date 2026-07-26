@@ -36,6 +36,7 @@ export interface MonthlyReportQuery {
   documentTypeLabel?: string;
   topicKey?: MonthlyReportingTopicKey;
   keyword?: string;
+  materialId?: number;
   categoryId?: number;
   categoryNodeKey?: string;
   limit?: number;
@@ -211,6 +212,9 @@ export class MonthlyReportSourceService {
         options.ignoreDocumentTypeLabel || !documentTypeLabel
           ? true
           : entry.documentTypeLabel === documentTypeLabel,
+      )
+      .filter((entry) =>
+        query.materialId ? entry.materialId === query.materialId : true,
       )
       .filter((entry) =>
         categoryNodeKey

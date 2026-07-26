@@ -1,3 +1,5 @@
+import { formatQty } from "@/utils/format";
+
 export function buildSalesProjectDetailPath(projectId) {
   return `/sales/project/detail/${projectId}`;
 }
@@ -8,11 +10,6 @@ export function toDateInputValue(value) {
 
 export function formatDate(value) {
   return toDateInputValue(value) || "-";
-}
-
-export function formatNumber(value) {
-  const parsed = Number(value ?? 0);
-  return Number.isFinite(parsed) ? parsed : 0;
 }
 
 export function formatAmount(value) {
@@ -31,14 +28,14 @@ export function buildSalesProjectSummaryCards(summary = {}) {
   return [
     {
       label: "项目库存",
-      value: formatNumber(summary.totalCurrentInventoryQty),
+      value: formatQty(summary.totalCurrentInventoryQty),
     },
-    { label: "物料种类", value: formatNumber(summary.materialKindCount) },
-    { label: "累计出库", value: formatNumber(summary.totalOutboundQty) },
-    { label: "累计退货", value: formatNumber(summary.totalReturnQty) },
+    { label: "物料种类", value: formatQty(summary.materialKindCount) },
+    { label: "累计出库", value: formatQty(summary.totalOutboundQty) },
+    { label: "累计退货", value: formatQty(summary.totalReturnQty) },
     {
       label: "净发货",
-      value: formatNumber(summary.totalNetShipmentQty),
+      value: formatQty(summary.totalNetShipmentQty),
     },
     {
       label: "净发货金额",

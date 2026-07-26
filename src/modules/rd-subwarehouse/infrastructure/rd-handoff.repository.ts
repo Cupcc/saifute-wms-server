@@ -19,21 +19,23 @@ export class RdHandoffRepository {
   async findOrders(
     params: {
       documentNo?: string;
+      lifecycleStatus?: "EFFECTIVE" | "VOIDED";
       bizDateFrom?: Date;
       bizDateTo?: Date;
       handlerName?: string;
       materialId?: number;
       materialName?: string;
-      sourceWorkshopId?: number;
       targetWorkshopId?: number;
+      boundStockScopeId?: number;
       limit: number;
       offset: number;
     },
     db?: DbClient,
   ) {
-    const where: Prisma.RdHandoffOrderWhereInput = {
-      lifecycleStatus: "EFFECTIVE",
-    };
+    const where: Prisma.RdHandoffOrderWhereInput = {};
+    if (params.lifecycleStatus) {
+      where.lifecycleStatus = params.lifecycleStatus;
+    }
     if (params.documentNo) {
       where.documentNo = { contains: params.documentNo };
     }
@@ -63,11 +65,14 @@ export class RdHandoffRepository {
         },
       };
     }
-    if (params.sourceWorkshopId) {
-      where.sourceWorkshopId = params.sourceWorkshopId;
-    }
     if (params.targetWorkshopId) {
       where.targetWorkshopId = params.targetWorkshopId;
+    }
+    if (params.boundStockScopeId) {
+      where.OR = [
+        { sourceStockScopeId: params.boundStockScopeId },
+        { targetStockScopeId: params.boundStockScopeId },
+      ];
     }
 
     const client = this.db(db);
@@ -97,6 +102,21 @@ export class RdHandoffRepository {
       where: { documentNo },
       include: { lines: { orderBy: { lineNo: "asc" } } },
     });
+  }
+
+  async findOrderByClientRequestId(clientRequestId: string, db?: DbClient) {
+    return this.db(db).rdHandoffOrder.findFirst({
+      where: { clientRequestId, lifecycleStatus: "EFFECTIVE" },
+      include: { lines: { orderBy: { lineNo: "asc" } } },
+    });
+  }
+
+  async findDocumentNosByPrefix(prefix: string, db?: DbClient) {
+    const rows = await this.db(db).rdHandoffOrder.findMany({
+      where: { documentNo: { startsWith: prefix } },
+      select: { documentNo: true },
+    });
+    return rows.map((row) => row.documentNo);
   }
 
   async createOrder(

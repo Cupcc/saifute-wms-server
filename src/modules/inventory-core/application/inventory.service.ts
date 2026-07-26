@@ -229,4 +229,13 @@ export class InventoryService {
   ) {
     return this.queries.listPriceLayerAvailability(params);
   }
+
+  listPriceLayerAvailabilityByMaterial(
+    params: Parameters<
+      InventoryQueryService["listPriceLayerAvailabilityByMaterial"]
+    >[0],
+    tx?: Prisma.TransactionClient,
+  ) {
+    return this.queries.listPriceLayerAvailabilityByMaterial(params, tx);
+  }
 }

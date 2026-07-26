@@ -25,34 +25,29 @@ export class UpdateRdProjectDto {
   @MaxLength(128)
   projectName?: string;
 
-  @IsDateString()
+  @IsDateString({ strict: true })
   @IsOptional()
   bizDate?: string;
 
   @IsInt()
   @IsOptional()
   @Min(1)
-  customerId?: number;
+  customerId?: number | null;
 
   @IsInt()
   @IsOptional()
   @Min(1)
-  supplierId?: number;
+  supplierId?: number | null;
 
   @IsInt()
   @IsOptional()
   @Min(1)
-  managerPersonnelId?: number;
-
-  @IsInt()
-  @IsOptional()
-  @Min(1)
-  workshopId?: number;
+  managerPersonnelId?: number | null;
 
   @IsString()
   @IsOptional()
   @MaxLength(500)
-  remark?: string;
+  remark?: string | null;
 
   @IsArray()
   @IsOptional()

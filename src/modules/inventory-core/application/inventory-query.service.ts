@@ -410,6 +410,86 @@ export class InventoryQueryService {
     );
   }
 
+  /**
+   * Batched variant of listPriceLayerAvailability: resolves the layer
+   * availability for many materials with a single repository query and
+   * returns the per-material price layers keyed by materialId.
+   */
+  async listPriceLayerAvailabilityByMaterial(
+    params: {
+      materialIds: number[];
+      stockScope?: StockScopeCode;
+      workshopId?: number;
+      sourceOperationTypes?: InventoryOperationTypeEnum[];
+      projectTargetId?: number | null;
+    },
+    tx?: Prisma.TransactionClient,
+  ): Promise<Map<number, PriceLayerAvailabilityItem[]>> {
+    const result = new Map<number, PriceLayerAvailabilityItem[]>();
+    const materialIds = [...new Set(params.materialIds)].filter(
+      (value) => value > 0,
+    );
+    if (materialIds.length === 0) {
+      return result;
+    }
+
+    const scope = await this.stockScopeCompatibilityService.resolveRequired({
+      stockScope: params.stockScope,
+      workshopId: params.workshopId,
+    });
+
+    const sourceLogs = await this.repository.findFifoSourceLogsByMaterials(
+      {
+        materialIds,
+        stockScopeId: scope.stockScopeId,
+        sourceOperationTypes:
+          params.sourceOperationTypes ?? FIFO_SOURCE_OPERATION_TYPES,
+        projectTargetId: params.projectTargetId ?? null,
+      },
+      tx,
+    );
+
+    const groupedByMaterial = new Map<
+      string,
+      {
+        materialId: number;
+        unitCost: Prisma.Decimal;
+        availableQty: Prisma.Decimal;
+        sourceLogCount: number;
+      }
+    >();
+    for (const sourceLog of sourceLogs) {
+      if (!sourceLog.unitCost) {
+        continue;
+      }
+
+      const key = `${sourceLog.materialId}:${sourceLog.unitCost.toString()}`;
+      const current = groupedByMaterial.get(key);
+      if (current) {
+        current.availableQty = current.availableQty.add(sourceLog.availableQty);
+        current.sourceLogCount += 1;
+        continue;
+      }
+
+      groupedByMaterial.set(key, {
+        materialId: sourceLog.materialId,
+        unitCost: sourceLog.unitCost,
+        availableQty: new Prisma.Decimal(sourceLog.availableQty),
+        sourceLogCount: 1,
+      });
+    }
+
+    for (const layer of groupedByMaterial.values()) {
+      const layers = result.get(layer.materialId) ?? [];
+      layers.push(layer);
+      result.set(layer.materialId, layers);
+    }
+    for (const layers of result.values()) {
+      layers.sort((left, right) => left.unitCost.comparedTo(right.unitCost));
+    }
+    return result;
+  }
+
   private async resolveInventoryStockScopeIds(params: {
     stockScope?: StockScopeCode;
     workshopId?: number;

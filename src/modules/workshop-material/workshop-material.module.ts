@@ -3,6 +3,7 @@ import { ApprovalModule } from "../approval/approval.module";
 import { InventoryCoreModule } from "../inventory-core/inventory-core.module";
 import { MasterDataModule } from "../master-data/master-data.module";
 import { RbacModule } from "../rbac/rbac.module";
+import { RdProjectSharedModule } from "../rd-project/rd-project-shared.module";
 import { WorkshopMaterialService } from "./application/workshop-material.service";
 import { WorkshopMaterialPickService } from "./application/workshop-material-pick.service";
 import { WorkshopMaterialReturnService } from "./application/workshop-material-return.service";
@@ -14,7 +15,13 @@ import { WorkshopMaterialRepository } from "./infrastructure/workshop-material.r
 import { WorkshopMaterialDocumentNumberRepository } from "./infrastructure/workshop-material-document-number.repository";
 
 @Module({
-  imports: [MasterDataModule, InventoryCoreModule, ApprovalModule, RbacModule],
+  imports: [
+    MasterDataModule,
+    InventoryCoreModule,
+    ApprovalModule,
+    RbacModule,
+    RdProjectSharedModule,
+  ],
   controllers: [WorkshopMaterialController],
   providers: [
     WorkshopMaterialService,

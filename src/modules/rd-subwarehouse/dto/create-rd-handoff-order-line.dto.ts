@@ -29,14 +29,14 @@ export class CreateRdHandoffOrderLineDto {
   sourceDocumentLineId?: number;
 
   @IsString()
-  @Matches(/^(?!0+(\.0+)?$)\d+(\.\d{1,6})?$/, {
+  @Matches(/^(?!0+(\.0+)?$)\d{1,12}(\.\d{1,6})?$/, {
     message: "quantity must be a positive decimal string",
   })
   quantity!: string;
 
   @IsString()
   @IsOptional()
-  @Matches(/^\d+(\.\d{1,4})?$/, {
+  @Matches(/^\d{1,10}(\.\d{1,4})?$/, {
     message:
       "unitPrice must be a non-negative decimal string with up to 4 decimals",
   })
