@@ -99,7 +99,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="pickDetailList">
+    <adaptive-table border stripe v-loading="loading" :data="pickDetailList" :column-config="columns">
       <el-table-column type="index" width="60" align="center" />
       <el-table-column sortable show-overflow-tooltip label="领料单号" align="center" prop="pickNo" min-width="140" v-if="columns[0].visible" />
       <el-table-column
@@ -197,7 +197,7 @@ const columns = ref([
   { key: 3, label: `物料名称`, visible: true },
   { key: 4, label: `规格型号`, visible: true },
   { key: 5, label: `数量`, visible: true },
-  { key: 6, label: `单价`, visible: true },
+  { key: 6, label: `成本价层`, visible: true },
   { key: 7, label: `金额`, visible: true },
   { key: 8, label: `备注`, visible: true },
 ]);

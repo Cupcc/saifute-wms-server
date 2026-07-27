@@ -58,7 +58,7 @@
       />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="scrapDetailList">
+    <adaptive-table border stripe v-loading="loading" :data="scrapDetailList" :column-config="columns">
       <el-table-column type="index" width="60" align="center" />
       <el-table-column
         sortable

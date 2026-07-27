@@ -50,7 +50,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="personnelList">
+    <adaptive-table border stripe v-loading="loading" :data="personnelList" :column-config="columns">
       <el-table-column type="index" width="50" align="center" />
       <el-table-column sortable show-overflow-tooltip label="姓名" align="center" prop="name" v-if="columns[0].visible" />
       <el-table-column sortable show-overflow-tooltip label="手机号" align="center" prop="contactPhone" v-if="columns[1].visible" />

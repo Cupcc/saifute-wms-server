@@ -1,45 +1,117 @@
 <template>
   <div class="top-right-btn" :style="style">
     <el-row>
-      <el-tooltip class="item" effect="dark" :content="showSearch ? '隐藏搜索' : '显示搜索'" placement="top" v-if="search">
-        <el-button circle icon="Search" @click="toggleSearch()" />
+      <el-tooltip
+        v-if="search"
+        class="item"
+        effect="dark"
+        :content="showSearch ? '隐藏搜索' : '显示搜索'"
+        placement="top"
+      >
+        <el-button circle icon="Search" @click="toggleSearch" />
       </el-tooltip>
       <el-tooltip class="item" effect="dark" content="刷新" placement="top">
-        <el-button circle icon="Refresh" @click="refresh()" />
+        <el-button circle icon="Refresh" @click="refresh" />
       </el-tooltip>
-      <el-tooltip class="item" effect="dark" content="显隐列" placement="top" v-if="columns">
-        <el-button circle icon="Menu" @click="showColumn()" v-if="showColumnsType === 'transfer'"/>
-        <el-dropdown trigger="click" :hide-on-click="false" style="padding-left: 12px" v-if="showColumnsType === 'checkbox'">
-          <el-button circle icon="Menu" />
-          <template #dropdown>
-            <el-dropdown-menu>
-              <!-- 全选/反选 按钮 -->
-              <el-dropdown-item>
-                <el-checkbox :indeterminate="isIndeterminate" v-model="isChecked" @change="toggleCheckAll"> 列展示 </el-checkbox>
-              </el-dropdown-item>
-              <div class="check-line"></div>
-              <template v-for="item in columns" :key="item.key">
-                <el-dropdown-item>
-                  <el-checkbox v-model="item.visible" @change="checkboxChange($event, item.label)" :label="item.label" />
-                </el-dropdown-item>
-              </template>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+
+      <el-tooltip
+        v-if="hasColumns && showColumnsType === 'transfer'"
+        class="item"
+        effect="dark"
+        content="显隐列"
+        placement="top"
+      >
+        <el-button circle icon="Menu" @click="showColumn" />
       </el-tooltip>
+
+      <el-popover
+        v-if="hasColumns && showColumnsType === 'checkbox'"
+        placement="bottom-end"
+        :width="300"
+        trigger="click"
+        @show="initializeColumnListSortable"
+      >
+        <template #reference>
+          <el-button
+            class="column-settings-trigger"
+            circle
+            icon="Menu"
+            aria-label="列设置"
+            title="列设置"
+          />
+        </template>
+
+        <div class="column-settings">
+          <div class="column-settings__header">
+            <div>
+              <div class="column-settings__title">列设置</div>
+              <div class="column-settings__hint">拖动表头或下方条目调整顺序</div>
+            </div>
+            <el-button link type="primary" @click="resetColumns">恢复默认</el-button>
+          </div>
+
+          <div class="column-settings__check-all">
+            <el-checkbox
+              :model-value="isChecked"
+              :indeterminate="isIndeterminate"
+              @change="toggleCheckAll"
+            >
+              显示全部列
+            </el-checkbox>
+          </div>
+
+          <div ref="columnListRef" class="column-settings__list">
+            <div
+              v-for="item in orderedColumns"
+              :key="getTableColumnId(item)"
+              class="column-settings__item"
+              :data-column-id="getTableColumnId(item)"
+            >
+              <span class="column-settings__drag-handle" title="拖动调整顺序">
+                <el-icon><Rank /></el-icon>
+              </span>
+              <el-checkbox
+                v-model="item.visible"
+                class="column-settings__checkbox"
+                @change="checkboxChange($event, item)"
+              >
+                {{ item.label }}
+              </el-checkbox>
+            </div>
+          </div>
+        </div>
+      </el-popover>
     </el-row>
+
     <el-dialog :title="title" v-model="open" append-to-body>
       <el-transfer
         :titles="['显示', '隐藏']"
         v-model="value"
         :data="columns"
         @change="dataChange"
-      ></el-transfer>
+      />
     </el-dialog>
   </div>
 </template>
 
 <script setup>
+import Sortable from "sortablejs";
+import useUserStore from "@/store/modules/user";
+import {
+  applyTableColumnPreference,
+  captureTableColumnDefaults,
+  createTableColumnPreference,
+  getOrderedTableColumns,
+  getTableColumnId,
+  getTableColumnPreferenceStorageKey,
+  loadTableColumnPreference,
+  normalizeTableColumnOrder,
+  removeTableColumnPreference,
+  restoreTableColumnDefaults,
+  saveTableColumnPreference,
+  setTableColumnOrder,
+} from "@/utils/tableColumnPreferences";
+
 const props = defineProps({
   /* 是否显示检索条件 */
   showSearch: {
@@ -49,6 +121,12 @@ const props = defineProps({
   /* 显隐列信息 */
   columns: {
     type: Array,
+    default: undefined,
+  },
+  /* 自定义偏好隔离键；默认使用当前路由 */
+  tableKey: {
+    type: String,
+    default: "",
   },
   /* 是否显示检索图标 */
   search: {
@@ -68,14 +146,18 @@ const props = defineProps({
 });
 
 const emits = defineEmits(["update:showSearch", "queryTable"]);
-
-// 显隐数据
+const route = useRoute();
+const userStore = useUserStore();
+const columnListRef = ref(null);
 const value = ref([]);
-// 弹出层标题
 const title = ref("显示/隐藏");
-// 是否显示弹出层
 const open = ref(false);
+const defaultsByStructure = new Map();
+const lastSavedStateByScope = new Map();
+let columnListSortable;
 
+const hasColumns = computed(() => (props.columns?.length ?? 0) > 0);
+const orderedColumns = computed(() => getOrderedTableColumns(props.columns));
 const style = computed(() => {
   const ret = {};
   if (props.gutter) {
@@ -83,82 +165,267 @@ const style = computed(() => {
   }
   return ret;
 });
-
-// 是否全选/半选 状态
-const isChecked = computed({
-  get: () => props.columns.every((col) => col.visible),
-  set: () => {},
-});
+const isChecked = computed(
+  () => hasColumns.value && props.columns.every((column) => column.visible),
+);
 const isIndeterminate = computed(
-  () => props.columns.some((col) => col.visible) && !isChecked.value,
+  () =>
+    hasColumns.value &&
+    props.columns.some((column) => column.visible) &&
+    !isChecked.value,
+);
+const columnStructureSignature = computed(() =>
+  (props.columns ?? [])
+    .map((column, index) => getTableColumnId(column, index))
+    .join("\u001f"),
+);
+const preferenceStorageKey = computed(() =>
+  getTableColumnPreferenceStorageKey(
+    userStore.id || userStore.name,
+    props.tableKey || route.path,
+  ),
+);
+const columnStateSignature = computed(() =>
+  JSON.stringify(
+    (props.columns ?? []).map((column, index) => ({
+      id: getTableColumnId(column, index),
+      order: column.order,
+      visible: column.visible !== false,
+    })),
+  ),
 );
 
-// 搜索
+function syncTransferValue() {
+  value.value = (props.columns ?? [])
+    .filter((column) => column.visible === false)
+    .map((column) => column.key);
+}
+
+function rememberCurrentState(storageKey) {
+  if (!storageKey || !hasColumns.value) {
+    return;
+  }
+  lastSavedStateByScope.set(
+    storageKey,
+    JSON.stringify(createTableColumnPreference(props.columns)),
+  );
+}
+
+function initializeColumnPreferences() {
+  if (!hasColumns.value) {
+    return;
+  }
+
+  const structureKey = columnStructureSignature.value;
+  if (!defaultsByStructure.has(structureKey)) {
+    defaultsByStructure.set(
+      structureKey,
+      captureTableColumnDefaults(props.columns),
+    );
+  }
+
+  restoreTableColumnDefaults(
+    props.columns,
+    defaultsByStructure.get(structureKey),
+  );
+  normalizeTableColumnOrder(props.columns);
+
+  const storageKey = preferenceStorageKey.value;
+  if (storageKey) {
+    applyTableColumnPreference(
+      props.columns,
+      loadTableColumnPreference(storageKey),
+    );
+    rememberCurrentState(storageKey);
+  }
+  syncTransferValue();
+}
+
+function persistColumnPreferences() {
+  const storageKey = preferenceStorageKey.value;
+  if (!storageKey || !hasColumns.value) {
+    return;
+  }
+
+  const preference = createTableColumnPreference(props.columns);
+  const serializedPreference = JSON.stringify(preference);
+  if (lastSavedStateByScope.get(storageKey) === serializedPreference) {
+    return;
+  }
+
+  saveTableColumnPreference(storageKey, preference);
+  lastSavedStateByScope.set(storageKey, serializedPreference);
+  syncTransferValue();
+}
+
+function syncSortableList() {
+  if (!columnListSortable) {
+    return;
+  }
+  columnListSortable.sort(
+    orderedColumns.value.map((column, index) =>
+      getTableColumnId(column, index),
+    ),
+  );
+}
+
+function initializeColumnListSortable() {
+  nextTick(() => {
+    if (!columnListRef.value) {
+      return;
+    }
+    if (columnListSortable?.el === columnListRef.value) {
+      syncSortableList();
+      return;
+    }
+
+    columnListSortable?.destroy();
+    columnListSortable = Sortable.create(columnListRef.value, {
+      animation: 160,
+      dataIdAttr: "data-column-id",
+      ghostClass: "column-settings__item--ghost",
+      handle: ".column-settings__drag-handle",
+      onEnd() {
+        setTableColumnOrder(props.columns, columnListSortable.toArray());
+      },
+    });
+  });
+}
+
 function toggleSearch() {
   emits("update:showSearch", !props.showSearch);
 }
 
-// 刷新
 function refresh() {
   emits("queryTable");
 }
 
-// 右侧列表元素变化
-function dataChange(data) {
-  for (let item in props.columns) {
-    const key = props.columns[item].key;
-    props.columns[item].visible = !data.includes(key);
-  }
+function dataChange(hiddenColumnKeys) {
+  props.columns.forEach((column) => {
+    column.visible = !hiddenColumnKeys.includes(column.key);
+  });
 }
 
-// 打开显隐列dialog
 function showColumn() {
+  syncTransferValue();
   open.value = true;
 }
 
-if (props.showColumnsType === "transfer") {
-  // 显隐列初始默认隐藏列
-  for (let item in props.columns) {
-    if (props.columns[item].visible === false) {
-      value.value.push(parseInt(item));
-    }
-  }
+function checkboxChange(visible, column) {
+  column.visible = visible;
 }
 
-// 单勾选
-function checkboxChange(event, label) {
-  const column = props.columns.find((item) => item.label === label);
-  if (column) {
-    column.visible = event;
-  }
-}
-
-// 切换全选/反选
-function toggleCheckAll() {
-  const newValue = !isChecked.value;
-  props.columns.forEach((col) => {
-    col.visible = newValue;
+function toggleCheckAll(visible) {
+  props.columns.forEach((column) => {
+    column.visible = visible;
   });
 }
+
+function resetColumns() {
+  const defaults = defaultsByStructure.get(columnStructureSignature.value);
+  if (!defaults) {
+    return;
+  }
+
+  restoreTableColumnDefaults(props.columns, defaults);
+  const storageKey = preferenceStorageKey.value;
+  removeTableColumnPreference(storageKey);
+  rememberCurrentState(storageKey);
+  syncTransferValue();
+  nextTick(syncSortableList);
+}
+
+watch(
+  [preferenceStorageKey, columnStructureSignature],
+  initializeColumnPreferences,
+  { immediate: true },
+);
+watch(columnStateSignature, persistColumnPreferences, { flush: "post" });
+
+onBeforeUnmount(() => {
+  columnListSortable?.destroy();
+});
 </script>
 
-<style lang='scss' scoped>
+<style lang="scss" scoped>
 :deep(.el-transfer__button) {
   border-radius: 50%;
   display: block;
-  margin-left: 0px;
+  margin-left: 0;
 }
+
 :deep(.el-transfer__button:first-child) {
   margin-bottom: 10px;
 }
-:deep(.el-dropdown-menu__item) {
-  line-height: 30px;
-  padding: 0 17px;
+
+.column-settings-trigger {
+  margin-left: 12px;
 }
-.check-line {
-  width: 90%;
-  height: 1px;
-  background-color: #ccc;
-  margin: 3px auto;
+
+.column-settings__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+}
+
+.column-settings__title {
+  color: var(--el-text-color-primary);
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.column-settings__hint {
+  color: var(--el-text-color-secondary);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.column-settings__check-all {
+  padding: 8px 0;
+  border-top: 1px solid var(--el-border-color-lighter);
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.column-settings__list {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-top: 6px;
+}
+
+.column-settings__item {
+  display: flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--el-bg-color-overlay);
+}
+
+.column-settings__item:hover {
+  background: var(--el-fill-color-light);
+}
+
+.column-settings__item--ghost {
+  background: var(--el-color-primary-light-9);
+  opacity: 0.7;
+}
+
+.column-settings__drag-handle {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 8px 6px 2px;
+  color: var(--el-text-color-placeholder);
+  cursor: grab;
+}
+
+.column-settings__drag-handle:active {
+  cursor: grabbing;
+}
+
+.column-settings__checkbox {
+  flex: 1;
+  margin-right: 0;
 }
 </style>

@@ -121,7 +121,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="productList" @selection-change="handleSelectionChange">
+    <adaptive-table border stripe v-loading="loading" :data="productList" :column-config="columns" @selection-change="handleSelectionChange">
 	    <el-table-column type="selection" width="50" align="center" />
       <el-table-column type="index" width="50" align="center" />
       <el-table-column sortable show-overflow-tooltip label="项目名称" align="center" prop="productName" v-if="columns[0].visible">

@@ -60,7 +60,7 @@
       />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="usedList">
+    <adaptive-table border stripe v-loading="loading" :data="usedList" :column-config="columns">
       <el-table-column type="index" width="50" align="center" />
       <el-table-column
         sortable

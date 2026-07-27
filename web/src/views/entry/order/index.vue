@@ -92,7 +92,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="orderList">
+    <adaptive-table border stripe v-loading="loading" :data="orderList" :column-config="columns">
       <el-table-column type="index" width="50" align="center" />
       <el-table-column sortable show-overflow-tooltip label="验收单号" align="center" min-width="140" prop="inboundNo" v-if="columns[0].visible">
         <template #default="scope">
