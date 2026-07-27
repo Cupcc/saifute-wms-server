@@ -7,6 +7,12 @@
             <div class="page-title">库存日志</div>
             <div class="page-subtitle">完整库存流水</div>
           </div>
+          <right-toolbar
+            :search="false"
+            :columns="columns"
+            :gutter="0"
+            @queryTable="loadRows"
+          />
         </div>
       </template>
 
@@ -115,62 +121,126 @@
         border
         stripe
         v-loading="loading"
+        :column-config="columns"
         table-layout="auto"
       >
-
-        <el-table-column prop="bizDate" label="业务日期" width="105" align="center">
+        <el-table-column
+          v-if="columns[0].visible"
+          prop="bizDate"
+          label="业务日期"
+          width="105"
+          align="center"
+        >
           <template #default="{ row }">
             {{ formatDate(row.bizDate) }}
           </template>
         </el-table-column>
-        <el-table-column label="物料" min-width="180" align="center" show-overflow-tooltip>
+        <el-table-column
+          v-if="columns[1].visible"
+          label="物料"
+          min-width="180"
+          align="center"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <div>{{ row.material?.materialCode }} {{ row.material?.materialName }}</div>
             <div class="subtext">{{ row.material?.specModel || "-" }}</div>
           </template>
         </el-table-column>
 
-        <el-table-column label="车间" min-width="100" align="center" show-overflow-tooltip>
+        <el-table-column
+          v-if="columns[2].visible"
+          label="车间"
+          min-width="100"
+          align="center"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             {{ row.workshop?.workshopName || "-" }}
           </template>
         </el-table-column>
-        <el-table-column prop="direction" label="方向" width="70" align="center">
+        <el-table-column
+          v-if="columns[3].visible"
+          prop="direction"
+          label="方向"
+          width="70"
+          align="center"
+        >
           <template #default="{ row }">
             <el-tag :type="row.direction === 'IN' ? 'success' : 'danger'">
               {{ row.direction === "IN" ? "入库" : "出库" }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="afterQty" label="变动后总库存" align="center">
+        <el-table-column
+          v-if="columns[4].visible"
+          prop="afterQty"
+          label="变动后总库存"
+          align="center"
+        >
           <template #default="{ row }">
             {{ formatQty(row.afterQty) }}
           </template>
         </el-table-column>
-        <el-table-column prop="priceLayerChangeQty" label="当前单价变动数量" align="center">
+        <el-table-column
+          v-if="columns[5].visible"
+          prop="priceLayerChangeQty"
+          label="当前单价变动数量"
+          align="center"
+        >
           <template #default="{ row }">
             <span :class="row.direction === 'IN' ? 'qty-in' : 'qty-out'">
               {{ formatPriceLayerChangeQty(row) }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="priceLayerAfterQty" label="当前单价变动后数量" align="center">
+        <el-table-column
+          v-if="columns[6].visible"
+          prop="priceLayerAfterQty"
+          label="当前单价变动后数量"
+          align="center"
+        >
           <template #default="{ row }">
             {{ formatOptionalQuantity(row.priceLayerAfterQty) }}
           </template>
         </el-table-column>
-        <el-table-column label="成本单价" prop="unitCost" align="right" header-align="center">
+        <el-table-column
+          v-if="columns[7].visible"
+          label="成本单价"
+          prop="unitCost"
+          align="right"
+          header-align="center"
+        >
           <template #default="{ row }">
             {{ formatMoney(row.unitCost) }}
           </template>
         </el-table-column>
-        <el-table-column label="成本金额" prop="costAmount" width="100" align="right" header-align="center">
+        <el-table-column
+          v-if="columns[8].visible"
+          label="成本金额"
+          prop="costAmount"
+          width="100"
+          align="right"
+          header-align="center"
+        >
           <template #default="{ row }">
             {{ formatMoney(row.costAmount) }}
           </template>
         </el-table-column>
-        <el-table-column prop="operatorId" label="操作人" width="80" align="center" />
-        <el-table-column label="单据编号" min-width="140" align="center" show-overflow-tooltip>
+        <el-table-column
+          v-if="columns[9].visible"
+          prop="operatorId"
+          label="操作人"
+          width="80"
+          align="center"
+        />
+        <el-table-column
+          v-if="columns[10].visible"
+          label="单据编号"
+          min-width="140"
+          align="center"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <el-button
               v-if="canOpenDocumentDetail(row)"
@@ -184,9 +254,22 @@
             <span v-else>{{ row.businessDocumentNumber || "-" }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="note" label="备注" min-width="140" align="center" show-overflow-tooltip />
+        <el-table-column
+          v-if="columns[11].visible"
+          prop="note"
+          label="备注"
+          min-width="140"
+          align="center"
+          show-overflow-tooltip
+        />
 
-        <el-table-column label="操作类型" min-width="130" align="center" show-overflow-tooltip>
+        <el-table-column
+          v-if="columns[12].visible"
+          label="操作类型"
+          min-width="130"
+          align="center"
+          show-overflow-tooltip
+        >
           <template #default="{ row }">
             <el-tooltip
               v-if="getReversalRevisionTooltip(row)"
@@ -202,6 +285,7 @@
           </template>
         </el-table-column>
         <el-table-column
+          v-if="columns[13].visible"
           label="单据类型"
           min-width="160"
           align="center"
@@ -213,17 +297,33 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="业务模块" width="100" align="center">
+        <el-table-column
+          v-if="columns[14].visible"
+          label="业务模块"
+          width="100"
+          align="center"
+        >
           <template #default="{ row }">
             {{ getBusinessModuleLabel(row.businessModule) }}
           </template>
         </el-table-column>
-        <el-table-column label="库存范围" width="80" align="center">
+        <el-table-column
+          v-if="columns[15].visible"
+          label="库存范围"
+          width="80"
+          align="center"
+        >
           <template #default="{ row }">
             {{ getStockScopeLabel(row.stockScope) }}
           </template>
         </el-table-column>
-        <el-table-column prop="occurredAt" label="发生时间" width="170" align="center">
+        <el-table-column
+          v-if="columns[16].visible"
+          prop="occurredAt"
+          label="发生时间"
+          width="170"
+          align="center"
+        >
           <template #default="{ row }">
             {{ formatDateTime(row.occurredAt) }}
           </template>
@@ -396,6 +496,25 @@ const filters = ref({
   businessDocumentType: "",
   businessDocumentNumber: "",
 });
+const columns = ref([
+  { key: 0, label: "业务日期", visible: true },
+  { key: 1, label: "物料", visible: true },
+  { key: 2, label: "车间", visible: true },
+  { key: 3, label: "方向", visible: true },
+  { key: 4, label: "变动后总库存", visible: true },
+  { key: 5, label: "当前单价变动数量", visible: true },
+  { key: 6, label: "当前单价变动后数量", visible: true },
+  { key: 7, label: "成本单价", visible: true },
+  { key: 8, label: "成本金额", visible: true },
+  { key: 9, label: "操作人", visible: true },
+  { key: 10, label: "单据编号", visible: true },
+  { key: 11, label: "备注", visible: true },
+  { key: 12, label: "操作类型", visible: true },
+  { key: 13, label: "单据类型", visible: true },
+  { key: 14, label: "业务模块", visible: true },
+  { key: 15, label: "库存范围", visible: true },
+  { key: 16, label: "发生时间", visible: true },
+]);
 const documentDetailOpen = ref(false);
 const documentDetailLoading = ref(false);
 const selectedLog = ref(null);
