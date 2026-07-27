@@ -74,7 +74,8 @@
       </div>
 
       <div ref="tableWrapRef" class="procurement-table-wrap">
-        <el-table
+        <adaptive-table
+          auto-columns
           :data="rows"
           row-key="id"
           height="100%"
@@ -344,7 +345,7 @@
               </el-button>
             </template>
           </el-table-column>
-        </el-table>
+        </adaptive-table>
       </div>
 
       <div class="pagination-wrap">

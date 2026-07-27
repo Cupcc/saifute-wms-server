@@ -10,7 +10,13 @@
       >
         <el-button circle icon="Search" @click="toggleSearch" />
       </el-tooltip>
-      <el-tooltip class="item" effect="dark" content="刷新" placement="top">
+      <el-tooltip
+        v-if="showRefresh"
+        class="item"
+        effect="dark"
+        content="刷新"
+        placement="top"
+      >
         <el-button circle icon="Refresh" @click="refresh" />
       </el-tooltip>
 
@@ -130,6 +136,11 @@ const props = defineProps({
   },
   /* 是否显示检索图标 */
   search: {
+    type: Boolean,
+    default: true,
+  },
+  /* 是否显示刷新图标 */
+  showRefresh: {
     type: Boolean,
     default: true,
   },

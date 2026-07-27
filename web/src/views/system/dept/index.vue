@@ -47,7 +47,9 @@
          <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
       </el-row>
 
-      <el-table
+      <adaptive-table
+         auto-columns
+         :fit-viewport="false"
          v-if="refreshTable"
          v-loading="loading"
          :data="deptList"
@@ -74,7 +76,7 @@
                <el-button v-if="!isRootDept(scope.row) && scope.row.parentId !== 0" link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:dept:remove']">删除</el-button>
             </template>
          </el-table-column>
-      </el-table>
+      </adaptive-table>
 
       <pagination
          v-show="total > 0"

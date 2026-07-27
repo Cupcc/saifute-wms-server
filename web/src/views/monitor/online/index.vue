@@ -24,7 +24,9 @@
             <el-button icon="Refresh" @click="resetQuery">重置</el-button>
          </el-form-item>
       </el-form>
-      <el-table
+      <adaptive-table
+         auto-columns
+         :fit-viewport="false"
          v-loading="loading"
          :data="onlineList.slice((pageNum - 1) * pageSize, pageNum * pageSize)"
          style="width: 100%;"
@@ -51,7 +53,7 @@
                <el-button link type="primary" icon="Delete" @click="handleForceLogout(scope.row)" v-hasPermi="['monitor:online:forceLogout']">强退</el-button>
             </template>
          </el-table-column>
-      </el-table>
+      </adaptive-table>
 
       <pagination v-show="total > 0" :total="total" v-model:page="pageNum" v-model:limit="pageSize" />
    </div>

@@ -47,7 +47,9 @@
          <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
       </el-row>
 
-      <el-table
+      <adaptive-table
+         auto-columns
+         :fit-viewport="false"
          v-if="refreshTable"
          v-loading="loading"
          :data="menuList"
@@ -81,7 +83,7 @@
                <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)" v-hasPermi="['system:menu:remove']">删除</el-button>
             </template>
          </el-table-column>
-      </el-table>
+      </adaptive-table>
 
       <!-- 添加或修改菜单对话框 -->
       <el-dialog :title="title" v-model="open" width="680px" append-to-body v-loading="dialogLoading">

@@ -41,6 +41,7 @@
 
 | Task 文档 | 状态 | 说明 |
 | --- | --- | --- |
+| `archive/retained-completed/task-20260727-1127-route-table-column-preference-coverage.md` | `accepted` | 路由表格列偏好全覆盖已完成：从受支持路由反查补齐 21 个主导航文件与 4 个辅助路由文件，reporting 12 张表全部支持拖动/显隐/持久化；月报 7 类汇总/明细区块可独立折叠。自动模式正确排除选择/序号/展开/操作/固定列并兼容动态列；14 个 focused tests、web production build 和真实 reporting/RD/system/stock 浏览器验收通过。 |
 | `archive/retained-completed/task-20260727-1007-user-table-column-preferences.md` | `accepted` | 业务列表公共列体验切片已完成：29 个既有列配置列表支持直接拖表头、面板拖动/显隐、按账号与路由隔离的浏览器本地偏好及恢复默认；5 个 focused tests、web production build 和真实组件浏览器 light acceptance 全部通过。 |
 | `archive/retained-completed/analysis-20260521-rbac-finance-accountant-role-review.md` | `implemented` | RBAC 财务会计只读角色已完成并归档：新增 `finance-accountant` seed 角色和只读权限 preset；启动修复只补缺失角色，不覆盖已存在运行态角色配置；相关系统管理 / 月报文档已同步，focused RBAC 测试、typecheck、Biome 与 diff 检查通过。 |
 | `archive/retained-completed/analysis-20260520-monthly-reporting-domain-review.md` | `implemented` | 普通月度对账报表完善已完成并归档：数量统一 2 位；普通月报单据类型筛选改为 `topicKey`；销售域在原 `领域汇总`区域新增固定销售列，不新增独立销售汇总区；`单据类型汇总`保留销售退货 0 行用于筛选和钻取；汇总层 `总成本`已删除，销售项目金额拆分为销售价金额 / 成本价金额。 |

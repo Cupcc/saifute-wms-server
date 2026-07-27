@@ -48,7 +48,13 @@
         </el-col>
       </el-row>
 
-      <el-table :data="rows" stripe v-loading="loading">
+      <adaptive-table
+        auto-columns
+        :fit-viewport="false"
+        :data="rows"
+        stripe
+        v-loading="loading"
+      >
         <el-table-column prop="materialCode" label="物料编码" min-width="140" />
         <el-table-column prop="materialName" label="物料名称" min-width="180" />
         <el-table-column prop="categoryName" label="分类" min-width="140" />
@@ -68,7 +74,7 @@
             {{ formatDateTime(row.updatedAt) }}
           </template>
         </el-table-column>
-      </el-table>
+      </adaptive-table>
 
       <div class="pagination-wrap">
         <el-pagination
