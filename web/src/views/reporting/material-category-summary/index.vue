@@ -48,7 +48,13 @@
         </el-col>
       </el-row>
 
-      <el-table :data="rows" stripe v-loading="loading">
+      <adaptive-table
+        auto-columns
+        :fit-viewport="false"
+        :data="rows"
+        stripe
+        v-loading="loading"
+      >
         <el-table-column prop="categoryCode" label="分类编码" min-width="140" />
         <el-table-column prop="categoryName" label="分类名称" min-width="180" />
         <el-table-column prop="materialCount" label="物料数" min-width="100" />
@@ -63,7 +69,7 @@
           label="库存货值"
           min-width="140"
         />
-      </el-table>
+      </adaptive-table>
 
       <div class="pagination-wrap">
         <el-pagination

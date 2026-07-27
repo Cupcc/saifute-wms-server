@@ -1,5 +1,11 @@
 const TABLE_COLUMN_PREFERENCE_VERSION = 1;
 const TABLE_COLUMN_STORAGE_PREFIX = "saifute:table-columns";
+const NON_CONFIGURABLE_RUNTIME_COLUMN_TYPES = new Set([
+  "selection",
+  "index",
+  "expand",
+]);
+const NON_CONFIGURABLE_RUNTIME_COLUMN_LABELS = new Set(["操作"]);
 
 function normalizeText(value) {
   return typeof value === "string" ? value.trim() : "";
@@ -34,6 +40,121 @@ export function getOrderedTableColumns(columns = []) {
     .map(({ column }) => column);
 }
 
+export function isAutoConfigurableTableColumn(column) {
+  const label = normalizeText(column?.label);
+  const type = normalizeText(column?.type).toLowerCase();
+  const fixed = column?.fixed;
+
+  return Boolean(
+    label &&
+      !NON_CONFIGURABLE_RUNTIME_COLUMN_TYPES.has(type) &&
+      !NON_CONFIGURABLE_RUNTIME_COLUMN_LABELS.has(label) &&
+      fixed !== true &&
+      fixed !== "left" &&
+      fixed !== "right",
+  );
+}
+
+export function isRuntimeTableColumnDeclared(column) {
+  if (typeof column?.getColumnIndex !== "function") {
+    return true;
+  }
+
+  try {
+    return column.getColumnIndex() >= 0;
+  } catch {
+    return false;
+  }
+}
+
+export function createAutoTableColumnConfig(runtimeColumns = []) {
+  const occurrencesByIdentity = new Map();
+
+  return runtimeColumns.flatMap((runtimeColumn, index) => {
+    if (!isAutoConfigurableTableColumn(runtimeColumn)) {
+      return [];
+    }
+
+    const label = normalizeText(runtimeColumn.label);
+    const prop = normalizeText(runtimeColumn.property ?? runtimeColumn.prop);
+    const identity = prop ? `property:${prop}` : `label:${label}`;
+    const occurrence = (occurrencesByIdentity.get(identity) ?? 0) + 1;
+    occurrencesByIdentity.set(identity, occurrence);
+    const preferenceKey = `auto:${identity}:${occurrence}`;
+
+    return [
+      {
+        key: preferenceKey,
+        preferenceKey,
+        ...(prop ? { prop } : {}),
+        label,
+        runtimeColumnId: String(runtimeColumn.id ?? `column-${index}`),
+        defaultVisible: true,
+        visible: true,
+      },
+    ];
+  });
+}
+
+export function mergeAutoTableColumnConfig(
+  currentColumns = [],
+  discoveredColumns = [],
+) {
+  const currentById = new Map(
+    currentColumns.map((column, index) => [
+      getTableColumnId(column, index),
+      column,
+    ]),
+  );
+  const mergedColumns = discoveredColumns.map((column, index) => {
+    const current = currentById.get(getTableColumnId(column, index));
+    return {
+      ...column,
+      visible: current?.visible ?? column.visible,
+      order: isFiniteOrder(current?.order) ? current.order : index,
+    };
+  });
+
+  setTableColumnOrder(
+    mergedColumns,
+    getOrderedTableColumns(currentColumns).map((column, index) =>
+      getTableColumnId(column, index),
+    ),
+  );
+  return mergedColumns;
+}
+
+export function getAutoManagedRuntimeColumns(
+  runtimeColumns = [],
+  columnConfig = [],
+) {
+  const runtimeColumnById = new Map(
+    runtimeColumns.map((column) => [String(column.id), column]),
+  );
+  const configByRuntimeColumnId = new Map(
+    columnConfig.map((column) => [String(column.runtimeColumnId), column]),
+  );
+  const orderedVisibleRuntimeColumns = getOrderedTableColumns(columnConfig)
+    .filter((column) => column.visible !== false)
+    .map((column) => runtimeColumnById.get(String(column.runtimeColumnId)))
+    .filter(Boolean);
+  let visibleColumnIndex = 0;
+
+  return runtimeColumns.flatMap((runtimeColumn) => {
+    const config = configByRuntimeColumnId.get(String(runtimeColumn.id));
+    if (!config) {
+      return [runtimeColumn];
+    }
+    if (config.visible === false) {
+      return [];
+    }
+
+    const orderedRuntimeColumn =
+      orderedVisibleRuntimeColumns[visibleColumnIndex++];
+    return orderedRuntimeColumn ? [orderedRuntimeColumn] : [];
+  });
+}
+
 export function normalizeTableColumnOrder(columns = []) {
   getOrderedTableColumns(columns).forEach((column, order) => {
     column.order = order;
@@ -44,7 +165,10 @@ export function normalizeTableColumnOrder(columns = []) {
 export function captureTableColumnDefaults(columns = []) {
   return columns.map((column, index) => ({
     id: getTableColumnId(column, index),
-    visible: column.visible !== false,
+    visible:
+      typeof column.defaultVisible === "boolean"
+        ? column.defaultVisible
+        : column.visible !== false,
   }));
 }
 

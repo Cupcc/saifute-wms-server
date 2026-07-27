@@ -54,7 +54,13 @@
         </el-button>
       </div>
 
-      <el-table :data="rows" stripe v-loading="loading">
+      <adaptive-table
+        auto-columns
+        :fit-viewport="false"
+        :data="rows"
+        stripe
+        v-loading="loading"
+      >
         <template #empty>
           <el-empty description="暂无主仓交接单，完成主仓交接后自动生成" />
         </template>
@@ -122,7 +128,7 @@
             </el-button>
           </template>
         </el-table-column>
-      </el-table>
+      </adaptive-table>
 
       <div class="pagination-wrap">
         <el-pagination

@@ -86,7 +86,7 @@
          <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
       </el-row>
 
-      <adaptive-table border stripe v-loading="loading" :data="dataList" @selection-change="handleSelectionChange">
+      <adaptive-table auto-columns border stripe v-loading="loading" :data="dataList" @selection-change="handleSelectionChange">
          <el-table-column type="selection" width="55" align="center" />
          <el-table-column label="字典编码" align="center" prop="dictCode" />
          <el-table-column label="字典标签" align="center" prop="dictLabel">

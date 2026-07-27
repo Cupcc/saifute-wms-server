@@ -224,60 +224,110 @@
         </el-row>
       </template>
 
-      <el-card v-if="!isMaterialCategoryView" shadow="never" class="section-card">
+      <el-card
+        v-if="!isMaterialCategoryView"
+        shadow="never"
+        class="section-card"
+        :class="{ 'is-collapsed': !sectionExpanded.domainSummary }"
+      >
         <template #header>
           <div class="section-header">
-            <span>领域汇总</span>
+            <button
+              type="button"
+              class="section-toggle"
+              :aria-expanded="sectionExpanded.domainSummary"
+              aria-controls="domain-summary-content"
+              @click="toggleSection('domainSummary')"
+            >
+              <el-icon
+                class="section-toggle-icon"
+                :class="{ 'is-expanded': sectionExpanded.domainSummary }"
+              >
+                <ArrowRight />
+              </el-icon>
+              <span>领域汇总</span>
+            </button>
             <span class="section-tip">
               {{ domainSummaryTip }}
             </span>
           </div>
         </template>
-        <div class="domain-legend">
-          <span class="legend-item">
-            <strong>研发项目</strong>：{{ rdProjectLegendText }}
-          </span>
-          <span class="legend-item">
-            <strong>RD小仓</strong>：{{ rdSubLegendText }}
-          </span>
-          <span class="legend-item">
-            <strong>销售项目</strong>：属于销售域下的业务汇总，不单列为一级领域。
-          </span>
+        <div
+          v-if="sectionExpanded.domainSummary"
+          id="domain-summary-content"
+        >
+          <div class="domain-legend">
+            <span class="legend-item">
+              <strong>研发项目</strong>：{{ rdProjectLegendText }}
+            </span>
+            <span class="legend-item">
+              <strong>RD小仓</strong>：{{ rdSubLegendText }}
+            </span>
+            <span class="legend-item">
+              <strong>销售项目</strong>：属于销售域下的业务汇总，不单列为一级领域。
+            </span>
+          </div>
+          <adaptive-table
+            auto-columns
+            :fit-viewport="false"
+            :table-key="`${route.path}#domain-summary`"
+            :data="domainRows"
+            stripe
+            v-loading="summaryLoading"
+          >
+            <el-table-column prop="domainLabel" label="领域" min-width="140" />
+            <el-table-column prop="documentCount" label="单据数" min-width="80" />
+            <el-table-column prop="totalInQuantity" label="总入数量" min-width="120" />
+            <el-table-column prop="totalInAmount" label="总入金额" min-width="140" />
+            <el-table-column prop="totalOutQuantity" label="总出数量" min-width="120" />
+            <el-table-column prop="totalOutAmount" label="总出金额" min-width="140" />
+            <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
+            <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
+            <el-table-column
+              v-if="hasSalesDomainRow"
+              prop="netSalesAmount"
+              label="销售净售出金额"
+              min-width="150"
+            />
+            <el-table-column
+              v-if="hasSalesDomainRow"
+              prop="netCostAmount"
+              label="销售净成本金额"
+              min-width="150"
+            />
+            <el-table-column
+              v-if="hasSalesDomainRow"
+              prop="salesGrossProfitAmount"
+              label="销售毛利金额"
+              min-width="140"
+            />
+          </adaptive-table>
         </div>
-        <el-table :data="domainRows" stripe v-loading="summaryLoading">
-          <el-table-column prop="domainLabel" label="领域" min-width="140" />
-          <el-table-column prop="documentCount" label="单据数" min-width="80" />
-          <el-table-column prop="totalInQuantity" label="总入数量" min-width="120" />
-          <el-table-column prop="totalInAmount" label="总入金额" min-width="140" />
-          <el-table-column prop="totalOutQuantity" label="总出数量" min-width="120" />
-          <el-table-column prop="totalOutAmount" label="总出金额" min-width="140" />
-          <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
-          <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
-          <el-table-column
-            v-if="hasSalesDomainRow"
-            prop="netSalesAmount"
-            label="销售净售出金额"
-            min-width="150"
-          />
-          <el-table-column
-            v-if="hasSalesDomainRow"
-            prop="netCostAmount"
-            label="销售净成本金额"
-            min-width="150"
-          />
-          <el-table-column
-            v-if="hasSalesDomainRow"
-            prop="salesGrossProfitAmount"
-            label="销售毛利金额"
-            min-width="140"
-          />
-        </el-table>
       </el-card>
 
-      <el-card v-if="!isMaterialCategoryView" shadow="never" class="section-card">
+      <el-card
+        v-if="!isMaterialCategoryView"
+        shadow="never"
+        class="section-card"
+        :class="{ 'is-collapsed': !sectionExpanded.documentTypeSummary }"
+      >
         <template #header>
           <div class="section-header">
-            <span>单据类型汇总</span>
+            <button
+              type="button"
+              class="section-toggle"
+              :aria-expanded="sectionExpanded.documentTypeSummary"
+              aria-controls="document-type-summary-content"
+              @click="toggleSection('documentTypeSummary')"
+            >
+              <el-icon
+                class="section-toggle-icon"
+                :class="{ 'is-expanded': sectionExpanded.documentTypeSummary }"
+              >
+                <ArrowRight />
+              </el-icon>
+              <span>单据类型汇总</span>
+            </button>
             <div class="detail-actions">
               <span class="section-tip">{{ activeDocumentTypeLabel }}</span>
               <el-button
@@ -291,7 +341,12 @@
             </div>
           </div>
         </template>
-        <el-table
+        <adaptive-table
+          v-if="sectionExpanded.documentTypeSummary"
+          id="document-type-summary-content"
+          auto-columns
+          :fit-viewport="false"
+          :table-key="`${route.path}#document-type-summary`"
           :data="documentTypeRows"
           stripe
           :row-key="resolveDocumentTypeRowKey"
@@ -308,27 +363,54 @@
           <el-table-column prop="totalOutAmount" label="总出金额" min-width="140" />
           <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
           <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
-        </el-table>
+        </adaptive-table>
       </el-card>
 
       <el-card
         v-if="!isMaterialCategoryView && businessSummaryTabs.length > 0"
         shadow="never"
         class="section-card"
+        :class="{ 'is-collapsed': !sectionExpanded.businessSummary }"
       >
         <template #header>
           <div class="section-header">
-            <span>业务汇总</span>
+            <button
+              type="button"
+              class="section-toggle"
+              :aria-expanded="sectionExpanded.businessSummary"
+              aria-controls="business-summary-content"
+              @click="toggleSection('businessSummary')"
+            >
+              <el-icon
+                class="section-toggle-icon"
+                :class="{ 'is-expanded': sectionExpanded.businessSummary }"
+              >
+                <ArrowRight />
+              </el-icon>
+              <span>业务汇总</span>
+            </button>
             <span class="section-tip">{{ activeBusinessSummaryTip }}</span>
           </div>
         </template>
-        <el-tabs v-model="activeBusinessSummaryTab" class="business-summary-tabs">
+        <el-tabs
+          v-if="sectionExpanded.businessSummary"
+          id="business-summary-content"
+          v-model="activeBusinessSummaryTab"
+          class="business-summary-tabs"
+        >
           <el-tab-pane
             v-if="workshopRows.length > 0"
             label="车间汇总"
             name="workshop"
           >
-            <el-table :data="workshopRows" stripe v-loading="summaryLoading">
+            <adaptive-table
+              auto-columns
+              :fit-viewport="false"
+              :table-key="`${route.path}#business-workshop-summary`"
+              :data="workshopRows"
+              stripe
+              v-loading="summaryLoading"
+            >
               <el-table-column prop="workshopName" label="车间" min-width="160" />
               <el-table-column prop="documentCount" label="单据数" min-width="80" />
               <el-table-column prop="pickQuantity" label="领料数量" min-width="120" />
@@ -339,14 +421,21 @@
               <el-table-column prop="scrapAmount" label="报废金额" min-width="140" />
               <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
               <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
-            </el-table>
+            </adaptive-table>
           </el-tab-pane>
           <el-tab-pane
             v-if="salesProjectRows.length > 0"
             label="销售项目汇总"
             name="salesProject"
           >
-            <el-table :data="salesProjectRows" stripe v-loading="summaryLoading">
+            <adaptive-table
+              auto-columns
+              :fit-viewport="false"
+              :table-key="`${route.path}#business-sales-project-summary`"
+              :data="salesProjectRows"
+              stripe
+              v-loading="summaryLoading"
+            >
               <el-table-column prop="salesProjectCode" label="销售项目编码" min-width="160" />
               <el-table-column prop="salesProjectName" label="销售项目名称" min-width="180" />
               <el-table-column prop="documentCount" label="单据数" min-width="80" />
@@ -359,14 +448,21 @@
               <el-table-column prop="netQuantity" label="净销售数量" min-width="120" />
               <el-table-column prop="netSalesAmount" label="净销售价金额" min-width="150" />
               <el-table-column prop="netCostAmount" label="净成本价金额" min-width="150" />
-            </el-table>
+            </adaptive-table>
           </el-tab-pane>
           <el-tab-pane
             v-if="rdProjectRows.length > 0"
             label="研发项目汇总"
             name="rdProject"
           >
-            <el-table :data="rdProjectRows" stripe v-loading="summaryLoading">
+            <adaptive-table
+              auto-columns
+              :fit-viewport="false"
+              :table-key="`${route.path}#business-rd-project-summary`"
+              :data="rdProjectRows"
+              stripe
+              v-loading="summaryLoading"
+            >
               <el-table-column prop="rdProjectCode" label="研发项目编码" min-width="160" />
               <el-table-column prop="rdProjectName" label="研发项目名称" min-width="180" />
               <el-table-column prop="documentCount" label="单据数" min-width="80" />
@@ -380,7 +476,7 @@
               <el-table-column prop="scrapAmount" label="项目报废金额" min-width="140" />
               <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
               <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
-            </el-table>
+            </adaptive-table>
           </el-tab-pane>
         </el-tabs>
       </el-card>
@@ -389,14 +485,34 @@
         v-if="isMaterialCategoryView && workshopRows.length > 0"
         shadow="never"
         class="section-card"
+        :class="{ 'is-collapsed': !sectionExpanded.workshopUsageSummary }"
       >
         <template #header>
           <div class="section-header">
-            <span>车间使用汇总</span>
+            <button
+              type="button"
+              class="section-toggle"
+              :aria-expanded="sectionExpanded.workshopUsageSummary"
+              aria-controls="workshop-usage-summary-content"
+              @click="toggleSection('workshopUsageSummary')"
+            >
+              <el-icon
+                class="section-toggle-icon"
+                :class="{ 'is-expanded': sectionExpanded.workshopUsageSummary }"
+              >
+                <ArrowRight />
+              </el-icon>
+              <span>车间使用汇总</span>
+            </button>
             <span class="section-tip">按车间汇总领料、退料和净使用。</span>
           </div>
         </template>
-        <el-table
+        <adaptive-table
+          v-if="sectionExpanded.workshopUsageSummary"
+          id="workshop-usage-summary-content"
+          auto-columns
+          :fit-viewport="false"
+          :table-key="`${route.path}#workshop-usage-summary`"
           :data="workshopRows"
           class="monthly-summary-table"
           stripe
@@ -413,13 +529,32 @@
           <el-table-column prop="returnAmount" label="退料金额" min-width="140" />
           <el-table-column prop="netUsedQuantity" label="净使用数量" min-width="120" />
           <el-table-column prop="netUsedAmount" label="净使用金额" min-width="140" />
-        </el-table>
+        </adaptive-table>
       </el-card>
 
-      <el-card v-if="isMaterialCategoryView" shadow="never" class="section-card">
+      <el-card
+        v-if="isMaterialCategoryView"
+        shadow="never"
+        class="section-card"
+        :class="{ 'is-collapsed': !sectionExpanded.categorySummary }"
+      >
         <template #header>
           <div class="section-header">
-            <span>分类汇总</span>
+            <button
+              type="button"
+              class="section-toggle"
+              :aria-expanded="sectionExpanded.categorySummary"
+              aria-controls="category-summary-content"
+              @click="toggleSection('categorySummary')"
+            >
+              <el-icon
+                class="section-toggle-icon"
+                :class="{ 'is-expanded': sectionExpanded.categorySummary }"
+              >
+                <ArrowRight />
+              </el-icon>
+              <span>分类汇总</span>
+            </button>
             <div class="detail-actions">
               <span class="section-tip">{{ activeCategoryLabel }}</span>
               <el-button
@@ -433,7 +568,12 @@
             </div>
           </div>
         </template>
-        <el-table
+        <adaptive-table
+          v-if="sectionExpanded.categorySummary"
+          id="category-summary-content"
+          auto-columns
+          :fit-viewport="false"
+          :table-key="`${route.path}#material-category-summary`"
           :data="categoryRows"
           class="monthly-summary-table"
           stripe
@@ -448,7 +588,11 @@
           <el-table-column prop="categoryName" label="分类名称" min-width="100" />
           <el-table-column prop="openingQuantity" label="月初库存数量" min-width="130" />
           <el-table-column prop="openingAmount" label="月初库存金额" min-width="140" />
-          <el-table-column prop="netProductionQuantity" min-width="140">
+          <el-table-column
+            prop="netProductionQuantity"
+            label="净生产数量"
+            min-width="140"
+          >
             <template #header>
               <el-tooltip
                 content="统计期内的验收入库数量 + 生产入库数量 - 退给厂家数量。"
@@ -461,7 +605,11 @@
               </el-tooltip>
             </template>
           </el-table-column>
-          <el-table-column prop="netProductionAmount" min-width="160">
+          <el-table-column
+            prop="netProductionAmount"
+            label="净生产金额"
+            min-width="160"
+          >
             <template #header>
               <el-tooltip
                 content="统计期内的验收入库金额 + 生产入库金额 - 退给厂家金额。"
@@ -474,7 +622,11 @@
               </el-tooltip>
             </template>
           </el-table-column>
-          <el-table-column prop="netSalesQuantity" min-width="140">
+          <el-table-column
+            prop="netSalesQuantity"
+            label="净销售数量"
+            min-width="140"
+          >
             <template #header>
               <el-tooltip
                 content="统计期内的销售出库数量 - 销售退货数量。"
@@ -487,7 +639,11 @@
               </el-tooltip>
             </template>
           </el-table-column>
-          <el-table-column prop="netSalesAmount" min-width="160">
+          <el-table-column
+            prop="netSalesAmount"
+            label="净销售金额"
+            min-width="160"
+          >
             <template #header>
               <el-tooltip
                 content="统计期内的销售出库销售价金额 - 销售退货销售价金额，不是成本价金额。"
@@ -502,22 +658,48 @@
           </el-table-column>
           <el-table-column prop="closingQuantity" label="月末库存数量" min-width="130" />
           <el-table-column prop="closingAmount" label="月末库存金额" min-width="140" />
-        </el-table>
+        </adaptive-table>
       </el-card>
 
-      <el-card v-if="isMaterialCategoryView" shadow="never" class="section-card">
+      <el-card
+        v-if="isMaterialCategoryView"
+        shadow="never"
+        class="section-card"
+        :class="{ 'is-collapsed': !sectionExpanded.materialSummary }"
+      >
         <template #header>
           <div class="section-header">
-            <span>物料汇总</span>
+            <button
+              type="button"
+              class="section-toggle"
+              :aria-expanded="sectionExpanded.materialSummary"
+              aria-controls="material-summary-content"
+              @click="toggleSection('materialSummary')"
+            >
+              <el-icon
+                class="section-toggle-icon"
+                :class="{ 'is-expanded': sectionExpanded.materialSummary }"
+              >
+                <ArrowRight />
+              </el-icon>
+              <span>物料汇总</span>
+            </button>
             <span class="section-tip">{{ materialSectionTip }}</span>
           </div>
         </template>
-        <el-table
-          :data="pagedMaterialRows"
-          stripe
-          row-key="materialKey"
-          v-loading="summaryLoading"
+        <div
+          v-if="sectionExpanded.materialSummary"
+          id="material-summary-content"
         >
+          <adaptive-table
+            auto-columns
+            :fit-viewport="false"
+            :table-key="`${route.path}#material-summary`"
+            :data="pagedMaterialRows"
+            stripe
+            row-key="materialKey"
+            v-loading="summaryLoading"
+          >
           <el-table-column prop="categoryCode" label="分类编码" min-width="80" />
           <el-table-column prop="categoryName" label="分类名称" min-width="100" show-overflow-tooltip />
           <el-table-column prop="materialCode" label="物料编码" min-width="100" />
@@ -552,30 +734,58 @@
           <el-table-column prop="salesReturnQuantity" label="销售退货数量" min-width="120" />
           <el-table-column prop="salesReturnSalesAmount" label="销售退货销售价金额" min-width="170" />
           <el-table-column prop="salesReturnCostAmount" label="销售退货成本价金额" min-width="170" />
-        </el-table>
-        <div class="pagination-wrap">
-          <el-pagination
-            background
-            layout="total, sizes, prev, pager, next"
-            :current-page="materialPageNum"
-            :page-size="materialPageSize"
-            :page-sizes="[50, 100, 200]"
-            :total="filteredMaterialTotal"
-            @current-change="handleMaterialPageChange"
-            @size-change="handleMaterialSizeChange"
-          />
+          </adaptive-table>
+          <div class="pagination-wrap">
+            <el-pagination
+              background
+              layout="total, sizes, prev, pager, next"
+              :current-page="materialPageNum"
+              :page-size="materialPageSize"
+              :page-sizes="[50, 100, 200]"
+              :total="filteredMaterialTotal"
+              @current-change="handleMaterialPageChange"
+              @size-change="handleMaterialSizeChange"
+            />
+          </div>
         </div>
       </el-card>
 
-      <el-card shadow="never" class="section-card">
+      <el-card
+        shadow="never"
+        class="section-card"
+        :class="{ 'is-collapsed': !sectionExpanded.details }"
+      >
         <template #header>
           <div class="section-header">
-            <span>{{ detailSectionTitle }}</span>
+            <button
+              type="button"
+              class="section-toggle"
+              :aria-expanded="sectionExpanded.details"
+              aria-controls="details-content"
+              @click="toggleSection('details')"
+            >
+              <el-icon
+                class="section-toggle-icon"
+                :class="{ 'is-expanded': sectionExpanded.details }"
+              >
+                <ArrowRight />
+              </el-icon>
+              <span>{{ detailSectionTitle }}</span>
+            </button>
             <span class="section-tip">{{ detailSectionTip }}</span>
           </div>
         </template>
 
-        <el-table v-if="!isMaterialCategoryView" :data="detailRows" stripe v-loading="detailLoading">
+        <div v-if="sectionExpanded.details" id="details-content">
+          <adaptive-table
+            v-if="!isMaterialCategoryView"
+            auto-columns
+            :fit-viewport="false"
+            :table-key="`${route.path}#domain-details`"
+            :data="detailRows"
+            stripe
+            v-loading="detailLoading"
+          >
           <el-table-column prop="domainLabel" label="领域" min-width="120" />
           <el-table-column prop="documentTypeLabel" label="单据类型" min-width="140" />
           <el-table-column prop="documentNo" label="单据编号" min-width="140" />
@@ -594,9 +804,17 @@
           <el-table-column prop="cost" label="成本" min-width="120" />
           <el-table-column prop="sourceBizMonth" label="来源月份" min-width="120" />
           <el-table-column prop="sourceDocumentNo" label="来源单据" min-width="200" show-overflow-tooltip />
-        </el-table>
+          </adaptive-table>
 
-        <el-table v-else :data="detailRows" stripe v-loading="detailLoading">
+          <adaptive-table
+            v-else
+            auto-columns
+            :fit-viewport="false"
+            :table-key="`${route.path}#material-category-details`"
+            :data="detailRows"
+            stripe
+            v-loading="detailLoading"
+          >
           <el-table-column prop="categoryCode" label="分类编码" min-width="80" />
           <el-table-column prop="categoryName" label="分类名称" min-width="100" show-overflow-tooltip />
           <el-table-column prop="documentTypeLabel" label="单据类型" min-width="140" />
@@ -616,19 +834,20 @@
           <el-table-column prop="amount" label="金额" min-width="120" />
           <el-table-column prop="salesUnitPrice" label="销售价" min-width="120" />
           <el-table-column prop="salesAmount" label="销售金额" min-width="120" />
-        </el-table>
+          </adaptive-table>
 
-        <div class="pagination-wrap">
-          <el-pagination
-            background
-            layout="total, sizes, prev, pager, next"
-            :current-page="pageNum"
-            :page-size="pageSize"
-            :page-sizes="[10, 20, 50]"
-            :total="detailTotal"
-            @current-change="handlePageChange"
-            @size-change="handleSizeChange"
-          />
+          <div class="pagination-wrap">
+            <el-pagination
+              background
+              layout="total, sizes, prev, pager, next"
+              :current-page="pageNum"
+              :page-size="pageSize"
+              :page-sizes="[10, 20, 50]"
+              :total="detailTotal"
+              @current-change="handlePageChange"
+              @size-change="handleSizeChange"
+            />
+          </div>
         </div>
       </el-card>
     </el-card>
@@ -683,6 +902,15 @@ const detailRows = ref([]);
 const detailTotal = ref(0);
 const summary = ref(createEmptySummary(DOMAIN_VIEW));
 const activeBusinessSummaryTab = ref("workshop");
+const sectionExpanded = ref({
+  domainSummary: true,
+  documentTypeSummary: true,
+  businessSummary: true,
+  workshopUsageSummary: true,
+  categorySummary: true,
+  materialSummary: true,
+  details: true,
+});
 
 const isRdRoute = computed(() => route.path.startsWith("/rd/"));
 const fixedStockScope = computed(() =>
@@ -1454,6 +1682,10 @@ function toggleMaterialCategorySummary() {
     !materialCategorySummaryVisible.value;
 }
 
+function toggleSection(sectionKey) {
+  sectionExpanded.value[sectionKey] = !sectionExpanded.value[sectionKey];
+}
+
 function handlePageChange(value) {
   pageNum.value = value;
   loadDetails();
@@ -1703,6 +1935,12 @@ watch(
     margin-top: 16px;
   }
 
+  .section-card.is-collapsed {
+    :deep(.el-card__body) {
+      display: none;
+    }
+  }
+
   .domain-legend {
     display: flex;
     flex-wrap: wrap;
@@ -1726,6 +1964,39 @@ watch(
     justify-content: space-between;
     gap: 16px;
     font-weight: 600;
+  }
+
+  .section-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    padding: 4px 0;
+    border: 0;
+    color: inherit;
+    background: transparent;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--el-color-primary);
+    }
+
+    &:focus-visible {
+      border-radius: 4px;
+      outline: 2px solid var(--el-color-primary-light-5);
+      outline-offset: 2px;
+    }
+  }
+
+  .section-toggle-icon {
+    color: #909399;
+    transition: transform 0.2s ease;
+
+    &.is-expanded {
+      transform: rotate(90deg);
+    }
   }
 
   .section-tip {

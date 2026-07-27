@@ -71,7 +71,13 @@
         </el-form-item>
       </el-form>
 
-      <el-table :data="rows" stripe v-loading="loading">
+      <adaptive-table
+        auto-columns
+        :fit-viewport="false"
+        :data="rows"
+        stripe
+        v-loading="loading"
+      >
         <el-table-column prop="bizDate" label="业务日期" min-width="120">
           <template #default="{ row }">
             {{ formatDateValue(row.bizDate) }}
@@ -132,7 +138,7 @@
         <template #empty>
           <el-empty description="暂无库存流水，可调整物料、单据或业务日期筛选后再查询" />
         </template>
-      </el-table>
+      </adaptive-table>
 
       <div class="pagination-wrap">
         <el-pagination

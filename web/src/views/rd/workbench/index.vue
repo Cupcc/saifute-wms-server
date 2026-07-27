@@ -62,7 +62,13 @@
         </div>
       </template>
 
-      <el-table :data="recentInboundRows" stripe v-loading="loading">
+      <adaptive-table
+        auto-columns
+        :fit-viewport="false"
+        :data="recentInboundRows"
+        stripe
+        v-loading="loading"
+      >
         <el-table-column label="单据编号" min-width="140">
           <template #default="{ row }">
             <el-link type="primary" @click="goToInboundResult(row.documentNo)">
@@ -99,7 +105,7 @@
         <template #empty>
           <el-empty description="暂无主仓交接单，完成主仓交接后自动生成" />
         </template>
-      </el-table>
+      </adaptive-table>
 
       <pagination
         v-show="recentInboundTotal > 0"

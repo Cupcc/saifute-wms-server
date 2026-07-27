@@ -1,5 +1,37 @@
 <template>
-  <el-table ref="tableRef" v-bind="$attrs" :height="resolvedHeight">
+  <div
+    v-if="autoColumns"
+    class="adaptive-table__auto-shell"
+    :style="autoShellStyle"
+  >
+    <div
+      v-if="generatedColumns.length"
+      class="adaptive-table__column-toolbar"
+    >
+      <right-toolbar
+        :search="false"
+        :show-refresh="false"
+        :columns="generatedColumns"
+        :table-key="tableKey"
+        :gutter="0"
+      />
+    </div>
+    <el-table
+      ref="tableRef"
+      v-bind="tableAttrs"
+      :height="resolvedHeight"
+      :max-height="resolvedMaxHeight"
+    >
+      <slot></slot>
+    </el-table>
+  </div>
+  <el-table
+    v-else
+    ref="tableRef"
+    v-bind="tableAttrs"
+    :height="resolvedHeight"
+    :max-height="resolvedMaxHeight"
+  >
     <slot></slot>
   </el-table>
 </template>
@@ -17,25 +49,71 @@ import {
   watch,
 } from "vue";
 import {
+  createAutoTableColumnConfig,
+  getAutoManagedRuntimeColumns,
   getOrderedTableColumns,
   getTableColumnId,
+  isRuntimeTableColumnDeclared,
+  mergeAutoTableColumnConfig,
   reorderVisibleTableColumns,
 } from "@/utils/tableColumnPreferences";
+
+defineOptions({ inheritAttrs: false });
 
 const props = defineProps({
   columnConfig: {
     type: Array,
     default: undefined,
   },
+  autoColumns: {
+    type: Boolean,
+    default: false,
+  },
+  tableKey: {
+    type: String,
+    default: "",
+  },
+  fitViewport: {
+    type: Boolean,
+    default: true,
+  },
 });
 
 const attrs = useAttrs();
 const tableRef = ref(null);
 const tableHeight = ref(400);
+const generatedColumns = ref([]);
 const minHeight = 150;
 const draggableHeaderClass = "adaptive-table__draggable-header";
 let headerSortable;
 let columnSyncFrame;
+let autoRuntimeColumns = [];
+
+const tableAttrs = computed(() =>
+  Object.fromEntries(
+    Object.entries(attrs).filter(
+      ([key]) => !["height", "max-height", "maxHeight"].includes(key),
+    ),
+  ),
+);
+const requestedHeight = computed(() => attrs.height);
+const resolvedMaxHeight = computed(
+  () => attrs["max-height"] ?? attrs.maxHeight,
+);
+const autoShellStyle = computed(() => {
+  if (requestedHeight.value === undefined) {
+    return undefined;
+  }
+  return {
+    height:
+      typeof requestedHeight.value === "number"
+        ? `${requestedHeight.value}px`
+        : requestedHeight.value,
+  };
+});
+const activeColumnConfig = computed(() =>
+  props.autoColumns ? generatedColumns.value : props.columnConfig,
+);
 
 const hasCustomHeight = computed(
   () =>
@@ -43,14 +121,20 @@ const hasCustomHeight = computed(
     attrs["max-height"] !== undefined ||
     attrs.maxHeight !== undefined,
 );
-const resolvedHeight = computed(() =>
-  hasCustomHeight.value ? undefined : tableHeight.value,
+const shouldCalculateHeight = computed(
+  () => props.fitViewport && !hasCustomHeight.value,
+);
+const resolvedHeight = computed(
+  () =>
+    requestedHeight.value ??
+    (shouldCalculateHeight.value ? tableHeight.value : undefined),
 );
 const columnConfigSignature = computed(() =>
   JSON.stringify(
-    (props.columnConfig ?? []).map((column, index) => ({
+    (activeColumnConfig.value ?? []).map((column, index) => ({
       id: getTableColumnId(column, index),
       order: column.order,
+      runtimeColumnId: column.runtimeColumnId,
       visible: column.visible !== false,
     })),
   ),
@@ -69,7 +153,9 @@ function getElementHeightWithMargin(element) {
 }
 
 function findPaginationElement(tableElement) {
-  let current = tableElement?.nextElementSibling ?? null;
+  const tableContainer =
+    tableElement?.closest(".adaptive-table__auto-shell") ?? tableElement;
+  let current = tableContainer?.nextElementSibling ?? null;
 
   while (current) {
     if (current.classList?.contains("pagination-container")) {
@@ -83,7 +169,7 @@ function findPaginationElement(tableElement) {
 
 /** 计算表格高度 */
 function calculateTableHeight() {
-  if (hasCustomHeight.value) {
+  if (!shouldCalculateHeight.value) {
     return;
   }
 
@@ -112,7 +198,7 @@ function calculateTableHeight() {
 }
 
 function scheduleTableHeightCalculation() {
-  if (hasCustomHeight.value) {
+  if (!shouldCalculateHeight.value) {
     return;
   }
 
@@ -131,10 +217,67 @@ function getRuntimeColumns() {
   return tableRef.value?.store?.states?._columns?.value ?? [];
 }
 
+function syncAutoColumnConfig() {
+  if (!props.autoColumns) {
+    return;
+  }
+
+  const runtimeColumns = getRuntimeColumns();
+  autoRuntimeColumns = autoRuntimeColumns.filter(
+    isRuntimeTableColumnDeclared,
+  );
+
+  const knownRuntimeColumnIds = new Set(
+    autoRuntimeColumns.map((column) => String(column.id)),
+  );
+  for (const runtimeColumn of runtimeColumns) {
+    if (!knownRuntimeColumnIds.has(String(runtimeColumn.id))) {
+      autoRuntimeColumns.push(runtimeColumn);
+      knownRuntimeColumnIds.add(String(runtimeColumn.id));
+    }
+  }
+
+  const discoveredColumns = createAutoTableColumnConfig(autoRuntimeColumns);
+  const currentStructure = generatedColumns.value
+    .map(
+      (column, index) =>
+        `${getTableColumnId(column, index)}:${column.runtimeColumnId}:${column.label}`,
+    )
+    .join("\u001f");
+  const discoveredStructure = discoveredColumns
+    .map(
+      (column, index) =>
+        `${getTableColumnId(column, index)}:${column.runtimeColumnId}:${column.label}`,
+    )
+    .join("\u001f");
+
+  if (currentStructure !== discoveredStructure) {
+    generatedColumns.value = mergeAutoTableColumnConfig(
+      generatedColumns.value,
+      discoveredColumns,
+    );
+  }
+}
+
 function mapRuntimeColumnsToConfig(runtimeColumns) {
+  if (props.autoColumns) {
+    const configByRuntimeColumnId = new Map(
+      generatedColumns.value.map((config) => [
+        String(config.runtimeColumnId),
+        config,
+      ]),
+    );
+    return new Map(
+      runtimeColumns.flatMap((runtimeColumn) => {
+        const config = configByRuntimeColumnId.get(String(runtimeColumn.id));
+        return config ? [[runtimeColumn.id, config]] : [];
+      }),
+    );
+  }
+
   const configQueuesByLabel = new Map();
 
-  for (const config of props.columnConfig ?? []) {
+  for (const config of activeColumnConfig.value ?? []) {
     if (config.visible === false) {
       continue;
     }
@@ -182,14 +325,48 @@ function findHeaderCell(headerRow, runtimeColumnId) {
 }
 
 function applyConfiguredColumnOrder() {
-  if (!props.columnConfig?.length) {
+  const columnConfig = activeColumnConfig.value;
+  if (!columnConfig?.length) {
+    return;
+  }
+
+  if (props.autoColumns) {
+    const currentRuntimeColumns = getRuntimeColumns();
+    const currentRuntimeColumnIds = new Set(
+      currentRuntimeColumns.map((column) => String(column.id)),
+    );
+    const configuredRuntimeColumnIds = new Set(
+      columnConfig.map((column) => String(column.runtimeColumnId)),
+    );
+    const availableRuntimeColumns = autoRuntimeColumns.filter(
+      (column) =>
+        configuredRuntimeColumnIds.has(String(column.id)) ||
+        currentRuntimeColumnIds.has(String(column.id)),
+    );
+    const reorderedRuntimeColumns = getAutoManagedRuntimeColumns(
+      availableRuntimeColumns,
+      columnConfig,
+    );
+    const orderChanged =
+      reorderedRuntimeColumns.length !== currentRuntimeColumns.length ||
+      reorderedRuntimeColumns.some(
+        (column, index) => column !== currentRuntimeColumns[index],
+      );
+    if (!orderChanged) {
+      return;
+    }
+
+    const tableStore = tableRef.value?.store;
+    tableStore.states._columns.value = reorderedRuntimeColumns;
+    tableStore.updateColumns();
+    tableRef.value?.doLayout?.();
     return;
   }
 
   const runtimeColumns = getRuntimeColumns();
   const configByRuntimeColumnId = mapRuntimeColumnsToConfig(runtimeColumns);
   const orderByConfigId = new Map(
-    getOrderedTableColumns(props.columnConfig).map((config, index) => [
+    getOrderedTableColumns(columnConfig).map((config, index) => [
       getTableColumnId(config, index),
       index,
     ]),
@@ -253,14 +430,14 @@ function getVisibleConfigOrderFromHeader(headerRow) {
 
 function handleHeaderDragEnd(headerRow) {
   reorderVisibleTableColumns(
-    props.columnConfig,
+    activeColumnConfig.value,
     getVisibleConfigOrderFromHeader(headerRow),
   );
   scheduleColumnOrderSync();
 }
 
 function initializeHeaderSortable() {
-  if (!props.columnConfig?.length) {
+  if (!activeColumnConfig.value?.length) {
     headerSortable?.destroy();
     headerSortable = undefined;
     return;
@@ -312,12 +489,13 @@ function initializeHeaderSortable() {
 }
 
 function syncColumnOrderAndDragging() {
+  syncAutoColumnConfig();
   applyConfiguredColumnOrder();
   initializeHeaderSortable();
 }
 
 function scheduleColumnOrderSync() {
-  if (!props.columnConfig?.length) {
+  if (!props.autoColumns && !activeColumnConfig.value?.length) {
     return;
   }
 
@@ -354,12 +532,36 @@ onBeforeUnmount(() => {
 });
 
 defineExpose({
+  generatedColumns,
   tableRef,
   refreshHeight: scheduleTableHeightCalculation,
 });
 </script>
 
 <style lang="scss" scoped>
+.adaptive-table__auto-shell {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.adaptive-table__auto-shell > :deep(.el-table) {
+  min-height: 0;
+  flex: 1;
+}
+
+.adaptive-table__column-toolbar {
+  display: flex;
+  flex: none;
+  justify-content: flex-end;
+  min-height: 32px;
+  margin-bottom: 8px;
+}
+
+.adaptive-table__column-toolbar :deep(.column-settings-trigger) {
+  margin-left: 0;
+}
+
 :deep(th.adaptive-table__draggable-header) {
   cursor: grab;
   user-select: none;
