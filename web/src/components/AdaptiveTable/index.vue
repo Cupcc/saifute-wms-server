@@ -160,10 +160,19 @@ function mapRuntimeColumnsToConfig(runtimeColumns) {
 }
 
 function findHeaderRow() {
-  const rows = tableRef.value?.$el?.querySelectorAll(
+  const tableElement = tableRef.value?.$el;
+  const rows = tableElement?.querySelectorAll(
     ".el-table__header-wrapper thead > tr",
   );
-  return rows?.[rows.length - 1] ?? null;
+  if (rows?.length) {
+    return rows[rows.length - 1];
+  }
+
+  return (
+    tableElement?.querySelector(
+      "thead.el-table__body-header > tr:last-child",
+    ) ?? null
+  );
 }
 
 function findHeaderCell(headerRow, runtimeColumnId) {

@@ -19,7 +19,7 @@
 - Related checklist: -
 - Related acceptance spec: -
 - Related acceptance run: -
-- Related files: `web/src/components/RightToolbar/**`, `web/src/components/AdaptiveTable/**`, `web/src/utils/tableColumnPreferences*`, 28 个已接入列配置的业务列表页
+- Related files: `web/src/components/RightToolbar/**`, `web/src/components/AdaptiveTable/**`, `web/src/utils/tableColumnPreferences*`, 29 个已接入列配置的业务列表页
 
 ## Requirement Alignment
 
@@ -32,7 +32,7 @@
 ## Progress Sync
 
 - Phase progress: discovery、implementation、review、light acceptance 均已完成。
-- Current state: 28 个已有列显隐配置的业务列表已统一支持表头/面板拖动、显隐、偏好恢复和恢复默认。
+- Current state: 29 个已有列显隐配置的业务列表已统一支持表头/面板拖动、显隐、偏好恢复和恢复默认。
 - Acceptance state: `accepted`
 - Blockers: 无。
 - Next step: 本切片无剩余动作；后续表格接入时复用相同 `column-config` 契约。
@@ -114,7 +114,7 @@
   - `bun test web/src/utils/tableColumnPreferences.test.js`：`5 pass / 0 fail / 16 assertions`。
   - `pnpm build:prod`（`web/`）：通过，`2573 modules transformed`。
   - `@biomejs/biome@2.4.7` task-scoped format/lint：新增纯 JS 文件 lint 通过，两个公共 Vue 组件 format check 通过；Vue 模板变量由 Vite production build 校验。
-  - 接入审计：已有 `RightToolbar :columns` 的 `28/28` 个列表均传入 `column-config`，配置 label 与运行时表头对齐。
+  - 接入审计：已有 `RightToolbar :columns` 的 `29/29` 个列表均传入 `column-config`，配置 label 与运行时表头对齐；库存日志的 `table-layout="auto"` 表头模式已纳入拖动兼容验证。
   - `git diff --check`：通过；临时 QA 路由、白名单与页面均已移除。
 - Validation environment note: 默认 pre-commit 的 `lint-staged` 调用了本地 Biome `2.5.5`，与仓库 `biome.json` 的 `2.4.7` schema/规则不兼容；未扩展本 task 去迁移全仓工具链，改用显式锁定的 `2.4.7` 完成上述 task-scoped 校验。
 - Findings: 无 blocking / important finding；review 中修正了领料明细“单价/成本价层”和报废单“创建者/创建人”两处既有配置标签漂移，确保列映射稳定。
@@ -143,7 +143,7 @@
 
 ## Final Status
 
-- Outcome: accepted；公共列偏好能力已覆盖 28 个已有列配置的业务列表。
+- Outcome: accepted；公共列偏好能力已覆盖 29 个已有列配置的业务列表。
 - Requirement alignment: 完成本 task 所承接的 F3 部分切片，不宣称整个“业务列表页旧风格节奏细化”能力完成。
 - Residual risks or testing gaps: 偏好按账号隔离保存在当前浏览器，不跨设备同步；尚未提供 `columns` 配置的历史表格不在本切片范围。
 - Directory disposition after completion: `retained-completed`，作为后续表格接入的公共契约与验收基线。
