@@ -142,7 +142,7 @@
       />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="rows">
+    <adaptive-table border stripe v-loading="loading" :data="rows" :column-config="columns">
       <el-table-column
         v-if="columns[0].visible"
         label="单号"

@@ -144,6 +144,7 @@
       stripe
       v-loading="loading"
       :data="rows"
+      :column-config="columns"
       @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection" width="55" align="center" />

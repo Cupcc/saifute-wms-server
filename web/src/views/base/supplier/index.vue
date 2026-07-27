@@ -67,7 +67,7 @@
       />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="supplierList">
+    <adaptive-table border stripe v-loading="loading" :data="supplierList" :column-config="columns">
       <el-table-column type="index" width="50" align="center" />
       <el-table-column
         v-if="columns[0].visible"

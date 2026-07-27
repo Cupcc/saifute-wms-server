@@ -122,7 +122,7 @@
 			<right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
 		</el-row>
 		
-		<adaptive-table border stripe v-loading="loading" :data="returnOrderList" @selection-change="handleSelectionChange" @row-click="handleRowClick">
+		<adaptive-table border stripe v-loading="loading" :data="returnOrderList" :column-config="columns" @selection-change="handleSelectionChange" @row-click="handleRowClick">
 			<el-table-column type="selection" width="50" align="center" />
 			<el-table-column type="index" width="50" align="center" />
 			<el-table-column sortable show-overflow-tooltip label="退料单号" align="center" prop="returnNo" min-width="140" v-if="columns[0].visible">

@@ -76,7 +76,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="materialList">
+    <adaptive-table border stripe v-loading="loading" :data="materialList" :column-config="columns">
       <el-table-column type="index" width="50" align="center" />
       <el-table-column sortable show-overflow-tooltip label="关联ID" align="center" prop="id" key="id" v-if="columns[0].visible"/>
       <el-table-column sortable show-overflow-tooltip label="关联项目id" align="center" prop="productId" v-if="columns[1].visible" />

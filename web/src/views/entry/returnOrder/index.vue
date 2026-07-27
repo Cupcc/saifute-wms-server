@@ -46,7 +46,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns" />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="returnOrderList">
+    <adaptive-table border stripe v-loading="loading" :data="returnOrderList" :column-config="columns">
       <el-table-column type="index" width="50" align="center" />
       <el-table-column sortable show-overflow-tooltip label="退货单号" align="center" prop="inboundNo" min-width="140" v-if="columns[0].visible">
         <template #default="scope">

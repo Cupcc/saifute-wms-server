@@ -76,7 +76,7 @@
       <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="scrapOrderList" @selection-change="handleSelectionChange" @row-click="handleRowClick">
+    <adaptive-table border stripe v-loading="loading" :data="scrapOrderList" :column-config="columns" @selection-change="handleSelectionChange" @row-click="handleRowClick">
       <el-table-column type="selection" width="50" align="center" />
       <el-table-column type="index" width="50" align="center" />
       <el-table-column sortable show-overflow-tooltip label="报废单号" align="center" prop="scrapNo" min-width="140" v-if="columns[0].visible">
@@ -436,7 +436,7 @@ const columns = ref([
   { key: 1, label: `报废日期`, visible: true },
   { key: 2, label: `处理方式`, visible: true },
   { key: 3, label: `经办人`, visible: true },
-  { key: 4, label: `创建者`, visible: false },
+  { key: 4, label: `创建人`, visible: false },
 ]);
 
 function formatDocumentDate(value) {

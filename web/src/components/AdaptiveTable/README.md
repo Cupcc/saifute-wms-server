@@ -8,6 +8,8 @@ AdaptiveTable 是一个基于 Element Plus 的 el-table 组件封装，具有自
 
 - 自动计算表格高度，适应不同屏幕尺寸
 - 表头固定，方便查看列名
+- 可选的表头拖拽排序能力，固定的序号、选择和操作列保持原位
+- 与 `RightToolbar` 配合时支持按用户和路由保存列顺序、显隐并恢复默认
 - 支持所有 el-table 的属性和事件
 - 响应式设计，窗口大小变化时自动调整
 
@@ -25,13 +27,37 @@ AdaptiveTable 是一个基于 Element Plus 的 el-table 组件封装，具有自
     stripe
     v-loading="loading"
     :data="tableData"
+    :column-config="columns"
   >
     <el-table-column type="index" width="60" align="center" />
     <el-table-column label="名称" prop="name" />
     <!-- 其他列 -->
   </adaptive-table>
 </template>
+
+<script setup>
+const columns = ref([
+  { key: 0, label: "名称", visible: true },
+  { key: 1, label: "编码", visible: true },
+])
+</script>
 ```
+
+将同一份配置传给工具栏后，用户可以在列设置面板中拖动、显示、隐藏和恢复默认：
+
+```vue
+<right-toolbar
+  v-model:show-search="showSearch"
+  :columns="columns"
+  @query-table="getList"
+/>
+```
+
+`columns` 数组本身保持页面声明顺序，组件只维护每项的 `order` 元数据，因此已有的
+`columns[index].visible` 写法仍然安全。配置项的 `label` 应与对应
+`el-table-column` 的 `label` 一致；如需在改名后继续复用旧偏好，可提供稳定的
+`preferenceKey` 或 `prop`。同一路由存在多张可配置表格时，应给各
+`RightToolbar` 传入不同的 `table-key`。
 
 ### 3. 完整示例
 
@@ -93,6 +119,8 @@ getList()
 ### Props
 
 支持所有 el-table 的 props，详见 [Element Plus Table 文档](https://element-plus.org/zh-CN/component/table.html#table-attributes)
+
+- `column-config`：可选的列配置数组。传入后开启可配置表头拖拽；未传入时行为与原组件一致。
 
 ### Events
 

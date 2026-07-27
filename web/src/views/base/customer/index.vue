@@ -90,6 +90,7 @@
       stripe
       v-loading="loading"
       :data="customerList"
+      :column-config="columns"
       row-key="customerId"
       :default-expand-all="isExpandAll"
       :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
