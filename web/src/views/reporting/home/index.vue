@@ -13,7 +13,9 @@
     <el-row :gutter="16" class="section-row">
       <el-col v-for="card in metricCards" :key="card.label" :xs="24" :sm="12" :lg="6">
         <el-card shadow="hover" class="metric-card">
-          <div class="metric-label">{{ card.label }}</div>
+          <div class="metric-label">
+            <reporting-metric-label :label="card.label" :content="card.help" />
+          </div>
           <div class="metric-value">{{ card.value }}</div>
         </el-card>
       </el-col>
@@ -23,16 +25,39 @@
       <el-col :xs="24" :lg="12">
         <el-card shadow="never" class="detail-card">
           <template #header>
-            <div class="card-title">今日单据</div>
+            <div class="card-title">
+              <reporting-metric-label
+                label="今日单据"
+                content="按业务时区当天的业务日期统计当前可见库存范围内已生效的业务单据。"
+              />
+            </div>
           </template>
           <el-descriptions :column="1" border>
-            <el-descriptions-item label="入库单据">
+            <el-descriptions-item>
+              <template #label>
+                <reporting-metric-label
+                  label="入库单据"
+                  content="业务日期为今天且已生效的入库单数量，受当前库存范围权限限制。"
+                />
+              </template>
               {{ dashboard.todayDocuments.inboundCount }}
             </el-descriptions-item>
-            <el-descriptions-item label="出库单据">
+            <el-descriptions-item>
+              <template #label>
+                <reporting-metric-label
+                  label="出库单据"
+                  content="业务日期为今天且已生效的销售出库单数量，不包含销售退货单。"
+                />
+              </template>
               {{ dashboard.todayDocuments.outboundCount }}
             </el-descriptions-item>
-            <el-descriptions-item label="领退料单据">
+            <el-descriptions-item>
+              <template #label>
+                <reporting-metric-label
+                  label="领退料单据"
+                  content="业务日期为今天且已生效的领料、退料及报废单数量。"
+                />
+              </template>
               {{ dashboard.todayDocuments.workshopMaterialCount }}
             </el-descriptions-item>
           </el-descriptions>
@@ -42,16 +67,39 @@
       <el-col :xs="24" :lg="12">
         <el-card shadow="never" class="detail-card">
           <template #header>
-            <div class="card-title">累计金额</div>
+            <div class="card-title">
+              <reporting-metric-label
+                label="累计金额"
+                content="汇总当前可见库存范围内全部业务日期的已生效单据金额，金额保留 4 位小数。"
+              />
+            </div>
           </template>
           <el-descriptions :column="1" border>
-            <el-descriptions-item label="累计入库金额">
+            <el-descriptions-item>
+              <template #label>
+                <reporting-metric-label
+                  label="累计入库金额"
+                  content="当前可见库存范围内全部已生效入库单的单据总金额合计。"
+                />
+              </template>
               {{ dashboard.cumulativeDocuments.inbound.totalAmount }}
             </el-descriptions-item>
-            <el-descriptions-item label="累计出库金额">
+            <el-descriptions-item>
+              <template #label>
+                <reporting-metric-label
+                  label="累计出库金额"
+                  content="当前可见库存范围内全部已生效销售出库单的单据总金额合计，不包含销售退货。"
+                />
+              </template>
               {{ dashboard.cumulativeDocuments.outbound.totalAmount }}
             </el-descriptions-item>
-            <el-descriptions-item label="累计领退料金额">
+            <el-descriptions-item>
+              <template #label>
+                <reporting-metric-label
+                  label="累计领退料金额"
+                  content="全部已生效领料、退料及报废单的单据总金额直接合计，不代表净耗用金额。"
+                />
+              </template>
               {{ dashboard.cumulativeDocuments.workshopMaterial.totalAmount }}
             </el-descriptions-item>
           </el-descriptions>
@@ -64,18 +112,29 @@
         <el-card shadow="never" class="chart-card">
           <template #header>
             <div class="chart-title-block">
-              <div class="card-title">库存健康</div>
+              <div class="card-title">
+                <reporting-metric-label
+                  label="库存健康"
+                  content="按当前在库物料数与低库存项形成的概览；正常库存项按“在库物料数 - 低库存项”计算，最低为 0。"
+                />
+              </div>
               <span class="card-tip">按在库物料与低库存项汇总</span>
             </div>
           </template>
           <div ref="inventoryHealthChartRef" class="chart-container chart-container--compact"></div>
           <div class="chart-summary">
             <div class="summary-pill">
-              <span>正常库存项</span>
+              <reporting-metric-label
+                label="正常库存项"
+                content="在库物料数减去低库存项后的结果；若结果小于 0，则显示为 0。"
+              />
               <strong>{{ healthyMaterialCount }}</strong>
             </div>
             <div class="summary-pill warning">
-              <span>低库存项</span>
+              <reporting-metric-label
+                label="低库存项"
+                content="已配置安全库存下限，且当前库存数量低于该下限的库存余额记录数。"
+              />
               <strong>{{ dashboard.inventory.lowStockCount }}</strong>
             </div>
           </div>
@@ -86,22 +145,36 @@
         <el-card shadow="never" class="chart-card">
           <template #header>
             <div class="chart-title-block">
-              <div class="card-title">最近 7 日业务趋势</div>
+              <div class="card-title">
+                <reporting-metric-label
+                  label="最近 7 日业务趋势"
+                  content="按最近 7 个自然日的库存流水分业务类型汇总；金额采用成本金额，数量和金额会保留业务方向的正负号。"
+                />
+              </div>
               <span class="card-tip">按总金额观察各业务类型波动</span>
             </div>
           </template>
           <div ref="trendChartRef" class="chart-container"></div>
           <div class="trend-summary-row">
             <div class="summary-pill">
-              <span>单据数</span>
+              <reporting-metric-label
+                label="单据数"
+                content="接口返回的每日、每业务类型汇总记录数之和，用于表示趋势数据点，不等同于原始业务单据去重数量。"
+              />
               <strong>{{ trendSummary.documentCount }}</strong>
             </div>
             <div class="summary-pill">
-              <span>总数量</span>
+              <reporting-metric-label
+                label="总数量"
+                content="最近 7 日各业务类型库存变动数量的合计，出库等业务可能以负数计入。"
+              />
               <strong>{{ trendSummary.totalQty }}</strong>
             </div>
             <div class="summary-pill">
-              <span>总金额</span>
+              <reporting-metric-label
+                label="总金额"
+                content="最近 7 日各业务类型库存流水成本金额的合计，不是销售收入金额，保留 4 位小数。"
+              />
               <strong>{{ trendSummary.totalAmount }}</strong>
             </div>
           </div>
@@ -114,7 +187,12 @@
         <el-card shadow="never" class="chart-card">
           <template #header>
             <div class="chart-title-block">
-              <div class="card-title">库存分类货值分布</div>
+              <div class="card-title">
+                <reporting-metric-label
+                  label="库存分类货值分布"
+                  content="按物料分类汇总库存货值后取金额最高的 8 个分类，饼图百分比仅以这 8 个分类的合计为分母。"
+                />
+              </div>
               <span class="card-tip">Top 8 分类按库存货值展示</span>
             </div>
           </template>
@@ -126,7 +204,12 @@
         <el-card shadow="never" class="chart-card">
           <template #header>
             <div class="chart-title-block">
-              <div class="card-title">库存分类 Top 8</div>
+              <div class="card-title">
+                <reporting-metric-label
+                  label="库存分类 Top 8"
+                  content="按各物料分类的库存货值从高到低取前 8 名；库存货值采用剩余入库来源的单位成本口径。"
+                />
+              </div>
               <span class="card-tip">按库存货值排序</span>
             </div>
           </template>
@@ -153,6 +236,7 @@ import {
   getTrendSeries,
 } from "@/api/reporting";
 import { formatQty } from "@/utils/format";
+import ReportingMetricLabel from "../components/ReportingMetricLabel.vue";
 const loading = ref(false);
 
 const dashboard = ref({
@@ -190,18 +274,22 @@ let categoryTopChart = null;
 const metricCards = computed(() => [
   {
     label: "在库物料数",
+    help: "当前可见库存范围内库存数量大于 0 的有效物料去重数；同一物料存在多个库存记录时只计 1 个。",
     value: dashboard.value.inventory.activeMaterialCount,
   },
   {
     label: "库存记录数",
+    help: "当前可见库存范围内有效物料的库存余额记录总数；同一物料分布在不同库存范围时会分别计数。",
     value: dashboard.value.inventory.inventoryRecordCount,
   },
   {
     label: "低库存项",
+    help: "已配置安全库存下限，且当前库存数量低于该下限的库存余额记录数。",
     value: dashboard.value.inventory.lowStockCount,
   },
   {
     label: "库存货值",
+    help: "按当前尚未耗用的入库来源数量乘以对应单位成本后汇总，属于库存成本口径，不是销售价。",
     value: dashboard.value.inventory.totalInventoryValue,
   },
 ]);
