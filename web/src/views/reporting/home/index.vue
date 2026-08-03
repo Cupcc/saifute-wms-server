@@ -28,7 +28,7 @@
             <div class="card-title">
               <reporting-metric-label
                 label="今日单据"
-                content="按业务时区当天的业务日期统计当前可见库存范围内已生效的业务单据。"
+                content="按业务时区当天的业务日期统计当前可见库存范围内已生效的业务单据，并按真实业务类型分列。"
               />
             </div>
           </template>
@@ -36,29 +36,49 @@
             <el-descriptions-item>
               <template #label>
                 <reporting-metric-label
-                  label="入库单据"
-                  content="业务日期为今天且已生效的入库单数量，受当前库存范围权限限制。"
+                  label="今日验收单"
+                  content="业务日期为今天且已生效的验收入库单数量。"
                 />
               </template>
-              {{ dashboard.todayDocuments.inboundCount }}
+              {{ dashboard.todayDocuments.acceptanceCount }}
             </el-descriptions-item>
             <el-descriptions-item>
               <template #label>
                 <reporting-metric-label
-                  label="出库单据"
-                  content="业务日期为今天且已生效的销售出库单数量，不包含销售退货单。"
+                  label="今日生产入库单"
+                  content="业务日期为今天且已生效的生产入库单数量。"
                 />
               </template>
-              {{ dashboard.todayDocuments.outboundCount }}
+              {{ dashboard.todayDocuments.productionReceiptCount }}
             </el-descriptions-item>
             <el-descriptions-item>
               <template #label>
                 <reporting-metric-label
-                  label="领退料单据"
-                  content="业务日期为今天且已生效的领料、退料及报废单数量。"
+                  label="今日退厂单"
+                  content="业务日期为今天且已生效的退厂/供应商退货单数量，不计为正向入库。"
                 />
               </template>
-              {{ dashboard.todayDocuments.workshopMaterialCount }}
+              {{ dashboard.todayDocuments.supplierReturnCount }}
+            </el-descriptions-item>
+            <el-descriptions-item>
+              <template #label>今日销售出库单</template>
+              {{ dashboard.todayDocuments.salesOutboundCount }}
+            </el-descriptions-item>
+            <el-descriptions-item>
+              <template #label>今日销售退货单</template>
+              {{ dashboard.todayDocuments.salesReturnCount }}
+            </el-descriptions-item>
+            <el-descriptions-item>
+              <template #label>今日车间领料单</template>
+              {{ dashboard.todayDocuments.workshopPickCount }}
+            </el-descriptions-item>
+            <el-descriptions-item>
+              <template #label>今日车间退料单</template>
+              {{ dashboard.todayDocuments.workshopReturnCount }}
+            </el-descriptions-item>
+            <el-descriptions-item>
+              <template #label>今日车间报废单</template>
+              {{ dashboard.todayDocuments.workshopScrapCount }}
             </el-descriptions-item>
           </el-descriptions>
         </el-card>
@@ -69,38 +89,61 @@
           <template #header>
             <div class="card-title">
               <reporting-metric-label
-                label="累计金额"
-                content="汇总当前可见库存范围内全部业务日期的已生效单据金额，金额保留 4 位小数。"
+                label="累计业务金额"
+                content="汇总当前可见库存范围内已生效事实，并明确区分入库计价、WMS销售价和实际库存成本。"
               />
             </div>
           </template>
           <el-descriptions :column="1" border>
             <el-descriptions-item>
               <template #label>
-                <reporting-metric-label
-                  label="累计入库金额"
-                  content="当前可见库存范围内全部已生效入库单的单据总金额合计。"
-                />
+                验收入库计价金额
               </template>
-              {{ dashboard.cumulativeDocuments.inbound.totalAmount }}
+              {{ dashboard.cumulativeAmounts.inbound.acceptanceAmount }}
             </el-descriptions-item>
             <el-descriptions-item>
               <template #label>
-                <reporting-metric-label
-                  label="累计出库金额"
-                  content="当前可见库存范围内全部已生效销售出库单的单据总金额合计，不包含销售退货。"
-                />
+                生产入库计价金额
               </template>
-              {{ dashboard.cumulativeDocuments.outbound.totalAmount }}
+              {{ dashboard.cumulativeAmounts.inbound.productionReceiptAmount }}
             </el-descriptions-item>
             <el-descriptions-item>
               <template #label>
-                <reporting-metric-label
-                  label="累计领退料金额"
-                  content="全部已生效领料、退料及报废单的单据总金额直接合计，不代表净耗用金额。"
-                />
+                退厂计价金额
               </template>
-              {{ dashboard.cumulativeDocuments.workshopMaterial.totalAmount }}
+              {{ dashboard.cumulativeAmounts.inbound.supplierReturnAmount }}
+            </el-descriptions-item>
+            <el-descriptions-item>
+              <template #label>采购净入库金额</template>
+              {{ dashboard.cumulativeAmounts.inbound.procurementNetInboundAmount }}
+            </el-descriptions-item>
+            <el-descriptions-item>
+              <template #label>销售出库额（WMS销售价）</template>
+              {{ dashboard.cumulativeAmounts.sales.outboundAmount }}
+            </el-descriptions-item>
+            <el-descriptions-item>
+              <template #label>销售退货额（WMS销售价）</template>
+              {{ dashboard.cumulativeAmounts.sales.returnAmount }}
+            </el-descriptions-item>
+            <el-descriptions-item>
+              <template #label>销售净额（WMS销售价）</template>
+              {{ dashboard.cumulativeAmounts.sales.netAmount }}
+            </el-descriptions-item>
+            <el-descriptions-item>
+              <template #label>车间领料成本</template>
+              {{ dashboard.cumulativeAmounts.workshop.pickCost }}
+            </el-descriptions-item>
+            <el-descriptions-item>
+              <template #label>车间退料冲回成本</template>
+              {{ dashboard.cumulativeAmounts.workshop.returnCost }}
+            </el-descriptions-item>
+            <el-descriptions-item>
+              <template #label>车间报废成本</template>
+              {{ dashboard.cumulativeAmounts.workshop.scrapCost }}
+            </el-descriptions-item>
+            <el-descriptions-item>
+              <template #label>车间净耗用成本</template>
+              {{ dashboard.cumulativeAmounts.workshop.netConsumptionCost }}
             </el-descriptions-item>
           </el-descriptions>
         </el-card>
@@ -115,27 +158,41 @@
               <div class="card-title">
                 <reporting-metric-label
                   label="库存健康"
-                  content="按当前在库物料数与低库存项形成的概览；正常库存项按“在库物料数 - 低库存项”计算，最低为 0。"
+                  content="按物料与仓别形成的库存余额记录互斥划分为正常、低库存、超上限和未配置四种状态。"
                 />
               </div>
-              <span class="card-tip">按在库物料与低库存项汇总</span>
+              <span class="card-tip">按物料 × 仓别汇总</span>
             </div>
           </template>
           <div ref="inventoryHealthChartRef" class="chart-container chart-container--compact"></div>
           <div class="chart-summary">
             <div class="summary-pill">
               <reporting-metric-label
-                label="正常库存项"
-                content="在库物料数减去低库存项后的结果；若结果小于 0，则显示为 0。"
+                label="正常的物料-仓别数"
+                content="已配置至少一个库存阈值，且当前数量未低于下限、未超过上限的物料-仓别项数。"
               />
-              <strong>{{ healthyMaterialCount }}</strong>
+              <strong>{{ dashboard.inventory.normalStockCount }}</strong>
             </div>
             <div class="summary-pill warning">
               <reporting-metric-label
-                label="低库存项"
+                label="低于下限的物料-仓别数"
                 content="已配置安全库存下限，且当前库存数量低于该下限的库存余额记录数。"
               />
               <strong>{{ dashboard.inventory.lowStockCount }}</strong>
+            </div>
+            <div class="summary-pill above-max">
+              <reporting-metric-label
+                label="高于上限的物料-仓别数"
+                content="已配置库存上限，且当前数量严格超过该上限的物料-仓别项数。"
+              />
+              <strong>{{ dashboard.inventory.aboveMaxStockCount }}</strong>
+            </div>
+            <div class="summary-pill unconfigured">
+              <reporting-metric-label
+                label="未配置阈值的物料-仓别数"
+                content="库存下限和上限均未配置的物料-仓别项数，不归入正常库存。"
+              />
+              <strong>{{ dashboard.inventory.unconfiguredStockCount }}</strong>
             </div>
           </div>
         </el-card>
@@ -148,34 +205,27 @@
               <div class="card-title">
                 <reporting-metric-label
                   label="最近 7 日业务趋势"
-                  content="按最近 7 个自然日的库存流水分业务类型汇总；金额采用成本金额，数量和金额会保留业务方向的正负号。"
+                  content="按最近 7 个自然日的库存流水分业务类型汇总；金额采用实际库存成本，并保留各业务类型定义的正负方向。"
                 />
               </div>
-              <span class="card-tip">按总金额观察各业务类型波动</span>
+              <span class="card-tip">按库存成本金额观察业务波动</span>
             </div>
           </template>
           <div ref="trendChartRef" class="chart-container"></div>
           <div class="trend-summary-row">
             <div class="summary-pill">
               <reporting-metric-label
-                label="单据数"
-                content="接口返回的每日、每业务类型汇总记录数之和，用于表示趋势数据点，不等同于原始业务单据去重数量。"
+                label="业务单据数"
+                content="最近 7 日按业务单据类型和单据 ID 去重后的真实业务单据数；同一单据多条库存流水只计一张。"
               />
               <strong>{{ trendSummary.documentCount }}</strong>
             </div>
             <div class="summary-pill">
               <reporting-metric-label
-                label="总数量"
-                content="最近 7 日各业务类型库存变动数量的合计，出库等业务可能以负数计入。"
+                label="库存成本净变动"
+                content="最近 7 日所有纳入趋势的库存流水按入为正、出为负计算的库存成本净变动，由后端精确汇总。"
               />
-              <strong>{{ trendSummary.totalQty }}</strong>
-            </div>
-            <div class="summary-pill">
-              <reporting-metric-label
-                label="总金额"
-                content="最近 7 日各业务类型库存流水成本金额的合计，不是销售收入金额，保留 4 位小数。"
-              />
-              <strong>{{ trendSummary.totalAmount }}</strong>
+              <strong>{{ trendSummary.inventoryCostNetChange }}</strong>
             </div>
           </div>
         </el-card>
@@ -189,11 +239,11 @@
             <div class="chart-title-block">
               <div class="card-title">
                 <reporting-metric-label
-                  label="库存分类货值分布"
-                  content="按物料分类汇总库存货值后取金额最高的 8 个分类，饼图百分比仅以这 8 个分类的合计为分母。"
+                  label="分类来源库存成本分布"
+                  content="按物料分类汇总可追溯来源库存成本后取金额最高的 8 个分类，饼图百分比仅以这 8 个分类的合计为分母。"
                 />
               </div>
-              <span class="card-tip">Top 8 分类按库存货值展示</span>
+              <span class="card-tip">Top 8 分类按来源库存成本展示</span>
             </div>
           </template>
           <div ref="categoryDistributionChartRef" class="chart-container"></div>
@@ -206,11 +256,11 @@
             <div class="chart-title-block">
               <div class="card-title">
                 <reporting-metric-label
-                  label="库存分类 Top 8"
-                  content="按各物料分类的库存货值从高到低取前 8 名；库存货值采用剩余入库来源的单位成本口径。"
+                  label="分类来源库存成本 Top 8"
+                  content="按各物料分类的可追溯来源库存成本从高到低取前 8 名；不等同于正式财务账面余额。"
                 />
               </div>
-              <span class="card-tip">按库存货值排序</span>
+              <span class="card-tip">按来源库存成本排序</span>
             </div>
           </template>
           <div ref="categoryTopChartRef" class="chart-container"></div>
@@ -235,7 +285,6 @@ import {
   getReportingHome,
   getTrendSeries,
 } from "@/api/reporting";
-import { formatQty } from "@/utils/format";
 import ReportingMetricLabel from "../components/ReportingMetricLabel.vue";
 const loading = ref(false);
 
@@ -244,21 +293,47 @@ const dashboard = ref({
     activeMaterialCount: 0,
     inventoryRecordCount: 0,
     lowStockCount: 0,
+    normalStockCount: 0,
+    aboveMaxStockCount: 0,
+    unconfiguredStockCount: 0,
     totalInventoryValue: "0.00",
   },
   todayDocuments: {
-    inboundCount: 0,
-    outboundCount: 0,
-    workshopMaterialCount: 0,
+    acceptanceCount: 0,
+    productionReceiptCount: 0,
+    supplierReturnCount: 0,
+    salesOutboundCount: 0,
+    salesReturnCount: 0,
+    workshopPickCount: 0,
+    workshopReturnCount: 0,
+    workshopScrapCount: 0,
   },
-  cumulativeDocuments: {
-    inbound: { totalAmount: "0.00" },
-    outbound: { totalAmount: "0.00" },
-    workshopMaterial: { totalAmount: "0.00" },
+  cumulativeAmounts: {
+    inbound: {
+      acceptanceAmount: "0.0000",
+      productionReceiptAmount: "0.0000",
+      supplierReturnAmount: "0.0000",
+      procurementNetInboundAmount: "0.0000",
+    },
+    sales: {
+      outboundAmount: "0.0000",
+      returnAmount: "0.0000",
+      netAmount: "0.0000",
+    },
+    workshop: {
+      pickCost: "0.0000",
+      returnCost: "0.0000",
+      scrapCost: "0.0000",
+      netConsumptionCost: "0.0000",
+    },
   },
 });
 
 const trendRows = ref([]);
+const trendSummary = ref({
+  documentCount: 0,
+  inventoryCostNetChange: "0.0000",
+});
 const categoryRows = ref([]);
 
 const inventoryHealthChartRef = ref(null);
@@ -273,14 +348,14 @@ let categoryTopChart = null;
 
 const metricCards = computed(() => [
   {
-    label: "在库物料数",
+    label: "在库物料品种数",
     help: "当前可见库存范围内库存数量大于 0 的有效物料去重数；同一物料存在多个库存记录时只计 1 个。",
     value: dashboard.value.inventory.activeMaterialCount,
   },
   {
-    label: "库存记录数",
-    help: "当前可见库存范围内有效物料的库存余额记录总数；同一物料分布在不同库存范围时会分别计数。",
-    value: dashboard.value.inventory.inventoryRecordCount,
+    label: "未配置阈值的物料-仓别数",
+    help: "库存下限和上限均未配置的物料-仓别项数；它们不再被误计为正常库存。",
+    value: dashboard.value.inventory.unconfiguredStockCount,
   },
   {
     label: "低库存项",
@@ -288,37 +363,11 @@ const metricCards = computed(() => [
     value: dashboard.value.inventory.lowStockCount,
   },
   {
-    label: "库存货值",
-    help: "按当前尚未耗用的入库来源数量乘以对应单位成本后汇总，属于库存成本口径，不是销售价。",
+    label: "可追溯来源库存成本",
+    help: "按当前尚未耗用的入库来源数量乘以对应单位成本后汇总，不是销售价或正式财务账面余额。",
     value: dashboard.value.inventory.totalInventoryValue,
   },
 ]);
-
-const healthyMaterialCount = computed(() =>
-  Math.max(
-    Number(dashboard.value.inventory.activeMaterialCount || 0) -
-      Number(dashboard.value.inventory.lowStockCount || 0),
-    0,
-  ),
-);
-
-const trendSummary = computed(() => {
-  let documentCount = 0;
-  let totalQty = 0;
-  let totalAmount = 0;
-
-  trendRows.value.forEach((item) => {
-    documentCount += Number(item.documentCount || 0);
-    totalQty += Number(item.totalQty || 0);
-    totalAmount += Number(item.totalAmount || 0);
-  });
-
-  return {
-    documentCount,
-    totalQty: formatQty(totalQty),
-    totalAmount: totalAmount.toFixed(4),
-  };
-});
 
 const categoryChartRows = computed(() =>
   (categoryRows.value || []).map((item) => ({
@@ -355,11 +404,13 @@ function formatShortDate(value) {
 
 function formatTrendType(value) {
   const labelMap = {
-    INBOUND: "入库",
-    SALES: "销售出库",
-    WORKSHOP_MATERIAL: "领退料",
-    RD_PROJECT: "研发项目",
-    RD: "研发协同",
+    INBOUND: "入库域净成本流量",
+    SALES: "销售出库成本",
+    WORKSHOP_MATERIAL: "车间净耗用成本",
+    RD_PROJECT: "研发项目净耗用成本",
+    RD_HANDOFF: "RD交接",
+    RD_STOCKTAKE_GAIN: "RD盘盈",
+    RD_STOCKTAKE_LOSS: "RD盘亏",
   };
   return labelMap[value] || value;
 }
@@ -391,17 +442,23 @@ function renderInventoryHealthChart() {
     return;
   }
 
-  const total = Number(dashboard.value.inventory.activeMaterialCount || 0);
+  const total = Number(dashboard.value.inventory.inventoryRecordCount || 0);
   const lowStockCount = Number(dashboard.value.inventory.lowStockCount || 0);
-  const normalCount = healthyMaterialCount.value;
+  const normalCount = Number(dashboard.value.inventory.normalStockCount || 0);
+  const aboveMaxStockCount = Number(
+    dashboard.value.inventory.aboveMaxStockCount || 0,
+  );
+  const unconfiguredStockCount = Number(
+    dashboard.value.inventory.unconfiguredStockCount || 0,
+  );
   const hasData = total > 0;
 
   inventoryHealthChart.setOption(
     {
-      color: ["#3c8f58", "#d66a5f"],
+      color: ["#3c8f58", "#d66a5f", "#7c3aed", "#9ca3af"],
       title: {
         text: `${total}`,
-        subtext: "在库物料",
+        subtext: "物料-仓别项",
         left: "center",
         top: "38%",
         textStyle: {
@@ -442,6 +499,8 @@ function renderInventoryHealthChart() {
             ? [
                 { value: normalCount, name: "正常库存项" },
                 { value: lowStockCount, name: "低库存项" },
+                { value: aboveMaxStockCount, name: "超上限项" },
+                { value: unconfiguredStockCount, name: "未配置项" },
               ]
             : [
                 {
@@ -467,14 +526,18 @@ function renderTrendChart() {
     "SALES",
     "WORKSHOP_MATERIAL",
     "RD_PROJECT",
-    "RD",
+    "RD_HANDOFF",
+    "RD_STOCKTAKE_GAIN",
+    "RD_STOCKTAKE_LOSS",
   ];
   const colorMap = {
     INBOUND: "#2f6fed",
     SALES: "#f97316",
     WORKSHOP_MATERIAL: "#14b8a6",
     RD_PROJECT: "#8b5cf6",
-    RD: "#ef4444",
+    RD_HANDOFF: "#ef4444",
+    RD_STOCKTAKE_GAIN: "#16a34a",
+    RD_STOCKTAKE_LOSS: "#dc2626",
   };
   const rowsByDate = new Map();
 
@@ -486,7 +549,7 @@ function renderTrendChart() {
 
   const dates = [...rowsByDate.keys()].sort();
   const activeTrendTypes = trendTypes.filter((trendType) =>
-    dates.some((date) => Number(rowsByDate.get(date)?.[trendType] || 0) > 0),
+    dates.some((date) => Number(rowsByDate.get(date)?.[trendType] || 0) !== 0),
   );
 
   trendChart.setOption(
@@ -518,7 +581,7 @@ function renderTrendChart() {
       },
       yAxis: {
         type: "value",
-        name: "金额",
+        name: "库存成本金额",
         axisLabel: {
           formatter: (value) => formatNumber(value, 0),
         },
@@ -580,7 +643,7 @@ function renderCategoryDistributionChart() {
       ],
       title: {
         text: "Top 8",
-        subtext: "按库存货值",
+        subtext: "按来源库存成本",
         left: "center",
         top: "40%",
         textStyle: {
@@ -604,7 +667,7 @@ function renderCategoryDistributionChart() {
       },
       series: [
         {
-          name: "库存货值",
+          name: "可追溯来源库存成本",
           type: "pie",
           radius: ["50%", "74%"],
           center: ["50%", "42%"],
@@ -660,7 +723,7 @@ function renderCategoryTopChart() {
           if (!item) {
             return "";
           }
-          return `${item.name}<br/>库存货值：${formatNumber(item.value)} 元`;
+          return `${item.name}<br/>可追溯来源库存成本：${formatNumber(item.value)} 元`;
         },
       },
       grid: {
@@ -762,6 +825,10 @@ async function loadDashboardData() {
 
     dashboard.value = homeResponse.data || dashboard.value;
     trendRows.value = trendResponse.data?.items || [];
+    trendSummary.value = trendResponse.data?.summary || {
+      documentCount: 0,
+      inventoryCostNetChange: "0.0000",
+    };
     categoryRows.value = categoryResponse.data?.items || [];
 
     await nextTick();
@@ -890,6 +957,22 @@ onBeforeUnmount(() => {
 
       strong {
         color: #b45309;
+      }
+    }
+
+    &.above-max {
+      background: #f5f3ff;
+
+      strong {
+        color: #7c3aed;
+      }
+    }
+
+    &.unconfigured {
+      background: #f3f4f6;
+
+      strong {
+        color: #6b7280;
       }
     }
   }

@@ -306,23 +306,23 @@ describe("MonthlyReportExportService", () => {
     expect(exportResult.content).toContain("2026-03 物料分类月报 - 单据行明细");
     expect(exportResult.content).toContain('<Style ss:ID="Title">');
     expect(exportResult.content).toContain(
-      'ss:MergeAcross="18" ss:StyleID="Title"><Data ss:Type="String">2026-03 物料分类月报 - 单据行明细',
+      'ss:MergeAcross="20" ss:StyleID="Title"><Data ss:Type="String">2026-03 物料分类月报 - 单据行明细',
     );
     expect(exportResult.content).toContain(
       '<Column ss:Width="160" /><Column ss:Width="100" />',
     );
     expect(exportResult.content).toContain("化工");
     expect(exportResult.content).toContain("原料 A");
-    expect(exportResult.content).toContain("月初库存金额");
-    expect(exportResult.content).toContain("月末金额");
+    expect(exportResult.content).toContain("月初库存成本");
+    expect(exportResult.content).toContain("月末库存成本");
     expect(exportResult.content).toContain("销售退货数量");
     expect(exportResult.content).toContain("销售出库销售价金额");
-    expect(exportResult.content).toContain("销售出库成本价金额");
+    expect(exportResult.content).toContain("销售出库成本");
     expect(exportResult.content).toContain("销售退货销售价金额");
-    expect(exportResult.content).toContain("销售退货成本价金额");
+    expect(exportResult.content).toContain("销售退货成本");
     expect(exportResult.content).toContain("销售金额");
-    expect(exportResult.content).toContain("库存净发生数量");
-    expect(exportResult.content).toContain("库存净发生金额");
+    expect(exportResult.content).toContain("库存净变动数量");
+    expect(exportResult.content).toContain("库存成本净变动");
     expect(exportResult.content).toContain("100.00");
     expect(exportResult.content).toContain("108.00");
     expect(exportResult.content).toContain('<Data ss:Type="Number">3</Data>');
@@ -330,8 +330,8 @@ describe("MonthlyReportExportService", () => {
     expect(exportResult.content).not.toContain("总成本");
     expect(exportResult.content).not.toContain("分类路径");
     expect(exportResult.content).not.toContain("层级");
-    expect(exportResult.content).not.toContain("来源月份");
-    expect(exportResult.content).not.toContain("来源单据");
+    expect(exportResult.content).toContain("来源月份");
+    expect(exportResult.content).toContain("来源单据");
     expect(exportResult.content).not.toContain("异常单据数");
     expect(exportResult.content).not.toContain("异常标识");
     expect(exportResult.content).toContain("XSTH-001");
@@ -351,29 +351,31 @@ describe("MonthlyReportExportService", () => {
     expect(categorySheet).not.toContain("车间退料数量");
     expect(categorySheet).not.toContain("车间净使用数量");
     expectLabelsInOrder(categorySheet, [
-      "月初库存数量",
-      "月初库存金额",
-      "净生产数量",
-      "净生产金额",
-      "净销售数量",
-      "净销售金额",
-      "月末库存数量",
-      "月末库存金额",
+      "月初库存成本",
+      "验收入库计价金额",
+      "退厂计价金额",
+      "采购净入库金额",
+      "生产入库计价金额",
+      "销售净额（WMS 销售价口径）",
+      "销售净成本",
+      "车间净耗用成本",
+      "库存成本净变动",
+      "月末库存成本",
     ]);
     expectLabelsInOrder(extractWorksheet(exportResult.content, "物料汇总"), [
-      "单据数",
+      "业务单据数",
       "月初数量",
-      "月初金额",
-      "库存净发生数量",
-      "库存净发生金额",
+      "月初库存成本",
+      "库存净变动数量",
+      "库存成本净变动",
       "月末数量",
-      "月末金额",
-      "入库数量",
+      "月末库存成本",
+      "库存流入数量",
     ]);
     expectLabelsInOrder(extractWorksheet(exportResult.content, "单据行明细"), [
       "数量",
-      "单价",
-      "金额",
+      "成本单价",
+      "成本金额",
       "销售价",
       "销售金额",
     ]);
@@ -461,10 +463,9 @@ describe("MonthlyReportExportService", () => {
     );
     expect(result.content).toContain("RD 交接单");
     expect(result.content).toContain("RDH-002");
-    expect(result.content).toContain("项目交接入数量");
-    expect(result.content).toContain("项目交接入金额");
-    expect(result.content).toContain('<Data ss:Type="Number">1</Data>');
-    expect(result.content).not.toContain("1.000000");
+    expect(result.content).not.toContain("项目交接入数量");
+    expect(result.content).toContain("项目交接入成本");
+    expect(result.content).toContain('<Data ss:Type="Number">18.0000</Data>');
     expect(result.content).not.toContain("交接金额");
     expect(result.content).not.toContain("主仓到RD交接汇总");
     expect(result.content).not.toContain("异常单据数");
@@ -524,23 +525,21 @@ describe("MonthlyReportExportService", () => {
 
     expect(result.content).not.toContain("总成本");
     expectLabelsInOrder(domainSheet, [
-      "销售净售出金额",
-      "销售净成本金额",
-      "销售毛利金额",
+      "销售净额（WMS 销售价口径）",
+      "销售净成本",
+      "WMS 商品毛利估算",
     ]);
     expect(domainSheet).not.toContain("销售出库数量");
     expect(domainSheet).not.toContain("销售退货数量");
     expect(domainSheet).not.toContain("净销售数量");
     expectLabelsInOrder(salesProjectSheet, [
-      "销售出库数量",
       "销售出库销售价金额",
-      "销售出库成本价金额",
-      "销售退货数量",
+      "销售出库成本",
       "销售退货销售价金额",
-      "销售退货成本价金额",
-      "净销售数量",
-      "净销售价金额",
-      "净成本价金额",
+      "销售退货成本",
+      "销售净额（WMS 销售价口径）",
+      "销售净成本",
+      "WMS 商品毛利估算",
     ]);
     expect(salesProjectSheet).toContain("销售项目 A");
     expect(domainSheet).toContain('<Data ss:Type="Number">80.0000</Data>');

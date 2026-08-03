@@ -4,7 +4,6 @@ import type { MonthlySalesProjectEntry } from "../infrastructure/monthly-report.
 import { normalizeMonthlyReportWorkshopRef } from "./monthly-reporting.formatters";
 import {
   formatMoney,
-  formatQuantity,
   getMonthlyReportingTopicMeta,
   type MonthlyReportEntry,
   MonthlyReportingDirection,
@@ -19,14 +18,10 @@ export interface MonthlyReportWorkshopSummaryItem {
   workshopId: number | null;
   workshopName: string;
   documentCount: number;
-  pickQuantity: string;
-  pickAmount: string;
-  returnQuantity: string;
-  returnAmount: string;
-  scrapQuantity: string;
-  scrapAmount: string;
-  netQuantity: string;
-  netAmount: string;
+  pickCostAmount: string;
+  returnCostAmount: string;
+  scrapCostAmount: string;
+  netConsumptionCostAmount: string;
 }
 
 export interface MonthlyReportSalesProjectSummaryItem {
@@ -34,15 +29,13 @@ export interface MonthlyReportSalesProjectSummaryItem {
   salesProjectCode: string | null;
   salesProjectName: string;
   documentCount: number;
-  salesOutboundQuantity: string;
   salesOutboundSalesAmount: string;
   salesOutboundCostAmount: string;
-  salesReturnQuantity: string;
   salesReturnSalesAmount: string;
   salesReturnCostAmount: string;
-  netQuantity: string;
   netSalesAmount: string;
   netCostAmount: string;
+  estimatedGrossProfitAmount: string;
 }
 
 export interface MonthlyReportRdProjectSummaryItem {
@@ -50,16 +43,12 @@ export interface MonthlyReportRdProjectSummaryItem {
   rdProjectCode: string | null;
   rdProjectName: string;
   documentCount: number;
-  handoffInQuantity: string;
-  handoffInAmount: string;
-  pickQuantity: string;
-  pickAmount: string;
-  returnQuantity: string;
-  returnAmount: string;
-  scrapQuantity: string;
-  scrapAmount: string;
-  netQuantity: string;
-  netAmount: string;
+  handoffInCostAmount: string;
+  pickCostAmount: string;
+  returnCostAmount: string;
+  scrapCostAmount: string;
+  netConsumptionCostAmount: string;
+  attributedInventoryCostNetChangeAmount: string;
 }
 
 @Injectable()
@@ -108,14 +97,9 @@ export class MonthlyReportDomainAggregatorService {
         const scrapRows = item.rows.filter(
           (row) => row.topicKey === "WORKSHOP_SCRAP",
         );
-        const pickQuantity = sumDecimals(pickRows.map((row) => row.quantity));
-        const returnQuantity = sumDecimals(
-          returnRows.map((row) => row.quantity),
-        );
-        const scrapQuantity = sumDecimals(scrapRows.map((row) => row.quantity));
-        const pickAmount = sumDecimals(pickRows.map((row) => row.amount));
-        const returnAmount = sumDecimals(returnRows.map((row) => row.amount));
-        const scrapAmount = sumDecimals(scrapRows.map((row) => row.amount));
+        const pickCostAmount = sumDecimals(pickRows.map((row) => row.cost));
+        const returnCostAmount = sumDecimals(returnRows.map((row) => row.cost));
+        const scrapCostAmount = sumDecimals(scrapRows.map((row) => row.cost));
         const documentKeys = new Set(
           item.rows.map((row) => `${row.documentType}:${row.documentId}`),
         );
@@ -123,20 +107,19 @@ export class MonthlyReportDomainAggregatorService {
           workshopId: item.workshopId,
           workshopName: item.workshopName,
           documentCount: documentKeys.size,
-          pickQuantity: formatQuantity(pickQuantity),
-          pickAmount: formatMoney(pickAmount),
-          returnQuantity: formatQuantity(returnQuantity),
-          returnAmount: formatMoney(returnAmount),
-          scrapQuantity: formatQuantity(scrapQuantity),
-          scrapAmount: formatMoney(scrapAmount),
-          netQuantity: formatQuantity(
-            returnQuantity.sub(pickQuantity).sub(scrapQuantity),
+          pickCostAmount: formatMoney(pickCostAmount),
+          returnCostAmount: formatMoney(returnCostAmount),
+          scrapCostAmount: formatMoney(scrapCostAmount),
+          netConsumptionCostAmount: formatMoney(
+            pickCostAmount.sub(returnCostAmount).add(scrapCostAmount),
           ),
-          netAmount: formatMoney(returnAmount.sub(pickAmount).sub(scrapAmount)),
         };
       })
       .sort((left, right) =>
-        compareDecimalStringsDesc(left.netAmount, right.netAmount),
+        compareDecimalStringsDesc(
+          left.netConsumptionCostAmount,
+          right.netConsumptionCostAmount,
+        ),
       );
   }
 
@@ -181,12 +164,6 @@ export class MonthlyReportDomainAggregatorService {
         const documentKeys = new Set(
           item.entries.map((entry) => `SalesStockOrder:${entry.documentId}`),
         );
-        const outboundQuantity = sumDecimals(
-          outboundEntries.map((entry) => entry.quantity),
-        );
-        const returnQuantity = sumDecimals(
-          returnEntries.map((entry) => entry.quantity),
-        );
         const outboundAmount = sumDecimals(
           outboundEntries.map((entry) => entry.amount),
         );
@@ -199,21 +176,23 @@ export class MonthlyReportDomainAggregatorService {
         const returnCostAmount = sumDecimals(
           returnEntries.map((entry) => entry.cost),
         );
+        const netSalesAmount = outboundAmount.sub(returnAmount);
+        const netCostAmount = outboundCostAmount.sub(returnCostAmount);
 
         return {
           salesProjectId: item.salesProjectId,
           salesProjectCode: item.salesProjectCode,
           salesProjectName: item.salesProjectName,
           documentCount: documentKeys.size,
-          salesOutboundQuantity: formatQuantity(outboundQuantity),
           salesOutboundSalesAmount: formatMoney(outboundAmount),
           salesOutboundCostAmount: formatMoney(outboundCostAmount),
-          salesReturnQuantity: formatQuantity(returnQuantity),
           salesReturnSalesAmount: formatMoney(returnAmount),
           salesReturnCostAmount: formatMoney(returnCostAmount),
-          netQuantity: formatQuantity(outboundQuantity.sub(returnQuantity)),
-          netSalesAmount: formatMoney(outboundAmount.sub(returnAmount)),
-          netCostAmount: formatMoney(outboundCostAmount.sub(returnCostAmount)),
+          netSalesAmount: formatMoney(netSalesAmount),
+          netCostAmount: formatMoney(netCostAmount),
+          estimatedGrossProfitAmount: formatMoney(
+            netSalesAmount.sub(netCostAmount),
+          ),
         };
       })
       .sort((left, right) =>
@@ -231,6 +210,17 @@ export class MonthlyReportDomainAggregatorService {
         row.topicKey === "RD_PROJECT_SCRAP"
       ) {
         return true;
+      }
+
+      if (
+        row.topicKey === "RD_STOCKTAKE_GAIN" ||
+        row.topicKey === "RD_STOCKTAKE_LOSS"
+      ) {
+        return (
+          row.rdProjectId != null ||
+          Boolean(row.rdProjectCode) ||
+          Boolean(row.rdProjectName)
+        );
       }
 
       return (
@@ -282,50 +272,57 @@ export class MonthlyReportDomainAggregatorService {
         const scrapRows = item.rows.filter(
           (row) => row.topicKey === "RD_PROJECT_SCRAP",
         );
+        const stocktakeGainRows = item.rows.filter(
+          (row) => row.topicKey === "RD_STOCKTAKE_GAIN",
+        );
+        const stocktakeLossRows = item.rows.filter(
+          (row) => row.topicKey === "RD_STOCKTAKE_LOSS",
+        );
         const documentKeys = new Set(
           item.rows.map((row) => `${row.documentType}:${row.documentId}`),
         );
-        const handoffInQuantity = sumDecimals(
-          handoffRows.map((row) => row.quantity),
+        const handoffInCostAmount = sumDecimals(
+          handoffRows.map((row) => row.cost),
         );
-        const pickQuantity = sumDecimals(pickRows.map((row) => row.quantity));
-        const returnQuantity = sumDecimals(
-          returnRows.map((row) => row.quantity),
+        const pickCostAmount = sumDecimals(pickRows.map((row) => row.cost));
+        const returnCostAmount = sumDecimals(returnRows.map((row) => row.cost));
+        const scrapCostAmount = sumDecimals(scrapRows.map((row) => row.cost));
+        const stocktakeGainCostAmount = sumDecimals(
+          stocktakeGainRows.map((row) => row.cost),
         );
-        const scrapQuantity = sumDecimals(scrapRows.map((row) => row.quantity));
-        const handoffInAmount = sumDecimals(
-          handoffRows.map((row) => row.amount),
+        const stocktakeLossCostAmount = sumDecimals(
+          stocktakeLossRows.map((row) => row.cost),
         );
-        const pickAmount = sumDecimals(pickRows.map((row) => row.amount));
-        const returnAmount = sumDecimals(returnRows.map((row) => row.amount));
-        const scrapAmount = sumDecimals(scrapRows.map((row) => row.amount));
+        const netConsumptionCostAmount = pickCostAmount
+          .sub(returnCostAmount)
+          .add(scrapCostAmount);
+        const attributedInventoryCostNetChangeAmount = handoffInCostAmount
+          .add(returnCostAmount)
+          .add(stocktakeGainCostAmount)
+          .sub(pickCostAmount)
+          .sub(scrapCostAmount)
+          .sub(stocktakeLossCostAmount);
 
         return {
           rdProjectId: item.rdProjectId,
           rdProjectCode: item.rdProjectCode,
           rdProjectName: item.rdProjectName,
           documentCount: documentKeys.size,
-          handoffInQuantity: formatQuantity(handoffInQuantity),
-          handoffInAmount: formatMoney(handoffInAmount),
-          pickQuantity: formatQuantity(pickQuantity),
-          pickAmount: formatMoney(pickAmount),
-          returnQuantity: formatQuantity(returnQuantity),
-          returnAmount: formatMoney(returnAmount),
-          scrapQuantity: formatQuantity(scrapQuantity),
-          scrapAmount: formatMoney(scrapAmount),
-          netQuantity: formatQuantity(
-            handoffInQuantity
-              .add(returnQuantity)
-              .sub(pickQuantity)
-              .sub(scrapQuantity),
-          ),
-          netAmount: formatMoney(
-            handoffInAmount.add(returnAmount).sub(pickAmount).sub(scrapAmount),
+          handoffInCostAmount: formatMoney(handoffInCostAmount),
+          pickCostAmount: formatMoney(pickCostAmount),
+          returnCostAmount: formatMoney(returnCostAmount),
+          scrapCostAmount: formatMoney(scrapCostAmount),
+          netConsumptionCostAmount: formatMoney(netConsumptionCostAmount),
+          attributedInventoryCostNetChangeAmount: formatMoney(
+            attributedInventoryCostNetChangeAmount,
           ),
         };
       })
       .sort((left, right) =>
-        compareDecimalStringsDesc(left.netAmount, right.netAmount),
+        compareDecimalStringsDesc(
+          left.netConsumptionCostAmount,
+          right.netConsumptionCostAmount,
+        ),
       );
   }
 }

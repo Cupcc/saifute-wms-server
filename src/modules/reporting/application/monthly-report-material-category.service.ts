@@ -19,6 +19,7 @@ import {
   createEmptyMonthlyMaterialCategoryBalanceTotals,
   filterMonthlyMaterialCategoryBalanceSnapshots,
   filterMonthlyMaterialCategoryBalanceSnapshotsByEntries,
+  type MonthlyMaterialCategoryBalanceTotals,
   resolveBalanceCategoryNodeKey,
 } from "./monthly-report-material-category-balance.helper";
 import {
@@ -39,79 +40,40 @@ import {
   sumDecimals,
 } from "./monthly-reporting.shared";
 
-export interface MonthlyReportMaterialCategorySummaryTotals {
-  categoryCount: number;
+export interface MonthlyReportMaterialCategoryAmountTotals {
   lineCount: number;
   documentCount: number;
-  acceptanceInboundQuantity: string;
   acceptanceInboundAmount: string;
-  productionReceiptQuantity: string;
   productionReceiptAmount: string;
-  supplierReturnQuantity: string;
   supplierReturnAmount: string;
-  netProductionQuantity: string;
-  netProductionAmount: string;
-  workshopPickQuantity: string;
-  workshopPickAmount: string;
-  workshopReturnQuantity: string;
-  workshopReturnAmount: string;
-  workshopNetUsedQuantity: string;
-  workshopNetUsedAmount: string;
-  salesOutboundQuantity: string;
-  salesOutboundAmount: string;
+  purchaseNetInboundAmount: string;
+  workshopPickCostAmount: string;
+  workshopReturnCostAmount: string;
+  workshopScrapCostAmount: string;
+  workshopNetConsumptionCostAmount: string;
   salesOutboundSalesAmount: string;
   salesOutboundCostAmount: string;
-  salesReturnQuantity: string;
-  salesReturnAmount: string;
   salesReturnSalesAmount: string;
   salesReturnCostAmount: string;
-  netSalesQuantity: string;
   netSalesAmount: string;
-  netQuantity: string;
-  netAmount: string;
-  openingQuantity: string;
-  openingAmount: string;
-  closingQuantity: string;
-  closingAmount: string;
+  netSalesCostAmount: string;
+  estimatedGrossProfitAmount: string;
+  openingCostAmount: string;
+  inventoryCostNetChangeAmount: string;
+  closingCostAmount: string;
 }
 
-export interface MonthlyReportMaterialCategorySummaryItem {
+export interface MonthlyReportMaterialCategorySummaryTotals
+  extends MonthlyReportMaterialCategoryAmountTotals {
+  categoryCount: number;
+}
+
+export interface MonthlyReportMaterialCategorySummaryItem
+  extends MonthlyReportMaterialCategoryAmountTotals {
   nodeKey: string;
   categoryId: number | null;
   categoryCode: string | null;
   categoryName: string;
-  lineCount: number;
-  documentCount: number;
-  acceptanceInboundQuantity: string;
-  acceptanceInboundAmount: string;
-  productionReceiptQuantity: string;
-  productionReceiptAmount: string;
-  supplierReturnQuantity: string;
-  supplierReturnAmount: string;
-  netProductionQuantity: string;
-  netProductionAmount: string;
-  workshopPickQuantity: string;
-  workshopPickAmount: string;
-  workshopReturnQuantity: string;
-  workshopReturnAmount: string;
-  workshopNetUsedQuantity: string;
-  workshopNetUsedAmount: string;
-  salesOutboundQuantity: string;
-  salesOutboundAmount: string;
-  salesOutboundSalesAmount: string;
-  salesOutboundCostAmount: string;
-  salesReturnQuantity: string;
-  salesReturnAmount: string;
-  salesReturnSalesAmount: string;
-  salesReturnCostAmount: string;
-  netSalesQuantity: string;
-  netSalesAmount: string;
-  netQuantity: string;
-  netAmount: string;
-  openingQuantity: string;
-  openingAmount: string;
-  closingQuantity: string;
-  closingAmount: string;
 }
 
 export type MonthlyReportMaterialCategoryCatalogItem = Pick<
@@ -119,7 +81,8 @@ export type MonthlyReportMaterialCategoryCatalogItem = Pick<
   "nodeKey" | "categoryId" | "categoryCode" | "categoryName"
 >;
 
-export interface MonthlyReportMaterialSummaryItem {
+export interface MonthlyReportMaterialSummaryItem
+  extends MonthlyReportMaterialCategoryAmountTotals {
   materialKey: string;
   categoryNodeKey: string;
   categoryId: number | null;
@@ -130,40 +93,21 @@ export interface MonthlyReportMaterialSummaryItem {
   materialName: string;
   materialSpec: string | null;
   unitCode: string;
-  lineCount: number;
-  documentCount: number;
   inQuantity: string;
   outQuantity: string;
-  netQuantity: string;
+  inventoryNetChangeQuantity: string;
   openingQuantity: string;
-  openingAmount: string;
   closingQuantity: string;
-  closingAmount: string;
   acceptanceInboundQuantity: string;
-  acceptanceInboundAmount: string;
   productionReceiptQuantity: string;
-  productionReceiptAmount: string;
   supplierReturnQuantity: string;
-  supplierReturnAmount: string;
-  netProductionQuantity: string;
-  netProductionAmount: string;
   workshopPickQuantity: string;
-  workshopPickAmount: string;
   workshopReturnQuantity: string;
-  workshopReturnAmount: string;
-  workshopNetUsedQuantity: string;
-  workshopNetUsedAmount: string;
+  workshopScrapQuantity: string;
+  workshopNetConsumptionQuantity: string;
   salesOutboundQuantity: string;
-  salesOutboundAmount: string;
-  salesOutboundSalesAmount: string;
-  salesOutboundCostAmount: string;
   salesReturnQuantity: string;
-  salesReturnAmount: string;
-  salesReturnSalesAmount: string;
-  salesReturnCostAmount: string;
   netSalesQuantity: string;
-  netSalesAmount: string;
-  netAmount: string;
 }
 
 export type MonthlyReportMaterialCatalogItem = Pick<
@@ -200,7 +144,7 @@ export interface MonthlyReportMaterialCategoryDocumentsResult {
   viewMode: MonthlyReportingViewMode.MATERIAL_CATEGORY;
   total: number;
   items: MonthlyReportMaterialCategoryDetailItem[];
-  summary: Omit<MonthlyReportMaterialCategorySummaryTotals, "categoryCount">;
+  summary: MonthlyReportMaterialCategoryAmountTotals;
 }
 
 @Injectable()
@@ -322,21 +266,9 @@ export class MonthlyReportMaterialCategoryService {
 
     return collectMonthlyMaterialGroups(entries)
       .map((item) => {
-        const commonTotals = this.buildCommonMaterialCategoryTotals(
-          item.entries,
-        );
-        const inQuantity = sumDecimals(
-          item.entries
-            .filter((entry) => entry.direction === MonthlyReportingDirection.IN)
-            .map((entry) => entry.quantity),
-        );
-        const outQuantity = sumDecimals(
-          item.entries
-            .filter(
-              (entry) => entry.direction === MonthlyReportingDirection.OUT,
-            )
-            .map((entry) => entry.quantity),
-        );
+        const balanceTotals =
+          balanceTotalsByMaterial.get(item.materialKey) ??
+          createEmptyMonthlyMaterialCategoryBalanceTotals();
 
         return {
           materialKey: item.materialKey,
@@ -349,11 +281,11 @@ export class MonthlyReportMaterialCategoryService {
           materialName: item.materialName,
           materialSpec: item.materialSpec,
           unitCode: item.unitCode,
-          ...commonTotals,
-          ...(balanceTotalsByMaterial.get(item.materialKey) ??
-            createEmptyMonthlyMaterialCategoryBalanceTotals()),
-          inQuantity: formatQuantity(inQuantity),
-          outQuantity: formatQuantity(outQuantity),
+          ...this.buildMaterialCategoryAmountTotals(
+            item.entries,
+            balanceTotals,
+          ),
+          ...this.buildMaterialQuantityTotals(item.entries, balanceTotals),
         };
       })
       .sort(compareMaterialItems);
@@ -408,9 +340,11 @@ export class MonthlyReportMaterialCategoryService {
           categoryId: item.categoryId,
           categoryCode: item.categoryCode,
           categoryName: item.categoryName,
-          ...this.buildCommonMaterialCategoryTotals(item.entries),
-          ...(balanceTotalsByCategory.get(item.nodeKey) ??
-            createEmptyMonthlyMaterialCategoryBalanceTotals()),
+          ...this.buildMaterialCategoryAmountTotals(
+            item.entries,
+            balanceTotalsByCategory.get(item.nodeKey) ??
+              createEmptyMonthlyMaterialCategoryBalanceTotals(),
+          ),
         };
       })
       .sort(compareMaterialCategoryItems);
@@ -419,20 +353,22 @@ export class MonthlyReportMaterialCategoryService {
   buildMaterialCategoryTotals(
     entries: MonthlyMaterialCategoryEntry[],
     balanceSnapshots: MonthlyMaterialCategoryBalanceSnapshot[] = [],
-  ): Omit<MonthlyReportMaterialCategorySummaryTotals, "categoryCount"> {
-    return this.buildCommonMaterialCategoryTotals(
+  ): MonthlyReportMaterialCategoryAmountTotals {
+    return this.buildMaterialCategoryAmountTotals(
       entries,
-      filterMonthlyMaterialCategoryBalanceSnapshotsByEntries(
-        balanceSnapshots,
-        entries,
+      buildMonthlyMaterialCategoryBalanceTotals(
+        filterMonthlyMaterialCategoryBalanceSnapshotsByEntries(
+          balanceSnapshots,
+          entries,
+        ),
       ),
     );
   }
 
-  private buildCommonMaterialCategoryTotals(
+  private buildMaterialCategoryAmountTotals(
     entries: MonthlyMaterialCategoryEntry[],
-    balanceSnapshots: MonthlyMaterialCategoryBalanceSnapshot[] = [],
-  ): Omit<MonthlyReportMaterialCategorySummaryTotals, "categoryCount"> {
+    balanceTotals: MonthlyMaterialCategoryBalanceTotals,
+  ): MonthlyReportMaterialCategoryAmountTotals {
     const documentKeys = new Set(
       entries.map((entry) => `${entry.documentType}:${entry.documentId}`),
     );
@@ -451,50 +387,32 @@ export class MonthlyReportMaterialCategoryService {
     const workshopReturnEntries = entries.filter(
       (entry) => entry.topicKey === "WORKSHOP_RETURN",
     );
+    const workshopScrapEntries = entries.filter(
+      (entry) => entry.topicKey === "WORKSHOP_SCRAP",
+    );
     const salesOutboundEntries = entries.filter(
       (entry) => entry.topicKey === "SALES_OUTBOUND",
     );
     const salesReturnEntries = entries.filter(
       (entry) => entry.topicKey === "SALES_RETURN",
     );
-    const acceptanceInboundQuantity = sumDecimals(
-      acceptanceInboundEntries.map((entry) => entry.quantity),
-    );
     const acceptanceInboundAmount = sumDecimals(
       acceptanceInboundEntries.map((entry) => entry.amount),
-    );
-    const productionReceiptQuantity = sumDecimals(
-      productionReceiptEntries.map((entry) => entry.quantity),
     );
     const productionReceiptAmount = sumDecimals(
       productionReceiptEntries.map((entry) => entry.amount),
     );
-    const supplierReturnQuantity = sumDecimals(
-      supplierReturnEntries.map((entry) => entry.quantity),
-    );
     const supplierReturnAmount = sumDecimals(
       supplierReturnEntries.map((entry) => entry.amount),
     );
-    const netProductionQuantity = acceptanceInboundQuantity
-      .add(productionReceiptQuantity)
-      .sub(supplierReturnQuantity);
-    const netProductionAmount = acceptanceInboundAmount
-      .add(productionReceiptAmount)
-      .sub(supplierReturnAmount);
-    const workshopPickQuantity = sumDecimals(
-      workshopPickEntries.map((entry) => entry.quantity),
+    const workshopPickCostAmount = sumDecimals(
+      workshopPickEntries.map((entry) => entry.cost),
     );
-    const workshopPickAmount = sumDecimals(
-      workshopPickEntries.map((entry) => entry.amount),
+    const workshopReturnCostAmount = sumDecimals(
+      workshopReturnEntries.map((entry) => entry.cost),
     );
-    const workshopReturnQuantity = sumDecimals(
-      workshopReturnEntries.map((entry) => entry.quantity),
-    );
-    const workshopReturnAmount = sumDecimals(
-      workshopReturnEntries.map((entry) => entry.amount),
-    );
-    const salesOutboundQuantity = sumDecimals(
-      salesOutboundEntries.map((entry) => entry.quantity),
+    const workshopScrapCostAmount = sumDecimals(
+      workshopScrapEntries.map((entry) => entry.cost),
     );
     const salesOutboundAmount = sumDecimals(
       salesOutboundEntries.map((entry) => entry.amount),
@@ -502,49 +420,116 @@ export class MonthlyReportMaterialCategoryService {
     const salesOutboundCostAmount = sumDecimals(
       salesOutboundEntries.map((entry) => entry.cost),
     );
-    const salesReturnQuantity = sumDecimals(
-      salesReturnEntries.map((entry) => entry.quantity),
-    );
     const salesReturnAmount = sumDecimals(
       salesReturnEntries.map((entry) => entry.amount),
     );
     const salesReturnCostAmount = sumDecimals(
       salesReturnEntries.map((entry) => entry.cost),
     );
-    const netSalesQuantity = salesOutboundQuantity.sub(salesReturnQuantity);
     const netSalesAmount = salesOutboundAmount.sub(salesReturnAmount);
+    const netSalesCostAmount = salesOutboundCostAmount.sub(
+      salesReturnCostAmount,
+    );
     return {
       lineCount: entries.length,
       documentCount: documentKeys.size,
-      acceptanceInboundQuantity: formatQuantity(acceptanceInboundQuantity),
       acceptanceInboundAmount: formatMoney(acceptanceInboundAmount),
-      productionReceiptQuantity: formatQuantity(productionReceiptQuantity),
       productionReceiptAmount: formatMoney(productionReceiptAmount),
-      supplierReturnQuantity: formatQuantity(supplierReturnQuantity),
       supplierReturnAmount: formatMoney(supplierReturnAmount),
-      netProductionQuantity: formatQuantity(netProductionQuantity),
-      netProductionAmount: formatMoney(netProductionAmount),
-      workshopPickQuantity: formatQuantity(workshopPickQuantity),
-      workshopPickAmount: formatMoney(workshopPickAmount),
-      workshopReturnQuantity: formatQuantity(workshopReturnQuantity),
-      workshopReturnAmount: formatMoney(workshopReturnAmount),
-      workshopNetUsedQuantity: formatQuantity(
-        workshopPickQuantity.sub(workshopReturnQuantity),
+      purchaseNetInboundAmount: formatMoney(
+        acceptanceInboundAmount.sub(supplierReturnAmount),
       ),
-      workshopNetUsedAmount: formatMoney(
-        workshopPickAmount.sub(workshopReturnAmount),
+      workshopPickCostAmount: formatMoney(workshopPickCostAmount),
+      workshopReturnCostAmount: formatMoney(workshopReturnCostAmount),
+      workshopScrapCostAmount: formatMoney(workshopScrapCostAmount),
+      workshopNetConsumptionCostAmount: formatMoney(
+        workshopPickCostAmount
+          .sub(workshopReturnCostAmount)
+          .add(workshopScrapCostAmount),
       ),
-      salesOutboundQuantity: formatQuantity(salesOutboundQuantity),
-      salesOutboundAmount: formatMoney(salesOutboundAmount),
       salesOutboundSalesAmount: formatMoney(salesOutboundAmount),
       salesOutboundCostAmount: formatMoney(salesOutboundCostAmount),
-      salesReturnQuantity: formatQuantity(salesReturnQuantity),
-      salesReturnAmount: formatMoney(salesReturnAmount),
       salesReturnSalesAmount: formatMoney(salesReturnAmount),
       salesReturnCostAmount: formatMoney(salesReturnCostAmount),
-      netSalesQuantity: formatQuantity(netSalesQuantity),
       netSalesAmount: formatMoney(netSalesAmount),
-      ...buildMonthlyMaterialCategoryBalanceTotals(balanceSnapshots),
+      netSalesCostAmount: formatMoney(netSalesCostAmount),
+      estimatedGrossProfitAmount: formatMoney(
+        netSalesAmount.sub(netSalesCostAmount),
+      ),
+      openingCostAmount: balanceTotals.openingAmount,
+      inventoryCostNetChangeAmount: balanceTotals.netAmount,
+      closingCostAmount: balanceTotals.closingAmount,
+    };
+  }
+
+  private buildMaterialQuantityTotals(
+    entries: MonthlyMaterialCategoryEntry[],
+    balanceTotals: MonthlyMaterialCategoryBalanceTotals,
+  ): Pick<
+    MonthlyReportMaterialSummaryItem,
+    | "inQuantity"
+    | "outQuantity"
+    | "inventoryNetChangeQuantity"
+    | "openingQuantity"
+    | "closingQuantity"
+    | "acceptanceInboundQuantity"
+    | "productionReceiptQuantity"
+    | "supplierReturnQuantity"
+    | "workshopPickQuantity"
+    | "workshopReturnQuantity"
+    | "workshopScrapQuantity"
+    | "workshopNetConsumptionQuantity"
+    | "salesOutboundQuantity"
+    | "salesReturnQuantity"
+    | "netSalesQuantity"
+  > {
+    const sumTopicQuantity = (topicKey: string) =>
+      sumDecimals(
+        entries
+          .filter((entry) => entry.topicKey === topicKey)
+          .map((entry) => entry.quantity),
+      );
+    const inQuantity = sumDecimals(
+      entries
+        .filter((entry) => entry.direction === MonthlyReportingDirection.IN)
+        .map((entry) => entry.quantity),
+    );
+    const outQuantity = sumDecimals(
+      entries
+        .filter((entry) => entry.direction === MonthlyReportingDirection.OUT)
+        .map((entry) => entry.quantity),
+    );
+    const acceptanceInboundQuantity = sumTopicQuantity("ACCEPTANCE_INBOUND");
+    const productionReceiptQuantity = sumTopicQuantity("PRODUCTION_RECEIPT");
+    const supplierReturnQuantity = sumTopicQuantity("SUPPLIER_RETURN");
+    const workshopPickQuantity = sumTopicQuantity("WORKSHOP_PICK");
+    const workshopReturnQuantity = sumTopicQuantity("WORKSHOP_RETURN");
+    const workshopScrapQuantity = sumTopicQuantity("WORKSHOP_SCRAP");
+    const salesOutboundQuantity = sumTopicQuantity("SALES_OUTBOUND");
+    const salesReturnQuantity = sumTopicQuantity("SALES_RETURN");
+
+    return {
+      inQuantity: formatQuantity(inQuantity),
+      outQuantity: formatQuantity(outQuantity),
+      inventoryNetChangeQuantity: balanceTotals.netQuantity,
+      openingQuantity: balanceTotals.openingQuantity,
+      closingQuantity: balanceTotals.closingQuantity,
+      acceptanceInboundQuantity: formatQuantity(acceptanceInboundQuantity),
+      productionReceiptQuantity: formatQuantity(productionReceiptQuantity),
+      supplierReturnQuantity: formatQuantity(supplierReturnQuantity),
+      workshopPickQuantity: formatQuantity(workshopPickQuantity),
+      workshopReturnQuantity: formatQuantity(workshopReturnQuantity),
+      workshopScrapQuantity: formatQuantity(workshopScrapQuantity),
+      workshopNetConsumptionQuantity: formatQuantity(
+        workshopPickQuantity
+          .sub(workshopReturnQuantity)
+          .add(workshopScrapQuantity),
+      ),
+      salesOutboundQuantity: formatQuantity(salesOutboundQuantity),
+      salesReturnQuantity: formatQuantity(salesReturnQuantity),
+      netSalesQuantity: formatQuantity(
+        salesOutboundQuantity.sub(salesReturnQuantity),
+      ),
     };
   }
 }

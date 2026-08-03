@@ -142,6 +142,8 @@ describe("MonthlyMaterialCategoryRepository amount fallback", () => {
         where: expect.objectContaining({
           businessDocumentType: "SalesStockOrder",
           businessDocumentLineId: { in: [302] },
+          reversalOfLogId: null,
+          reversedByLogs: { none: {} },
         }),
         _sum: { costAmount: true },
       }),

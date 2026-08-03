@@ -33,6 +33,7 @@
             value-format="YYYY-MM"
             placeholder="选择月份"
             style="width: 180px"
+            @change="handleSearch"
           />
         </el-form-item>
         <el-form-item label="仓别">
@@ -148,46 +149,21 @@
       </el-form>
 
       <el-row v-if="!isMaterialCategoryView" :gutter="16" class="summary-row">
-        <el-col :xs="24" :sm="12" :lg="4">
+        <el-col
+          v-for="item in domainSummaryStats"
+          :key="item.key"
+          :xs="24"
+          :sm="12"
+          :lg="4"
+        >
           <div class="stat-box">
-            <div class="stat-label">总入数量</div>
-            <div class="stat-value">{{ summary.totalInQuantity }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">总入金额</div>
-            <div class="stat-value">{{ summary.totalInAmount }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">总出数量</div>
-            <div class="stat-value">{{ summary.totalOutQuantity }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">总出金额</div>
-            <div class="stat-value">{{ summary.totalOutAmount }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">净发生数量</div>
-            <div class="stat-value">{{ summary.netQuantity }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">净发生金额</div>
-            <div class="stat-value">{{ summary.netAmount }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="12" :lg="4">
-          <div class="stat-box">
-            <div class="stat-label">单据数</div>
-            <div class="stat-value">{{ summary.documentCount }}</div>
+            <div class="stat-label">
+              <reporting-metric-label
+                :label="item.label"
+                :content="item.help"
+              />
+            </div>
+            <div class="stat-value">{{ item.value }}</div>
           </div>
         </el-col>
       </el-row>
@@ -217,7 +193,12 @@
             :lg="4"
           >
             <div class="stat-box" :class="{ 'danger-box': item.danger }">
-              <div class="stat-label">{{ item.label }}</div>
+              <div class="stat-label">
+                <reporting-metric-label
+                  :label="item.label"
+                  :content="item.help"
+                />
+              </div>
               <div class="stat-value">{{ item.value }}</div>
             </div>
           </el-col>
@@ -268,38 +249,51 @@
             </span>
           </div>
           <adaptive-table
-            auto-columns
+            column-preferences
             :fit-viewport="false"
             :table-key="`${route.path}#domain-summary`"
             :data="domainRows"
             stripe
             v-loading="summaryLoading"
           >
-            <el-table-column prop="domainLabel" label="领域" min-width="140" />
-            <el-table-column prop="documentCount" label="单据数" min-width="80" />
-            <el-table-column prop="totalInQuantity" label="总入数量" min-width="120" />
-            <el-table-column prop="totalInAmount" label="总入金额" min-width="140" />
-            <el-table-column prop="totalOutQuantity" label="总出数量" min-width="120" />
-            <el-table-column prop="totalOutAmount" label="总出金额" min-width="140" />
-            <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
-            <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
-            <el-table-column
+            <reporting-column prop="domainLabel" label="领域" />
+            <reporting-metric-column
+              prop="documentCount"
+              label="业务单据数"
+              :content="monthlyMetricHelp.count.documentCount"
+            />
+            <reporting-metric-column
+              prop="inventoryCostInAmount"
+              label="库存成本流入"
+              :content="monthlyMetricHelp.costFlow.inAmount"
+            />
+            <reporting-metric-column
+              prop="inventoryCostOutAmount"
+              label="库存成本流出"
+              :content="monthlyMetricHelp.costFlow.outAmount"
+            />
+            <reporting-metric-column
+              prop="inventoryCostNetChangeAmount"
+              label="库存成本净变动"
+              :content="monthlyMetricHelp.costFlow.netChangeAmount"
+            />
+            <reporting-metric-column
               v-if="hasSalesDomainRow"
               prop="netSalesAmount"
-              label="销售净售出金额"
-              min-width="150"
+              label="销售净额（WMS销售价）"
+              :content="monthlyMetricHelp.sales.netSalesAmount"
             />
-            <el-table-column
+            <reporting-metric-column
               v-if="hasSalesDomainRow"
               prop="netCostAmount"
-              label="销售净成本金额"
-              min-width="150"
+              label="销售净成本"
+              :content="monthlyMetricHelp.sales.netCostAmount"
             />
-            <el-table-column
+            <reporting-metric-column
               v-if="hasSalesDomainRow"
               prop="salesGrossProfitAmount"
-              label="销售毛利金额"
-              min-width="140"
+              label="WMS商品毛利估算"
+              :content="monthlyMetricHelp.sales.grossProfitAmount"
             />
           </adaptive-table>
         </div>
@@ -344,7 +338,7 @@
         <adaptive-table
           v-if="sectionExpanded.documentTypeSummary"
           id="document-type-summary-content"
-          auto-columns
+          column-preferences
           :fit-viewport="false"
           :table-key="`${route.path}#document-type-summary`"
           :data="documentTypeRows"
@@ -354,15 +348,14 @@
           :row-class-name="resolveDocumentTypeRowClassName"
           @row-click="handleDocumentTypeRowClick"
         >
-          <el-table-column prop="domainLabel" label="领域" min-width="120" />
-          <el-table-column prop="documentTypeLabel" label="单据类型" min-width="180" />
-          <el-table-column prop="documentCount" label="单据数" min-width="80" />
-          <el-table-column prop="totalInQuantity" label="总入数量" min-width="120" />
-          <el-table-column prop="totalInAmount" label="总入金额" min-width="140" />
-          <el-table-column prop="totalOutQuantity" label="总出数量" min-width="120" />
-          <el-table-column prop="totalOutAmount" label="总出金额" min-width="140" />
-          <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
-          <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
+          <reporting-column prop="domainLabel" label="领域" />
+          <reporting-column prop="documentTypeLabel" label="单据类型" />
+          <reporting-metric-column prop="documentCount" label="业务单据数" :content="monthlyMetricHelp.count.documentCount" />
+          <reporting-column prop="businessAmountLabel" label="业务金额口径" />
+          <reporting-column prop="businessAmount" label="业务金额" />
+          <reporting-metric-column prop="inventoryCostInAmount" label="库存成本流入" :content="monthlyMetricHelp.costFlow.inAmount" />
+          <reporting-metric-column prop="inventoryCostOutAmount" label="库存成本流出" :content="monthlyMetricHelp.costFlow.outAmount" />
+          <reporting-metric-column prop="inventoryCostNetChangeAmount" label="库存成本净变动" :content="monthlyMetricHelp.costFlow.netChangeAmount" />
         </adaptive-table>
       </el-card>
 
@@ -404,23 +397,19 @@
             name="workshop"
           >
             <adaptive-table
-              auto-columns
+              column-preferences
               :fit-viewport="false"
               :table-key="`${route.path}#business-workshop-summary`"
               :data="workshopRows"
               stripe
               v-loading="summaryLoading"
             >
-              <el-table-column prop="workshopName" label="车间" min-width="160" />
-              <el-table-column prop="documentCount" label="单据数" min-width="80" />
-              <el-table-column prop="pickQuantity" label="领料数量" min-width="120" />
-              <el-table-column prop="pickAmount" label="领料金额" min-width="140" />
-              <el-table-column prop="returnQuantity" label="退料数量" min-width="120" />
-              <el-table-column prop="returnAmount" label="退料金额" min-width="140" />
-              <el-table-column prop="scrapQuantity" label="报废数量" min-width="120" />
-              <el-table-column prop="scrapAmount" label="报废金额" min-width="140" />
-              <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
-              <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
+              <reporting-column prop="workshopName" label="车间" />
+              <reporting-metric-column prop="documentCount" label="业务单据数" :content="monthlyMetricHelp.count.documentCount" />
+              <reporting-metric-column prop="pickCostAmount" label="领料成本" :content="monthlyMetricHelp.workshop.pickCostAmount" />
+              <reporting-metric-column prop="returnCostAmount" label="退料冲回成本" :content="monthlyMetricHelp.workshop.returnCostAmount" />
+              <reporting-metric-column prop="scrapCostAmount" label="报废成本" :content="monthlyMetricHelp.workshop.scrapCostAmount" />
+              <reporting-metric-column prop="netConsumptionCostAmount" label="车间净耗用成本" :content="monthlyMetricHelp.workshop.netConsumptionCostAmount" />
             </adaptive-table>
           </el-tab-pane>
           <el-tab-pane
@@ -429,25 +418,23 @@
             name="salesProject"
           >
             <adaptive-table
-              auto-columns
+              column-preferences
               :fit-viewport="false"
               :table-key="`${route.path}#business-sales-project-summary`"
               :data="salesProjectRows"
               stripe
               v-loading="summaryLoading"
             >
-              <el-table-column prop="salesProjectCode" label="销售项目编码" min-width="160" />
-              <el-table-column prop="salesProjectName" label="销售项目名称" min-width="180" />
-              <el-table-column prop="documentCount" label="单据数" min-width="80" />
-              <el-table-column prop="salesOutboundQuantity" label="销售出库数量" min-width="120" />
-              <el-table-column prop="salesOutboundSalesAmount" label="销售出库销售价金额" min-width="170" />
-              <el-table-column prop="salesOutboundCostAmount" label="销售出库成本价金额" min-width="170" />
-              <el-table-column prop="salesReturnQuantity" label="销售退货数量" min-width="120" />
-              <el-table-column prop="salesReturnSalesAmount" label="销售退货销售价金额" min-width="170" />
-              <el-table-column prop="salesReturnCostAmount" label="销售退货成本价金额" min-width="170" />
-              <el-table-column prop="netQuantity" label="净销售数量" min-width="120" />
-              <el-table-column prop="netSalesAmount" label="净销售价金额" min-width="150" />
-              <el-table-column prop="netCostAmount" label="净成本价金额" min-width="150" />
+              <reporting-column prop="salesProjectCode" label="销售项目编码" />
+              <reporting-column prop="salesProjectName" label="销售项目名称" />
+              <reporting-metric-column prop="documentCount" label="业务单据数" :content="monthlyMetricHelp.count.documentCount" />
+              <reporting-column prop="salesOutboundSalesAmount" label="销售出库销售价金额" />
+              <reporting-metric-column prop="salesOutboundCostAmount" label="销售出库成本" :content="monthlyMetricHelp.sales.outboundCostAmount" />
+              <reporting-column prop="salesReturnSalesAmount" label="销售退货销售价金额" />
+              <reporting-metric-column prop="salesReturnCostAmount" label="销售退货成本" :content="monthlyMetricHelp.sales.returnCostAmount" />
+              <reporting-metric-column prop="netSalesAmount" label="销售净额（WMS销售价）" :content="monthlyMetricHelp.sales.netSalesAmount" />
+              <reporting-metric-column prop="netCostAmount" label="销售净成本" :content="monthlyMetricHelp.sales.netCostAmount" />
+              <reporting-metric-column prop="estimatedGrossProfitAmount" label="WMS商品毛利估算" :content="monthlyMetricHelp.sales.grossProfitAmount" />
             </adaptive-table>
           </el-tab-pane>
           <el-tab-pane
@@ -456,26 +443,22 @@
             name="rdProject"
           >
             <adaptive-table
-              auto-columns
+              column-preferences
               :fit-viewport="false"
               :table-key="`${route.path}#business-rd-project-summary`"
               :data="rdProjectRows"
               stripe
               v-loading="summaryLoading"
             >
-              <el-table-column prop="rdProjectCode" label="研发项目编码" min-width="160" />
-              <el-table-column prop="rdProjectName" label="研发项目名称" min-width="180" />
-              <el-table-column prop="documentCount" label="单据数" min-width="80" />
-              <el-table-column prop="handoffInQuantity" label="项目交接入数量" min-width="130" />
-              <el-table-column prop="handoffInAmount" label="项目交接入金额" min-width="140" />
-              <el-table-column prop="pickQuantity" label="项目领用数量" min-width="120" />
-              <el-table-column prop="pickAmount" label="项目领用金额" min-width="140" />
-              <el-table-column prop="returnQuantity" label="项目退回数量" min-width="120" />
-              <el-table-column prop="returnAmount" label="项目退回金额" min-width="140" />
-              <el-table-column prop="scrapQuantity" label="项目报废数量" min-width="120" />
-              <el-table-column prop="scrapAmount" label="项目报废金额" min-width="140" />
-              <el-table-column prop="netQuantity" label="净发生数量" min-width="120" />
-              <el-table-column prop="netAmount" label="净发生金额" min-width="140" />
+              <reporting-column prop="rdProjectCode" label="研发项目编码" />
+              <reporting-column prop="rdProjectName" label="研发项目名称" />
+              <reporting-metric-column prop="documentCount" label="业务单据数" :content="monthlyMetricHelp.count.documentCount" />
+              <reporting-metric-column prop="handoffInCostAmount" label="项目交接入成本" :content="monthlyMetricHelp.rdProject.handoffInCostAmount" />
+              <reporting-metric-column prop="pickCostAmount" label="项目领用成本" :content="monthlyMetricHelp.rdProject.pickCostAmount" />
+              <reporting-metric-column prop="returnCostAmount" label="项目退回成本" :content="monthlyMetricHelp.rdProject.returnCostAmount" />
+              <reporting-metric-column prop="scrapCostAmount" label="项目报废成本" :content="monthlyMetricHelp.rdProject.scrapCostAmount" />
+              <reporting-metric-column prop="netConsumptionCostAmount" label="项目净耗用成本" :content="monthlyMetricHelp.rdProject.netConsumptionCostAmount" />
+              <reporting-metric-column prop="attributedInventoryCostNetChangeAmount" label="项目归属库存成本净变动" :content="monthlyMetricHelp.rdProject.attributedInventoryCostNetChangeAmount" />
             </adaptive-table>
           </el-tab-pane>
         </el-tabs>
@@ -504,31 +487,27 @@
               </el-icon>
               <span>车间使用汇总</span>
             </button>
-            <span class="section-tip">按车间汇总领料、退料和净使用。</span>
+            <span class="section-tip">按车间汇总领料、退料、报废和净耗用成本。</span>
           </div>
         </template>
         <adaptive-table
           v-if="sectionExpanded.workshopUsageSummary"
           id="workshop-usage-summary-content"
-          auto-columns
+          column-preferences
           :fit-viewport="false"
           :table-key="`${route.path}#workshop-usage-summary`"
           :data="workshopRows"
           class="monthly-summary-table"
           stripe
-          show-summary
-          :summary-method="getWorkshopUsageSummaries"
           v-loading="summaryLoading"
         >
-          <el-table-column prop="workshopName" label="车间" min-width="160" />
-          <el-table-column prop="lineCount" label="单据行数" min-width="90" />
-          <el-table-column prop="documentCount" label="单据数" min-width="80" />
-          <el-table-column prop="pickQuantity" label="领料数量" min-width="120" />
-          <el-table-column prop="pickAmount" label="领料金额" min-width="140" />
-          <el-table-column prop="returnQuantity" label="退料数量" min-width="120" />
-          <el-table-column prop="returnAmount" label="退料金额" min-width="140" />
-          <el-table-column prop="netUsedQuantity" label="净使用数量" min-width="120" />
-          <el-table-column prop="netUsedAmount" label="净使用金额" min-width="140" />
+          <reporting-column prop="workshopName" label="车间" />
+          <reporting-metric-column prop="lineCount" label="单据行数" :content="monthlyMetricHelp.count.lineCount" />
+          <reporting-metric-column prop="documentCount" label="业务单据数" :content="monthlyMetricHelp.count.documentCount" />
+          <reporting-metric-column prop="pickCostAmount" label="领料成本" :content="monthlyMetricHelp.workshop.pickCostAmount" />
+          <reporting-metric-column prop="returnCostAmount" label="退料冲回成本" :content="monthlyMetricHelp.workshop.returnCostAmount" />
+          <reporting-metric-column prop="scrapCostAmount" label="报废成本" :content="monthlyMetricHelp.workshop.scrapCostAmount" />
+          <reporting-metric-column prop="netConsumptionCostAmount" label="车间净耗用成本" :content="monthlyMetricHelp.workshop.netConsumptionCostAmount" />
         </adaptive-table>
       </el-card>
 
@@ -571,7 +550,7 @@
         <adaptive-table
           v-if="sectionExpanded.categorySummary"
           id="category-summary-content"
-          auto-columns
+          column-preferences
           :fit-viewport="false"
           :table-key="`${route.path}#material-category-summary`"
           :data="categoryRows"
@@ -584,80 +563,55 @@
           :row-class-name="resolveCategoryRowClassName"
           @row-click="handleCategoryRowClick"
         >
-          <el-table-column prop="categoryCode" label="分类编码" min-width="80" />
-          <el-table-column prop="categoryName" label="分类名称" min-width="100" />
-          <el-table-column prop="openingQuantity" label="月初库存数量" min-width="130" />
-          <el-table-column prop="openingAmount" label="月初库存金额" min-width="140" />
-          <el-table-column
-            prop="netProductionQuantity"
-            label="净生产数量"
-            min-width="140"
-          >
-            <template #header>
-              <el-tooltip
-                content="统计期内的验收入库数量 + 生产入库数量 - 退给厂家数量。"
-                placement="top"
-              >
-                <span class="metric-header" tabindex="0">
-                  净生产数量
-                  <el-icon class="metric-help-icon"><QuestionFilled /></el-icon>
-                </span>
-              </el-tooltip>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="netProductionAmount"
-            label="净生产金额"
-            min-width="160"
-          >
-            <template #header>
-              <el-tooltip
-                content="统计期内的验收入库金额 + 生产入库金额 - 退给厂家金额。"
-                placement="top"
-              >
-                <span class="metric-header" tabindex="0">
-                  净生产金额
-                  <el-icon class="metric-help-icon"><QuestionFilled /></el-icon>
-                </span>
-              </el-tooltip>
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="netSalesQuantity"
-            label="净销售数量"
-            min-width="140"
-          >
-            <template #header>
-              <el-tooltip
-                content="统计期内的销售出库数量 - 销售退货数量。"
-                placement="top"
-              >
-                <span class="metric-header" tabindex="0">
-                  净销售数量
-                  <el-icon class="metric-help-icon"><QuestionFilled /></el-icon>
-                </span>
-              </el-tooltip>
-            </template>
-          </el-table-column>
-          <el-table-column
+          <reporting-column prop="categoryCode" label="分类编码" />
+          <reporting-column prop="categoryName" label="分类名称" />
+          <reporting-metric-column
+            prop="openingCostAmount"
+            label="月初库存成本"
+            :content="monthlyMetricHelp.balance.openingCostAmount"
+          />
+          <reporting-column
+            prop="acceptanceInboundAmount"
+            label="验收入库计价金额"
+          />
+          <reporting-column
+            prop="supplierReturnAmount"
+            label="退厂计价金额"
+          />
+          <reporting-metric-column
+            prop="purchaseNetInboundAmount"
+            label="采购净入库金额"
+            :content="monthlyMetricHelp.inbound.purchaseNetInboundAmount"
+          />
+          <reporting-column
+            prop="productionReceiptAmount"
+            label="生产入库计价金额"
+          />
+          <reporting-metric-column
             prop="netSalesAmount"
-            label="净销售金额"
-            min-width="160"
-          >
-            <template #header>
-              <el-tooltip
-                content="统计期内的销售出库销售价金额 - 销售退货销售价金额，不是成本价金额。"
-                placement="top"
-              >
-                <span class="metric-header" tabindex="0">
-                  净销售金额
-                  <el-icon class="metric-help-icon"><QuestionFilled /></el-icon>
-                </span>
-              </el-tooltip>
-            </template>
-          </el-table-column>
-          <el-table-column prop="closingQuantity" label="月末库存数量" min-width="130" />
-          <el-table-column prop="closingAmount" label="月末库存金额" min-width="140" />
+            label="销售净额（WMS销售价）"
+            :content="monthlyMetricHelp.sales.netSalesAmount"
+          />
+          <reporting-metric-column
+            prop="netSalesCostAmount"
+            label="销售净成本"
+            :content="monthlyMetricHelp.sales.netCostAmount"
+          />
+          <reporting-metric-column
+            prop="workshopNetConsumptionCostAmount"
+            label="车间净耗用成本"
+            :content="monthlyMetricHelp.workshop.netConsumptionCostAmount"
+          />
+          <reporting-metric-column
+            prop="inventoryCostNetChangeAmount"
+            label="库存成本净变动"
+            :content="monthlyMetricHelp.balance.inventoryCostNetChangeAmount"
+          />
+          <reporting-metric-column
+            prop="closingCostAmount"
+            label="月末库存成本"
+            :content="monthlyMetricHelp.balance.closingCostAmount"
+          />
         </adaptive-table>
       </el-card>
 
@@ -692,7 +646,7 @@
           id="material-summary-content"
         >
           <adaptive-table
-            auto-columns
+            column-preferences
             :fit-viewport="false"
             :table-key="`${route.path}#material-summary`"
             :data="pagedMaterialRows"
@@ -700,40 +654,47 @@
             row-key="materialKey"
             v-loading="summaryLoading"
           >
-          <el-table-column prop="categoryCode" label="分类编码" min-width="80" />
-          <el-table-column prop="categoryName" label="分类名称" min-width="100" show-overflow-tooltip />
-          <el-table-column prop="materialCode" label="物料编码" min-width="100" />
-          <el-table-column prop="materialName" label="物料名称" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="materialSpec" label="规格型号" min-width="160" show-overflow-tooltip />
-          <el-table-column prop="unitCode" label="单位" min-width="60" />
-          <el-table-column prop="lineCount" label="单据行数" min-width="80" />
-          <el-table-column prop="documentCount" label="单据数" min-width="80" />
-          <el-table-column prop="openingQuantity" label="月初数量" min-width="120" />
-          <el-table-column prop="openingAmount" label="月初金额" min-width="120" />
-          <el-table-column prop="netQuantity" label="库存净发生数量" min-width="150" />
-          <el-table-column prop="netAmount" label="库存净发生金额" min-width="150" />
-          <el-table-column prop="closingQuantity" label="月末数量" min-width="120" />
-          <el-table-column prop="closingAmount" label="月末金额" min-width="120" />
-          <el-table-column prop="inQuantity" label="入库数量" min-width="120" />
-          <el-table-column prop="outQuantity" label="出库数量" min-width="120" />
-          <el-table-column prop="acceptanceInboundQuantity" label="验收入库数量" min-width="120" />
-          <el-table-column prop="acceptanceInboundAmount" label="验收入库金额" min-width="140" />
-          <el-table-column prop="productionReceiptQuantity" label="生产入库数量" min-width="120" />
-          <el-table-column prop="productionReceiptAmount" label="生产入库金额" min-width="140" />
-          <el-table-column prop="supplierReturnQuantity" label="退给厂家数量" min-width="120" />
-          <el-table-column prop="supplierReturnAmount" label="退给厂家金额" min-width="140" />
-          <el-table-column prop="workshopPickQuantity" label="车间领料数量" min-width="120" />
-          <el-table-column prop="workshopPickAmount" label="车间领料金额" min-width="140" />
-          <el-table-column prop="workshopReturnQuantity" label="车间退料数量" min-width="120" />
-          <el-table-column prop="workshopReturnAmount" label="车间退料金额" min-width="140" />
-          <el-table-column prop="workshopNetUsedQuantity" label="车间净使用数量" min-width="130" />
-          <el-table-column prop="workshopNetUsedAmount" label="车间净使用金额" min-width="150" />
-          <el-table-column prop="salesOutboundQuantity" label="销售出库数量" min-width="120" />
-          <el-table-column prop="salesOutboundSalesAmount" label="销售出库销售价金额" min-width="170" />
-          <el-table-column prop="salesOutboundCostAmount" label="销售出库成本价金额" min-width="170" />
-          <el-table-column prop="salesReturnQuantity" label="销售退货数量" min-width="120" />
-          <el-table-column prop="salesReturnSalesAmount" label="销售退货销售价金额" min-width="170" />
-          <el-table-column prop="salesReturnCostAmount" label="销售退货成本价金额" min-width="170" />
+          <reporting-column prop="categoryCode" label="分类编码" />
+          <reporting-column prop="categoryName" label="分类名称" show-overflow-tooltip />
+          <reporting-column prop="materialCode" label="物料编码" />
+          <reporting-column prop="materialName" label="物料名称" show-overflow-tooltip />
+          <reporting-column prop="materialSpec" label="规格型号" show-overflow-tooltip />
+          <reporting-column prop="unitCode" label="单位" />
+          <reporting-metric-column prop="lineCount" label="单据行数" :content="monthlyMetricHelp.count.lineCount" />
+          <reporting-metric-column prop="documentCount" label="业务单据数" :content="monthlyMetricHelp.count.documentCount" />
+          <reporting-metric-column prop="openingQuantity" label="月初数量" :content="monthlyMetricHelp.balance.openingQuantity" />
+          <reporting-metric-column prop="openingCostAmount" label="月初库存成本" :content="monthlyMetricHelp.balance.openingCostAmount" />
+          <reporting-metric-column prop="inventoryNetChangeQuantity" label="库存净变动数量" :content="monthlyMetricHelp.balance.netQuantity" />
+          <reporting-metric-column prop="inventoryCostNetChangeAmount" label="库存成本净变动" :content="monthlyMetricHelp.balance.inventoryCostNetChangeAmount" />
+          <reporting-metric-column prop="closingQuantity" label="月末数量" :content="monthlyMetricHelp.balance.closingQuantity" />
+          <reporting-metric-column prop="closingCostAmount" label="月末库存成本" :content="monthlyMetricHelp.balance.closingCostAmount" />
+          <reporting-metric-column prop="inQuantity" label="库存流入数量" :content="monthlyMetricHelp.inbound.inQuantity" />
+          <reporting-metric-column prop="outQuantity" label="库存流出数量" :content="monthlyMetricHelp.inbound.outQuantity" />
+          <reporting-column prop="acceptanceInboundQuantity" label="验收入库数量" />
+          <reporting-column prop="acceptanceInboundAmount" label="验收入库计价金额" />
+          <reporting-column prop="productionReceiptQuantity" label="生产入库数量" />
+          <reporting-column prop="productionReceiptAmount" label="生产入库计价金额" />
+          <reporting-column prop="supplierReturnQuantity" label="退给厂家数量" />
+          <reporting-column prop="supplierReturnAmount" label="退厂计价金额" />
+          <reporting-metric-column prop="purchaseNetInboundAmount" label="采购净入库金额" :content="monthlyMetricHelp.inbound.purchaseNetInboundAmount" />
+          <reporting-column prop="workshopPickQuantity" label="车间领料数量" />
+          <reporting-metric-column prop="workshopPickCostAmount" label="车间领料成本" :content="monthlyMetricHelp.workshop.pickCostAmount" />
+          <reporting-column prop="workshopReturnQuantity" label="车间退料数量" />
+          <reporting-metric-column prop="workshopReturnCostAmount" label="车间退料冲回成本" :content="monthlyMetricHelp.workshop.returnCostAmount" />
+          <reporting-column prop="workshopScrapQuantity" label="车间报废数量" />
+          <reporting-metric-column prop="workshopScrapCostAmount" label="车间报废成本" :content="monthlyMetricHelp.workshop.scrapCostAmount" />
+          <reporting-metric-column prop="workshopNetConsumptionQuantity" label="车间净耗用数量" :content="monthlyMetricHelp.workshop.netConsumptionQuantity" />
+          <reporting-metric-column prop="workshopNetConsumptionCostAmount" label="车间净耗用成本" :content="monthlyMetricHelp.workshop.netConsumptionCostAmount" />
+          <reporting-column prop="salesOutboundQuantity" label="销售出库数量" />
+          <reporting-column prop="salesOutboundSalesAmount" label="销售出库销售价金额" />
+          <reporting-metric-column prop="salesOutboundCostAmount" label="销售出库成本" :content="monthlyMetricHelp.sales.outboundCostAmount" />
+          <reporting-column prop="salesReturnQuantity" label="销售退货数量" />
+          <reporting-column prop="salesReturnSalesAmount" label="销售退货销售价金额" />
+          <reporting-metric-column prop="salesReturnCostAmount" label="销售退货成本" :content="monthlyMetricHelp.sales.returnCostAmount" />
+          <reporting-metric-column prop="netSalesQuantity" label="净销售数量" :content="monthlyMetricHelp.sales.netQuantity" />
+          <reporting-metric-column prop="netSalesAmount" label="销售净额（WMS销售价）" :content="monthlyMetricHelp.sales.netSalesAmount" />
+          <reporting-metric-column prop="netSalesCostAmount" label="销售净成本" :content="monthlyMetricHelp.sales.netCostAmount" />
+          <reporting-metric-column prop="estimatedGrossProfitAmount" label="WMS商品毛利估算" :content="monthlyMetricHelp.sales.grossProfitAmount" />
           </adaptive-table>
           <div class="pagination-wrap">
             <el-pagination
@@ -779,61 +740,63 @@
         <div v-if="sectionExpanded.details" id="details-content">
           <adaptive-table
             v-if="!isMaterialCategoryView"
-            auto-columns
+            column-preferences
             :fit-viewport="false"
             :table-key="`${route.path}#domain-details`"
             :data="detailRows"
             stripe
             v-loading="detailLoading"
           >
-          <el-table-column prop="domainLabel" label="领域" min-width="120" />
-          <el-table-column prop="documentTypeLabel" label="单据类型" min-width="140" />
-          <el-table-column prop="documentNo" label="单据编号" min-width="140" />
-          <el-table-column prop="bizDate" label="业务日期" min-width="120" />
-          <el-table-column prop="stockScopeName" label="仓别" min-width="140" />
-          <el-table-column prop="workshopName" label="车间" min-width="140" />
-          <el-table-column prop="salesProjectLabel" label="销售项目" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="rdProjectCode" label="研发项目编码" min-width="160" />
-          <el-table-column prop="rdProjectName" label="研发项目名称" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="sourceStockScopeName" label="来源仓别" min-width="140" />
-          <el-table-column prop="targetStockScopeName" label="目标仓别" min-width="140" />
-          <el-table-column prop="sourceWorkshopName" label="来源车间" min-width="140" />
-          <el-table-column prop="targetWorkshopName" label="目标车间" min-width="140" />
-          <el-table-column prop="quantity" label="数量" min-width="120" />
-          <el-table-column prop="amount" label="金额" min-width="120" />
-          <el-table-column prop="cost" label="成本" min-width="120" />
-          <el-table-column prop="sourceBizMonth" label="来源月份" min-width="120" />
-          <el-table-column prop="sourceDocumentNo" label="来源单据" min-width="200" show-overflow-tooltip />
+          <reporting-column prop="domainLabel" label="领域" />
+          <reporting-column prop="documentTypeLabel" label="单据类型" />
+          <reporting-column prop="documentNo" label="单据编号" />
+          <reporting-column prop="bizDate" label="业务日期" />
+          <reporting-column prop="stockScopeName" label="仓别" />
+          <reporting-column prop="workshopName" label="车间" />
+          <reporting-column prop="salesProjectLabel" label="销售项目" show-overflow-tooltip />
+          <reporting-column prop="rdProjectCode" label="研发项目编码" />
+          <reporting-column prop="rdProjectName" label="研发项目名称" show-overflow-tooltip />
+          <reporting-column prop="sourceStockScopeName" label="来源仓别" />
+          <reporting-column prop="targetStockScopeName" label="目标仓别" />
+          <reporting-column prop="sourceWorkshopName" label="来源车间" />
+          <reporting-column prop="targetWorkshopName" label="目标车间" />
+          <reporting-column prop="businessAmountLabel" label="业务金额口径" />
+          <reporting-column prop="amount" label="业务金额" />
+          <reporting-metric-column prop="cost" label="库存成本" :content="monthlyMetricHelp.detail.documentCost" />
+          <reporting-column prop="sourceBizMonth" label="来源月份" />
+          <reporting-column prop="sourceDocumentNo" label="来源单据" show-overflow-tooltip />
           </adaptive-table>
 
           <adaptive-table
             v-else
-            auto-columns
+            column-preferences
             :fit-viewport="false"
             :table-key="`${route.path}#material-category-details`"
             :data="detailRows"
             stripe
             v-loading="detailLoading"
           >
-          <el-table-column prop="categoryCode" label="分类编码" min-width="80" />
-          <el-table-column prop="categoryName" label="分类名称" min-width="100" show-overflow-tooltip />
-          <el-table-column prop="documentTypeLabel" label="单据类型" min-width="140" />
-          <el-table-column prop="documentNo" label="单据编号" min-width="140" />
-          <el-table-column prop="lineNo" label="行号" min-width="90" />
-          <el-table-column prop="bizDate" label="业务日期" min-width="120" />
-          <el-table-column prop="stockScopeName" label="仓别" min-width="140" />
-          <el-table-column prop="workshopName" label="车间" min-width="140" />
-          <el-table-column prop="materialCode" label="物料编码" min-width="100" />
-          <el-table-column prop="materialName" label="物料名称" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="materialSpec" label="规格型号" min-width="160" show-overflow-tooltip />
-          <el-table-column prop="unitCode" label="单位" min-width="60" />
-          <el-table-column prop="salesProjectCode" label="销售项目编码" min-width="160" />
-          <el-table-column prop="salesProjectName" label="销售项目名称" min-width="180" show-overflow-tooltip />
-          <el-table-column prop="quantity" label="数量" min-width="120" />
-          <el-table-column prop="unitPrice" label="单价" min-width="120" />
-          <el-table-column prop="amount" label="金额" min-width="120" />
-          <el-table-column prop="salesUnitPrice" label="销售价" min-width="120" />
-          <el-table-column prop="salesAmount" label="销售金额" min-width="120" />
+          <reporting-column prop="categoryCode" label="分类编码" />
+          <reporting-column prop="categoryName" label="分类名称" show-overflow-tooltip />
+          <reporting-column prop="documentTypeLabel" label="单据类型" />
+          <reporting-column prop="documentNo" label="单据编号" />
+          <reporting-column prop="lineNo" label="行号" />
+          <reporting-column prop="bizDate" label="业务日期" />
+          <reporting-column prop="stockScopeName" label="仓别" />
+          <reporting-column prop="workshopName" label="车间" />
+          <reporting-column prop="materialCode" label="物料编码" />
+          <reporting-column prop="materialName" label="物料名称" show-overflow-tooltip />
+          <reporting-column prop="materialSpec" label="规格型号" show-overflow-tooltip />
+          <reporting-column prop="unitCode" label="单位" />
+          <reporting-column prop="salesProjectCode" label="销售项目编码" />
+          <reporting-column prop="salesProjectName" label="销售项目名称" show-overflow-tooltip />
+          <reporting-column prop="quantity" label="数量" />
+          <reporting-metric-column prop="unitPrice" label="成本单价" :content="monthlyMetricHelp.detail.unitPrice" />
+          <reporting-metric-column prop="amount" label="成本金额" :content="monthlyMetricHelp.detail.amount" />
+          <reporting-column prop="salesUnitPrice" label="销售价" />
+          <reporting-column prop="salesAmount" label="销售金额" />
+          <reporting-column prop="sourceBizMonth" label="来源月份" />
+          <reporting-column prop="sourceDocumentNo" label="来源单据" show-overflow-tooltip />
           </adaptive-table>
 
           <div class="pagination-wrap">
@@ -864,7 +827,17 @@ import {
   getMonthlyReportingSummary,
 } from "@/api/reporting";
 import useUserStore from "@/store/modules/user";
-import { formatQty } from "@/utils/format";
+import {
+  applySectionExpansionPreference,
+  createSectionExpansionPreference,
+  getSectionExpansionPreferenceStorageKey,
+  loadSectionExpansionPreference,
+  saveSectionExpansionPreference,
+} from "@/utils/sectionExpansionPreferences";
+import ReportingColumn from "../components/ReportingColumn.vue";
+import ReportingMetricColumn from "../components/ReportingMetricColumn.vue";
+import ReportingMetricLabel from "../components/ReportingMetricLabel.vue";
+import { monthlyMetricHelp } from "../reportingMetricHelp";
 
 const DOMAIN_VIEW = "DOMAIN";
 const MATERIAL_CATEGORY_VIEW = "MATERIAL_CATEGORY";
@@ -872,6 +845,15 @@ const MATERIAL_CATEGORY_ROUTE_NAMES = new Set([
   "MonthlyReportingMaterialCategory",
   "RdMonthlyReportingMaterialCategory",
 ]);
+const DEFAULT_SECTION_EXPANDED = Object.freeze({
+  domainSummary: true,
+  documentTypeSummary: true,
+  businessSummary: true,
+  workshopUsageSummary: true,
+  categorySummary: true,
+  materialSummary: true,
+  details: true,
+});
 
 const userStore = useUserStore();
 const route = useRoute();
@@ -902,15 +884,7 @@ const detailRows = ref([]);
 const detailTotal = ref(0);
 const summary = ref(createEmptySummary(DOMAIN_VIEW));
 const activeBusinessSummaryTab = ref("workshop");
-const sectionExpanded = ref({
-  domainSummary: true,
-  documentTypeSummary: true,
-  businessSummary: true,
-  workshopUsageSummary: true,
-  categorySummary: true,
-  materialSummary: true,
-  details: true,
-});
+const sectionExpanded = ref({ ...DEFAULT_SECTION_EXPANDED });
 
 const isRdRoute = computed(() => route.path.startsWith("/rd/"));
 const fixedStockScope = computed(() =>
@@ -924,6 +898,12 @@ const fixedWorkshopId = computed(() =>
   userStore.workshopScope?.mode === "FIXED"
     ? userStore.workshopScope.workshopId
     : undefined,
+);
+const sectionExpansionPreferenceStorageKey = computed(() =>
+  getSectionExpansionPreferenceStorageKey(
+    userStore.id || userStore.name,
+    route.path,
+  ),
 );
 const filters = ref(createDefaultFilters(resolveRouteViewMode()));
 const isMaterialCategoryView = computed(
@@ -946,138 +926,142 @@ const siblingViewRouteName = computed(() => {
 const siblingViewActionText = computed(() =>
   isMaterialCategoryView.value ? "查看领域月报" : "查看物料分类月报",
 );
-const materialCategorySummaryStats = computed(() => [
+const domainSummaryStats = computed(() => [
   {
-    key: "openingQuantity",
-    label: "月初库存数量",
-    value: summary.value.openingQuantity,
+    key: "inventoryCostInAmount",
+    label: "库存成本流入",
+    value: summary.value.inventoryCostInAmount,
+    help: monthlyMetricHelp.costFlow.inAmount,
   },
   {
-    key: "openingAmount",
-    label: "月初库存金额",
-    value: summary.value.openingAmount,
+    key: "inventoryCostOutAmount",
+    label: "库存成本流出",
+    value: summary.value.inventoryCostOutAmount,
+    help: monthlyMetricHelp.costFlow.outAmount,
   },
   {
-    key: "netQuantity",
-    label: "库存净发生数量",
-    value: summary.value.netQuantity,
+    key: "inventoryCostNetChangeAmount",
+    label: "库存成本净变动",
+    value: summary.value.inventoryCostNetChangeAmount,
+    help: monthlyMetricHelp.costFlow.netChangeAmount,
   },
   {
-    key: "netAmount",
-    label: "库存净发生金额",
-    value: summary.value.netAmount,
-  },
-  {
-    key: "closingQuantity",
-    label: "月末库存数量",
-    value: summary.value.closingQuantity,
-  },
-  {
-    key: "closingAmount",
-    label: "月末库存金额",
-    value: summary.value.closingAmount,
-  },
-  {
-    key: "acceptanceInboundQuantity",
-    label: "验收入库数量",
-    value: summary.value.acceptanceInboundQuantity,
-  },
-  {
-    key: "acceptanceInboundAmount",
-    label: "验收入库金额",
-    value: summary.value.acceptanceInboundAmount,
-  },
-  {
-    key: "productionReceiptQuantity",
-    label: "生产入库数量",
-    value: summary.value.productionReceiptQuantity,
+    key: "purchaseNetInboundAmount",
+    label: "采购净入库金额",
+    value: summary.value.purchaseNetInboundAmount,
+    help: monthlyMetricHelp.inbound.purchaseNetInboundAmount,
   },
   {
     key: "productionReceiptAmount",
-    label: "生产入库金额",
+    label: "生产入库计价金额",
     value: summary.value.productionReceiptAmount,
   },
   {
-    key: "supplierReturnQuantity",
-    label: "退给厂家数量",
-    value: summary.value.supplierReturnQuantity,
+    key: "salesNetAmount",
+    label: "销售净额（WMS销售价）",
+    value: summary.value.salesNetAmount,
+    help: monthlyMetricHelp.sales.netSalesAmount,
+  },
+  {
+    key: "salesNetCostAmount",
+    label: "销售净成本",
+    value: summary.value.salesNetCostAmount,
+    help: monthlyMetricHelp.sales.netCostAmount,
+  },
+  {
+    key: "workshopNetConsumptionCostAmount",
+    label: "车间净耗用成本",
+    value: summary.value.workshopNetConsumptionCostAmount,
+    help: monthlyMetricHelp.workshop.netConsumptionCostAmount,
+  },
+  {
+    key: "rdProjectNetConsumptionCostAmount",
+    label: "研发项目净耗用成本",
+    value: summary.value.rdProjectNetConsumptionCostAmount,
+    help: monthlyMetricHelp.rdProject.netConsumptionCostAmount,
+  },
+  {
+    key: "documentCount",
+    label: "业务单据数",
+    value: summary.value.documentCount,
+    help: monthlyMetricHelp.count.documentCount,
+  },
+]);
+const materialCategorySummaryStats = computed(() => [
+  {
+    key: "openingCostAmount",
+    label: "月初库存成本",
+    value: summary.value.openingCostAmount,
+    help: monthlyMetricHelp.balance.openingCostAmount,
+  },
+  {
+    key: "inventoryCostNetChangeAmount",
+    label: "库存成本净变动",
+    value: summary.value.inventoryCostNetChangeAmount,
+    help: monthlyMetricHelp.balance.inventoryCostNetChangeAmount,
+  },
+  {
+    key: "closingCostAmount",
+    label: "月末库存成本",
+    value: summary.value.closingCostAmount,
+    help: monthlyMetricHelp.balance.closingCostAmount,
+  },
+  {
+    key: "acceptanceInboundAmount",
+    label: "验收入库计价金额",
+    value: summary.value.acceptanceInboundAmount,
+  },
+  {
+    key: "productionReceiptAmount",
+    label: "生产入库计价金额",
+    value: summary.value.productionReceiptAmount,
   },
   {
     key: "supplierReturnAmount",
-    label: "退给厂家金额",
+    label: "退厂计价金额",
     value: summary.value.supplierReturnAmount,
   },
   {
-    key: "salesOutboundQuantity",
-    label: "销售出库数量",
-    value: summary.value.salesOutboundQuantity,
+    key: "purchaseNetInboundAmount",
+    label: "采购净入库金额",
+    value: summary.value.purchaseNetInboundAmount,
+    help: monthlyMetricHelp.inbound.purchaseNetInboundAmount,
   },
   {
-    key: "salesOutboundSalesAmount",
-    label: "销售出库销售价金额",
-    value: summary.value.salesOutboundSalesAmount,
+    key: "workshopNetConsumptionCostAmount",
+    label: "车间净耗用成本",
+    value: summary.value.workshopNetConsumptionCostAmount,
+    help: monthlyMetricHelp.workshop.netConsumptionCostAmount,
   },
   {
-    key: "salesOutboundCostAmount",
-    label: "销售出库成本价金额",
-    value: summary.value.salesOutboundCostAmount,
+    key: "netSalesAmount",
+    label: "销售净额（WMS销售价）",
+    value: summary.value.netSalesAmount,
+    help: monthlyMetricHelp.sales.netSalesAmount,
   },
   {
-    key: "salesReturnQuantity",
-    label: "销售退货数量",
-    value: summary.value.salesReturnQuantity,
+    key: "netSalesCostAmount",
+    label: "销售净成本",
+    value: summary.value.netSalesCostAmount,
+    help: monthlyMetricHelp.sales.netCostAmount,
   },
   {
-    key: "salesReturnSalesAmount",
-    label: "销售退货销售价金额",
-    value: summary.value.salesReturnSalesAmount,
-  },
-  {
-    key: "salesReturnCostAmount",
-    label: "销售退货成本价金额",
-    value: summary.value.salesReturnCostAmount,
-  },
-  {
-    key: "workshopPickQuantity",
-    label: "车间领料数量",
-    value: summary.value.workshopPickQuantity,
-  },
-  {
-    key: "workshopPickAmount",
-    label: "车间领料金额",
-    value: summary.value.workshopPickAmount,
-  },
-  {
-    key: "workshopReturnQuantity",
-    label: "车间退料数量",
-    value: summary.value.workshopReturnQuantity,
-  },
-  {
-    key: "workshopReturnAmount",
-    label: "车间退料金额",
-    value: summary.value.workshopReturnAmount,
-  },
-  {
-    key: "workshopNetUsedQuantity",
-    label: "车间净使用数量",
-    value: summary.value.workshopNetUsedQuantity,
-  },
-  {
-    key: "workshopNetUsedAmount",
-    label: "车间净使用金额",
-    value: summary.value.workshopNetUsedAmount,
+    key: "estimatedGrossProfitAmount",
+    label: "WMS商品毛利估算",
+    value: summary.value.estimatedGrossProfitAmount,
+    help: monthlyMetricHelp.sales.grossProfitAmount,
   },
   {
     key: "lineCount",
     label: "单据行数",
     value: summary.value.lineCount,
-    danger: true,
+    help: monthlyMetricHelp.count.lineCount,
   },
   {
     key: "documentCount",
-    label: "单据数量",
+    label: "业务单据数",
     value: summary.value.documentCount,
-    danger: true,
+    help: monthlyMetricHelp.count.documentCount,
   },
 ]);
 const activeCategoryNodeKey = computed(
@@ -1173,15 +1157,15 @@ const reportingSubtitle = computed(() => {
   }
 
   if (filters.value.stockScope === "MAIN") {
-    return "当前是主仓视角，发往研发项目的项目交接已计入总出金额；销售项目在下方业务汇总中查看。";
+    return "当前是主仓视角；库存成本按入出方向展示，销售、车间和研发项目使用各自明确的金额口径。";
   }
   if (filters.value.stockScope === "RD_SUB") {
-    return "当前是 RD 小仓视角，项目交接已直接计入研发项目总入，RD小仓只保留盘盈盘亏等仓务；销售项目在下方业务汇总中查看。";
+    return "当前是 RD 小仓视角；项目交接成本进入项目归属库存，盘盈盘亏等仓务在 RD 小仓领域查看。";
   }
-  return "先看当前月份各领域的总入、总出和净发生，再按领域查看单据类型。研发项目包含项目交接、领用、退回和报废；RD小仓只保留盘盈盘亏等仓务；销售项目在下方业务汇总中查看。";
+  return "顶层仅展示可解释的库存成本流入/流出及业务专属金额；跨物料数量只在物料汇总和单据行明细中保留。";
 });
 const domainSummaryTip = computed(
-  () => "先看当前筛选范围内各领域的总入、总出和净发生。",
+  () => "按统一库存成本口径查看各领域流入、流出与净变动。",
 );
 const rdProjectLegendText = computed(
   () => "查看项目交接、项目领用、项目退回和项目报废。",
@@ -1289,55 +1273,29 @@ const activeBusinessSummaryTip = computed(
       (item) => item.key === activeBusinessSummaryTab.value,
     )?.tip || "切换查看不同业务锚点的汇总。",
 );
-const WORKSHOP_USAGE_COUNT_TOTAL_KEYS = new Set([
+const MATERIAL_CATEGORY_COUNT_TOTAL_KEYS = new Set([
   "lineCount",
   "documentCount",
-]);
-const WORKSHOP_USAGE_QUANTITY_TOTAL_KEYS = new Set([
-  "pickQuantity",
-  "returnQuantity",
-  "netUsedQuantity",
-]);
-const WORKSHOP_USAGE_AMOUNT_TOTAL_KEYS = new Set([
-  "pickAmount",
-  "returnAmount",
-  "netUsedAmount",
-]);
-const MATERIAL_CATEGORY_QUANTITY_TOTAL_KEYS = new Set([
-  "openingQuantity",
-  "netQuantity",
-  "closingQuantity",
-  "netProductionQuantity",
-  "netSalesQuantity",
-  "acceptanceInboundQuantity",
-  "productionReceiptQuantity",
-  "supplierReturnQuantity",
-  "salesOutboundQuantity",
-  "salesReturnQuantity",
 ]);
 const MATERIAL_CATEGORY_TOTAL_KEYS = new Set([
   "lineCount",
   "documentCount",
-  "openingQuantity",
-  "openingAmount",
-  "netQuantity",
-  "netAmount",
-  "closingQuantity",
-  "closingAmount",
-  "netProductionQuantity",
-  "netProductionAmount",
-  "netSalesQuantity",
+  "openingCostAmount",
+  "inventoryCostNetChangeAmount",
+  "closingCostAmount",
   "netSalesAmount",
-  "acceptanceInboundQuantity",
+  "netSalesCostAmount",
+  "estimatedGrossProfitAmount",
   "acceptanceInboundAmount",
-  "productionReceiptQuantity",
   "productionReceiptAmount",
-  "supplierReturnQuantity",
   "supplierReturnAmount",
-  "salesOutboundQuantity",
+  "purchaseNetInboundAmount",
+  "workshopPickCostAmount",
+  "workshopReturnCostAmount",
+  "workshopScrapCostAmount",
+  "workshopNetConsumptionCostAmount",
   "salesOutboundSalesAmount",
   "salesOutboundCostAmount",
-  "salesReturnQuantity",
   "salesReturnSalesAmount",
   "salesReturnCostAmount",
 ]);
@@ -1346,12 +1304,17 @@ function createEmptyDomainSummary() {
   return {
     domainCount: 0,
     documentCount: 0,
-    totalInQuantity: "0",
-    totalInAmount: "0.00",
-    totalOutQuantity: "0",
-    totalOutAmount: "0.00",
-    netQuantity: "0",
-    netAmount: "0.00",
+    inventoryCostInAmount: "0.0000",
+    inventoryCostOutAmount: "0.0000",
+    inventoryCostNetChangeAmount: "0.0000",
+    acceptanceInboundAmount: "0.0000",
+    productionReceiptAmount: "0.0000",
+    supplierReturnAmount: "0.0000",
+    purchaseNetInboundAmount: "0.0000",
+    salesNetAmount: "0.0000",
+    salesNetCostAmount: "0.0000",
+    workshopNetConsumptionCostAmount: "0.0000",
+    rdProjectNetConsumptionCostAmount: "0.0000",
   };
 }
 
@@ -1360,36 +1323,24 @@ function createEmptyMaterialCategorySummary() {
     categoryCount: 0,
     lineCount: 0,
     documentCount: 0,
-    acceptanceInboundQuantity: "0",
-    acceptanceInboundAmount: "0.00",
-    productionReceiptQuantity: "0",
-    productionReceiptAmount: "0.00",
-    supplierReturnQuantity: "0",
-    supplierReturnAmount: "0.00",
-    netProductionQuantity: "0",
-    netProductionAmount: "0.00",
-    workshopPickQuantity: "0",
-    workshopPickAmount: "0.00",
-    workshopReturnQuantity: "0",
-    workshopReturnAmount: "0.00",
-    workshopNetUsedQuantity: "0",
-    workshopNetUsedAmount: "0.00",
-    salesOutboundQuantity: "0",
-    salesOutboundAmount: "0.00",
-    salesOutboundSalesAmount: "0.00",
-    salesOutboundCostAmount: "0.00",
-    salesReturnQuantity: "0",
-    salesReturnAmount: "0.00",
-    salesReturnSalesAmount: "0.00",
-    salesReturnCostAmount: "0.00",
-    netSalesQuantity: "0",
-    netSalesAmount: "0.00",
-    netQuantity: "0",
-    netAmount: "0.00",
-    openingQuantity: "0",
-    openingAmount: "0.00",
-    closingQuantity: "0",
-    closingAmount: "0.00",
+    acceptanceInboundAmount: "0.0000",
+    productionReceiptAmount: "0.0000",
+    supplierReturnAmount: "0.0000",
+    purchaseNetInboundAmount: "0.0000",
+    workshopPickCostAmount: "0.0000",
+    workshopReturnCostAmount: "0.0000",
+    workshopScrapCostAmount: "0.0000",
+    workshopNetConsumptionCostAmount: "0.0000",
+    salesOutboundSalesAmount: "0.0000",
+    salesOutboundCostAmount: "0.0000",
+    salesReturnSalesAmount: "0.0000",
+    salesReturnCostAmount: "0.0000",
+    netSalesAmount: "0.0000",
+    netSalesCostAmount: "0.0000",
+    estimatedGrossProfitAmount: "0.0000",
+    openingCostAmount: "0.0000",
+    inventoryCostNetChangeAmount: "0.0000",
+    closingCostAmount: "0.0000",
   };
 }
 
@@ -1426,18 +1377,6 @@ function createDefaultFilters(viewMode = DOMAIN_VIEW) {
   };
 }
 
-function parseSummaryNumber(value) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function sumSummaryRows(data, property) {
-  return data.reduce(
-    (sum, item) => sum + parseSummaryNumber(item?.[property]),
-    0,
-  );
-}
-
 function buildSummaryCells(columns, resolveValue) {
   return columns.map((column, index) => {
     if (index === 0) {
@@ -1452,29 +1391,11 @@ function buildSummaryCells(columns, resolveValue) {
   });
 }
 
-function getWorkshopUsageSummaries({ columns, data }) {
-  return buildSummaryCells(columns, (property) => {
-    if (WORKSHOP_USAGE_COUNT_TOTAL_KEYS.has(property)) {
-      return sumSummaryRows(data, property);
-    }
-
-    if (WORKSHOP_USAGE_QUANTITY_TOTAL_KEYS.has(property)) {
-      return formatQty(sumSummaryRows(data, property));
-    }
-
-    if (WORKSHOP_USAGE_AMOUNT_TOTAL_KEYS.has(property)) {
-      return sumSummaryRows(data, property).toFixed(2);
-    }
-
-    return "";
-  });
-}
-
 function getCategorySummaries({ columns }) {
   return buildSummaryCells(columns, (property) =>
     MATERIAL_CATEGORY_TOTAL_KEYS.has(property)
       ? (summary.value[property] ??
-        (MATERIAL_CATEGORY_QUANTITY_TOTAL_KEYS.has(property) ? "0" : "0.00"))
+        (MATERIAL_CATEGORY_COUNT_TOTAL_KEYS.has(property) ? 0 : "0.0000"))
       : "",
   );
 }
@@ -1684,6 +1605,17 @@ function toggleMaterialCategorySummary() {
 
 function toggleSection(sectionKey) {
   sectionExpanded.value[sectionKey] = !sectionExpanded.value[sectionKey];
+  saveSectionExpansionPreference(
+    sectionExpansionPreferenceStorageKey.value,
+    createSectionExpansionPreference(sectionExpanded.value),
+  );
+}
+
+function restoreSectionExpansionPreferences() {
+  sectionExpanded.value = applySectionExpansionPreference(
+    DEFAULT_SECTION_EXPANDED,
+    loadSectionExpansionPreference(sectionExpansionPreferenceStorageKey.value),
+  );
 }
 
 function handlePageChange(value) {
@@ -1856,6 +1788,12 @@ watch(filteredMaterialTotal, (total) => {
   }
 });
 
+watch(
+  sectionExpansionPreferenceStorageKey,
+  restoreSectionExpansionPreferences,
+  { immediate: true },
+);
+
 function handleNavigateToSiblingView() {
   router.push({ name: siblingViewRouteName.value });
 }
@@ -2027,19 +1965,6 @@ watch(
     :deep(.el-table__footer-wrapper .cell) {
       font-weight: 700;
     }
-  }
-
-  .metric-header {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    cursor: help;
-  }
-
-  .metric-help-icon {
-    color: #909399;
-    font-size: 14px;
-    flex: 0 0 auto;
   }
 
   .stat-box {

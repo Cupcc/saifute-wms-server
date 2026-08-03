@@ -153,7 +153,16 @@ const MONTHLY_REPORT_NUMERIC_COLUMN_SUFFIXES = [
   "单据行数",
 ] as const;
 
-const MONTHLY_REPORT_EXACT_NUMERIC_COLUMNS = new Set(["值", "行号"]);
+const MONTHLY_REPORT_EXACT_NUMERIC_COLUMNS = new Set([
+  "值",
+  "行号",
+  "库存成本流入",
+  "库存成本流出",
+  "库存成本净变动",
+  "项目归属库存成本净变动",
+  "销售净额（WMS 销售价口径）",
+  "WMS 商品毛利估算",
+]);
 
 const MONTHLY_REPORT_NUMBER_PATTERN = /^-?\d+(?:\.\d+)?$/;
 

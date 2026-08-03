@@ -53,17 +53,17 @@
               <el-col :span="1.5">
                 <el-button type="warning" plain icon="Download" @click="handleExport" v-hasPermi="['system:user:export']">导出</el-button>
               </el-col>
-              <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
+              <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
             </el-row>
 
-            <adaptive-table class="user-page__table" border stripe v-loading="loading" :data="userList" :column-config="columns" @selection-change="handleSelectionChange" table-layout="auto">
+            <adaptive-table class="user-page__table" border stripe v-loading="loading" :data="userList" column-preferences @selection-change="handleSelectionChange" table-layout="auto">
               <el-table-column type="selection" width="50" align="center" />
-              <el-table-column label="用户编号" align="center" key="userId" prop="userId" v-if="columns[0].visible" />
-              <el-table-column label="用户名称" align="center" key="userName" prop="userName" v-if="columns[1].visible" :show-overflow-tooltip="true" />
-              <el-table-column label="用户昵称" align="center" key="nickName" prop="nickName" v-if="columns[2].visible" :show-overflow-tooltip="true" />
-              <el-table-column label="部门" align="center" key="deptName" prop="dept.deptName" v-if="columns[3].visible" :show-overflow-tooltip="true" />
-              <el-table-column label="手机号码" align="center" key="phonenumber" prop="phonenumber" v-if="columns[4].visible" width="120" />
-              <el-table-column label="状态" align="center" key="status" v-if="columns[5].visible">
+              <el-table-column label="用户编号" align="center" key="userId" prop="userId" />
+              <el-table-column label="用户名称" align="center" key="userName" prop="userName" :show-overflow-tooltip="true" />
+              <el-table-column label="用户昵称" align="center" key="nickName" prop="nickName" :show-overflow-tooltip="true" />
+              <el-table-column label="部门" align="center" key="deptName" prop="dept.deptName" :show-overflow-tooltip="true" />
+              <el-table-column label="手机号码" align="center" key="phonenumber" prop="phonenumber" width="120" />
+              <el-table-column label="状态" align="center" key="status">
                 <template #default="scope">
                   <el-switch
                     v-model="scope.row.status"
@@ -73,7 +73,7 @@
                   ></el-switch>
                 </template>
               </el-table-column>
-              <el-table-column label="登录锁定" align="center" key="loginLockStatus" v-if="columns[6].visible" width="120">
+              <el-table-column label="登录锁定" align="center" key="loginLockStatus" width="120">
                 <template #default="scope">
                   <el-tooltip :content="getLoginLockTooltip(scope.row)" placement="top">
                     <el-tag :type="getLoginLockTagType(scope.row)" effect="plain">
@@ -82,7 +82,7 @@
                   </el-tooltip>
                 </template>
               </el-table-column>
-              <el-table-column label="创建时间" align="center" prop="createdAt" v-if="columns[7].visible" width="160">
+              <el-table-column label="创建时间" align="center" prop="createdAt" width="160">
                 <template #default="scope">
                   <span>{{ parseTime(scope.row.createdAt) }}</span>
                 </template>
@@ -288,17 +288,6 @@ const upload = reactive({
   url: `${import.meta.env.VITE_APP_BASE_API}/api/system/user/importData`,
 });
 // 列显隐信息
-const columns = ref([
-  { key: 0, label: `用户编号`, visible: true },
-  { key: 1, label: `用户名称`, visible: true },
-  { key: 2, label: `用户昵称`, visible: true },
-  { key: 3, label: `部门`, visible: true },
-  { key: 4, label: `手机号码`, visible: true },
-  { key: 5, label: `状态`, visible: true },
-  { key: 6, label: `登录锁定`, visible: true },
-  { key: 7, label: `创建时间`, visible: true },
-]);
-
 const data = reactive({
   form: {},
   queryParams: {

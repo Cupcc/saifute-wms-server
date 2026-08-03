@@ -237,38 +237,37 @@ describe("MonthlyReportMaterialCategoryService", () => {
     expect(result.summary).toMatchObject({
       categoryCount: 1,
       lineCount: 4,
-      openingAmount: "170.0000",
-      closingAmount: "216.0000",
-      netQuantity: "5",
+      openingCostAmount: "170.0000",
+      closingCostAmount: "216.0000",
       acceptanceInboundAmount: "30.0000",
       productionReceiptAmount: "50.0000",
-      netProductionQuantity: "6",
-      netProductionAmount: "80.0000",
+      purchaseNetInboundAmount: "30.0000",
       salesOutboundSalesAmount: "40.0000",
       salesOutboundCostAmount: "28.0000",
       salesReturnSalesAmount: "8.0000",
       salesReturnCostAmount: "6.0000",
-      netSalesQuantity: "0",
       netSalesAmount: "32.0000",
-      netAmount: "46.0000",
+      netSalesCostAmount: "22.0000",
+      estimatedGrossProfitAmount: "10.0000",
+      inventoryCostNetChangeAmount: "46.0000",
     });
     expect(result.summary).not.toHaveProperty("totalCost");
+    expect(result.summary).not.toHaveProperty("openingQuantity");
+    expect(result.summary).not.toHaveProperty("netProductionAmount");
     expect(result.categories).toEqual([
       expect.objectContaining({
         nodeKey: "11:CHEM:化工",
         categoryName: "化工",
         acceptanceInboundAmount: "30.0000",
         productionReceiptAmount: "50.0000",
-        netProductionQuantity: "6",
-        netProductionAmount: "80.0000",
+        purchaseNetInboundAmount: "30.0000",
         salesOutboundSalesAmount: "40.0000",
         salesOutboundCostAmount: "28.0000",
         salesReturnSalesAmount: "8.0000",
         salesReturnCostAmount: "6.0000",
-        netSalesQuantity: "0",
         netSalesAmount: "32.0000",
-        netQuantity: "5",
-        netAmount: "46.0000",
+        netSalesCostAmount: "22.0000",
+        inventoryCostNetChangeAmount: "46.0000",
       }),
     ]);
     expect(result.materials).toEqual([
@@ -283,15 +282,15 @@ describe("MonthlyReportMaterialCategoryService", () => {
         lineCount: 2,
         documentCount: 2,
         openingQuantity: "10",
-        openingAmount: "100.0000",
+        openingCostAmount: "100.0000",
         closingQuantity: "15",
-        closingAmount: "180.0000",
+        closingCostAmount: "180.0000",
         inQuantity: "6",
         outQuantity: "0",
-        netQuantity: "5",
+        inventoryNetChangeQuantity: "5",
         acceptanceInboundAmount: "30.0000",
         productionReceiptAmount: "50.0000",
-        netAmount: "80.0000",
+        inventoryCostNetChangeAmount: "80.0000",
       }),
       expect.objectContaining({
         categoryNodeKey: "11:CHEM:化工",
@@ -300,17 +299,17 @@ describe("MonthlyReportMaterialCategoryService", () => {
         lineCount: 2,
         documentCount: 2,
         openingQuantity: "7",
-        openingAmount: "70.0000",
+        openingCostAmount: "70.0000",
         closingQuantity: "7",
-        closingAmount: "36.0000",
+        closingCostAmount: "36.0000",
         inQuantity: "3",
         outQuantity: "3",
-        netQuantity: "0",
+        inventoryNetChangeQuantity: "0",
         salesOutboundSalesAmount: "40.0000",
         salesOutboundCostAmount: "28.0000",
         salesReturnSalesAmount: "8.0000",
         salesReturnCostAmount: "6.0000",
-        netAmount: "-34.0000",
+        inventoryCostNetChangeAmount: "-34.0000",
       }),
     ]);
     for (const item of [result.categories[0], ...result.materials])
@@ -356,17 +355,15 @@ describe("MonthlyReportMaterialCategoryService", () => {
     expect(result.summary).toMatchObject({
       categoryCount: 1,
       lineCount: 1,
-      openingQuantity: "10",
-      openingAmount: "100.0000",
-      closingQuantity: "15",
-      closingAmount: "180.0000",
+      openingCostAmount: "100.0000",
+      closingCostAmount: "180.0000",
     });
     expect(result.categories).toEqual([
       expect.objectContaining({
         nodeKey: "11:CHEM:化工",
         lineCount: 1,
-        openingAmount: "100.0000",
-        closingAmount: "180.0000",
+        openingCostAmount: "100.0000",
+        closingCostAmount: "180.0000",
       }),
     ]);
     expect(result.materials).toEqual([
@@ -374,8 +371,8 @@ describe("MonthlyReportMaterialCategoryService", () => {
         materialId: 501,
         materialCode: "M-RAW-001",
         lineCount: 1,
-        openingAmount: "100.0000",
-        closingAmount: "180.0000",
+        openingCostAmount: "100.0000",
+        closingCostAmount: "180.0000",
       }),
     ]);
     expect(result.categoryCatalog).toEqual([
@@ -482,8 +479,8 @@ describe("MonthlyReportMaterialCategoryService", () => {
     expect(result.summary).toMatchObject({
       categoryCount: 1,
       lineCount: 1,
-      openingQuantity: "7",
-      closingQuantity: "11",
+      openingCostAmount: "70.0000",
+      closingCostAmount: "150.0000",
       acceptanceInboundAmount: "80.0000",
     });
     expect(result.materials).toEqual([

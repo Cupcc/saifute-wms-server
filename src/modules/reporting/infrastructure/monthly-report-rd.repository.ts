@@ -16,6 +16,7 @@ import {
   buildMonthlyReportHandoffStockScopeWhere,
   buildMonthlyReportStockScopeWhere,
   joinArrowLabels,
+  loadEffectiveInventoryCostByDocumentLineId,
   loadRdProjectActionSourceMap,
   resolveSourceReference,
   sumNullableDecimals,
@@ -54,6 +55,7 @@ export class MonthlyReportRdRepository {
         workshop: true,
         lines: {
           select: {
+            id: true,
             costAmount: true,
             sourceDocumentId: true,
             sourceDocumentType: true,
@@ -81,6 +83,12 @@ export class MonthlyReportRdRepository {
       this.prisma,
       sourceActionIds,
     );
+    const inventoryCostByLineId =
+      await loadEffectiveInventoryCostByDocumentLineId(
+        this.prisma,
+        BusinessDocumentType.RdProjectMaterialAction,
+        actions.flatMap((action) => action.lines.map((line) => line.id)),
+      );
 
     return actions.map((action) => {
       const sourceReference = resolveSourceReference(
@@ -131,7 +139,11 @@ export class MonthlyReportRdRepository {
         targetWorkshopName: null,
         quantity: action.totalQty,
         amount: action.totalAmount,
-        cost: sumNullableDecimals(action.lines.map((line) => line.costAmount)),
+        cost: sumNullableDecimals(
+          action.lines.map(
+            (line) => inventoryCostByLineId.get(line.id) ?? line.costAmount,
+          ),
+        ),
         sourceBizDate: sourceReference.sourceBizDate,
         sourceDocumentNo: sourceReference.sourceDocumentNo,
       };

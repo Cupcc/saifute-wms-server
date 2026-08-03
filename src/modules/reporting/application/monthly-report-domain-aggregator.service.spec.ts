@@ -99,19 +99,29 @@ describe("MonthlyReportDomainAggregatorService", () => {
     });
   });
 
-  it("formats ordinary monthly report aggregate quantities as integers", () => {
+  it("uses actual costs and removes cross-material quantities", () => {
     const workshopItems = service.buildWorkshopItems([
       createEntry({
         topicKey: MonthlyReportingTopicKey.WORKSHOP_PICK,
         direction: MonthlyReportingDirection.OUT,
         quantity: new Prisma.Decimal("3"),
         amount: new Prisma.Decimal("30"),
+        cost: new Prisma.Decimal("21"),
       }),
       createEntry({
         topicKey: MonthlyReportingTopicKey.WORKSHOP_RETURN,
         direction: MonthlyReportingDirection.IN,
         quantity: new Prisma.Decimal("1.2"),
         amount: new Prisma.Decimal("8"),
+        cost: new Prisma.Decimal("5"),
+      }),
+      createEntry({
+        topicKey: MonthlyReportingTopicKey.WORKSHOP_SCRAP,
+        direction: MonthlyReportingDirection.OUT,
+        documentId: 3,
+        quantity: new Prisma.Decimal("0.5"),
+        amount: new Prisma.Decimal("6"),
+        cost: new Prisma.Decimal("4"),
       }),
     ]);
     const rdProjectItems = service.buildRdProjectItems([
@@ -124,18 +134,73 @@ describe("MonthlyReportDomainAggregatorService", () => {
         rdProjectCode: "RDP-701",
         rdProjectName: "研发项目",
         quantity: new Prisma.Decimal("1.234"),
-        amount: new Prisma.Decimal("100"),
+        amount: new Prisma.Decimal("90"),
+        cost: new Prisma.Decimal("100"),
+      }),
+      createEntry({
+        topicKey: MonthlyReportingTopicKey.RD_PROJECT_PICK,
+        direction: MonthlyReportingDirection.OUT,
+        documentType: "RdProjectMaterialAction",
+        documentId: 2,
+        rdProjectId: 701,
+        rdProjectCode: "RDP-701",
+        rdProjectName: "研发项目",
+        cost: new Prisma.Decimal("20"),
+      }),
+      createEntry({
+        topicKey: MonthlyReportingTopicKey.RD_PROJECT_RETURN,
+        direction: MonthlyReportingDirection.IN,
+        documentType: "RdProjectMaterialAction",
+        documentId: 3,
+        rdProjectId: 701,
+        rdProjectCode: "RDP-701",
+        rdProjectName: "研发项目",
+        cost: new Prisma.Decimal("5"),
+      }),
+      createEntry({
+        topicKey: MonthlyReportingTopicKey.RD_PROJECT_SCRAP,
+        direction: MonthlyReportingDirection.OUT,
+        documentType: "RdProjectMaterialAction",
+        documentId: 4,
+        rdProjectId: 701,
+        rdProjectCode: "RDP-701",
+        rdProjectName: "研发项目",
+        cost: new Prisma.Decimal("3"),
+      }),
+      createEntry({
+        topicKey: MonthlyReportingTopicKey.RD_STOCKTAKE_GAIN,
+        direction: MonthlyReportingDirection.IN,
+        documentType: "RdStocktakeOrder",
+        documentId: 5,
+        rdProjectId: 701,
+        rdProjectCode: "RDP-701",
+        rdProjectName: "研发项目",
+        cost: new Prisma.Decimal("12"),
+      }),
+      createEntry({
+        topicKey: MonthlyReportingTopicKey.RD_STOCKTAKE_LOSS,
+        direction: MonthlyReportingDirection.OUT,
+        documentType: "RdStocktakeOrder",
+        documentId: 6,
+        rdProjectId: 701,
+        rdProjectCode: "RDP-701",
+        rdProjectName: "研发项目",
+        cost: new Prisma.Decimal("7"),
       }),
     ]);
 
     expect(workshopItems[0]).toMatchObject({
-      pickQuantity: "3",
-      returnQuantity: "1",
-      netQuantity: "-2",
+      pickCostAmount: "21.0000",
+      returnCostAmount: "5.0000",
+      scrapCostAmount: "4.0000",
+      netConsumptionCostAmount: "20.0000",
     });
+    expect(workshopItems[0]).not.toHaveProperty("pickQuantity");
     expect(rdProjectItems[0]).toMatchObject({
-      handoffInQuantity: "1",
-      netQuantity: "1",
+      handoffInCostAmount: "100.0000",
+      netConsumptionCostAmount: "18.0000",
+      attributedInventoryCostNetChangeAmount: "87.0000",
     });
+    expect(rdProjectItems[0]).not.toHaveProperty("handoffInQuantity");
   });
 });

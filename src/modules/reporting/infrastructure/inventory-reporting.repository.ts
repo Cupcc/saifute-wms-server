@@ -39,16 +39,27 @@ export interface InventoryValuationSnapshot {
 }
 
 export interface TrendDocumentSnapshot {
-  sourceType: "INBOUND" | "SALES" | "WORKSHOP_MATERIAL" | "RD_PROJECT" | "RD";
+  sourceType:
+    | "INBOUND"
+    | "SALES"
+    | "WORKSHOP_MATERIAL"
+    | "RD_PROJECT"
+    | "RD_HANDOFF"
+    | "RD_STOCKTAKE_GAIN"
+    | "RD_STOCKTAKE_LOSS";
   bizDate: Date;
-  totalQty: Prisma.Decimal;
+  businessDocumentType: string;
+  businessDocumentId: number;
   totalAmount: Prisma.Decimal;
+  inventoryCostDelta: Prisma.Decimal;
 }
 
 interface InventoryLogTrendGroup {
   bizDate: Date;
+  operationType: InventoryOperationType;
+  businessDocumentType: string;
+  businessDocumentId: number;
   _sum: {
-    changeQty: Prisma.Decimal | null;
     costAmount: Prisma.Decimal | null;
   } | null;
 }
@@ -195,6 +206,8 @@ export class InventoryReportingRepository {
     const baseWhere: Prisma.InventoryLogWhereInput = {
       bizDate: { gte: params.dateFrom, lte: params.dateTo },
       stockScopeId: { in: params.inventoryStockScopeIds },
+      reversalOfLogId: null,
+      reversedByLogs: { none: {} },
       ...(params.workshopId ? { workshopId: params.workshopId } : {}),
     };
 
@@ -203,88 +216,151 @@ export class InventoryReportingRepository {
       InventoryOperationType.PRODUCTION_RECEIPT_IN,
     ];
     const inboundReturnTypes = [InventoryOperationType.SUPPLIER_RETURN_OUT];
-    const salesTypes = [InventoryOperationType.OUTBOUND_OUT];
+    const salesTypes = [
+      InventoryOperationType.OUTBOUND_OUT,
+      InventoryOperationType.SALES_RETURN_IN,
+    ];
     const workshopMaterialTypes = [
       InventoryOperationType.PICK_OUT,
       InventoryOperationType.RETURN_IN,
       InventoryOperationType.SCRAP_OUT,
     ];
-    const rdProjectTypes = [InventoryOperationType.RD_PROJECT_OUT];
-    const rdTypes = [
+    const rdProjectTypes = [
+      InventoryOperationType.RD_PROJECT_OUT,
+      InventoryOperationType.RETURN_IN,
+      InventoryOperationType.SCRAP_OUT,
+    ];
+    const rdHandoffTypes = [
       InventoryOperationType.RD_HANDOFF_OUT,
       InventoryOperationType.RD_HANDOFF_IN,
+    ];
+    const rdStocktakeTypes = [
       InventoryOperationType.RD_STOCKTAKE_IN,
       InventoryOperationType.RD_STOCKTAKE_OUT,
     ];
 
-    const groupByBizDate = (where: Prisma.InventoryLogWhereInput) =>
+    const groupByBusinessDocument = (where: Prisma.InventoryLogWhereInput) =>
       this.prisma.inventoryLog.groupBy({
-        by: ["bizDate"],
+        by: [
+          "bizDate",
+          "operationType",
+          "businessDocumentType",
+          "businessDocumentId",
+        ],
         where,
-        _sum: { changeQty: true, costAmount: true },
+        _sum: { costAmount: true },
       });
 
-    const [inbound, inboundReturns, sales, workshopMaterial, rdProject, rd] =
-      await Promise.all([
-        groupByBizDate({
-          ...baseWhere,
-          businessDocumentType: BusinessDocumentType.StockInOrder,
-          operationType: { in: inboundTypes },
-        }),
-        groupByBizDate({
-          ...baseWhere,
-          businessDocumentType: BusinessDocumentType.StockInOrder,
-          operationType: { in: inboundReturnTypes },
-        }),
-        groupByBizDate({
-          ...baseWhere,
-          businessDocumentType: BusinessDocumentType.SalesStockOrder,
-          operationType: { in: salesTypes },
-        }),
-        groupByBizDate({
-          ...baseWhere,
-          businessDocumentType: BusinessDocumentType.WorkshopMaterialOrder,
-          operationType: { in: workshopMaterialTypes },
-        }),
-        groupByBizDate({
-          ...baseWhere,
-          businessDocumentType: BusinessDocumentType.RdProjectMaterialAction,
-          operationType: { in: rdProjectTypes },
-        }),
-        groupByBizDate({
-          ...baseWhere,
-          operationType: { in: rdTypes },
-        }),
-      ]);
+    const [
+      inbound,
+      inboundReturns,
+      sales,
+      workshopMaterial,
+      rdProject,
+      rdHandoff,
+      rdStocktake,
+    ] = await Promise.all([
+      groupByBusinessDocument({
+        ...baseWhere,
+        businessDocumentType: BusinessDocumentType.StockInOrder,
+        operationType: { in: inboundTypes },
+      }),
+      groupByBusinessDocument({
+        ...baseWhere,
+        businessDocumentType: BusinessDocumentType.StockInOrder,
+        operationType: { in: inboundReturnTypes },
+      }),
+      groupByBusinessDocument({
+        ...baseWhere,
+        businessDocumentType: BusinessDocumentType.SalesStockOrder,
+        operationType: { in: salesTypes },
+      }),
+      groupByBusinessDocument({
+        ...baseWhere,
+        businessDocumentType: BusinessDocumentType.WorkshopMaterialOrder,
+        operationType: { in: workshopMaterialTypes },
+      }),
+      groupByBusinessDocument({
+        ...baseWhere,
+        businessDocumentType: BusinessDocumentType.RdProjectMaterialAction,
+        operationType: { in: rdProjectTypes },
+      }),
+      groupByBusinessDocument({
+        ...baseWhere,
+        businessDocumentType: BusinessDocumentType.RdHandoffOrder,
+        operationType: { in: rdHandoffTypes },
+      }),
+      groupByBusinessDocument({
+        ...baseWhere,
+        businessDocumentType: BusinessDocumentType.RdStocktakeOrder,
+        operationType: { in: rdStocktakeTypes },
+      }),
+    ]);
 
     return [
-      ...inbound.map((item) => this.mapLogGroupToSnapshot(item, "INBOUND")),
-      ...inboundReturns.map((item) =>
-        this.mapLogGroupToSnapshot(item, "INBOUND", -1),
+      ...inbound.map((item) =>
+        this.mapLogGroupToSnapshot(item, "INBOUND", 1, 1),
       ),
-      ...sales.map((item) => this.mapLogGroupToSnapshot(item, "SALES")),
+      ...inboundReturns.map((item) =>
+        this.mapLogGroupToSnapshot(item, "INBOUND", -1, -1),
+      ),
+      ...sales.map((item) => this.mapConsumptionLogGroup(item, "SALES")),
       ...workshopMaterial.map((item) =>
-        this.mapLogGroupToSnapshot(item, "WORKSHOP_MATERIAL"),
+        this.mapConsumptionLogGroup(item, "WORKSHOP_MATERIAL"),
       ),
       ...rdProject.map((item) =>
-        this.mapLogGroupToSnapshot(item, "RD_PROJECT"),
+        this.mapConsumptionLogGroup(item, "RD_PROJECT"),
       ),
-      ...rd.map((item) => this.mapLogGroupToSnapshot(item, "RD")),
+      ...rdHandoff.map((item) => {
+        const sign =
+          item.operationType === InventoryOperationType.RD_HANDOFF_IN ? 1 : -1;
+        return this.mapLogGroupToSnapshot(item, "RD_HANDOFF", sign, sign);
+      }),
+      ...rdStocktake.map((item) => {
+        const isGain =
+          item.operationType === InventoryOperationType.RD_STOCKTAKE_IN;
+        const sign = isGain ? 1 : -1;
+        return this.mapLogGroupToSnapshot(
+          item,
+          isGain ? "RD_STOCKTAKE_GAIN" : "RD_STOCKTAKE_LOSS",
+          sign,
+          sign,
+        );
+      }),
     ];
+  }
+
+  private mapConsumptionLogGroup(
+    group: InventoryLogTrendGroup,
+    sourceType: "SALES" | "WORKSHOP_MATERIAL" | "RD_PROJECT",
+  ): TrendDocumentSnapshot {
+    const isReturn =
+      group.operationType === InventoryOperationType.RETURN_IN ||
+      group.operationType === InventoryOperationType.SALES_RETURN_IN;
+    const consumptionSign: 1 | -1 = isReturn ? -1 : 1;
+    const inventorySign: 1 | -1 = isReturn ? 1 : -1;
+    return this.mapLogGroupToSnapshot(
+      group,
+      sourceType,
+      consumptionSign,
+      inventorySign,
+    );
   }
 
   private mapLogGroupToSnapshot(
     group: InventoryLogTrendGroup,
     sourceType: TrendDocumentSnapshot["sourceType"],
-    sign = 1,
+    displaySign: 1 | -1,
+    inventorySign: 1 | -1,
   ): TrendDocumentSnapshot {
-    const totalQty = group._sum?.changeQty ?? new Prisma.Decimal(0);
     const totalAmount = group._sum?.costAmount ?? new Prisma.Decimal(0);
     return {
       sourceType,
       bizDate: group.bizDate,
-      totalQty: sign < 0 ? totalQty.neg() : totalQty,
-      totalAmount: sign < 0 ? totalAmount.neg() : totalAmount,
+      businessDocumentType: group.businessDocumentType,
+      businessDocumentId: group.businessDocumentId,
+      totalAmount: displaySign < 0 ? totalAmount.neg() : totalAmount,
+      inventoryCostDelta: inventorySign < 0 ? totalAmount.neg() : totalAmount,
     };
   }
 

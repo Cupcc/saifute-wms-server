@@ -24,56 +24,120 @@
       <el-row :gutter="16" class="summary-row">
         <el-col :xs="24" :sm="12" :lg="6">
           <div class="stat-box">
-            <div class="stat-label">在库物料数</div>
+            <div class="stat-label">
+              <reporting-metric-label
+                label="在库物料品种数"
+                :content="inventoryMetricHelp.activeMaterialCount"
+              />
+            </div>
             <div class="stat-value">{{ summary.activeMaterialCount }}</div>
           </div>
         </el-col>
         <el-col :xs="24" :sm="12" :lg="6">
           <div class="stat-box">
-            <div class="stat-label">库存记录数</div>
+            <div class="stat-label">
+              <reporting-metric-label
+                label="库存余额记录数（含零余额）"
+                :content="inventoryMetricHelp.inventoryRecordCount"
+              />
+            </div>
             <div class="stat-value">{{ summary.inventoryRecordCount }}</div>
           </div>
         </el-col>
         <el-col :xs="24" :sm="12" :lg="6">
           <div class="stat-box">
-            <div class="stat-label">低库存项</div>
+            <div class="stat-label">
+              <reporting-metric-label
+                label="可追溯来源库存成本"
+                :content="inventoryMetricHelp.totalInventoryValue"
+              />
+            </div>
+            <div class="stat-value">{{ summary.totalInventoryValue }}</div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12" :lg="6">
+          <div class="stat-box">
+            <div class="stat-label">
+              <reporting-metric-label
+                label="低于下限的物料-仓别数"
+                :content="inventoryMetricHelp.lowStockCount"
+              />
+            </div>
             <div class="stat-value">{{ summary.lowStockCount }}</div>
           </div>
         </el-col>
         <el-col :xs="24" :sm="12" :lg="6">
           <div class="stat-box">
-            <div class="stat-label">库存货值</div>
-            <div class="stat-value">{{ summary.totalInventoryValue }}</div>
+            <div class="stat-label">
+              <reporting-metric-label
+                label="正常的物料-仓别数"
+                :content="inventoryMetricHelp.normalStockCount"
+              />
+            </div>
+            <div class="stat-value">{{ summary.normalStockCount }}</div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12" :lg="6">
+          <div class="stat-box">
+            <div class="stat-label">
+              <reporting-metric-label
+                label="高于上限的物料-仓别数"
+                :content="inventoryMetricHelp.aboveMaxStockCount"
+              />
+            </div>
+            <div class="stat-value">{{ summary.aboveMaxStockCount }}</div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12" :lg="6">
+          <div class="stat-box">
+            <div class="stat-label">
+              <reporting-metric-label
+                label="未配置阈值的物料-仓别数"
+                :content="inventoryMetricHelp.unconfiguredStockCount"
+              />
+            </div>
+            <div class="stat-value">{{ summary.unconfiguredStockCount }}</div>
           </div>
         </el-col>
       </el-row>
 
       <adaptive-table
-        auto-columns
+        column-preferences
         :fit-viewport="false"
         :data="rows"
         stripe
         v-loading="loading"
       >
-        <el-table-column prop="materialCode" label="物料编码" min-width="140" />
-        <el-table-column prop="materialName" label="物料名称" min-width="180" />
-        <el-table-column prop="categoryName" label="分类" min-width="140" />
-        <el-table-column prop="stockScopeName" label="库存范围" min-width="140" />
-        <el-table-column prop="quantityOnHand" label="库存数量" min-width="120" />
-        <el-table-column prop="unitCode" label="单位" min-width="90" />
-        <el-table-column prop="inventoryValue" label="库存货值" min-width="120" />
-        <el-table-column label="状态" min-width="110">
+        <reporting-column prop="materialCode" label="物料编码" />
+        <reporting-column prop="materialName" label="物料名称" />
+        <reporting-column prop="categoryName" label="分类" />
+        <reporting-column prop="stockScopeName" label="库存范围" />
+        <reporting-metric-column
+          prop="quantityOnHand"
+          label="库存数量"
+          :content="inventoryMetricHelp.quantityOnHand"
+        />
+        <reporting-column prop="unitCode" label="单位" />
+        <reporting-metric-column
+          prop="inventoryValue"
+          label="可追溯来源库存成本"
+          :content="inventoryMetricHelp.inventoryValue"
+        />
+        <reporting-metric-column
+          label="状态"
+          :content="inventoryMetricHelp.inventoryStatus"
+        >
           <template #default="{ row }">
-            <el-tag :type="row.isBelowMin ? 'danger' : 'success'">
-              {{ row.isBelowMin ? "低库存" : "正常" }}
+            <el-tag :type="getInventoryStatusMeta(row.inventoryStatus).type">
+              {{ getInventoryStatusMeta(row.inventoryStatus).label }}
             </el-tag>
           </template>
-        </el-table-column>
-        <el-table-column label="更新时间" min-width="180">
+        </reporting-metric-column>
+        <reporting-column label="更新时间">
           <template #default="{ row }">
             {{ formatDateTime(row.updatedAt) }}
           </template>
-        </el-table-column>
+        </reporting-column>
       </adaptive-table>
 
       <div class="pagination-wrap">
@@ -96,6 +160,10 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { getInventorySummary } from "@/api/reporting";
+import ReportingColumn from "../components/ReportingColumn.vue";
+import ReportingMetricColumn from "../components/ReportingMetricColumn.vue";
+import ReportingMetricLabel from "../components/ReportingMetricLabel.vue";
+import { inventoryMetricHelp } from "../reportingMetricHelp";
 
 const route = useRoute();
 const loading = ref(false);
@@ -110,11 +178,24 @@ const summary = ref({
   activeMaterialCount: 0,
   inventoryRecordCount: 0,
   lowStockCount: 0,
+  normalStockCount: 0,
+  aboveMaxStockCount: 0,
+  unconfiguredStockCount: 0,
   totalInventoryValue: "0.00",
+});
+const inventoryStatusMeta = Object.freeze({
+  LOW: { label: "低于下限", type: "danger" },
+  NORMAL: { label: "正常", type: "success" },
+  ABOVE_MAX: { label: "高于上限", type: "warning" },
+  UNCONFIGURED: { label: "未配置阈值", type: "info" },
 });
 const routeStockScope = computed(() =>
   route.path.startsWith("/rd/") ? "RD_SUB" : undefined,
 );
+
+function getInventoryStatusMeta(status) {
+  return inventoryStatusMeta[status] ?? { label: "未知", type: "info" };
+}
 
 function formatDateTime(value) {
   if (!value) {

@@ -85,13 +85,13 @@
           v-hasPermi="['workshop-material:pick-order:update']"
         >修改</el-button>
       </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="pickOrderList" :column-config="columns" @selection-change="handleSelectionChange" @row-click="handleRowClick">
+    <adaptive-table border stripe v-loading="loading" :data="pickOrderList" column-preferences @selection-change="handleSelectionChange" @row-click="handleRowClick">
       <el-table-column type="selection" width="50" align="center" />
       <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="领料单号" align="center" prop="pickNo" min-width="140" v-if="columns[0].visible">
+      <el-table-column sortable show-overflow-tooltip label="领料单号" align="center" prop="pickNo" min-width="140">
         <template #default="scope">
           <el-button link type="primary" @click="handleDetail(scope.row)">
             {{ scope.row.pickNo }}
@@ -106,7 +106,6 @@
         prop="pickDate"
         width="200"
         :sort-method="comparePickDateRows"
-        v-if="columns[1].visible"
       >
         <template #default="scope">
           <el-button link type="primary" @click="handleDetail(scope.row)">
@@ -119,21 +118,21 @@
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="领料人" align="center" prop="picker" v-if="columns[2].visible">
+      <el-table-column sortable show-overflow-tooltip label="领料人" align="center" prop="picker">
         <template #default="scope">
           <el-button link type="primary" @click="handleDetail(scope.row)">
             {{ scope.row.picker }}
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="经办人" align="center" prop="createBy" width="120" v-if="columns[3].visible">
+      <el-table-column sortable show-overflow-tooltip label="经办人" align="center" prop="createBy" width="120">
         <template #default="scope">
           <el-button link type="primary" @click="handleDetail(scope.row)">
             {{ scope.row.createBy || "-" }}
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="审核结果" align="center" prop="auditStatus" v-if="columns[4].visible">
+      <el-table-column sortable show-overflow-tooltip label="审核结果" align="center" prop="auditStatus">
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
             <span v-if="scope.row.auditStatus === '0' || scope.row.auditStatus === 0" style="color: #E6A23C;">未审核</span>
@@ -503,15 +502,6 @@ const data = reactive({
 const { queryParams, form, rules, abandonForm, abandonRules } = toRefs(data);
 
 const username = computed(() => useUserStore().name);
-
-// 添加columns数组定义
-const columns = ref([
-  { key: 0, label: `领料单号`, visible: true },
-  { key: 1, label: `领料日期`, visible: true },
-  { key: 2, label: `领料人`, visible: true },
-  { key: 3, label: `经办人`, visible: true },
-  { key: 4, label: `审核结果`, visible: true },
-]);
 
 function formatDocumentDate(value) {
   if (!value) {

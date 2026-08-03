@@ -90,18 +90,16 @@
       <right-toolbar
         v-model:showSearch="showSearch"
         @queryTable="getList"
-        :columns="columns"
       />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="inventoryList" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="inventoryList" column-preferences>
       <el-table-column type="index" width="50" align="center" />
       <el-table-column
         sortable
         show-overflow-tooltip
         label="物料编码"
         align="center"
-        v-if="columns[0].visible"
       >
         <template #default="scope">
           <el-button
@@ -118,7 +116,6 @@
         show-overflow-tooltip
         label="物料名称"
         align="center"
-        v-if="columns[1].visible"
       >
         <template #default="scope">
           <el-button
@@ -136,7 +133,6 @@
         label="规格型号"
         align="center"
         prop="specification"
-        v-if="columns[2].visible"
       >
         <template #default="scope">
           <el-button
@@ -154,7 +150,6 @@
         label="物料分类"
         align="center"
         prop="category"
-        v-if="columns[3].visible"
       >
         <template #default="scope">
           <dict-tag :options="saifute_material_category" :value="scope.row.category" />
@@ -166,7 +161,6 @@
         label="仓库范围"
         align="center"
         prop="stockScopeName"
-        v-if="columns[4].visible"
       >
         <template #default="scope">
           <el-tag
@@ -183,7 +177,6 @@
         label="当前库存"
         align="center"
         prop="currentQty"
-        v-if="columns[5].visible"
       >
         <template #default="scope">
           <el-button
@@ -200,7 +193,6 @@
         label="价格库存"
         align="center"
         width="120"
-        v-if="columns[6].visible"
       >
         <template #default="scope">
           <el-button link type="primary" @click="handleViewDetail(scope.row)">
@@ -343,16 +335,6 @@ const stockScopeOptions = [
   { label: "主仓", value: "MAIN" },
   { label: "研发小仓", value: "RD_SUB" },
 ];
-
-const columns = ref([
-  { key: 0, label: "物料编码", visible: true },
-  { key: 1, label: "物料名称", visible: true },
-  { key: 2, label: "规格型号", visible: true },
-  { key: 3, label: "物料分类", visible: true },
-  { key: 4, label: "仓库范围", visible: true },
-  { key: 5, label: "当前库存", visible: true },
-  { key: 6, label: "价格库存", visible: true },
-]);
 
 function getList() {
   loading.value = true;

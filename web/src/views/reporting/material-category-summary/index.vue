@@ -10,7 +10,7 @@
           <el-input
             v-model="filters.keyword"
             clearable
-            placeholder="分类名称"
+            placeholder="物料编码或名称"
             style="width: 260px"
             @keyup.enter="handleSearch"
           />
@@ -24,50 +24,126 @@
       <el-row :gutter="16" class="summary-row">
         <el-col :xs="24" :sm="12" :lg="6">
           <div class="stat-box">
-            <div class="stat-label">在库物料数</div>
+            <div class="stat-label">
+              <reporting-metric-label
+                label="在库物料品种数"
+                :content="inventoryMetricHelp.activeMaterialCount"
+              />
+            </div>
             <div class="stat-value">{{ summary.activeMaterialCount }}</div>
           </div>
         </el-col>
         <el-col :xs="24" :sm="12" :lg="6">
           <div class="stat-box">
-            <div class="stat-label">库存记录数</div>
+            <div class="stat-label">
+              <reporting-metric-label
+                label="库存余额记录数（含零余额）"
+                :content="inventoryMetricHelp.inventoryRecordCount"
+              />
+            </div>
             <div class="stat-value">{{ summary.inventoryRecordCount }}</div>
           </div>
         </el-col>
         <el-col :xs="24" :sm="12" :lg="6">
           <div class="stat-box">
-            <div class="stat-label">低库存项</div>
+            <div class="stat-label">
+              <reporting-metric-label
+                label="可追溯来源库存成本"
+                :content="inventoryMetricHelp.totalInventoryValue"
+              />
+            </div>
+            <div class="stat-value">{{ summary.totalInventoryValue }}</div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12" :lg="6">
+          <div class="stat-box">
+            <div class="stat-label">
+              <reporting-metric-label
+                label="低于下限的物料-仓别数"
+                :content="inventoryMetricHelp.lowStockCount"
+              />
+            </div>
             <div class="stat-value">{{ summary.lowStockCount }}</div>
           </div>
         </el-col>
         <el-col :xs="24" :sm="12" :lg="6">
           <div class="stat-box">
-            <div class="stat-label">库存货值</div>
-            <div class="stat-value">{{ summary.totalInventoryValue }}</div>
+            <div class="stat-label">
+              <reporting-metric-label
+                label="正常的物料-仓别数"
+                :content="inventoryMetricHelp.normalStockCount"
+              />
+            </div>
+            <div class="stat-value">{{ summary.normalStockCount }}</div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12" :lg="6">
+          <div class="stat-box">
+            <div class="stat-label">
+              <reporting-metric-label
+                label="高于上限的物料-仓别数"
+                :content="inventoryMetricHelp.aboveMaxStockCount"
+              />
+            </div>
+            <div class="stat-value">{{ summary.aboveMaxStockCount }}</div>
+          </div>
+        </el-col>
+        <el-col :xs="24" :sm="12" :lg="6">
+          <div class="stat-box">
+            <div class="stat-label">
+              <reporting-metric-label
+                label="未配置阈值的物料-仓别数"
+                :content="inventoryMetricHelp.unconfiguredStockCount"
+              />
+            </div>
+            <div class="stat-value">{{ summary.unconfiguredStockCount }}</div>
           </div>
         </el-col>
       </el-row>
 
       <adaptive-table
-        auto-columns
+        column-preferences
         :fit-viewport="false"
         :data="rows"
         stripe
         v-loading="loading"
       >
-        <el-table-column prop="categoryCode" label="分类编码" min-width="140" />
-        <el-table-column prop="categoryName" label="分类名称" min-width="180" />
-        <el-table-column prop="materialCount" label="物料数" min-width="100" />
-        <el-table-column
-          prop="inventoryRecordCount"
-          label="库存记录数"
-          min-width="120"
+        <reporting-column prop="categoryCode" label="分类编码" />
+        <reporting-column prop="categoryName" label="分类名称" />
+        <reporting-metric-column
+          prop="materialCount"
+          label="有库存余额记录的物料数"
+          :content="inventoryMetricHelp.materialCount"
         />
-        <el-table-column prop="lowStockCount" label="低库存项" min-width="100" />
-        <el-table-column
+        <reporting-metric-column
+          prop="inventoryRecordCount"
+          label="库存余额记录数（含零余额）"
+          :content="inventoryMetricHelp.inventoryRecordCount"
+        />
+        <reporting-metric-column
+          prop="lowStockCount"
+          label="低于下限的物料-仓别数"
+          :content="inventoryMetricHelp.lowStockCount"
+        />
+        <reporting-metric-column
+          prop="normalStockCount"
+          label="正常的物料-仓别数"
+          :content="inventoryMetricHelp.normalStockCount"
+        />
+        <reporting-metric-column
+          prop="aboveMaxStockCount"
+          label="高于上限的物料-仓别数"
+          :content="inventoryMetricHelp.aboveMaxStockCount"
+        />
+        <reporting-metric-column
+          prop="unconfiguredStockCount"
+          label="未配置阈值的物料-仓别数"
+          :content="inventoryMetricHelp.unconfiguredStockCount"
+        />
+        <reporting-metric-column
           prop="totalInventoryValue"
-          label="库存货值"
-          min-width="140"
+          label="可追溯来源库存成本"
+          :content="inventoryMetricHelp.totalInventoryValue"
         />
       </adaptive-table>
 
@@ -91,6 +167,10 @@
 import { computed, onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
 import { getMaterialCategorySummary } from "@/api/reporting";
+import ReportingColumn from "../components/ReportingColumn.vue";
+import ReportingMetricColumn from "../components/ReportingMetricColumn.vue";
+import ReportingMetricLabel from "../components/ReportingMetricLabel.vue";
+import { inventoryMetricHelp } from "../reportingMetricHelp";
 
 const route = useRoute();
 const loading = ref(false);
@@ -105,6 +185,9 @@ const summary = ref({
   activeMaterialCount: 0,
   inventoryRecordCount: 0,
   lowStockCount: 0,
+  normalStockCount: 0,
+  aboveMaxStockCount: 0,
+  unconfiguredStockCount: 0,
   totalInventoryValue: "0.00",
 });
 const routeStockScope = computed(() =>

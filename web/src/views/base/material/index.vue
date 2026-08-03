@@ -52,21 +52,21 @@
           v-hasPermi="['master:material:create']"
         >新增</el-button>
       </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="materialList" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="materialList" column-preferences>
       <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable :sort-method="compareMaterialCodeRows" show-overflow-tooltip label="物料编码" align="center" prop="materialCode" v-if="columns[0].visible" />
-      <el-table-column sortable show-overflow-tooltip label="物料名称" align="center" prop="materialName" v-if="columns[1].visible" />
-      <el-table-column sortable show-overflow-tooltip label="规格型号" align="center" prop="specification" v-if="columns[2].visible" />
-      <el-table-column sortable show-overflow-tooltip label="分类" align="center" prop="category" v-if="columns[3].visible">
+      <el-table-column sortable :sort-method="compareMaterialCodeRows" show-overflow-tooltip label="物料编码" align="center" prop="materialCode" />
+      <el-table-column sortable show-overflow-tooltip label="物料名称" align="center" prop="materialName" />
+      <el-table-column sortable show-overflow-tooltip label="规格型号" align="center" prop="specification" />
+      <el-table-column sortable show-overflow-tooltip label="分类" align="center" prop="category">
         <template #default="scope">
           <span>{{ scope.row.categoryName || "未分类" }}</span>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="单位" align="center" prop="unit" v-if="columns[4].visible" />
-      <el-table-column sortable show-overflow-tooltip label="安全库存" align="center" prop="stockMin" v-if="columns[5].visible" />
+      <el-table-column sortable show-overflow-tooltip label="单位" align="center" prop="unit" />
+      <el-table-column sortable show-overflow-tooltip label="安全库存" align="center" prop="stockMin" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['master:material:update']">修改</el-button>
@@ -262,16 +262,6 @@ function validatevoidDescription(rule, value, callback) {
 }
 
 const { queryParams, form, rules } = toRefs(data);
-
-// 添加columns数组定义
-const columns = ref([
-  { key: 0, label: `物料编码`, visible: true },
-  { key: 1, label: `物料名称`, visible: true },
-  { key: 2, label: `规格型号`, visible: true },
-  { key: 3, label: `分类`, visible: true },
-  { key: 4, label: `单位`, visible: true },
-  { key: 5, label: `安全库存`, visible: true },
-]);
 
 function compareMaterialCodeRows(left, right) {
   return compareNaturalCode(left?.materialCode, right?.materialCode);

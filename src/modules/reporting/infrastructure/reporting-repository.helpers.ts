@@ -158,6 +158,64 @@ export function multiplyDecimals(
   return toDecimal(left).mul(toDecimal(right));
 }
 
+export async function loadEffectiveInventoryCostByDocumentId(
+  prisma: PrismaService,
+  businessDocumentType: string,
+  documentIds: number[],
+) {
+  if (documentIds.length === 0) {
+    return new Map<number, Prisma.Decimal>();
+  }
+
+  const groups = await prisma.inventoryLog.groupBy({
+    by: ["businessDocumentId"],
+    where: {
+      businessDocumentType,
+      businessDocumentId: { in: documentIds },
+      reversalOfLogId: null,
+      reversedByLogs: { none: {} },
+    },
+    _sum: { costAmount: true },
+  });
+
+  return new Map(
+    groups.map((group) => [
+      group.businessDocumentId,
+      toDecimal(group._sum.costAmount),
+    ]),
+  );
+}
+
+export async function loadEffectiveInventoryCostByDocumentLineId(
+  prisma: PrismaService,
+  businessDocumentType: string,
+  documentLineIds: number[],
+) {
+  if (documentLineIds.length === 0) {
+    return new Map<number, Prisma.Decimal>();
+  }
+
+  const groups = await prisma.inventoryLog.groupBy({
+    by: ["businessDocumentLineId"],
+    where: {
+      businessDocumentType,
+      businessDocumentLineId: { in: documentLineIds },
+      reversalOfLogId: null,
+      reversedByLogs: { none: {} },
+    },
+    _sum: { costAmount: true },
+  });
+
+  return new Map(
+    groups
+      .filter((group) => typeof group.businessDocumentLineId === "number")
+      .map((group) => [
+        group.businessDocumentLineId as number,
+        toDecimal(group._sum.costAmount),
+      ]),
+  );
+}
+
 export function collectDistinctNumbers(
   values: Array<number | null | undefined>,
 ): number[] {

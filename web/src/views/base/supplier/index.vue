@@ -62,15 +62,13 @@
       </el-col>
       <right-toolbar
         v-model:showSearch="showSearch"
-        :columns="columns"
         @queryTable="getList"
       />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="supplierList" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="supplierList" column-preferences>
       <el-table-column type="index" width="50" align="center" />
       <el-table-column
-        v-if="columns[0].visible"
         sortable
         show-overflow-tooltip
         label="供应商编码"
@@ -78,7 +76,6 @@
         prop="supplierCode"
       />
       <el-table-column
-        v-if="columns[1].visible"
         sortable
         show-overflow-tooltip
         label="供应商名称"
@@ -86,7 +83,6 @@
         prop="supplierName"
       />
       <el-table-column
-        v-if="columns[2].visible"
         sortable
         show-overflow-tooltip
         label="联系人"
@@ -94,7 +90,6 @@
         prop="contactPerson"
       />
       <el-table-column
-        v-if="columns[3].visible"
         sortable
         show-overflow-tooltip
         label="联系方式"
@@ -102,7 +97,6 @@
         prop="contactPhone"
       />
       <el-table-column
-        v-if="columns[4].visible"
         sortable
         show-overflow-tooltip
         label="供应商地址"
@@ -218,14 +212,6 @@ const data = reactive({
 });
 
 const { queryParams, form, rules } = toRefs(data);
-
-const columns = ref([
-  { key: 0, label: "供应商编码", visible: true },
-  { key: 1, label: "供应商名称", visible: true },
-  { key: 2, label: "联系人", visible: true },
-  { key: 3, label: "联系方式", visible: true },
-  { key: 4, label: "供应商地址", visible: true },
-]);
 
 function getList() {
   loading.value = true;

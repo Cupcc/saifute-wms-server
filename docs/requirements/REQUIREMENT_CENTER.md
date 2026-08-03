@@ -93,13 +93,14 @@
 
 | REQ     | 功能项 | 需求摘要        | 来源  | 阶段      | 状态     | 关联任务 |
 | ------- | --- | ----------- | --- | ------- | ------ | ---- |
-| REQ-028 | F1  | 本期发生金额月度口径  | PRD | Phase 1 | ✅ 已完成  | `task-20260411-1105` |
+| REQ-028 | F1  | 分金额基础月度汇总（研发缺失成本待确认） | PRD | Phase 1 | 🔧 有条件完成 | `task-20260730-reporting-metric-semantics-alignment` |
 | REQ-029 | F2  | 领域优先目录与业务汇总 | PRD | Phase 1 | ✅ 已完成  | `task-20260411-1105` |
 | REQ-030 | F3  | 领域汇总到单据头追溯  | PRD | Phase 1 | ✅ 已完成  | `task-20260411-1105` |
 | REQ-032 | F5  | 仓库侧查看与导出   | PRD | Phase 1 | ✅ 已完成  | `task-20260411-0301` |
-| REQ-069 | F6  | 正式月报结果与人工重算 | PRD | Phase 2 | 📋 未开始 | -    |
+| REQ-069 | F6  | 实时月报与次月单次导出归档 | PRD | Phase 1 | ✅ 流程已确认 | `task-20260730-reporting-metric-semantics-alignment` |
 | REQ-070 | F7  | 日期范围报表语义分离 | PRD | Phase 2 | 📋 未开始 | -    |
 | REQ-073 | F8  | RD 小仓项目化口径与视角重算 | PRD | Phase 2 | ✅ 已完成 | `task-20260414-1418` |
+| REQ-074 | F9  | 物料分类分口径月报（分类层无数量） | PRD | Phase 1 | ✅ 已完成 | `task-20260730-reporting-metric-semantics-alignment` |
 
 
 ### 前端旧风格回归 — `domain/frontend-old-style-adaptation.md`
@@ -109,7 +110,7 @@
 | ------- | --- | --------------------- | --- | ------- | ------ | ---- |
 | REQ-033 | F1  | 登录页 / Layout / 菜单壳层回归 | PRD | Phase 1 | ✅ 已完成  | -    |
 | REQ-034 | F2  | 旧版图表首页回归              | PRD | Phase 2 | ✅ 已完成  | -    |
-| REQ-035 | F3  | 业务列表页旧风格节奏细化          | PRD | Phase 3 | 🔧 进行中 | `task-20260727-1007`、`task-20260727-1127` |
+| REQ-035 | F3  | 业务列表页旧风格节奏细化          | PRD | Phase 3 | 🔧 进行中 | `task-20260727-1007`、`task-20260727-1127`、`task-20260729-1512` |
 | REQ-036 | F4  | 详情页与编辑流适配             | PRD | Phase 4 | 📋 未开始 | -    |
 | REQ-037 | F5  | 多角色体验一致性              | PRD | Phase 4 | 🔧 进行中 | -    |
 

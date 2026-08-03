@@ -21,7 +21,7 @@ import {
 } from "./monthly-report-source.service";
 import {
   formatMoney,
-  formatQuantity,
+  getMonthlyReportingBusinessAmountLabel,
   getMonthlyReportingDomainMeta,
   getMonthlyReportingTopicMeta,
   type MonthlyReportEntry,
@@ -32,43 +32,50 @@ import {
   sumDecimals,
 } from "./monthly-reporting.shared";
 
-export interface MonthlyReportSummaryTotals {
-  domainCount: number;
+export interface MonthlyReportCostTotals {
   documentCount: number;
-  totalInQuantity: string;
-  totalInAmount: string;
-  totalOutQuantity: string;
-  totalOutAmount: string;
-  netQuantity: string;
-  netAmount: string;
+  inventoryCostInAmount: string;
+  inventoryCostOutAmount: string;
+  inventoryCostNetChangeAmount: string;
+}
+
+export interface MonthlyReportSummaryTotals extends MonthlyReportCostTotals {
+  domainCount: number;
+  acceptanceInboundAmount: string;
+  productionReceiptAmount: string;
+  supplierReturnAmount: string;
+  purchaseNetInboundAmount: string;
+  salesNetAmount: string;
+  salesNetCostAmount: string;
+  workshopNetConsumptionCostAmount: string;
+  rdProjectNetConsumptionCostAmount: string;
 }
 
 export interface MonthlyReportDomainSummaryItem
-  extends Omit<MonthlyReportSummaryTotals, "domainCount">,
+  extends MonthlyReportCostTotals,
     MonthlyReportSalesFixedColumns {
   domainKey: MonthlyReportingDomainKey;
   domainLabel: string;
 }
 
 export interface MonthlyReportSalesFixedColumns {
-  salesOutboundQuantity: string | null;
   salesOutboundSalesAmount: string | null;
   salesOutboundCostAmount: string | null;
-  salesReturnQuantity: string | null;
   salesReturnSalesAmount: string | null;
   salesReturnCostAmount: string | null;
-  netSalesQuantity: string | null;
   netSalesAmount: string | null;
   netCostAmount: string | null;
   salesGrossProfitAmount: string | null;
 }
 
 export interface MonthlyReportDocumentTypeSummaryItem
-  extends Omit<MonthlyReportSummaryTotals, "domainCount"> {
+  extends MonthlyReportCostTotals {
   domainKey: MonthlyReportingDomainKey;
   domainLabel: string;
   topicKey: MonthlyReportingTopicKey;
   documentTypeLabel: string;
+  businessAmountLabel: string;
+  businessAmount: string;
 }
 
 export interface MonthlyReportDomainFilters {
@@ -100,7 +107,7 @@ export interface MonthlyReportDomainDocumentsResult {
   viewMode: MonthlyReportingViewMode.DOMAIN;
   total: number;
   items: MonthlyReportDocumentItem[];
-  summary: Omit<MonthlyReportSummaryTotals, "domainCount">;
+  summary: MonthlyReportCostTotals;
 }
 
 @Injectable()
@@ -165,12 +172,9 @@ export class MonthlyReportDomainSummaryService {
         filteredSalesProjectEntries,
       ),
       rdProjectItems: this.aggregatorService.buildRdProjectItems(filteredRows),
-      summary: {
-        domainCount: domainItems.length,
-        ...this.buildTotals(filteredRows, {
-          stockScope: query.stockScope,
-        }),
-      },
+      summary: this.buildSummaryTotals(filteredRows, domainItems.length, {
+        stockScope: query.stockScope,
+      }),
     };
   }
 
@@ -200,7 +204,7 @@ export class MonthlyReportDomainSummaryService {
     options: {
       stockScope?: StockScopeCode;
     } = {},
-  ): Omit<MonthlyReportSummaryTotals, "domainCount"> {
+  ): MonthlyReportCostTotals {
     const documentKeys = new Set(
       rows.map((row) => `${row.documentType}:${row.documentId}`),
     );
@@ -214,19 +218,111 @@ export class MonthlyReportDomainSummaryService {
     const outRows = transferExcludedRows.filter(
       (row) => row.direction === MonthlyReportingDirection.OUT,
     );
-    const totalInQuantity = sumDecimals(inRows.map((row) => row.quantity));
-    const totalOutQuantity = sumDecimals(outRows.map((row) => row.quantity));
-    const totalInAmount = sumDecimals(inRows.map((row) => row.amount));
-    const totalOutAmount = sumDecimals(outRows.map((row) => row.amount));
+    const inventoryCostInAmount = sumDecimals(inRows.map((row) => row.cost));
+    const inventoryCostOutAmount = sumDecimals(outRows.map((row) => row.cost));
 
     return {
       documentCount: documentKeys.size,
-      totalInQuantity: formatQuantity(totalInQuantity),
-      totalInAmount: formatMoney(totalInAmount),
-      totalOutQuantity: formatQuantity(totalOutQuantity),
-      totalOutAmount: formatMoney(totalOutAmount),
-      netQuantity: formatQuantity(totalInQuantity.sub(totalOutQuantity)),
-      netAmount: formatMoney(totalInAmount.sub(totalOutAmount)),
+      inventoryCostInAmount: formatMoney(inventoryCostInAmount),
+      inventoryCostOutAmount: formatMoney(inventoryCostOutAmount),
+      inventoryCostNetChangeAmount: formatMoney(
+        inventoryCostInAmount.sub(inventoryCostOutAmount),
+      ),
+    };
+  }
+
+  buildSummaryTotals(
+    rows: MonthlyReportEntry[],
+    domainCount: number,
+    options: {
+      stockScope?: StockScopeCode;
+    } = {},
+  ): MonthlyReportSummaryTotals {
+    const sumAmountByTopic = (
+      topicKey: MonthlyReportingTopicKey,
+      field: "amount" | "cost",
+    ) =>
+      sumDecimals(
+        rows
+          .filter((row) => row.topicKey === topicKey)
+          .map((row) => row[field]),
+      );
+    const acceptanceInboundAmount = sumAmountByTopic(
+      MonthlyReportingTopicKey.ACCEPTANCE_INBOUND,
+      "amount",
+    );
+    const productionReceiptAmount = sumAmountByTopic(
+      MonthlyReportingTopicKey.PRODUCTION_RECEIPT,
+      "amount",
+    );
+    const supplierReturnAmount = sumAmountByTopic(
+      MonthlyReportingTopicKey.SUPPLIER_RETURN,
+      "amount",
+    );
+    const salesOutboundAmount = sumAmountByTopic(
+      MonthlyReportingTopicKey.SALES_OUTBOUND,
+      "amount",
+    );
+    const salesReturnAmount = sumAmountByTopic(
+      MonthlyReportingTopicKey.SALES_RETURN,
+      "amount",
+    );
+    const salesOutboundCostAmount = sumAmountByTopic(
+      MonthlyReportingTopicKey.SALES_OUTBOUND,
+      "cost",
+    );
+    const salesReturnCostAmount = sumAmountByTopic(
+      MonthlyReportingTopicKey.SALES_RETURN,
+      "cost",
+    );
+    const workshopPickCostAmount = sumAmountByTopic(
+      MonthlyReportingTopicKey.WORKSHOP_PICK,
+      "cost",
+    );
+    const workshopReturnCostAmount = sumAmountByTopic(
+      MonthlyReportingTopicKey.WORKSHOP_RETURN,
+      "cost",
+    );
+    const workshopScrapCostAmount = sumAmountByTopic(
+      MonthlyReportingTopicKey.WORKSHOP_SCRAP,
+      "cost",
+    );
+    const rdProjectPickCostAmount = sumAmountByTopic(
+      MonthlyReportingTopicKey.RD_PROJECT_PICK,
+      "cost",
+    );
+    const rdProjectReturnCostAmount = sumAmountByTopic(
+      MonthlyReportingTopicKey.RD_PROJECT_RETURN,
+      "cost",
+    );
+    const rdProjectScrapCostAmount = sumAmountByTopic(
+      MonthlyReportingTopicKey.RD_PROJECT_SCRAP,
+      "cost",
+    );
+
+    return {
+      domainCount,
+      ...this.buildTotals(rows, options),
+      acceptanceInboundAmount: formatMoney(acceptanceInboundAmount),
+      productionReceiptAmount: formatMoney(productionReceiptAmount),
+      supplierReturnAmount: formatMoney(supplierReturnAmount),
+      purchaseNetInboundAmount: formatMoney(
+        acceptanceInboundAmount.sub(supplierReturnAmount),
+      ),
+      salesNetAmount: formatMoney(salesOutboundAmount.sub(salesReturnAmount)),
+      salesNetCostAmount: formatMoney(
+        salesOutboundCostAmount.sub(salesReturnCostAmount),
+      ),
+      workshopNetConsumptionCostAmount: formatMoney(
+        workshopPickCostAmount
+          .sub(workshopReturnCostAmount)
+          .add(workshopScrapCostAmount),
+      ),
+      rdProjectNetConsumptionCostAmount: formatMoney(
+        rdProjectPickCostAmount
+          .sub(rdProjectReturnCostAmount)
+          .add(rdProjectScrapCostAmount),
+      ),
     };
   }
 
@@ -265,13 +361,10 @@ export class MonthlyReportDomainSummaryService {
   ): MonthlyReportSalesFixedColumns {
     if (domainKey !== MonthlyReportingDomainKey.SALES) {
       return {
-        salesOutboundQuantity: null,
         salesOutboundSalesAmount: null,
         salesOutboundCostAmount: null,
-        salesReturnQuantity: null,
         salesReturnSalesAmount: null,
         salesReturnCostAmount: null,
-        netSalesQuantity: null,
         netSalesAmount: null,
         netCostAmount: null,
         salesGrossProfitAmount: null,
@@ -284,10 +377,6 @@ export class MonthlyReportDomainSummaryService {
     const returnRows = rows.filter(
       (row) => row.topicKey === MonthlyReportingTopicKey.SALES_RETURN,
     );
-    const outboundQuantity = sumDecimals(
-      outboundRows.map((row) => row.quantity),
-    );
-    const returnQuantity = sumDecimals(returnRows.map((row) => row.quantity));
     const outboundSalesAmount = sumDecimals(
       outboundRows.map((row) => row.amount),
     );
@@ -299,13 +388,10 @@ export class MonthlyReportDomainSummaryService {
     const netCostAmount = outboundCostAmount.sub(returnCostAmount);
 
     return {
-      salesOutboundQuantity: formatQuantity(outboundQuantity),
       salesOutboundSalesAmount: formatMoney(outboundSalesAmount),
       salesOutboundCostAmount: formatMoney(outboundCostAmount),
-      salesReturnQuantity: formatQuantity(returnQuantity),
       salesReturnSalesAmount: formatMoney(returnSalesAmount),
       salesReturnCostAmount: formatMoney(returnCostAmount),
-      netSalesQuantity: formatQuantity(outboundQuantity.sub(returnQuantity)),
       netSalesAmount: formatMoney(netSalesAmount),
       netCostAmount: formatMoney(netCostAmount),
       salesGrossProfitAmount: formatMoney(netSalesAmount.sub(netCostAmount)),
@@ -372,6 +458,12 @@ export class MonthlyReportDomainSummaryService {
         domainLabel: getMonthlyReportingDomainMeta(item.domainKey).label,
         topicKey: item.topicKey,
         documentTypeLabel: item.documentTypeLabel,
+        businessAmountLabel: getMonthlyReportingBusinessAmountLabel(
+          item.topicKey,
+        ),
+        businessAmount: formatMoney(
+          sumDecimals(item.rows.map((row) => row.amount)),
+        ),
         sortOrder: item.sortOrder,
         ...this.buildTotals(item.rows, {
           stockScope: options.stockScope,

@@ -1,5 +1,14 @@
+import {
+  createPreferenceStorageKey,
+  loadJsonPreference,
+  removeJsonPreference,
+  saveJsonPreference,
+} from "./preferenceStorage";
+
 const TABLE_COLUMN_PREFERENCE_VERSION = 1;
-const TABLE_COLUMN_STORAGE_PREFIX = "saifute:table-columns";
+const TABLE_COLUMN_PREFERENCE_NAMESPACE = "table-columns";
+// This prefix is already persisted in users' browsers and must remain stable.
+const LEGACY_RUNTIME_PREFERENCE_KEY_PREFIX = "auto";
 const NON_CONFIGURABLE_RUNTIME_COLUMN_TYPES = new Set([
   "selection",
   "index",
@@ -40,7 +49,7 @@ export function getOrderedTableColumns(columns = []) {
     .map(({ column }) => column);
 }
 
-export function isAutoConfigurableTableColumn(column) {
+export function isConfigurableRuntimeTableColumn(column) {
   const label = normalizeText(column?.label);
   const type = normalizeText(column?.type).toLowerCase();
   const fixed = column?.fixed;
@@ -67,11 +76,17 @@ export function isRuntimeTableColumnDeclared(column) {
   }
 }
 
-export function createAutoTableColumnConfig(runtimeColumns = []) {
+export function createRuntimeTableColumnPreferences(
+  runtimeColumns = [],
+  defaultHiddenColumns = [],
+) {
   const occurrencesByIdentity = new Map();
+  const defaultHiddenColumnIds = new Set(
+    defaultHiddenColumns.map(normalizeText).filter(Boolean),
+  );
 
   return runtimeColumns.flatMap((runtimeColumn, index) => {
-    if (!isAutoConfigurableTableColumn(runtimeColumn)) {
+    if (!isConfigurableRuntimeTableColumn(runtimeColumn)) {
       return [];
     }
 
@@ -80,7 +95,10 @@ export function createAutoTableColumnConfig(runtimeColumns = []) {
     const identity = prop ? `property:${prop}` : `label:${label}`;
     const occurrence = (occurrencesByIdentity.get(identity) ?? 0) + 1;
     occurrencesByIdentity.set(identity, occurrence);
-    const preferenceKey = `auto:${identity}:${occurrence}`;
+    const preferenceKey = `${LEGACY_RUNTIME_PREFERENCE_KEY_PREFIX}:${identity}:${occurrence}`;
+    const defaultVisible = ![prop, label, preferenceKey]
+      .filter(Boolean)
+      .some((columnId) => defaultHiddenColumnIds.has(columnId));
 
     return [
       {
@@ -89,14 +107,14 @@ export function createAutoTableColumnConfig(runtimeColumns = []) {
         ...(prop ? { prop } : {}),
         label,
         runtimeColumnId: String(runtimeColumn.id ?? `column-${index}`),
-        defaultVisible: true,
-        visible: true,
+        defaultVisible,
+        visible: defaultVisible,
       },
     ];
   });
 }
 
-export function mergeAutoTableColumnConfig(
+export function mergeRuntimeTableColumnPreferences(
   currentColumns = [],
   discoveredColumns = [],
 ) {
@@ -124,28 +142,35 @@ export function mergeAutoTableColumnConfig(
   return mergedColumns;
 }
 
-export function getAutoManagedRuntimeColumns(
+export function getPreferenceManagedRuntimeColumns(
   runtimeColumns = [],
-  columnConfig = [],
+  preferenceColumns = [],
 ) {
   const runtimeColumnById = new Map(
     runtimeColumns.map((column) => [String(column.id), column]),
   );
-  const configByRuntimeColumnId = new Map(
-    columnConfig.map((column) => [String(column.runtimeColumnId), column]),
+  const preferenceByRuntimeColumnId = new Map(
+    preferenceColumns.map((column) => [
+      String(column.runtimeColumnId),
+      column,
+    ]),
   );
-  const orderedVisibleRuntimeColumns = getOrderedTableColumns(columnConfig)
+  const orderedVisibleRuntimeColumns = getOrderedTableColumns(
+    preferenceColumns,
+  )
     .filter((column) => column.visible !== false)
     .map((column) => runtimeColumnById.get(String(column.runtimeColumnId)))
     .filter(Boolean);
   let visibleColumnIndex = 0;
 
   return runtimeColumns.flatMap((runtimeColumn) => {
-    const config = configByRuntimeColumnId.get(String(runtimeColumn.id));
-    if (!config) {
+    const preference = preferenceByRuntimeColumnId.get(
+      String(runtimeColumn.id),
+    );
+    if (!preference) {
       return [runtimeColumn];
     }
-    if (config.visible === false) {
+    if (preference.visible === false) {
       return [];
     }
 
@@ -268,20 +293,38 @@ export function applyTableColumnPreference(columns = [], preference) {
     return false;
   }
 
-  const columnsById = new Map(
-    columns.map((column, index) => [getTableColumnId(column, index), column]),
-  );
+  const columnsById = new Map();
+  columns.forEach((column, index) => {
+    const preferenceIds = [
+      getTableColumnId(column, index),
+      normalizeText(column?.prop) ? `field:${normalizeText(column.prop)}` : "",
+      normalizeText(column?.label)
+        ? `label:${normalizeText(column.label)}`
+        : "",
+    ].filter(Boolean);
+    for (const preferenceId of preferenceIds) {
+      if (!columnsById.has(preferenceId)) {
+        columnsById.set(preferenceId, column);
+      }
+    }
+  });
   const savedIds = [];
+  const appliedColumnIds = new Set();
 
   for (const savedColumn of preference.columns) {
     const column = columnsById.get(savedColumn?.id);
-    if (!column || savedIds.includes(savedColumn.id)) {
+    if (!column) {
+      continue;
+    }
+    const columnId = getTableColumnId(column);
+    if (appliedColumnIds.has(columnId)) {
       continue;
     }
     if (typeof savedColumn.visible === "boolean") {
       column.visible = savedColumn.visible;
     }
-    savedIds.push(savedColumn.id);
+    appliedColumnIds.add(columnId);
+    savedIds.push(columnId);
   }
 
   setTableColumnOrder(columns, savedIds);
@@ -305,49 +348,22 @@ export function restoreTableColumnDefaults(columns = [], defaults = []) {
 }
 
 export function getTableColumnPreferenceStorageKey(userId, tableKey) {
-  const normalizedUserId = normalizeText(String(userId ?? ""));
-  const normalizedTableKey = normalizeText(String(tableKey ?? ""));
-  if (!normalizedUserId || !normalizedTableKey) {
-    return "";
-  }
-  return `${TABLE_COLUMN_STORAGE_PREFIX}:v${TABLE_COLUMN_PREFERENCE_VERSION}:${encodeURIComponent(normalizedUserId)}:${encodeURIComponent(normalizedTableKey)}`;
+  return createPreferenceStorageKey(
+    TABLE_COLUMN_PREFERENCE_NAMESPACE,
+    TABLE_COLUMN_PREFERENCE_VERSION,
+    userId,
+    tableKey,
+  );
 }
 
 export function loadTableColumnPreference(storageKey, storage) {
-  if (!storageKey) {
-    return null;
-  }
-  try {
-    const targetStorage = storage ?? globalThis.localStorage;
-    const rawValue = targetStorage?.getItem(storageKey);
-    return rawValue ? JSON.parse(rawValue) : null;
-  } catch {
-    return null;
-  }
+  return loadJsonPreference(storageKey, storage);
 }
 
 export function saveTableColumnPreference(storageKey, preference, storage) {
-  if (!storageKey) {
-    return false;
-  }
-  try {
-    const targetStorage = storage ?? globalThis.localStorage;
-    targetStorage?.setItem(storageKey, JSON.stringify(preference));
-    return Boolean(targetStorage);
-  } catch {
-    return false;
-  }
+  return saveJsonPreference(storageKey, preference, storage);
 }
 
 export function removeTableColumnPreference(storageKey, storage) {
-  if (!storageKey) {
-    return false;
-  }
-  try {
-    const targetStorage = storage ?? globalThis.localStorage;
-    targetStorage?.removeItem(storageKey);
-    return Boolean(targetStorage);
-  } catch {
-    return false;
-  }
+  return removeJsonPreference(storageKey, storage);
 }

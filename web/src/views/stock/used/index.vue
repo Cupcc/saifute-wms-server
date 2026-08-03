@@ -56,11 +56,10 @@
       <right-toolbar
         v-model:showSearch="showSearch"
         @queryTable="getList"
-        :columns="columns"
       />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="usedList" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="usedList" column-preferences>
       <el-table-column type="index" width="50" align="center" />
       <el-table-column
         sortable
@@ -68,7 +67,6 @@
         label="物料编码"
         align="center"
         prop="materialCode"
-        v-if="columns[0].visible"
       />
       <el-table-column
         sortable
@@ -76,7 +74,6 @@
         label="物料名称"
         align="center"
         prop="materialName"
-        v-if="columns[1].visible"
       />
       <el-table-column
         sortable
@@ -84,7 +81,6 @@
         label="规格型号"
         align="center"
         prop="specification"
-        v-if="columns[2].visible"
       />
       <el-table-column
         sortable
@@ -92,7 +88,6 @@
         label="累计占用"
         align="center"
         prop="allocatedQty"
-        v-if="columns[3].visible"
       />
       <el-table-column
         sortable
@@ -100,7 +95,6 @@
         label="已释放"
         align="center"
         prop="releasedQty"
-        v-if="columns[4].visible"
       />
       <el-table-column
         sortable
@@ -108,7 +102,6 @@
         label="当前使用量"
         align="center"
         prop="useQty"
-        v-if="columns[5].visible"
       />
       <el-table-column
         sortable
@@ -116,7 +109,6 @@
         label="消费单据类型"
         align="center"
         prop="consumerDocumentType"
-        v-if="columns[6].visible"
       />
       <el-table-column
         sortable
@@ -124,7 +116,6 @@
         label="消费单据ID"
         align="center"
         prop="consumerDocumentId"
-        v-if="columns[7].visible"
       />
       <el-table-column
         sortable
@@ -132,7 +123,6 @@
         label="状态"
         align="center"
         prop="status"
-        v-if="columns[8].visible"
       />
     </adaptive-table>
 
@@ -168,18 +158,6 @@ const data = reactive({
 });
 
 const { queryParams } = toRefs(data);
-
-const columns = ref([
-  { key: 0, label: "物料编码", visible: true },
-  { key: 1, label: "物料名称", visible: true },
-  { key: 2, label: "规格型号", visible: true },
-  { key: 3, label: "累计占用", visible: true },
-  { key: 4, label: "已释放", visible: true },
-  { key: 5, label: "当前使用量", visible: true },
-  { key: 6, label: "消费单据类型", visible: true },
-  { key: 7, label: "消费单据ID", visible: true },
-  { key: 8, label: "状态", visible: true },
-]);
 
 function getList() {
   loading.value = true;

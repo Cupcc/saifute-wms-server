@@ -16,7 +16,6 @@ import {
   multiplyDecimals,
   resolveSourceReference,
   sumNullableDecimals,
-  toDecimal,
   toStockScopeCode,
 } from "./reporting-repository.helpers";
 
@@ -193,13 +192,20 @@ export class MonthlyReportAdjustmentRepository {
       const totalInQty = sumNullableDecimals(
         order.lines.map((line) => line.remainingQtyAtCorrection),
       );
-      const totalInAmount = sumNullableDecimals(
-        order.lines.map((line) =>
-          toDecimal(line.generatedInLog?.costAmount).add(
-            toDecimal(line.historicalDiffAmount),
-          ),
+      const totalInInventoryCost = sumNullableDecimals(
+        order.lines.map(
+          (line) =>
+            line.generatedInLog?.costAmount ??
+            multiplyDecimals(
+              line.remainingQtyAtCorrection,
+              line.correctUnitCost,
+            ),
         ),
       );
+      const totalHistoricalDiffAmount = sumNullableDecimals(
+        order.lines.map((line) => line.historicalDiffAmount),
+      );
+      const totalInAmount = totalInInventoryCost.add(totalHistoricalDiffAmount);
       const entries: MonthlyReportEntry[] = [];
 
       if (!totalOutQty.eq(0) || !totalOutAmount.eq(0)) {
@@ -260,7 +266,7 @@ export class MonthlyReportAdjustmentRepository {
           targetWorkshopName: null,
           quantity: totalInQty,
           amount: totalInAmount,
-          cost: totalInAmount,
+          cost: totalInInventoryCost,
           sourceBizDate: sourceReference.sourceBizDate,
           sourceDocumentNo: sourceReference.sourceDocumentNo,
         });

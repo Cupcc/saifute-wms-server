@@ -11,6 +11,7 @@ import {
   formatMoney,
   formatQuantity,
   formatYearMonth,
+  getMonthlyReportingBusinessAmountLabel,
   getMonthlyReportingDomainMeta,
   getMonthlyReportingTopicMeta,
   type MonthlyMaterialCategoryEntry,
@@ -39,7 +40,7 @@ export interface MonthlyReportDocumentItem {
   targetStockScopeName: string | null;
   sourceWorkshopName: string | null;
   targetWorkshopName: string | null;
-  quantity: string;
+  businessAmountLabel: string;
   amount: string;
   cost: string;
   sourceBizMonth: string | null;
@@ -122,7 +123,7 @@ export class MonthlyReportItemMapperService {
       targetWorkshopName: normalizeMonthlyReportWorkshopName(
         row.targetWorkshopName,
       ),
-      quantity: formatQuantity(row.quantity),
+      businessAmountLabel: getMonthlyReportingBusinessAmountLabel(row.topicKey),
       amount: formatMoney(row.amount),
       cost: formatMoney(row.cost),
       sourceBizMonth: row.sourceBizDate

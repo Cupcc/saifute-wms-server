@@ -106,14 +106,12 @@
       </el-col>
       <right-toolbar
         v-model:showSearch="showSearch"
-        :columns="columns"
         @queryTable="getList"
       />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="rows" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="rows" column-preferences>
       <el-table-column
-        v-if="columns[0].visible"
         label="项目编码"
         prop="salesProjectCode"
         min-width="160"
@@ -131,14 +129,12 @@
         </template>
       </el-table-column>
       <el-table-column
-        v-if="columns[1].visible"
         label="项目名称"
         prop="salesProjectName"
         min-width="200"
         show-overflow-tooltip
       />
       <el-table-column
-        v-if="columns[2].visible"
         label="业务日期"
         prop="bizDate"
         width="120"
@@ -148,28 +144,24 @@
         </template>
       </el-table-column>
       <el-table-column
-        v-if="columns[3].visible"
         label="客户"
         prop="customerName"
         min-width="180"
         show-overflow-tooltip
       />
       <el-table-column
-        v-if="columns[4].visible"
         label="负责人"
         prop="managerName"
         min-width="140"
         show-overflow-tooltip
       />
       <el-table-column
-        v-if="columns[5].visible"
         label="车间"
         prop="workshopName"
         min-width="140"
         show-overflow-tooltip
       />
       <el-table-column
-        v-if="columns[6].visible"
         label="项目库存"
         width="110"
         align="right"
@@ -179,7 +171,6 @@
         </template>
       </el-table-column>
       <el-table-column
-        v-if="columns[7].visible"
         label="物料种类"
         width="110"
         align="right"
@@ -189,7 +180,6 @@
         </template>
       </el-table-column>
       <el-table-column
-        v-if="columns[8].visible"
         label="净发货"
         width="110"
         align="right"
@@ -199,7 +189,6 @@
         </template>
       </el-table-column>
       <el-table-column
-        v-if="columns[9].visible"
         label="备注"
         prop="remark"
         min-width="180"
@@ -290,19 +279,6 @@ const queryParams = reactive({
   customerId: undefined,
   workshopId: undefined,
 });
-
-const columns = ref([
-  { key: 0, label: "项目编码", visible: true },
-  { key: 1, label: "项目名称", visible: true },
-  { key: 2, label: "业务日期", visible: true },
-  { key: 3, label: "客户", visible: true },
-  { key: 4, label: "负责人", visible: true },
-  { key: 5, label: "车间", visible: true },
-  { key: 6, label: "项目库存", visible: true },
-  { key: 7, label: "物料种类", visible: true },
-  { key: 8, label: "净发货", visible: true },
-  { key: 9, label: "备注", visible: true },
-]);
 
 async function searchCustomers(keyword) {
   customerLoading.value = true;

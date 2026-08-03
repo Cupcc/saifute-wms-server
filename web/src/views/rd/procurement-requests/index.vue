@@ -75,7 +75,7 @@
 
       <div ref="tableWrapRef" class="procurement-table-wrap">
         <adaptive-table
-          auto-columns
+          column-preferences
           :data="rows"
           row-key="id"
           height="100%"

@@ -89,12 +89,12 @@
           v-hasPermi="['inbound:order:create']"
         >新增</el-button>
       </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="orderList" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="orderList" column-preferences :default-hidden-columns="['createBy']">
       <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="验收单号" align="center" min-width="140" prop="inboundNo" v-if="columns[0].visible">
+      <el-table-column sortable show-overflow-tooltip label="验收单号" align="center" min-width="140" prop="inboundNo">
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
             {{ scope.row.inboundNo }}
@@ -109,7 +109,6 @@
         prop="inboundDate"
         width="200"
         :sort-method="compareInboundDateRows"
-        v-if="columns[1].visible"
       >
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
@@ -122,42 +121,42 @@
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="总金额" align="center" min-width="100" prop="totalAmount" v-if="columns[2].visible" >
+      <el-table-column sortable show-overflow-tooltip label="总金额" align="center" min-width="100" prop="totalAmount" >
 	      <template #default="scope">
 		      <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
 			      {{ scope.row.totalAmount }}
 		      </el-button>
 	      </template>
       </el-table-column>
-	    <el-table-column sortable show-overflow-tooltip label="供应商" align="center" min-width="120" prop="supplierName" v-if="columns[3].visible">
+	    <el-table-column sortable show-overflow-tooltip label="供应商" align="center" min-width="120" prop="supplierName">
 		    <template #default="scope">
 			    <el-button link type="primary" :underline="false" @click="handleViewSupplier(scope.row.supplierId)">
 				    {{ scope.row.supplierName }}
 			    </el-button>
 		    </template>
 	    </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="经办人" align="center" min-width="100" prop="attn" v-if="columns[4].visible">
+      <el-table-column sortable show-overflow-tooltip label="经办人" align="center" min-width="100" prop="attn">
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
             {{ scope.row.attn }}
           </el-button>
         </template>
       </el-table-column>
-	    <el-table-column sortable show-overflow-tooltip label="关联部门" align="center" width="120" prop="workshopName" v-if="columns[5].visible">
+	    <el-table-column sortable show-overflow-tooltip label="关联部门" align="center" width="120" prop="workshopName">
 		    <template #default="scope">
 			    <el-button link type="primary" :underline="false" @click="handleDetail(scope.row)">
 				    {{ scope.row.workshopName }}
 			    </el-button>
 		    </template>
 	    </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="创建人" align="center" prop="createBy" v-if="columns[6].visible">
+      <el-table-column sortable show-overflow-tooltip label="创建人" align="center" prop="createBy">
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
             {{ scope.row.createBy }}
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="审核结果" align="center" width="120" prop="auditStatus" v-if="columns[7].visible">
+      <el-table-column sortable show-overflow-tooltip label="审核结果" align="center" width="120" prop="auditStatus">
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
             <span v-if="scope.row.auditStatus === '0' || scope.row.auditStatus === 0" style="color: #E6A23C;">未审核</span>
@@ -714,18 +713,6 @@ const data = reactive({
 });
 
 const { queryParams, form, rules, abandonForm, abandonRules } = toRefs(data);
-
-// 添加columns数组定义
-const columns = ref([
-  { key: 0, label: `验收单号`, visible: true },
-  { key: 1, label: `验收日期`, visible: true },
-  { key: 2, label: `总金额`, visible: true },
-  { key: 3, label: `供应商`, visible: true },
-  { key: 4, label: `经办人`, visible: true },
-  { key: 5, label: `关联部门`, visible: true },
-  { key: 6, label: `创建人`, visible: false },
-  { key: 7, label: `审核结果`, visible: true },
-]);
 
 function formatDocumentDate(value) {
   if (!value) {

@@ -48,7 +48,7 @@
       </el-row>
 
       <adaptive-table
-         auto-columns
+         column-preferences
          :fit-viewport="false"
          v-if="refreshTable"
          v-loading="loading"

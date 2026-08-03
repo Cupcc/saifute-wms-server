@@ -176,6 +176,7 @@ export const MONTHLY_REPORTING_MATERIAL_CATEGORY_TOPIC_OPTIONS: ReadonlyArray<Mo
     MonthlyReportingTopicKey.SUPPLIER_RETURN,
     MonthlyReportingTopicKey.WORKSHOP_PICK,
     MonthlyReportingTopicKey.WORKSHOP_RETURN,
+    MonthlyReportingTopicKey.WORKSHOP_SCRAP,
     MonthlyReportingTopicKey.SALES_OUTBOUND,
     MonthlyReportingTopicKey.SALES_RETURN,
   ];
@@ -278,6 +279,37 @@ export function getMonthlyReportingTopicMeta(
   topicKey: MonthlyReportingTopicKey,
 ): MonthlyReportingTopicMeta {
   return MONTHLY_REPORTING_TOPIC_META[topicKey];
+}
+
+export function getMonthlyReportingBusinessAmountLabel(
+  topicKey: MonthlyReportingTopicKey,
+): string {
+  switch (topicKey) {
+    case MonthlyReportingTopicKey.ACCEPTANCE_INBOUND:
+      return "验收入库计价金额";
+    case MonthlyReportingTopicKey.PRODUCTION_RECEIPT:
+      return "生产入库计价金额";
+    case MonthlyReportingTopicKey.SUPPLIER_RETURN:
+      return "退厂计价金额";
+    case MonthlyReportingTopicKey.SALES_OUTBOUND:
+    case MonthlyReportingTopicKey.SALES_RETURN:
+      return "WMS 销售价金额";
+    case MonthlyReportingTopicKey.WORKSHOP_PICK:
+    case MonthlyReportingTopicKey.WORKSHOP_RETURN:
+    case MonthlyReportingTopicKey.WORKSHOP_SCRAP:
+    case MonthlyReportingTopicKey.RD_PROJECT_PICK:
+    case MonthlyReportingTopicKey.RD_PROJECT_RETURN:
+    case MonthlyReportingTopicKey.RD_PROJECT_SCRAP:
+    case MonthlyReportingTopicKey.RD_HANDOFF:
+      return "单据录入金额";
+    case MonthlyReportingTopicKey.RD_STOCKTAKE_GAIN:
+    case MonthlyReportingTopicKey.RD_STOCKTAKE_LOSS:
+      return "盘点成本金额";
+    case MonthlyReportingTopicKey.PRICE_CORRECTION_IN:
+      return "调价转入成本及历史耗用差额";
+    case MonthlyReportingTopicKey.PRICE_CORRECTION_OUT:
+      return "调价转出成本";
+  }
 }
 
 const yearMonthFormatterCache = new Map<string, Intl.DateTimeFormat>();

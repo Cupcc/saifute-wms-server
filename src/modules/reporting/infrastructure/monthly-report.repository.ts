@@ -21,6 +21,8 @@ import {
   buildMonthlyReportStockScopeWhere,
   collectDistinctNumbers,
   collectDistinctStrings,
+  loadEffectiveInventoryCostByDocumentId,
+  loadEffectiveInventoryCostByDocumentLineId,
   loadSalesOrderSourceMap,
   loadWorkshopOrderSourceMap,
   resolveMonthlyReportStockScopeCode,
@@ -125,6 +127,12 @@ export class MonthlyReportRepository {
       },
       orderBy: [{ orderId: "asc" }, { lineNo: "asc" }],
     });
+    const inventoryCostByLineId =
+      await loadEffectiveInventoryCostByDocumentLineId(
+        this.prisma,
+        BusinessDocumentType.SalesStockOrder,
+        lines.map((line) => line.id),
+      );
 
     return lines.map((line) => {
       return {
@@ -145,7 +153,7 @@ export class MonthlyReportRepository {
         createdAt: line.order.createdAt,
         quantity: line.quantity,
         amount: line.amount,
-        cost: toDecimal(line.costAmount),
+        cost: inventoryCostByLineId.get(line.id) ?? toDecimal(line.costAmount),
       };
     });
   }
@@ -176,6 +184,12 @@ export class MonthlyReportRepository {
       },
       orderBy: [{ bizDate: "asc" }, { id: "asc" }],
     });
+    const inventoryCostByDocumentId =
+      await loadEffectiveInventoryCostByDocumentId(
+        this.prisma,
+        BusinessDocumentType.StockInOrder,
+        orders.map((order) => order.id),
+      );
 
     return orders.map((order) => ({
       topicKey: this.resolveStockInTopicKey(order.orderType),
@@ -209,7 +223,8 @@ export class MonthlyReportRepository {
       targetWorkshopName: null,
       quantity: order.totalQty,
       amount: order.totalAmount,
-      cost: order.totalAmount,
+      cost:
+        inventoryCostByDocumentId.get(order.id) ?? toDecimal(order.totalAmount),
       sourceBizDate: null,
       sourceDocumentNo: null,
     }));
@@ -277,10 +292,14 @@ export class MonthlyReportRepository {
         ),
       ),
     ];
-    const sourceOrderMap = await loadSalesOrderSourceMap(
-      this.prisma,
-      sourceOrderIds,
-    );
+    const [sourceOrderMap, inventoryCostByDocumentId] = await Promise.all([
+      loadSalesOrderSourceMap(this.prisma, sourceOrderIds),
+      loadEffectiveInventoryCostByDocumentId(
+        this.prisma,
+        BusinessDocumentType.SalesStockOrder,
+        orders.map((order) => order.id),
+      ),
+    ]);
 
     return orders.map((order) => {
       const sourceReference = resolveSourceReference(
@@ -345,7 +364,9 @@ export class MonthlyReportRepository {
         targetWorkshopName: null,
         quantity: order.totalQty,
         amount: order.totalAmount,
-        cost: sumNullableDecimals(order.lines.map((line) => line.costAmount)),
+        cost:
+          inventoryCostByDocumentId.get(order.id) ??
+          sumNullableDecimals(order.lines.map((line) => line.costAmount)),
         sourceBizDate: sourceReference.sourceBizDate,
         sourceDocumentNo: sourceReference.sourceDocumentNo,
       };
@@ -393,10 +414,14 @@ export class MonthlyReportRepository {
         ),
       ),
     ];
-    const sourceOrderMap = await loadWorkshopOrderSourceMap(
-      this.prisma,
-      sourceOrderIds,
-    );
+    const [sourceOrderMap, inventoryCostByDocumentId] = await Promise.all([
+      loadWorkshopOrderSourceMap(this.prisma, sourceOrderIds),
+      loadEffectiveInventoryCostByDocumentId(
+        this.prisma,
+        BusinessDocumentType.WorkshopMaterialOrder,
+        orders.map((order) => order.id),
+      ),
+    ]);
 
     return orders.map((order) => {
       const sourceReference = resolveSourceReference(
@@ -454,7 +479,9 @@ export class MonthlyReportRepository {
         targetWorkshopName: null,
         quantity: order.totalQty,
         amount: order.totalAmount,
-        cost: sumNullableDecimals(order.lines.map((line) => line.costAmount)),
+        cost:
+          inventoryCostByDocumentId.get(order.id) ??
+          sumNullableDecimals(order.lines.map((line) => line.costAmount)),
         sourceBizDate: sourceReference.sourceBizDate,
         sourceDocumentNo: sourceReference.sourceDocumentNo,
       };

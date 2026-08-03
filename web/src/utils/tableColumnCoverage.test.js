@@ -14,6 +14,20 @@ const auxiliaryRouteComponents = [
   "system/role/authUser",
   "system/user/authRole",
 ];
+const fixedSemanticTableFiles = {
+  "monitor/cache/list.vue": "缓存名称与键名组成不可隐藏的主从选择器",
+  "rd/procurement-requests/components/RdProcurementItemLinesEditor.vue":
+    "采购品项行编辑器",
+  "rd/projects/detail.vue": "研发项目详情、BOM 与动作行编辑工作流",
+  "sales/components/SalesOrderDetailDialog.vue": "销售单据详情核对表",
+  "sales/components/SalesOrderEditorDialog.vue": "销售单据行编辑器",
+  "sales-project/components/SalesProjectAcceptanceOrderDetailDialog.vue":
+    "项目验收单详情核对表",
+  "sales-project/components/SalesProjectAcceptanceOrderDialog.vue":
+    "项目验收单行编辑器",
+  "sales-project/components/SalesProjectDetailPage.vue":
+    "项目物料选择与销售草稿创建工作流",
+};
 
 function readSource(filePath) {
   return fs.readFileSync(filePath, "utf8");
@@ -75,11 +89,21 @@ function hasDataTable(source) {
   return /<(?:el-table|adaptive-table)(?=[\s>])/.test(source);
 }
 
+function collectOpeningTags(source, componentName) {
+  return [
+    ...source.matchAll(
+      new RegExp(`<${componentName}(?=[\\s>])[\\s\\S]*?>`, "g"),
+    ),
+  ].map((match) => match[0]);
+}
+
+function tagEnablesColumnPreferences(tag) {
+  return /(?:^|\s)column-preferences(?:\s|=|\/>|>)/.test(tag);
+}
+
 function hasColumnPreferences(source) {
-  return [...source.matchAll(/<adaptive-table(?=[\s>])([\s\S]*?)>/g)].some(
-    (match) =>
-      /(?:^|\s)auto-columns(?:\s|>|$)/.test(match[1]) ||
-      /:column-config=/.test(match[1]),
+  return collectOpeningTags(source, "adaptive-table").some(
+    tagEnablesColumnPreferences,
   );
 }
 
@@ -94,6 +118,20 @@ function collectVueFiles(directory) {
 }
 
 describe("route table column preference coverage", () => {
+  it("keeps every standard reporting table in the supported route registry", () => {
+    const supportedComponents = new Set(collectSupportedRouteComponents());
+    const expectedReportingComponents = [
+      "reporting/inventory-summary/index",
+      "reporting/material-category-summary/index",
+      "reporting/trends/index",
+      "reporting/monthly-reporting/index",
+    ];
+
+    for (const component of expectedReportingComponents) {
+      expect(supportedComponents.has(component)).toBe(true);
+    }
+  });
+
   it("covers every supported route component that directly renders a data table", () => {
     const uncovered = [];
 
@@ -119,14 +157,16 @@ describe("route table column preference coverage", () => {
     const monthlySource = readSource(
       resolveViewComponent("reporting/monthly-reporting/index"),
     );
-    const autoTableTags = [
-      ...monthlySource.matchAll(/<adaptive-table(?=[\s>])([\s\S]*?)>/g),
-    ].filter((match) => /(?:^|\s)auto-columns(?:\s|>|$)/.test(match[1]));
-    const tableKeys = autoTableTags
-      .map((match) => match[1].match(/:table-key="([^"]+)"/)?.[1])
+    const preferenceTableTags = collectOpeningTags(
+      monthlySource,
+      "adaptive-table",
+    ).filter(tagEnablesColumnPreferences);
+    const tableKeys = preferenceTableTags
+      .map((tag) => tag.match(/:table-key="([^"]+)"/)?.[1])
       .filter(Boolean);
 
-    expect(autoTableTags).toHaveLength(10);
+    expect(preferenceTableTags).toHaveLength(10);
+    expect(tableKeys).toHaveLength(preferenceTableTags.length);
     expect(new Set(tableKeys).size).toBe(10);
     expect(
       hasColumnPreferences(
@@ -138,6 +178,11 @@ describe("route table column preference coverage", () => {
         readSource(
           resolveViewComponent("reporting/material-category-summary/index"),
         ),
+      ),
+    ).toBe(true);
+    expect(
+      hasColumnPreferences(
+        readSource(resolveViewComponent("reporting/trends/index")),
       ),
     ).toBe(true);
   });
@@ -168,17 +213,67 @@ describe("route table column preference coverage", () => {
         `v-if="sectionExpanded.${sectionKey}"`,
       );
     }
+    expect(monthlySource).toContain(
+      "getSectionExpansionPreferenceStorageKey(",
+    );
+    expect(monthlySource).toContain("userStore.id || userStore.name");
+    expect(monthlySource).toContain("saveSectionExpansionPreference(");
+    expect(monthlySource).toContain("loadSectionExpansionPreference(");
+    expect(monthlySource).toMatch(
+      /watch\(\s*sectionExpansionPreferenceStorageKey,\s*restoreSectionExpansionPreferences,\s*\{ immediate: true \},\s*\)/,
+    );
   });
 
-  it("keeps every explicit toolbar column contract connected to AdaptiveTable", () => {
-    const disconnected = collectVueFiles(viewsRoot)
+  it("keeps every raw table-only view intentionally classified", () => {
+    const rawTableOnlyFiles = collectVueFiles(viewsRoot)
       .filter((filePath) => {
         const source = readSource(filePath);
-        return /<right-toolbar[\s\S]{0,500}:columns=/.test(source) &&
-          !/:column-config=/.test(source);
+        return /<el-table(?=[\s>])/.test(source) &&
+          !hasColumnPreferences(source);
       })
-      .map((filePath) => path.relative(repositoryRoot, filePath));
+      .map((filePath) => path.relative(viewsRoot, filePath));
+    const unclassified = rawTableOnlyFiles.filter(
+      (filePath) => !Object.hasOwn(fixedSemanticTableFiles, filePath),
+    );
+    const staleClassifications = Object.keys(fixedSemanticTableFiles).filter(
+      (filePath) => !rawTableOnlyFiles.includes(filePath),
+    );
 
-    expect(disconnected).toEqual([]);
+    expect({ unclassified, staleClassifications }).toEqual({
+      unclassified: [],
+      staleClassifications: [],
+    });
+  });
+
+  it("forbids legacy page-level column preference contracts", () => {
+    const violations = [];
+
+    for (const filePath of collectVueFiles(viewsRoot)) {
+      const source = readSource(filePath);
+      const relativePath = path.relative(repositoryRoot, filePath);
+
+      if (/\bauto-columns\b/.test(source)) {
+        violations.push(`${relativePath}: auto-columns`);
+      }
+      if (/:column-config\s*=/.test(source)) {
+        violations.push(`${relativePath}: column-config`);
+      }
+      if (
+        collectOpeningTags(source, "right-toolbar").some((tag) =>
+          /(?:^|\s):columns\s*=/.test(tag),
+        )
+      ) {
+        violations.push(`${relativePath}: RightToolbar columns`);
+      }
+      if (
+        /v-if\s*=\s*["'][^"']*\bcolumns\s*\[[^\]]+\]\s*\.visible/.test(
+          source,
+        )
+      ) {
+        violations.push(`${relativePath}: columns[index].visible`);
+      }
+    }
+
+    expect(violations).toEqual([]);
   });
 });

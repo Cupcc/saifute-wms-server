@@ -32,55 +32,83 @@
       </el-form>
 
       <el-row :gutter="16" class="summary-row">
-        <el-col :xs="24" :sm="8">
+        <el-col :xs="24" :sm="12">
           <div class="stat-box">
-            <div class="stat-label">记录数</div>
-            <div class="stat-value">{{ rows.length }}</div>
+            <div class="stat-label">
+              <reporting-metric-label
+                label="业务单据数"
+                :content="trendMetricHelp.documentCount"
+              />
+            </div>
+            <div class="stat-value">{{ summary.documentCount }}</div>
           </div>
         </el-col>
-        <el-col :xs="24" :sm="8">
+        <el-col :xs="24" :sm="12">
           <div class="stat-box">
-            <div class="stat-label">总数量</div>
-            <div class="stat-value">{{ summary.totalQty }}</div>
-          </div>
-        </el-col>
-        <el-col :xs="24" :sm="8">
-          <div class="stat-box">
-            <div class="stat-label">总金额</div>
-            <div class="stat-value">{{ summary.totalAmount }}</div>
+            <div class="stat-label">
+              <reporting-metric-label
+                label="库存成本净变动"
+                :content="trendMetricHelp.inventoryCostNetChange"
+              />
+            </div>
+            <div class="stat-value">{{ summary.inventoryCostNetChange }}</div>
           </div>
         </el-col>
       </el-row>
 
-      <el-table :data="rows" stripe v-loading="loading">
-        <el-table-column prop="date" label="日期" min-width="120" />
-        <el-table-column label="类型" min-width="140">
+      <adaptive-table
+        column-preferences
+        :fit-viewport="false"
+        :data="rows"
+        stripe
+        v-loading="loading"
+      >
+        <reporting-metric-column
+          prop="date"
+          label="日期"
+          :content="trendMetricHelp.date"
+        />
+        <reporting-metric-column
+          label="类型"
+          :content="trendMetricHelp.trendType"
+        >
           <template #default="{ row }">
             {{ formatTrendType(row.trendType) }}
           </template>
-        </el-table-column>
-        <el-table-column prop="documentCount" label="单据数" min-width="100" />
-        <el-table-column prop="totalQty" label="总数量" min-width="140" />
-        <el-table-column prop="totalAmount" label="总金额" min-width="140" />
-      </el-table>
+        </reporting-metric-column>
+        <reporting-metric-column
+          prop="documentCount"
+          label="业务单据数"
+          :content="trendMetricHelp.documentCount"
+        />
+        <reporting-metric-column
+          prop="totalAmount"
+          label="库存成本金额"
+          :content="trendMetricHelp.totalAmount"
+        />
+      </adaptive-table>
     </el-card>
   </div>
 </template>
 
 <script setup name="ReportingTrendsPage">
-import { computed, onMounted, ref } from "vue";
+import { onMounted, ref } from "vue";
 import { getTrendSeries } from "@/api/reporting";
-import { formatQty } from "@/utils/format";
+import ReportingMetricColumn from "../components/ReportingMetricColumn.vue";
+import ReportingMetricLabel from "../components/ReportingMetricLabel.vue";
+import { trendMetricHelp } from "../reportingMetricHelp";
 
 const loading = ref(false);
 const rows = ref([]);
 const trendOptions = [
   { label: "全部", value: "ALL" },
-  { label: "入库", value: "INBOUND" },
-  { label: "销售出库", value: "SALES" },
-  { label: "领退料", value: "WORKSHOP_MATERIAL" },
-  { label: "研发项目", value: "RD_PROJECT" },
-  { label: "研发协同", value: "RD" },
+  { label: "入库域净成本流量", value: "INBOUND" },
+  { label: "销售出库成本", value: "SALES" },
+  { label: "车间净耗用成本", value: "WORKSHOP_MATERIAL" },
+  { label: "研发项目净耗用成本", value: "RD_PROJECT" },
+  { label: "RD交接", value: "RD_HANDOFF" },
+  { label: "RD盘盈", value: "RD_STOCKTAKE_GAIN" },
+  { label: "RD盘亏", value: "RD_STOCKTAKE_LOSS" },
 ];
 
 const filters = ref({
@@ -88,17 +116,9 @@ const filters = ref({
   dateRange: getDefaultRange(),
 });
 
-const summary = computed(() => {
-  let totalQty = 0;
-  let totalAmount = 0;
-  rows.value.forEach((item) => {
-    totalQty += Number(item.totalQty || 0);
-    totalAmount += Number(item.totalAmount || 0);
-  });
-  return {
-    totalQty: formatQty(totalQty),
-    totalAmount: totalAmount.toFixed(4),
-  };
+const summary = ref({
+  documentCount: 0,
+  inventoryCostNetChange: "0.0000",
 });
 
 function getDefaultRange() {
@@ -111,11 +131,13 @@ function getDefaultRange() {
 function formatTrendType(value) {
   const labelMap = {
     ALL: "全部",
-    INBOUND: "入库",
-    SALES: "销售出库",
-    WORKSHOP_MATERIAL: "领退料",
-    RD_PROJECT: "研发项目",
-    RD: "研发协同",
+    INBOUND: "入库域净成本流量",
+    SALES: "销售出库成本",
+    WORKSHOP_MATERIAL: "车间净耗用成本",
+    RD_PROJECT: "研发项目净耗用成本",
+    RD_HANDOFF: "RD交接",
+    RD_STOCKTAKE_GAIN: "RD盘盈",
+    RD_STOCKTAKE_LOSS: "RD盘亏",
   };
   return labelMap[value] || value;
 }
@@ -130,6 +152,7 @@ async function loadRows() {
       dateTo,
     });
     rows.value = response.data?.items || [];
+    summary.value = response.data?.summary || summary.value;
   } finally {
     loading.value = false;
   }

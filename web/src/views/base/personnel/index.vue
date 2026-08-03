@@ -47,14 +47,14 @@
           v-hasPermi="['master:personnel:create']"
         >新增</el-button>
       </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="personnelList" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="personnelList" column-preferences>
       <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="姓名" align="center" prop="name" v-if="columns[0].visible" />
-      <el-table-column sortable show-overflow-tooltip label="手机号" align="center" prop="contactPhone" v-if="columns[1].visible" />
-      <el-table-column sortable show-overflow-tooltip label="所属车间" align="center" prop="workshopName" v-if="columns[2].visible">
+      <el-table-column sortable show-overflow-tooltip label="姓名" align="center" prop="name" />
+      <el-table-column sortable show-overflow-tooltip label="手机号" align="center" prop="contactPhone" />
+      <el-table-column sortable show-overflow-tooltip label="所属车间" align="center" prop="workshopName">
         <template #default="scope">
           {{ scope.row.workshopName || "-" }}
         </template>
@@ -155,12 +155,6 @@ const data = reactive({
 });
 
 const { queryParams, form, rules } = toRefs(data);
-
-const columns = ref([
-  { key: 0, label: `姓名`, visible: true },
-  { key: 1, label: `手机号`, visible: true },
-  { key: 2, label: `所属车间`, visible: true },
-]);
 
 /** 查询人员信息列表 */
 function getList() {
