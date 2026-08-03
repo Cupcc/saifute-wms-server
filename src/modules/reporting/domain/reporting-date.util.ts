@@ -9,22 +9,8 @@
 export function resolveTodayRange(businessTimezone: string) {
   const now = new Date();
   const parts = getTimeZoneDateParts(now, businessTimezone);
-  const start = createDateInBusinessTimezone(
-    businessTimezone,
-    parts.year,
-    parts.month,
-    parts.day,
-  );
-  const end = createDateInBusinessTimezone(
-    businessTimezone,
-    parts.year,
-    parts.month,
-    parts.day,
-    23,
-    59,
-    59,
-    999,
-  );
+  const start = createDatabaseDate(parts.year, parts.month, parts.day);
+  const end = createDatabaseDate(parts.year, parts.month, parts.day);
   return { start, end };
 }
 
@@ -36,16 +22,7 @@ export function resolveDateRange(
   const endParts = dateTo
     ? parseDateOnly(dateTo)
     : getTimeZoneDateParts(new Date(), businessTimezone);
-  const end = createDateInBusinessTimezone(
-    businessTimezone,
-    endParts.year,
-    endParts.month,
-    endParts.day,
-    23,
-    59,
-    59,
-    999,
-  );
+  const end = createDatabaseDate(endParts.year, endParts.month, endParts.day);
 
   const startParts = dateFrom
     ? parseDateOnly(dateFrom)
@@ -53,13 +30,16 @@ export function resolveDateRange(
         new Date(end.getTime() - 6 * 24 * 60 * 60 * 1000),
         businessTimezone,
       );
-  const start = createDateInBusinessTimezone(
-    businessTimezone,
+  const start = createDatabaseDate(
     startParts.year,
     startParts.month,
     startParts.day,
   );
   return { dateFrom: start, dateTo: end };
+}
+
+function createDatabaseDate(year: number, month: number, day: number) {
+  return new Date(Date.UTC(year, month - 1, day));
 }
 
 export function toDateOnly(value: Date, businessTimezone: string) {

@@ -134,7 +134,6 @@
       </el-col>
       <right-toolbar
         v-model:showSearch="showSearch"
-        :columns="columns"
         @queryTable="getList"
       />
     </el-row>
@@ -144,12 +143,11 @@
       stripe
       v-loading="loading"
       :data="rows"
-      :column-config="columns"
+      column-preferences
       @selection-change="handleSelectionChange"
     >
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column
-        v-if="columns[0].visible"
         label="单号"
         prop="documentNo"
         min-width="180"
@@ -167,7 +165,6 @@
         </template>
       </el-table-column>
       <el-table-column
-        v-if="columns[1].visible"
         label="业务日期"
         prop="bizDate"
         width="200"
@@ -184,35 +181,31 @@
         </template>
       </el-table-column>
       <el-table-column
-        v-if="columns[2].visible"
         label="客户"
         prop="customerName"
         min-width="180"
         show-overflow-tooltip
       />
       <el-table-column
-        v-if="columns[3].visible"
         label="车间"
         prop="workshopName"
         min-width="120"
         show-overflow-tooltip
       />
       <el-table-column
-        v-if="columns[4].visible"
         label="经手人"
         prop="handlerName"
         min-width="80"
         show-overflow-tooltip
       />
       <el-table-column
-        v-if="showSourceOutbound && columns[5].visible"
+        v-if="showSourceOutbound"
         label="来源出库 ID"
         prop="sourceOutboundOrderId"
         width="120"
         align="center"
       />
       <el-table-column
-        v-if="columns[quantityColumnIndex].visible"
         label="总数量"
         prop="totalQty"
         width="70"
@@ -223,7 +216,6 @@
         </template>
       </el-table-column>
       <el-table-column
-        v-if="columns[amountColumnIndex].visible"
         label="总金额"
         prop="totalAmount"
         width="100"
@@ -234,7 +226,6 @@
         </template>
       </el-table-column>
       <el-table-column
-        v-if="columns[statusColumnIndex].visible"
         label="审核状态"
         prop="auditStatus"
         width="110"
@@ -247,7 +238,6 @@
         </template>
       </el-table-column>
       <el-table-column
-        v-if="columns[remarkColumnIndex].visible"
         label="备注"
         prop="remark"
         min-width="180"
@@ -415,38 +405,6 @@ const queryParams = reactive({
   workshopId: undefined,
   sourceOutboundOrderId: "",
 });
-
-const columns = ref(
-  props.showSourceOutbound
-    ? [
-        { key: 0, label: "单号", visible: true },
-        { key: 1, label: "业务日期", visible: true },
-        { key: 2, label: "客户", visible: true },
-        { key: 3, label: "车间", visible: true },
-        { key: 4, label: "经手人", visible: true },
-        { key: 5, label: "来源出库 ID", visible: true },
-        { key: 6, label: "总数量", visible: true },
-        { key: 7, label: "总金额", visible: true },
-        { key: 8, label: "审核状态", visible: true },
-        { key: 9, label: "备注", visible: true },
-      ]
-    : [
-        { key: 0, label: "单号", visible: true },
-        { key: 1, label: "业务日期", visible: true },
-        { key: 2, label: "客户", visible: true },
-        { key: 3, label: "车间", visible: true },
-        { key: 4, label: "经手人", visible: true },
-        { key: 5, label: "总数量", visible: true },
-        { key: 6, label: "总金额", visible: true },
-        { key: 7, label: "审核状态", visible: true },
-        { key: 8, label: "备注", visible: true },
-      ],
-);
-
-const quantityColumnIndex = computed(() => (props.showSourceOutbound ? 6 : 5));
-const amountColumnIndex = computed(() => (props.showSourceOutbound ? 7 : 6));
-const statusColumnIndex = computed(() => (props.showSourceOutbound ? 8 : 7));
-const remarkColumnIndex = computed(() => (props.showSourceOutbound ? 9 : 8));
 
 function buildQuery() {
   return {
@@ -701,11 +659,6 @@ void [
   multiple,
   queryLabelWidth,
   queryParams,
-  columns,
-  quantityColumnIndex,
-  amountColumnIndex,
-  statusColumnIndex,
-  remarkColumnIndex,
   resetQuery,
   handleSelectionChange,
   handleAdd,

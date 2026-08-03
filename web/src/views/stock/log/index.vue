@@ -9,7 +9,6 @@
           </div>
           <right-toolbar
             :search="false"
-            :columns="columns"
             :gutter="0"
             @queryTable="loadRows"
           />
@@ -121,11 +120,10 @@
         border
         stripe
         v-loading="loading"
-        :column-config="columns"
+        column-preferences
         table-layout="auto"
       >
         <el-table-column
-          v-if="columns[0].visible"
           prop="bizDate"
           label="业务日期"
           width="105"
@@ -136,7 +134,6 @@
           </template>
         </el-table-column>
         <el-table-column
-          v-if="columns[1].visible"
           label="物料"
           min-width="180"
           align="center"
@@ -149,7 +146,6 @@
         </el-table-column>
 
         <el-table-column
-          v-if="columns[2].visible"
           label="车间"
           min-width="100"
           align="center"
@@ -160,7 +156,6 @@
           </template>
         </el-table-column>
         <el-table-column
-          v-if="columns[3].visible"
           prop="direction"
           label="方向"
           width="70"
@@ -173,7 +168,6 @@
           </template>
         </el-table-column>
         <el-table-column
-          v-if="columns[4].visible"
           prop="afterQty"
           label="变动后总库存"
           align="center"
@@ -183,7 +177,6 @@
           </template>
         </el-table-column>
         <el-table-column
-          v-if="columns[5].visible"
           prop="priceLayerChangeQty"
           label="当前单价变动数量"
           align="center"
@@ -195,7 +188,6 @@
           </template>
         </el-table-column>
         <el-table-column
-          v-if="columns[6].visible"
           prop="priceLayerAfterQty"
           label="当前单价变动后数量"
           align="center"
@@ -205,7 +197,6 @@
           </template>
         </el-table-column>
         <el-table-column
-          v-if="columns[7].visible"
           label="成本单价"
           prop="unitCost"
           align="right"
@@ -216,7 +207,6 @@
           </template>
         </el-table-column>
         <el-table-column
-          v-if="columns[8].visible"
           label="成本金额"
           prop="costAmount"
           width="100"
@@ -228,14 +218,12 @@
           </template>
         </el-table-column>
         <el-table-column
-          v-if="columns[9].visible"
           prop="operatorId"
           label="操作人"
           width="80"
           align="center"
         />
         <el-table-column
-          v-if="columns[10].visible"
           label="单据编号"
           min-width="140"
           align="center"
@@ -255,7 +243,6 @@
           </template>
         </el-table-column>
         <el-table-column
-          v-if="columns[11].visible"
           prop="note"
           label="备注"
           min-width="140"
@@ -264,7 +251,6 @@
         />
 
         <el-table-column
-          v-if="columns[12].visible"
           label="操作类型"
           min-width="130"
           align="center"
@@ -285,7 +271,6 @@
           </template>
         </el-table-column>
         <el-table-column
-          v-if="columns[13].visible"
           label="单据类型"
           min-width="160"
           align="center"
@@ -298,7 +283,6 @@
         </el-table-column>
 
         <el-table-column
-          v-if="columns[14].visible"
           label="业务模块"
           width="100"
           align="center"
@@ -308,7 +292,6 @@
           </template>
         </el-table-column>
         <el-table-column
-          v-if="columns[15].visible"
           label="库存范围"
           width="80"
           align="center"
@@ -318,7 +301,6 @@
           </template>
         </el-table-column>
         <el-table-column
-          v-if="columns[16].visible"
           prop="occurredAt"
           label="发生时间"
           width="170"
@@ -496,25 +478,6 @@ const filters = ref({
   businessDocumentType: "",
   businessDocumentNumber: "",
 });
-const columns = ref([
-  { key: 0, label: "业务日期", visible: true },
-  { key: 1, label: "物料", visible: true },
-  { key: 2, label: "车间", visible: true },
-  { key: 3, label: "方向", visible: true },
-  { key: 4, label: "变动后总库存", visible: true },
-  { key: 5, label: "当前单价变动数量", visible: true },
-  { key: 6, label: "当前单价变动后数量", visible: true },
-  { key: 7, label: "成本单价", visible: true },
-  { key: 8, label: "成本金额", visible: true },
-  { key: 9, label: "操作人", visible: true },
-  { key: 10, label: "单据编号", visible: true },
-  { key: 11, label: "备注", visible: true },
-  { key: 12, label: "操作类型", visible: true },
-  { key: 13, label: "单据类型", visible: true },
-  { key: 14, label: "业务模块", visible: true },
-  { key: 15, label: "库存范围", visible: true },
-  { key: 16, label: "发生时间", visible: true },
-]);
 const documentDetailOpen = ref(false);
 const documentDetailLoading = ref(false);
 const selectedLog = ref(null);

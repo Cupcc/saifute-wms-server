@@ -1,19 +1,16 @@
 <template>
   <div
-    v-if="autoColumns"
-    class="adaptive-table__auto-shell"
-    :style="autoShellStyle"
+    v-if="columnPreferences"
+    class="adaptive-table__preference-shell"
+    :style="preferenceShellStyle"
   >
     <div
-      v-if="generatedColumns.length"
+      v-if="preferenceColumns.length"
       class="adaptive-table__column-toolbar"
     >
-      <right-toolbar
-        :search="false"
-        :show-refresh="false"
-        :columns="generatedColumns"
+      <column-settings
+        :columns="preferenceColumns"
         :table-key="tableKey"
-        :gutter="0"
       />
     </div>
     <el-table
@@ -38,6 +35,7 @@
 
 <script setup>
 import Sortable from "sortablejs";
+import ColumnSettings from "./ColumnSettings.vue";
 import {
   computed,
   nextTick,
@@ -49,25 +47,24 @@ import {
   watch,
 } from "vue";
 import {
-  createAutoTableColumnConfig,
-  getAutoManagedRuntimeColumns,
-  getOrderedTableColumns,
+  createRuntimeTableColumnPreferences,
+  getPreferenceManagedRuntimeColumns,
   getTableColumnId,
   isRuntimeTableColumnDeclared,
-  mergeAutoTableColumnConfig,
+  mergeRuntimeTableColumnPreferences,
   reorderVisibleTableColumns,
 } from "@/utils/tableColumnPreferences";
 
 defineOptions({ inheritAttrs: false });
 
 const props = defineProps({
-  columnConfig: {
-    type: Array,
-    default: undefined,
-  },
-  autoColumns: {
+  columnPreferences: {
     type: Boolean,
     default: false,
+  },
+  defaultHiddenColumns: {
+    type: Array,
+    default: () => [],
   },
   tableKey: {
     type: String,
@@ -82,12 +79,16 @@ const props = defineProps({
 const attrs = useAttrs();
 const tableRef = ref(null);
 const tableHeight = ref(400);
-const generatedColumns = ref([]);
+const preferenceColumns = ref([]);
 const minHeight = 150;
+const minColumnWidth = 40;
 const draggableHeaderClass = "adaptive-table__draggable-header";
+const columnResizeHandleClass = "adaptive-table__column-resize-handle";
 let headerSortable;
 let columnSyncFrame;
-let autoRuntimeColumns = [];
+let columnResizeFrame;
+let activeColumnResizeCleanup;
+let declaredRuntimeColumns = [];
 
 const tableAttrs = computed(() =>
   Object.fromEntries(
@@ -100,7 +101,7 @@ const requestedHeight = computed(() => attrs.height);
 const resolvedMaxHeight = computed(
   () => attrs["max-height"] ?? attrs.maxHeight,
 );
-const autoShellStyle = computed(() => {
+const preferenceShellStyle = computed(() => {
   if (requestedHeight.value === undefined) {
     return undefined;
   }
@@ -111,10 +112,6 @@ const autoShellStyle = computed(() => {
         : requestedHeight.value,
   };
 });
-const activeColumnConfig = computed(() =>
-  props.autoColumns ? generatedColumns.value : props.columnConfig,
-);
-
 const hasCustomHeight = computed(
   () =>
     attrs.height !== undefined ||
@@ -129,9 +126,9 @@ const resolvedHeight = computed(
     requestedHeight.value ??
     (shouldCalculateHeight.value ? tableHeight.value : undefined),
 );
-const columnConfigSignature = computed(() =>
+const preferenceSignature = computed(() =>
   JSON.stringify(
-    (activeColumnConfig.value ?? []).map((column, index) => ({
+    preferenceColumns.value.map((column, index) => ({
       id: getTableColumnId(column, index),
       order: column.order,
       runtimeColumnId: column.runtimeColumnId,
@@ -154,7 +151,8 @@ function getElementHeightWithMargin(element) {
 
 function findPaginationElement(tableElement) {
   const tableContainer =
-    tableElement?.closest(".adaptive-table__auto-shell") ?? tableElement;
+    tableElement?.closest(".adaptive-table__preference-shell") ??
+    tableElement;
   let current = tableContainer?.nextElementSibling ?? null;
 
   while (current) {
@@ -209,36 +207,35 @@ function scheduleTableHeightCalculation() {
   });
 }
 
-function normalizeColumnLabel(value) {
-  return typeof value === "string" ? value.trim() : "";
-}
-
 function getRuntimeColumns() {
   return tableRef.value?.store?.states?._columns?.value ?? [];
 }
 
-function syncAutoColumnConfig() {
-  if (!props.autoColumns) {
+function syncPreferenceColumns() {
+  if (!props.columnPreferences) {
     return;
   }
 
   const runtimeColumns = getRuntimeColumns();
-  autoRuntimeColumns = autoRuntimeColumns.filter(
+  declaredRuntimeColumns = declaredRuntimeColumns.filter(
     isRuntimeTableColumnDeclared,
   );
 
   const knownRuntimeColumnIds = new Set(
-    autoRuntimeColumns.map((column) => String(column.id)),
+    declaredRuntimeColumns.map((column) => String(column.id)),
   );
   for (const runtimeColumn of runtimeColumns) {
     if (!knownRuntimeColumnIds.has(String(runtimeColumn.id))) {
-      autoRuntimeColumns.push(runtimeColumn);
+      declaredRuntimeColumns.push(runtimeColumn);
       knownRuntimeColumnIds.add(String(runtimeColumn.id));
     }
   }
 
-  const discoveredColumns = createAutoTableColumnConfig(autoRuntimeColumns);
-  const currentStructure = generatedColumns.value
+  const discoveredColumns = createRuntimeTableColumnPreferences(
+    declaredRuntimeColumns,
+    props.defaultHiddenColumns,
+  );
+  const currentStructure = preferenceColumns.value
     .map(
       (column, index) =>
         `${getTableColumnId(column, index)}:${column.runtimeColumnId}:${column.label}`,
@@ -252,54 +249,28 @@ function syncAutoColumnConfig() {
     .join("\u001f");
 
   if (currentStructure !== discoveredStructure) {
-    generatedColumns.value = mergeAutoTableColumnConfig(
-      generatedColumns.value,
+    preferenceColumns.value = mergeRuntimeTableColumnPreferences(
+      preferenceColumns.value,
       discoveredColumns,
     );
   }
 }
 
-function mapRuntimeColumnsToConfig(runtimeColumns) {
-  if (props.autoColumns) {
-    const configByRuntimeColumnId = new Map(
-      generatedColumns.value.map((config) => [
-        String(config.runtimeColumnId),
-        config,
-      ]),
-    );
-    return new Map(
-      runtimeColumns.flatMap((runtimeColumn) => {
-        const config = configByRuntimeColumnId.get(String(runtimeColumn.id));
-        return config ? [[runtimeColumn.id, config]] : [];
-      }),
-    );
-  }
-
-  const configQueuesByLabel = new Map();
-
-  for (const config of activeColumnConfig.value ?? []) {
-    if (config.visible === false) {
-      continue;
-    }
-    const label = normalizeColumnLabel(config.label);
-    if (!label) {
-      continue;
-    }
-    const queue = configQueuesByLabel.get(label) ?? [];
-    queue.push(config);
-    configQueuesByLabel.set(label, queue);
-  }
-
-  const configByRuntimeColumnId = new Map();
-  for (const runtimeColumn of runtimeColumns) {
-    const label = normalizeColumnLabel(runtimeColumn.label);
-    const queue = configQueuesByLabel.get(label);
-    const config = queue?.shift();
-    if (config) {
-      configByRuntimeColumnId.set(runtimeColumn.id, config);
-    }
-  }
-  return configByRuntimeColumnId;
+function mapRuntimeColumnsToPreferences(runtimeColumns) {
+  const preferenceByRuntimeColumnId = new Map(
+    preferenceColumns.value.map((preference) => [
+      String(preference.runtimeColumnId),
+      preference,
+    ]),
+  );
+  return new Map(
+    runtimeColumns.flatMap((runtimeColumn) => {
+      const preference = preferenceByRuntimeColumnId.get(
+        String(runtimeColumn.id),
+      );
+      return preference ? [[runtimeColumn.id, preference]] : [];
+    }),
+  );
 }
 
 function findHeaderRow() {
@@ -324,120 +295,206 @@ function findHeaderCell(headerRow, runtimeColumnId) {
   );
 }
 
-function applyConfiguredColumnOrder() {
-  const columnConfig = activeColumnConfig.value;
-  if (!columnConfig?.length) {
+function notifyHeaderDragEnd(newWidth, oldWidth, column, event) {
+  const listener = attrs.onHeaderDragend;
+  const listeners = Array.isArray(listener) ? listener : [listener];
+
+  for (const currentListener of listeners) {
+    currentListener?.(newWidth, oldWidth, column, event);
+  }
+}
+
+function scheduleColumnResizeLayout(column, width, handle) {
+  columnResizeFrame && window.cancelAnimationFrame(columnResizeFrame);
+  columnResizeFrame = window.requestAnimationFrame(() => {
+    columnResizeFrame = undefined;
+    column.width = width;
+    column.realWidth = width;
+    handle.setAttribute("aria-valuenow", String(width));
+    tableRef.value?.store?.scheduleLayout?.(false, true);
+  });
+}
+
+function startColumnResize(event, column, cell, handle) {
+  if (event.button !== 0) {
     return;
   }
 
-  if (props.autoColumns) {
-    const currentRuntimeColumns = getRuntimeColumns();
-    const currentRuntimeColumnIds = new Set(
-      currentRuntimeColumns.map((column) => String(column.id)),
-    );
-    const configuredRuntimeColumnIds = new Set(
-      columnConfig.map((column) => String(column.runtimeColumnId)),
-    );
-    const availableRuntimeColumns = autoRuntimeColumns.filter(
-      (column) =>
-        configuredRuntimeColumnIds.has(String(column.id)) ||
-        currentRuntimeColumnIds.has(String(column.id)),
-    );
-    const reorderedRuntimeColumns = getAutoManagedRuntimeColumns(
-      availableRuntimeColumns,
-      columnConfig,
-    );
-    const orderChanged =
-      reorderedRuntimeColumns.length !== currentRuntimeColumns.length ||
-      reorderedRuntimeColumns.some(
-        (column, index) => column !== currentRuntimeColumns[index],
-      );
-    if (!orderChanged) {
-      return;
-    }
+  event.preventDefault();
+  event.stopPropagation();
+  activeColumnResizeCleanup?.();
 
-    const tableStore = tableRef.value?.store;
-    tableStore.states._columns.value = reorderedRuntimeColumns;
-    tableStore.updateColumns();
+  const startX = event.clientX;
+  const oldWidth = Math.round(cell.getBoundingClientRect().width);
+  let nextWidth = oldWidth;
+  const previousCursor = document.body.style.cursor;
+  const previousUserSelect = document.body.style.userSelect;
+
+  document.body.style.cursor = "col-resize";
+  document.body.style.userSelect = "none";
+  cell.classList.add("adaptive-table__column-resizing");
+
+  function handlePointerMove(moveEvent) {
+    nextWidth = Math.max(
+      minColumnWidth,
+      Math.round(oldWidth + moveEvent.clientX - startX),
+    );
+    scheduleColumnResizeLayout(column, nextWidth, handle);
+  }
+
+  function cleanup() {
+    window.removeEventListener("pointermove", handlePointerMove);
+    window.removeEventListener("pointerup", finishColumnResize);
+    window.removeEventListener("pointercancel", finishColumnResize);
+    document.body.style.cursor = previousCursor;
+    document.body.style.userSelect = previousUserSelect;
+    cell.classList.remove("adaptive-table__column-resizing");
+    if (activeColumnResizeCleanup === cleanup) {
+      activeColumnResizeCleanup = undefined;
+    }
+  }
+
+  function finishColumnResize(endEvent) {
+    if (columnResizeFrame) {
+      window.cancelAnimationFrame(columnResizeFrame);
+      columnResizeFrame = undefined;
+      column.width = nextWidth;
+      column.realWidth = nextWidth;
+    }
+    cleanup();
     tableRef.value?.doLayout?.();
+    if (nextWidth !== oldWidth) {
+      notifyHeaderDragEnd(nextWidth, oldWidth, column, endEvent);
+    }
+  }
+
+  activeColumnResizeCleanup = cleanup;
+  window.addEventListener("pointermove", handlePointerMove);
+  window.addEventListener("pointerup", finishColumnResize);
+  window.addEventListener("pointercancel", finishColumnResize);
+}
+
+function initializeColumnResizeHandles(headerRow, runtimeColumns) {
+  const activeHandles = new Set();
+
+  for (const column of runtimeColumns) {
+    if (column.resizable === false || column.children?.length) {
+      continue;
+    }
+
+    const cell = findHeaderCell(headerRow, column.id);
+    if (!cell) {
+      continue;
+    }
+
+    const columnId = String(column.id);
+    let handle = cell.querySelector(`:scope > .${columnResizeHandleClass}`);
+    if (handle?.dataset.columnId !== columnId) {
+      handle?.remove();
+      handle = undefined;
+    }
+    if (!handle) {
+      handle = document.createElement("span");
+      handle.className = columnResizeHandleClass;
+      handle.dataset.columnId = columnId;
+      handle.title = "拖动竖线调整列宽";
+      handle.setAttribute("role", "separator");
+      handle.setAttribute("aria-orientation", "vertical");
+      handle.setAttribute("aria-label", `调整${column.label || "此列"}列宽`);
+      handle.setAttribute("aria-valuemin", String(minColumnWidth));
+      handle.addEventListener("pointerdown", (resizeEvent) => {
+        startColumnResize(resizeEvent, column, cell, handle);
+      });
+      cell.append(handle);
+    }
+    handle.setAttribute(
+      "aria-valuenow",
+      String(Math.round(cell.getBoundingClientRect().width)),
+    );
+    activeHandles.add(handle);
+  }
+
+  for (const handle of headerRow.querySelectorAll(
+    `.${columnResizeHandleClass}`,
+  )) {
+    if (!activeHandles.has(handle)) {
+      handle.remove();
+    }
+  }
+}
+
+function applyPreferenceColumnState() {
+  if (preferenceColumns.value.length === 0) {
     return;
   }
 
-  const runtimeColumns = getRuntimeColumns();
-  const configByRuntimeColumnId = mapRuntimeColumnsToConfig(runtimeColumns);
-  const orderByConfigId = new Map(
-    getOrderedTableColumns(columnConfig).map((config, index) => [
-      getTableColumnId(config, index),
-      index,
-    ]),
+  const currentRuntimeColumns = getRuntimeColumns();
+  const currentRuntimeColumnIds = new Set(
+    currentRuntimeColumns.map((column) => String(column.id)),
   );
-  const configurablePositions = [];
-  const configurableRuntimeColumns = [];
-
-  runtimeColumns.forEach((runtimeColumn, index) => {
-    if (configByRuntimeColumnId.has(runtimeColumn.id)) {
-      configurablePositions.push(index);
-      configurableRuntimeColumns.push(runtimeColumn);
-    }
-  });
-
-  configurableRuntimeColumns.sort((left, right) => {
-    const leftConfig = configByRuntimeColumnId.get(left.id);
-    const rightConfig = configByRuntimeColumnId.get(right.id);
-    return (
-      (orderByConfigId.get(getTableColumnId(leftConfig)) ?? 0) -
-      (orderByConfigId.get(getTableColumnId(rightConfig)) ?? 0)
+  const preferenceRuntimeColumnIds = new Set(
+    preferenceColumns.value.map((column) => String(column.runtimeColumnId)),
+  );
+  const availableRuntimeColumns = declaredRuntimeColumns.filter(
+    (column) =>
+      preferenceRuntimeColumnIds.has(String(column.id)) ||
+      currentRuntimeColumnIds.has(String(column.id)),
+  );
+  const nextRuntimeColumns = getPreferenceManagedRuntimeColumns(
+    availableRuntimeColumns,
+    preferenceColumns.value,
+  );
+  const stateChanged =
+    nextRuntimeColumns.length !== currentRuntimeColumns.length ||
+    nextRuntimeColumns.some(
+      (column, index) => column !== currentRuntimeColumns[index],
     );
-  });
-
-  const reorderedRuntimeColumns = runtimeColumns.slice();
-  configurablePositions.forEach((position, index) => {
-    reorderedRuntimeColumns[position] = configurableRuntimeColumns[index];
-  });
-
-  const orderChanged = reorderedRuntimeColumns.some(
-    (column, index) => column !== runtimeColumns[index],
-  );
-  if (!orderChanged) {
+  if (!stateChanged) {
     return;
   }
 
   const tableStore = tableRef.value?.store;
-  tableStore.states._columns.value = reorderedRuntimeColumns;
+  const runtimeColumnState = tableStore?.states?._columns;
+  if (!runtimeColumnState || typeof tableStore.updateColumns !== "function") {
+    return;
+  }
+
+  runtimeColumnState.value = nextRuntimeColumns;
   tableStore.updateColumns();
   tableRef.value?.doLayout?.();
 }
 
-function getVisibleConfigOrderFromHeader(headerRow) {
+function getVisiblePreferenceOrderFromHeader(headerRow) {
   const runtimeColumns = getRuntimeColumns();
-  const configByRuntimeColumnId = mapRuntimeColumnsToConfig(runtimeColumns);
+  const preferenceByRuntimeColumnId =
+    mapRuntimeColumnsToPreferences(runtimeColumns);
   const runtimeColumnById = new Map(
     runtimeColumns.map((column) => [column.id, column]),
   );
-  const visibleConfigIds = [];
+  const visiblePreferenceIds = [];
 
   for (const cell of Array.from(headerRow?.children ?? [])) {
     const runtimeColumnId = Array.from(cell.classList).find((className) =>
       runtimeColumnById.has(className),
     );
-    const config = configByRuntimeColumnId.get(runtimeColumnId);
-    if (config) {
-      visibleConfigIds.push(getTableColumnId(config));
+    const preference = preferenceByRuntimeColumnId.get(runtimeColumnId);
+    if (preference) {
+      visiblePreferenceIds.push(getTableColumnId(preference));
     }
   }
-  return visibleConfigIds;
+  return visiblePreferenceIds;
 }
 
 function handleHeaderDragEnd(headerRow) {
   reorderVisibleTableColumns(
-    activeColumnConfig.value,
-    getVisibleConfigOrderFromHeader(headerRow),
+    preferenceColumns.value,
+    getVisiblePreferenceOrderFromHeader(headerRow),
   );
   scheduleColumnOrderSync();
 }
 
 function initializeHeaderSortable() {
-  if (!activeColumnConfig.value?.length) {
+  if (preferenceColumns.value.length === 0) {
     headerSortable?.destroy();
     headerSortable = undefined;
     return;
@@ -449,7 +506,9 @@ function initializeHeaderSortable() {
   }
 
   const runtimeColumns = getRuntimeColumns();
-  const configByRuntimeColumnId = mapRuntimeColumnsToConfig(runtimeColumns);
+  initializeColumnResizeHandles(headerRow, runtimeColumns);
+  const preferenceByRuntimeColumnId =
+    mapRuntimeColumnsToPreferences(runtimeColumns);
   for (const cell of Array.from(headerRow.children)) {
     cell.classList.remove(draggableHeaderClass);
     if (cell.title === "拖动调整列顺序") {
@@ -459,7 +518,7 @@ function initializeHeaderSortable() {
 
   let draggableColumnCount = 0;
   for (const runtimeColumn of runtimeColumns) {
-    if (!configByRuntimeColumnId.has(runtimeColumn.id)) {
+    if (!preferenceByRuntimeColumnId.has(runtimeColumn.id)) {
       continue;
     }
     const cell = findHeaderCell(headerRow, runtimeColumn.id);
@@ -476,6 +535,8 @@ function initializeHeaderSortable() {
       animation: 160,
       direction: "horizontal",
       draggable: `th.${draggableHeaderClass}`,
+      filter: `.${columnResizeHandleClass}`,
+      preventOnFilter: false,
       ghostClass: "adaptive-table__draggable-header--ghost",
       onMove(event) {
         return event.related?.classList.contains(draggableHeaderClass) ?? false;
@@ -488,14 +549,14 @@ function initializeHeaderSortable() {
   headerSortable.option("disabled", draggableColumnCount < 2);
 }
 
-function syncColumnOrderAndDragging() {
-  syncAutoColumnConfig();
-  applyConfiguredColumnOrder();
+function syncColumnPreferences() {
+  syncPreferenceColumns();
+  applyPreferenceColumnState();
   initializeHeaderSortable();
 }
 
 function scheduleColumnOrderSync() {
-  if (!props.autoColumns && !activeColumnConfig.value?.length) {
+  if (!props.columnPreferences) {
     return;
   }
 
@@ -505,7 +566,7 @@ function scheduleColumnOrderSync() {
     }
     columnSyncFrame = window.requestAnimationFrame(() => {
       columnSyncFrame = undefined;
-      syncColumnOrderAndDragging();
+      syncColumnPreferences();
     });
   });
 }
@@ -521,31 +582,34 @@ onUpdated(() => {
   scheduleColumnOrderSync();
 });
 
-watch(columnConfigSignature, scheduleColumnOrderSync, { flush: "post" });
+watch(preferenceSignature, scheduleColumnOrderSync, { flush: "post" });
 
 onBeforeUnmount(() => {
   window.removeEventListener("resize", scheduleTableHeightCalculation);
   headerSortable?.destroy();
+  activeColumnResizeCleanup?.();
   if (columnSyncFrame) {
     window.cancelAnimationFrame(columnSyncFrame);
+  }
+  if (columnResizeFrame) {
+    window.cancelAnimationFrame(columnResizeFrame);
   }
 });
 
 defineExpose({
-  generatedColumns,
   tableRef,
   refreshHeight: scheduleTableHeightCalculation,
 });
 </script>
 
 <style lang="scss" scoped>
-.adaptive-table__auto-shell {
+.adaptive-table__preference-shell {
   display: flex;
   min-height: 0;
   flex-direction: column;
 }
 
-.adaptive-table__auto-shell > :deep(.el-table) {
+.adaptive-table__preference-shell > :deep(.el-table) {
   min-height: 0;
   flex: 1;
 }
@@ -574,5 +638,38 @@ defineExpose({
 :deep(th.adaptive-table__draggable-header--ghost) {
   background: var(--el-color-primary-light-9);
   opacity: 0.75;
+}
+
+:deep(.adaptive-table__column-resize-handle) {
+  position: absolute;
+  z-index: calc(var(--el-table-index) + 3);
+  top: 0;
+  right: 0;
+  width: 12px;
+  height: 100%;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+:deep(.adaptive-table__column-resize-handle::after) {
+  position: absolute;
+  top: 20%;
+  right: 0;
+  bottom: 20%;
+  width: 1px;
+  background: var(--el-border-color);
+  content: "";
+  transition:
+    width var(--el-transition-duration-fast),
+    background-color var(--el-transition-duration-fast);
+}
+
+:deep(.adaptive-table__column-resize-handle:hover::after),
+:deep(
+  th.adaptive-table__column-resizing
+    > .adaptive-table__column-resize-handle::after
+) {
+  width: 2px;
+  background: var(--el-color-primary);
 }
 </style>

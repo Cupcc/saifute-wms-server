@@ -73,13 +73,13 @@
           v-hasPermi="['workshop-material:scrap-order:void']"
         >作废</el-button>
       </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="scrapOrderList" :column-config="columns" @selection-change="handleSelectionChange" @row-click="handleRowClick">
+    <adaptive-table border stripe v-loading="loading" :data="scrapOrderList" column-preferences :default-hidden-columns="['createBy']" @selection-change="handleSelectionChange" @row-click="handleRowClick">
       <el-table-column type="selection" width="50" align="center" />
       <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="报废单号" align="center" prop="scrapNo" min-width="140" v-if="columns[0].visible">
+      <el-table-column sortable show-overflow-tooltip label="报废单号" align="center" prop="scrapNo" min-width="140">
         <template #default="scope">
           <el-button link type="primary" @click="handleDetail(scope.row)">{{ scope.row.scrapNo }}</el-button>
         </template>
@@ -92,7 +92,6 @@
         prop="scrapDate"
         width="200"
         :sort-method="compareScrapDateRows"
-        v-if="columns[1].visible"
       >
         <template #default="scope">
           <el-button link type="primary" @click="handleDetail(scope.row)">
@@ -105,19 +104,19 @@
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="处理方式" align="center" prop="disposalMethod" v-if="columns[2].visible">
+      <el-table-column sortable show-overflow-tooltip label="处理方式" align="center" prop="disposalMethod">
         <template #default="scope">
           <el-button link type="primary" @click="handleDetail(scope.row)">
             <dict-tag :options="saifute_disposal_method" :value="scope.row.disposalMethod"/>
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="经办人" align="center" prop="attn" v-if="columns[3].visible">
+      <el-table-column sortable show-overflow-tooltip label="经办人" align="center" prop="attn">
         <template #default="scope">
           <el-button link type="primary" @click="handleDetail(scope.row)">{{ scope.row.attn }}</el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="创建人" align="center" prop="createBy" v-if="columns[4].visible">
+      <el-table-column sortable show-overflow-tooltip label="创建人" align="center" prop="createBy">
         <template #default="scope">
           <el-button link type="primary" @click="handleDetail(scope.row)">{{ scope.row.createBy }}</el-button>
         </template>
@@ -429,15 +428,6 @@ const data = reactive({
 });
 
 const { queryParams, form, rules, abandonForm, abandonRules } = toRefs(data);
-
-// 添加columns数组定义
-const columns = ref([
-  { key: 0, label: `报废单号`, visible: true },
-  { key: 1, label: `报废日期`, visible: true },
-  { key: 2, label: `处理方式`, visible: true },
-  { key: 3, label: `经办人`, visible: true },
-  { key: 4, label: `创建人`, visible: false },
-]);
 
 function formatDocumentDate(value) {
   if (!value) {

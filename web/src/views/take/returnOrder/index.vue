@@ -119,13 +119,13 @@
 					v-hasPermi="['workshop-material:return-order:update']"
 				>修改</el-button>
 			</el-col>
-			<right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
+			<right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
 		</el-row>
 		
-		<adaptive-table border stripe v-loading="loading" :data="returnOrderList" :column-config="columns" @selection-change="handleSelectionChange" @row-click="handleRowClick">
+		<adaptive-table border stripe v-loading="loading" :data="returnOrderList" column-preferences :default-hidden-columns="['createBy']" @selection-change="handleSelectionChange" @row-click="handleRowClick">
 			<el-table-column type="selection" width="50" align="center" />
 			<el-table-column type="index" width="50" align="center" />
-			<el-table-column sortable show-overflow-tooltip label="退料单号" align="center" prop="returnNo" min-width="140" v-if="columns[0].visible">
+			<el-table-column sortable show-overflow-tooltip label="退料单号" align="center" prop="returnNo" min-width="140">
 				<template #default="scope">
 					<el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
 						{{ scope.row.returnNo }}
@@ -139,8 +139,7 @@
 				align="center"
 				prop="returnDate"
 				width="200"
-				:sort-method="compareReturnDateRows"
-				v-if="columns[1].visible">
+				:sort-method="compareReturnDateRows">
 				<template #default="scope">
 					<el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
 						<span style="display: inline-flex; flex-direction: column; align-items: center; line-height: 1.35;">
@@ -152,19 +151,19 @@
 					</el-button>
 				</template>
 			</el-table-column>
-			<el-table-column sortable show-overflow-tooltip label="退料车间" align="center" prop="workshopName" v-if="columns[2].visible" />
-			<el-table-column sortable show-overflow-tooltip label="退料类型" align="center" prop="sourceType" v-if="columns[3].visible">
+			<el-table-column sortable show-overflow-tooltip label="退料车间" align="center" prop="workshopName" />
+			<el-table-column sortable show-overflow-tooltip label="退料类型" align="center" prop="sourceType">
 				<template #default="scope">
 					<el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
 						<dict-tag :options="source_type" :value="scope.row.sourceType"/>
 					</el-button>
 				</template>
 			</el-table-column>
-			<el-table-column sortable show-overflow-tooltip label="领料单号" align="center" prop="pickNo" min-width="140" v-if="columns[4].visible" />
-			<el-table-column sortable show-overflow-tooltip label="退料人" align="center" prop="returnBy" v-if="columns[5].visible" />
-			<el-table-column sortable show-overflow-tooltip label="创建人" align="center" prop="createBy" v-if="columns[6].visible" />
-			<el-table-column sortable show-overflow-tooltip label="总金额" align="center" prop="totalAmount" v-if="columns[7].visible" />
-			<el-table-column sortable show-overflow-tooltip label="审核结果" align="center" prop="auditStatus" v-if="columns[8].visible">
+			<el-table-column sortable show-overflow-tooltip label="领料单号" align="center" prop="pickNo" min-width="140" />
+			<el-table-column sortable show-overflow-tooltip label="退料人" align="center" prop="returnBy" />
+			<el-table-column sortable show-overflow-tooltip label="创建人" align="center" prop="createBy" />
+			<el-table-column sortable show-overflow-tooltip label="总金额" align="center" prop="totalAmount" />
+			<el-table-column sortable show-overflow-tooltip label="审核结果" align="center" prop="auditStatus">
 				<template #default="scope">
 					<el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
 						<span v-if="scope.row.auditStatus === '0' || scope.row.auditStatus === 0" style="color: #E6A23C;">未审核</span>
@@ -628,19 +627,6 @@ const {
   abandonRules,
   pickOrderQueryParams,
 } = toRefs(data);
-
-// 添加columns数组定义
-const columns = ref([
-  { key: 0, label: `退料单号`, visible: true },
-  { key: 1, label: `退料日期`, visible: true },
-  { key: 2, label: `退料车间`, visible: true },
-  { key: 3, label: `退料类型`, visible: true },
-  { key: 4, label: `领料单号`, visible: true },
-  { key: 5, label: `退料人`, visible: true },
-  { key: 6, label: `创建人`, visible: false },
-  { key: 7, label: `总金额`, visible: true },
-  { key: 8, label: `审核结果`, visible: true },
-]);
 
 function formatDocumentDate(value) {
   if (!value) {

@@ -151,13 +151,15 @@ describe("Monthly report document type contract", () => {
         expect.objectContaining({
           topicKey: MonthlyReportingTopicKey.SALES_OUTBOUND,
           documentCount: 1,
-          totalOutQuantity: "10",
+          businessAmount: "100.0000",
+          inventoryCostOutAmount: "70.0000",
         }),
         expect.objectContaining({
           topicKey: MonthlyReportingTopicKey.SALES_RETURN,
           documentCount: 0,
-          totalInQuantity: "0",
-          totalOutQuantity: "0",
+          businessAmount: "0.0000",
+          inventoryCostInAmount: "0.0000",
+          inventoryCostOutAmount: "0.0000",
         }),
       ]),
     );
@@ -166,7 +168,8 @@ describe("Monthly report document type contract", () => {
         topicKey: MonthlyReportingTopicKey.SALES_RETURN,
         documentTypeLabel: "销售退货单",
         documentCount: 0,
-        totalInAmount: "0.0000",
+        businessAmount: "0.0000",
+        inventoryCostInAmount: "0.0000",
       }),
     ]);
   });
@@ -211,7 +214,8 @@ describe("Monthly report document type contract", () => {
       expect.objectContaining({
         topicKey: MonthlyReportingTopicKey.SALES_RETURN,
         documentTypeLabel: "销售退货单",
-        totalInAmount: "20.0000",
+        businessAmount: "20.0000",
+        inventoryCostInAmount: "14.0000",
       }),
     ]);
     expect(summary.salesProjectItems).toEqual([

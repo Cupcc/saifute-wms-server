@@ -2,16 +2,16 @@ import { describe, expect, it } from "bun:test";
 import {
   applyTableColumnPreference,
   captureTableColumnDefaults,
-  createAutoTableColumnConfig,
+  createRuntimeTableColumnPreferences,
   createTableColumnPreference,
-  getAutoManagedRuntimeColumns,
+  getPreferenceManagedRuntimeColumns,
   getOrderedTableColumns,
   getTableColumnId,
   getTableColumnPreferenceStorageKey,
-  isAutoConfigurableTableColumn,
+  isConfigurableRuntimeTableColumn,
   isRuntimeTableColumnDeclared,
   loadTableColumnPreference,
-  mergeAutoTableColumnConfig,
+  mergeRuntimeTableColumnPreferences,
   removeTableColumnPreference,
   reorderVisibleTableColumns,
   restoreTableColumnDefaults,
@@ -119,7 +119,7 @@ describe("tableColumnPreferences", () => {
     expect(storage.getItem(firstKey)).toBeNull();
   });
 
-  it("derives stable automatic columns while excluding fixed utility columns", () => {
+  it("derives stable runtime preferences while excluding fixed utility columns", () => {
     const runtimeColumns = [
       { id: "selection", type: "selection" },
       { id: "code", type: "default", property: "code", label: "编码" },
@@ -127,10 +127,10 @@ describe("tableColumnPreferences", () => {
       { id: "operation", type: "default", label: "操作", fixed: "right" },
     ];
 
-    expect(isAutoConfigurableTableColumn(runtimeColumns[0])).toBe(false);
-    expect(isAutoConfigurableTableColumn(runtimeColumns[1])).toBe(true);
-    expect(isAutoConfigurableTableColumn(runtimeColumns[3])).toBe(false);
-    expect(createAutoTableColumnConfig(runtimeColumns)).toEqual([
+    expect(isConfigurableRuntimeTableColumn(runtimeColumns[0])).toBe(false);
+    expect(isConfigurableRuntimeTableColumn(runtimeColumns[1])).toBe(true);
+    expect(isConfigurableRuntimeTableColumn(runtimeColumns[3])).toBe(false);
+    expect(createRuntimeTableColumnPreferences(runtimeColumns)).toEqual([
       {
         key: "auto:property:code:1",
         preferenceKey: "auto:property:code:1",
@@ -169,8 +169,8 @@ describe("tableColumnPreferences", () => {
     expect(isRuntimeTableColumnDeclared({})).toBe(true);
   });
 
-  it("preserves automatic column preferences as runtime columns evolve", () => {
-    const original = createAutoTableColumnConfig([
+  it("preserves column preferences as runtime columns evolve", () => {
+    const original = createRuntimeTableColumnPreferences([
       { id: "code-v1", property: "code", label: "编码" },
       { id: "name-v1", property: "name", label: "名称" },
     ]);
@@ -180,12 +180,12 @@ describe("tableColumnPreferences", () => {
       "field:auto:property:code:1",
     ]);
 
-    const evolved = createAutoTableColumnConfig([
+    const evolved = createRuntimeTableColumnPreferences([
       { id: "code-v2", property: "code", label: "编码" },
       { id: "name-v2", property: "name", label: "名称" },
       { id: "remark-v2", property: "remark", label: "备注" },
     ]);
-    const merged = mergeAutoTableColumnConfig(original, evolved);
+    const merged = mergeRuntimeTableColumnPreferences(original, evolved);
 
     expect(orderedLabels(merged)).toEqual(["名称", "编码", "备注"]);
     expect(merged.find((column) => column.prop === "code")?.visible).toBe(
@@ -196,8 +196,8 @@ describe("tableColumnPreferences", () => {
     ).toBe("code-v2");
   });
 
-  it("keeps discovered visibility as the automatic reset default", () => {
-    const columns = createAutoTableColumnConfig([
+  it("keeps discovered visibility as the reset default", () => {
+    const columns = createRuntimeTableColumnPreferences([
       { id: "code", property: "code", label: "编码" },
       { id: "name", property: "name", label: "名称" },
     ]);
@@ -216,7 +216,7 @@ describe("tableColumnPreferences", () => {
       { id: "name", property: "name", label: "名称" },
       { id: "operation", label: "操作", fixed: "right" },
     ];
-    const columns = createAutoTableColumnConfig(runtimeColumns);
+    const columns = createRuntimeTableColumnPreferences(runtimeColumns);
     setTableColumnOrder(columns, [
       "field:auto:property:name:1",
       "field:auto:property:code:1",
@@ -224,9 +224,32 @@ describe("tableColumnPreferences", () => {
     columns.find((column) => column.prop === "code").visible = false;
 
     expect(
-      getAutoManagedRuntimeColumns(runtimeColumns, columns).map(
+      getPreferenceManagedRuntimeColumns(runtimeColumns, columns).map(
         (column) => column.id,
       ),
     ).toEqual(["selection", "name", "operation"]);
+  });
+
+  it("applies semantic default visibility and legacy label preferences", () => {
+    const columns = createRuntimeTableColumnPreferences(
+      [
+        { id: "code", property: "code", label: "编码" },
+        { id: "remark", property: "remark", label: "备注" },
+      ],
+      ["remark"],
+    );
+
+    expect(columns.map((column) => column.visible)).toEqual([true, false]);
+    expect(
+      applyTableColumnPreference(columns, {
+        version: 1,
+        columns: [
+          { id: "label:备注", visible: true },
+          { id: "label:编码", visible: false },
+        ],
+      }),
+    ).toBe(true);
+    expect(orderedLabels(columns)).toEqual(["备注", "编码"]);
+    expect(columns.map((column) => column.visible)).toEqual([false, true]);
   });
 });

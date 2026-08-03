@@ -23,11 +23,11 @@ import {
 import { MonthlyMaterialCategoryWorkshopRepository } from "./monthly-material-category-workshop.repository";
 import {
   buildMonthlyReportStockScopeWhere,
+  loadEffectiveInventoryCostByDocumentLineId,
   loadSalesOrderSourceMap,
   resolveMonthlyReportStockScopeCode,
   resolveMonthlyReportStockScopeName,
   resolveSourceReference,
-  toDecimal,
 } from "./reporting-repository.helpers";
 
 @Injectable()
@@ -406,24 +406,10 @@ export class MonthlyMaterialCategoryRepository {
       return new Map<number, Prisma.Decimal>();
     }
 
-    const groups = await this.prisma.inventoryLog.groupBy({
-      by: ["businessDocumentLineId"],
-      where: {
-        businessDocumentType: BusinessDocumentType.SalesStockOrder,
-        businessDocumentLineId: { in: lineIds },
-      },
-      _sum: {
-        costAmount: true,
-      },
-    });
-
-    return new Map(
-      groups
-        .filter((group) => typeof group.businessDocumentLineId === "number")
-        .map((group) => [
-          group.businessDocumentLineId as number,
-          toDecimal(group._sum.costAmount),
-        ]),
+    return loadEffectiveInventoryCostByDocumentLineId(
+      this.prisma,
+      BusinessDocumentType.SalesStockOrder,
+      lineIds,
     );
   }
 }

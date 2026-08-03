@@ -1,8 +1,10 @@
 import { Prisma } from "../../../../generated/prisma/client";
+import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
 import {
   MonthlyReportingDirection,
   MonthlyReportingTopicKey,
 } from "../application/monthly-reporting.shared";
+import { HomeMetricsRepository } from "./home-metrics.repository";
 import { InventoryReportingRepository } from "./inventory-reporting.repository";
 import { MonthlyMaterialCategoryRepository } from "./monthly-material-category.repository";
 import { MonthlyReportRepository } from "./monthly-report.repository";
@@ -10,12 +12,24 @@ import { MonthlyReportRepository } from "./monthly-report.repository";
 describe("ReportingRepository", () => {
   function createMockPrisma() {
     const $queryRaw = jest.fn().mockResolvedValue([]);
-    const stockInOrder = { findMany: jest.fn().mockResolvedValue([]) };
+    const stockInOrder = {
+      findMany: jest.fn().mockResolvedValue([]),
+      groupBy: jest.fn().mockResolvedValue([]),
+    };
     const stockInOrderLine = { findMany: jest.fn().mockResolvedValue([]) };
-    const salesStockOrder = { findMany: jest.fn().mockResolvedValue([]) };
+    const salesStockOrder = {
+      findMany: jest.fn().mockResolvedValue([]),
+      groupBy: jest.fn().mockResolvedValue([]),
+    };
     const salesStockOrderLine = { findMany: jest.fn().mockResolvedValue([]) };
     const inventoryLog = { groupBy: jest.fn().mockResolvedValue([]) };
-    const workshopMaterialOrder = { findMany: jest.fn().mockResolvedValue([]) };
+    const workshopMaterialOrder = {
+      findMany: jest.fn().mockResolvedValue([]),
+      groupBy: jest.fn().mockResolvedValue([]),
+    };
+    const workshopMaterialOrderLine = {
+      aggregate: jest.fn().mockResolvedValue({ _sum: { costAmount: null } }),
+    };
     const rdProjectMaterialAction = {
       findMany: jest.fn().mockResolvedValue([]),
     };
@@ -33,6 +47,7 @@ describe("ReportingRepository", () => {
       salesStockOrderLine,
       inventoryLog,
       workshopMaterialOrder,
+      workshopMaterialOrderLine,
       rdProjectMaterialAction,
       rdHandoffOrder,
       rdStocktakeOrder,
@@ -75,6 +90,16 @@ describe("ReportingRepository", () => {
   function createInventoryReportingRepository() {
     const prisma = createMockPrisma();
     const repository = new InventoryReportingRepository(prisma as never);
+
+    return {
+      ...prisma,
+      repository,
+    };
+  }
+
+  function createHomeMetricsRepository() {
+    const prisma = createMockPrisma();
+    const repository = new HomeMetricsRepository(prisma as never);
 
     return {
       ...prisma,
@@ -139,7 +164,8 @@ describe("ReportingRepository", () => {
   });
 
   it("maps supplier returns as inbound-domain outbound rows instead of production receipts", async () => {
-    const { repository, stockInOrder } = createMonthlyReportRepository();
+    const { repository, stockInOrder, inventoryLog } =
+      createMonthlyReportRepository();
     stockInOrder.findMany.mockResolvedValue([
       {
         id: 88,
@@ -153,6 +179,12 @@ describe("ReportingRepository", () => {
         workshopId: 192,
         workshopNameSnapshot: "装备车间",
         workshop: null,
+      },
+    ] as never);
+    inventoryLog.groupBy.mockResolvedValue([
+      {
+        businessDocumentId: 88,
+        _sum: { costAmount: new Prisma.Decimal(40) },
       },
     ] as never);
 
@@ -171,9 +203,59 @@ describe("ReportingRepository", () => {
           documentTypeLabel: "退厂单",
           documentNo: "TGC20260508001",
           amount: new Prisma.Decimal(36),
+          cost: new Prisma.Decimal(40),
         }),
       ]),
     );
+    expect(inventoryLog.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          reversalOfLogId: null,
+          reversedByLogs: { none: {} },
+        }),
+      }),
+    );
+  });
+
+  it("keeps historical price-correction differences out of inventory cost flow", async () => {
+    const { repository, stockInPriceCorrectionOrder } =
+      createMonthlyReportRepository();
+    stockInPriceCorrectionOrder.findMany.mockResolvedValue([
+      {
+        id: 98,
+        documentNo: "TJ-001",
+        bizDate: new Date("2026-05-10T00:00:00.000Z"),
+        createdAt: new Date("2026-05-10T09:00:00.000Z"),
+        stockScope: { scopeCode: "MAIN", scopeName: "主仓" },
+        workshopId: 192,
+        workshop: { workshopName: "装备车间" },
+        lines: [
+          {
+            sourceBizDateSnapshot: new Date("2026-04-01T00:00:00.000Z"),
+            sourceDocumentNoSnapshot: "YS-001",
+            remainingQtyAtCorrection: new Prisma.Decimal(2),
+            wrongUnitCost: new Prisma.Decimal(10),
+            correctUnitCost: new Prisma.Decimal(12),
+            historicalDiffAmount: new Prisma.Decimal(3),
+            generatedOutLog: { costAmount: new Prisma.Decimal(20) },
+            generatedInLog: { costAmount: new Prisma.Decimal(24) },
+          },
+        ],
+      },
+    ] as never);
+
+    const result = await repository.findMonthlyReportEntries({
+      start: new Date("2026-05-01T00:00:00.000Z"),
+      end: new Date("2026-05-31T23:59:59.999Z"),
+    });
+    const correctionIn = result.find(
+      (item) => item.topicKey === MonthlyReportingTopicKey.PRICE_CORRECTION_IN,
+    );
+
+    expect(correctionIn).toMatchObject({
+      amount: new Prisma.Decimal(27),
+      cost: new Prisma.Decimal(24),
+    });
   });
 
   it("filters rd handoff rows by line project workshop when one order spans multiple workshops", async () => {
@@ -549,12 +631,15 @@ describe("ReportingRepository", () => {
       .mockResolvedValueOnce([
         {
           bizDate: new Date("2026-05-08T00:00:00.000Z"),
+          operationType: "SUPPLIER_RETURN_OUT",
+          businessDocumentType: "StockInOrder",
+          businessDocumentId: 88,
           _sum: {
-            changeQty: new Prisma.Decimal(2),
             costAmount: new Prisma.Decimal(24),
           },
         },
       ])
+      .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
       .mockResolvedValueOnce([])
@@ -570,10 +655,226 @@ describe("ReportingRepository", () => {
     expect(result).toEqual([
       expect.objectContaining({
         sourceType: "INBOUND",
-        totalQty: new Prisma.Decimal(-2),
+        businessDocumentType: "StockInOrder",
+        businessDocumentId: 88,
         totalAmount: new Prisma.Decimal(-24),
+        inventoryCostDelta: new Prisma.Decimal(-24),
       }),
     ]);
+    expect(inventoryLog.groupBy).toHaveBeenCalledTimes(7);
+    expect(inventoryLog.groupBy.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({
+        by: [
+          "bizDate",
+          "operationType",
+          "businessDocumentType",
+          "businessDocumentId",
+        ],
+        where: expect.objectContaining({
+          reversalOfLogId: null,
+          reversedByLogs: { none: {} },
+        }),
+      }),
+    );
+  });
+
+  it("maps workshop, RD project, handoff, and stocktake cost directions", async () => {
+    const { repository, inventoryLog } = createInventoryReportingRepository();
+    const group = (
+      operationType: string,
+      businessDocumentType: string,
+      businessDocumentId: number,
+      costAmount: string,
+    ) => ({
+      bizDate: new Date("2026-05-08T00:00:00.000Z"),
+      operationType,
+      businessDocumentType,
+      businessDocumentId,
+      _sum: { costAmount: new Prisma.Decimal(costAmount) },
+    });
+    inventoryLog.groupBy
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        group("OUTBOUND_OUT", "SalesStockOrder", 10, "70"),
+        group("SALES_RETURN_IN", "SalesStockOrder", 11, "15"),
+      ])
+      .mockResolvedValueOnce([
+        group("PICK_OUT", "WorkshopMaterialOrder", 1, "100"),
+        group("RETURN_IN", "WorkshopMaterialOrder", 2, "30"),
+        group("SCRAP_OUT", "WorkshopMaterialOrder", 3, "20"),
+      ])
+      .mockResolvedValueOnce([
+        group("RD_PROJECT_OUT", "RdProjectMaterialAction", 4, "80"),
+        group("RETURN_IN", "RdProjectMaterialAction", 5, "10"),
+        group("SCRAP_OUT", "RdProjectMaterialAction", 6, "5"),
+      ])
+      .mockResolvedValueOnce([
+        group("RD_HANDOFF_OUT", "RdHandoffOrder", 7, "40"),
+        group("RD_HANDOFF_IN", "RdHandoffOrder", 7, "40"),
+      ])
+      .mockResolvedValueOnce([
+        group("RD_STOCKTAKE_IN", "RdStocktakeOrder", 8, "12"),
+        group("RD_STOCKTAKE_OUT", "RdStocktakeOrder", 9, "7"),
+      ]);
+
+    const result = await repository.findTrendDocuments({
+      dateFrom: new Date("2026-05-01T00:00:00.000Z"),
+      dateTo: new Date("2026-05-31T23:59:59.999Z"),
+      inventoryStockScopeIds: [1, 2],
+    });
+
+    expect(
+      result
+        .filter((item) => item.sourceType === "SALES")
+        .map((item) => [
+          item.totalAmount.toString(),
+          item.inventoryCostDelta.toString(),
+        ]),
+    ).toEqual([
+      ["70", "-70"],
+      ["-15", "15"],
+    ]);
+    expect(
+      result
+        .filter((item) => item.sourceType === "WORKSHOP_MATERIAL")
+        .map((item) => [
+          item.totalAmount.toString(),
+          item.inventoryCostDelta.toString(),
+        ]),
+    ).toEqual([
+      ["100", "-100"],
+      ["-30", "30"],
+      ["20", "-20"],
+    ]);
+    expect(
+      result
+        .filter((item) => item.sourceType === "RD_PROJECT")
+        .map((item) => [
+          item.totalAmount.toString(),
+          item.inventoryCostDelta.toString(),
+        ]),
+    ).toEqual([
+      ["80", "-80"],
+      ["-10", "10"],
+      ["5", "-5"],
+    ]);
+    expect(
+      result
+        .filter((item) => item.sourceType === "RD_HANDOFF")
+        .map((item) => item.totalAmount.toString()),
+    ).toEqual(["-40", "40"]);
+    expect(
+      result
+        .filter((item) => item.sourceType.startsWith("RD_STOCKTAKE"))
+        .map((item) => [item.sourceType, item.totalAmount.toString()]),
+    ).toEqual([
+      ["RD_STOCKTAKE_GAIN", "12"],
+      ["RD_STOCKTAKE_LOSS", "-7"],
+    ]);
+  });
+
+  it("splits home document counts and cumulative financial bases", async () => {
+    const {
+      repository,
+      stockInOrder,
+      salesStockOrder,
+      workshopMaterialOrder,
+      inventoryLog,
+    } = createHomeMetricsRepository();
+    stockInOrder.groupBy
+      .mockResolvedValueOnce([
+        { orderType: "ACCEPTANCE", _count: { _all: 2 } },
+        { orderType: "PRODUCTION_RECEIPT", _count: { _all: 1 } },
+        { orderType: "SUPPLIER_RETURN", _count: { _all: 3 } },
+      ])
+      .mockResolvedValueOnce([
+        {
+          orderType: "ACCEPTANCE",
+          _sum: { totalAmount: new Prisma.Decimal(100) },
+        },
+        {
+          orderType: "PRODUCTION_RECEIPT",
+          _sum: { totalAmount: new Prisma.Decimal(40) },
+        },
+        {
+          orderType: "SUPPLIER_RETURN",
+          _sum: { totalAmount: new Prisma.Decimal(25) },
+        },
+      ]);
+    salesStockOrder.groupBy
+      .mockResolvedValueOnce([
+        { orderType: "OUTBOUND", _count: { _all: 4 } },
+        { orderType: "SALES_RETURN", _count: { _all: 1 } },
+      ])
+      .mockResolvedValueOnce([
+        {
+          orderType: "OUTBOUND",
+          _sum: { totalAmount: new Prisma.Decimal(80) },
+        },
+        {
+          orderType: "SALES_RETURN",
+          _sum: { totalAmount: new Prisma.Decimal(10) },
+        },
+      ]);
+    workshopMaterialOrder.groupBy.mockResolvedValueOnce([
+      { orderType: "PICK", _count: { _all: 5 } },
+      { orderType: "RETURN", _count: { _all: 2 } },
+      { orderType: "SCRAP", _count: { _all: 1 } },
+    ]);
+    workshopMaterialOrder.findMany.mockResolvedValueOnce([
+      { id: 501, orderType: "PICK" },
+      { id: 502, orderType: "RETURN" },
+      { id: 503, orderType: "SCRAP" },
+    ] as never);
+    inventoryLog.groupBy.mockResolvedValueOnce([
+      {
+        businessDocumentId: 501,
+        _sum: { costAmount: new Prisma.Decimal(60) },
+      },
+      {
+        businessDocumentId: 502,
+        _sum: { costAmount: new Prisma.Decimal(15) },
+      },
+      {
+        businessDocumentId: 503,
+        _sum: { costAmount: new Prisma.Decimal(8) },
+      },
+    ] as never);
+
+    const result = await repository.getHomeMetrics(
+      new Date("2026-05-08T00:00:00.000Z"),
+      new Date("2026-05-08T23:59:59.999Z"),
+      { stockScope: "MAIN" },
+    );
+
+    expect(result).toMatchObject({
+      acceptanceTodayCount: 2,
+      productionReceiptTodayCount: 1,
+      supplierReturnTodayCount: 3,
+      salesOutboundTodayCount: 4,
+      salesReturnTodayCount: 1,
+      workshopPickTodayCount: 5,
+      workshopReturnTodayCount: 2,
+      workshopScrapTodayCount: 1,
+      acceptanceTotalAmount: new Prisma.Decimal(100),
+      productionReceiptTotalAmount: new Prisma.Decimal(40),
+      supplierReturnTotalAmount: new Prisma.Decimal(25),
+      salesOutboundTotalAmount: new Prisma.Decimal(80),
+      salesReturnTotalAmount: new Prisma.Decimal(10),
+      workshopPickCostAmount: new Prisma.Decimal(60),
+      workshopReturnCostAmount: new Prisma.Decimal(15),
+      workshopScrapCostAmount: new Prisma.Decimal(8),
+    });
+    expect(inventoryLog.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          businessDocumentType: BusinessDocumentType.WorkshopMaterialOrder,
+          reversalOfLogId: null,
+          reversedByLogs: { none: {} },
+        }),
+      }),
+    );
   });
 
   it("avoids reserved keywords in inventory valuation raw SQL aliases", async () => {

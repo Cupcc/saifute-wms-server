@@ -118,26 +118,26 @@
 	    <el-col :span="1.5">
 		    <el-button type="warning" plain icon="Download" @click="handleExport" v-hasPermi="['article:product:export']">导出</el-button>
 	    </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="productList" :column-config="columns" @selection-change="handleSelectionChange">
+    <adaptive-table border stripe v-loading="loading" :data="productList" column-preferences @selection-change="handleSelectionChange">
 	    <el-table-column type="selection" width="50" align="center" />
       <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="项目名称" align="center" prop="productName" v-if="columns[0].visible">
+      <el-table-column sortable show-overflow-tooltip label="项目名称" align="center" prop="productName">
         <template #default="scope">
           <el-button link type="primary" @click="handleView(scope.row)">{{ scope.row.productName }}</el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="客户" align="center" prop="customerName" v-if="columns[1].visible" />
-      <el-table-column sortable show-overflow-tooltip label="业务员" align="center" prop="salesman" v-if="columns[2].visible" />
-      <el-table-column sortable show-overflow-tooltip label="分类" align="center" prop="classification" v-if="columns[3].visible" />
-      <el-table-column sortable show-overflow-tooltip label="下单日期" align="center" prop="orderDate" v-if="columns[4].visible" width="120" >
+      <el-table-column sortable show-overflow-tooltip label="客户" align="center" prop="customerName" />
+      <el-table-column sortable show-overflow-tooltip label="业务员" align="center" prop="salesman" />
+      <el-table-column sortable show-overflow-tooltip label="分类" align="center" prop="classification" />
+      <el-table-column sortable show-overflow-tooltip label="下单日期" align="center" prop="orderDate" width="120" >
 	      <template #default="scope">
 	        <span>{{ parseTime(scope.row.orderDate, '{y}-{m}-{d}') }}</span>
 	      </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="出库日期" align="center" prop="outBoundDate" v-if="columns[5].visible" width="120" >
+      <el-table-column sortable show-overflow-tooltip label="出库日期" align="center" prop="outBoundDate" width="120" >
 	      <template #default="scope">
 	        <span>{{ parseTime(scope.row.outBoundDate, '{y}-{m}-{d}') }}</span>
 	      </template>
@@ -516,16 +516,6 @@ const { queryParams, form, rules } = toRefs(data);
 const detailData = ref({});
 const detailOpen = ref(false);
 const dialogLoading = ref(false);
-
-// 添加columns数组定义
-const columns = ref([
-  { key: 0, label: `项目名称`, visible: true },
-  { key: 1, label: `客户`, visible: true },
-  { key: 2, label: `业务员`, visible: true },
-  { key: 3, label: `分类`, visible: true },
-  { key: 4, label: `下单日期`, visible: true },
-  { key: 5, label: `出库日期`, visible: true },
-]);
 
 /** 查询项目列表 */
 function getList() {

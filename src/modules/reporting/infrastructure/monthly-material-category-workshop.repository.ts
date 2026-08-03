@@ -18,6 +18,7 @@ import {
 } from "./monthly-material-category.helpers";
 import {
   buildMonthlyReportStockScopeWhere,
+  loadEffectiveInventoryCostByDocumentLineId,
   loadWorkshopOrderSourceMap,
   resolveMonthlyReportStockScopeCode,
   resolveMonthlyReportStockScopeName,
@@ -48,6 +49,7 @@ export class MonthlyMaterialCategoryWorkshopRepository {
             in: [
               WorkshopMaterialOrderType.PICK,
               WorkshopMaterialOrderType.RETURN,
+              WorkshopMaterialOrderType.SCRAP,
             ],
           },
           bizDate: { gte: params.start, lte: params.end },
@@ -121,6 +123,12 @@ export class MonthlyMaterialCategoryWorkshopRepository {
       this.prisma,
       sourceOrderIds,
     );
+    const inventoryCostByLineId =
+      await loadEffectiveInventoryCostByDocumentLineId(
+        this.prisma,
+        BusinessDocumentType.WorkshopMaterialOrder,
+        lines.map((line) => line.id),
+      );
 
     return lines.map((line) => {
       const lineAmount = resolveMaterialCategoryLineAmount(
@@ -128,9 +136,8 @@ export class MonthlyMaterialCategoryWorkshopRepository {
         line.quantity,
         line.unitPrice,
       );
-      const currentCost = toDecimal(line.costAmount);
       const lineCost =
-        currentCost.isZero() && !lineAmount.isZero() ? lineAmount : currentCost;
+        inventoryCostByLineId.get(line.id) ?? toDecimal(line.costAmount);
       const lineUnitPrice = resolveMaterialCategoryUnitPrice({
         amount: lineCost,
         quantity: line.quantity,

@@ -137,14 +137,12 @@
     <el-row :gutter="10" class="mb8">
       <right-toolbar
         v-model:showSearch="showSearch"
-        :columns="columns"
         @queryTable="getList"
       />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="rows" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="rows" column-preferences>
       <el-table-column
-        v-if="columns[0].visible"
         label="单号"
         prop="documentNo"
         min-width="140"
@@ -157,7 +155,6 @@
         </template>
       </el-table-column>
       <el-table-column
-        v-if="columns[1].visible"
         label="业务日期"
         prop="bizDate"
         width="200"
@@ -174,49 +171,43 @@
         </template>
       </el-table-column>
       <el-table-column
-        v-if="columns[2].visible"
         label="客户"
         prop="customerName"
         min-width="150"
         show-overflow-tooltip
       />
       <el-table-column
-        v-if="columns[3].visible"
         label="车间"
         prop="workshopName"
         min-width="140"
         show-overflow-tooltip
       />
       <el-table-column
-        v-if="showSourceOutbound && columns[4].visible"
+        v-if="showSourceOutbound"
         label="来源出库 ID"
         prop="sourceOutboundOrderId"
         width="120"
         align="center"
       />
       <el-table-column
-        v-if="columns[materialCodeColumnIndex].visible"
         label="物料编码"
         prop="materialCode"
         min-width="120"
         show-overflow-tooltip
       />
       <el-table-column
-        v-if="columns[materialNameColumnIndex].visible"
         label="物料名称"
         prop="materialName"
         min-width="160"
         show-overflow-tooltip
       />
       <el-table-column
-        v-if="columns[specificationColumnIndex].visible"
         label="规格型号"
         prop="specification"
         min-width="140"
         show-overflow-tooltip
       />
       <el-table-column
-        v-if="columns[quantityColumnIndex].visible"
         label="数量"
         prop="quantity"
         width="90"
@@ -227,7 +218,6 @@
         </template>
       </el-table-column>
       <el-table-column
-        v-if="columns[amountColumnIndex].visible"
         label="金额"
         prop="amount"
         width="110"
@@ -238,7 +228,6 @@
         </template>
       </el-table-column>
       <el-table-column
-        v-if="columns[remarkColumnIndex].visible"
         label="备注"
         prop="remark"
         min-width="160"
@@ -342,48 +331,6 @@ const queryParams = reactive({
   specification: "",
   sourceOutboundOrderId: "",
 });
-
-const columns = ref(
-  props.showSourceOutbound
-    ? [
-        { key: 0, label: "单号", visible: true },
-        { key: 1, label: "业务日期", visible: true },
-        { key: 2, label: "客户", visible: true },
-        { key: 3, label: "车间", visible: true },
-        { key: 4, label: "来源出库 ID", visible: true },
-        { key: 5, label: "物料编码", visible: true },
-        { key: 6, label: "物料名称", visible: true },
-        { key: 7, label: "规格型号", visible: true },
-        { key: 8, label: "数量", visible: true },
-        { key: 9, label: "金额", visible: true },
-        { key: 10, label: "备注", visible: true },
-      ]
-    : [
-        { key: 0, label: "单号", visible: true },
-        { key: 1, label: "业务日期", visible: true },
-        { key: 2, label: "客户", visible: true },
-        { key: 3, label: "车间", visible: true },
-        { key: 4, label: "物料编码", visible: true },
-        { key: 5, label: "物料名称", visible: true },
-        { key: 6, label: "规格型号", visible: true },
-        { key: 7, label: "数量", visible: true },
-        { key: 8, label: "金额", visible: true },
-        { key: 9, label: "备注", visible: true },
-      ],
-);
-
-const materialCodeColumnIndex = computed(() =>
-  props.showSourceOutbound ? 5 : 4,
-);
-const materialNameColumnIndex = computed(() =>
-  props.showSourceOutbound ? 6 : 5,
-);
-const specificationColumnIndex = computed(() =>
-  props.showSourceOutbound ? 7 : 6,
-);
-const quantityColumnIndex = computed(() => (props.showSourceOutbound ? 8 : 7));
-const amountColumnIndex = computed(() => (props.showSourceOutbound ? 9 : 8));
-const remarkColumnIndex = computed(() => (props.showSourceOutbound ? 10 : 9));
 
 function buildQuery() {
   return {
@@ -546,13 +493,6 @@ void [
   detailLoading,
   detailData,
   queryParams,
-  columns,
-  materialCodeColumnIndex,
-  materialNameColumnIndex,
-  specificationColumnIndex,
-  quantityColumnIndex,
-  amountColumnIndex,
-  remarkColumnIndex,
   resetQuery,
   handleOpenDetail,
   searchCustomer,

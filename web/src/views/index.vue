@@ -23,24 +23,13 @@
           <el-card class="stat-card stat-card-primary" shadow="always">
             <div class="stat-content">
               <div class="stat-info">
-                <p class="stat-label">今日入库单据</p>
-                <p class="stat-value">{{ statisticsData.inbound.todayCount }}</p>
-                <el-tag
-                  :type="
-                    statisticsData.inbound.percentageChange >= 0
-                      ? 'success'
-                      : 'danger'
-                  "
-                  size="small"
-                >
-                  <el-icon class="mr-1"
-                    ><ArrowUp
-                      v-if="statisticsData.inbound.percentageChange >= 0"
-                    /><ArrowDown v-else
-                  /></el-icon>
-                  {{ statisticsData.inbound.percentageChange >= 0 ? "+" : ""
-                  }}{{ statisticsData.inbound.percentageChange }}% 较昨天
-                </el-tag>
+                <p class="stat-label">今日入库域单据</p>
+                <p class="stat-value stat-value--compact">
+                  {{ statisticsData.todayDocuments.acceptanceCount }} /
+                  {{ statisticsData.todayDocuments.productionReceiptCount }} /
+                  {{ statisticsData.todayDocuments.supplierReturnCount }}
+                </p>
+                <p class="stat-breakdown">验收 / 生产入库 / 退厂</p>
               </div>
               <div class="stat-icon bg-primary-light">
                 <el-icon :size="24" color="#409EFF"><Box /></el-icon>
@@ -53,24 +42,12 @@
           <el-card class="stat-card stat-card-success" shadow="always">
             <div class="stat-content">
               <div class="stat-info">
-                <p class="stat-label">今日出库单据</p>
-                <p class="stat-value">{{ statisticsData.outbound.todayCount }}</p>
-                <el-tag
-                  :type="
-                    statisticsData.outbound.percentageChange >= 0
-                      ? 'success'
-                      : 'danger'
-                  "
-                  size="small"
-                >
-                  <el-icon class="mr-1"
-                    ><ArrowUp
-                      v-if="statisticsData.outbound.percentageChange >= 0"
-                    /><ArrowDown v-else
-                  /></el-icon>
-                  {{ statisticsData.outbound.percentageChange >= 0 ? "+" : ""
-                  }}{{ statisticsData.outbound.percentageChange }}% 较昨日
-                </el-tag>
+                <p class="stat-label">今日销售单据</p>
+                <p class="stat-value stat-value--compact">
+                  {{ statisticsData.todayDocuments.salesOutboundCount }} /
+                  {{ statisticsData.todayDocuments.salesReturnCount }}
+                </p>
+                <p class="stat-breakdown">销售出库 / 销售退货</p>
               </div>
               <div class="stat-icon bg-success-light">
                 <el-icon :size="24" color="#67C23A"><HomeFilled /></el-icon>
@@ -83,32 +60,13 @@
           <el-card class="stat-card stat-card-warning" shadow="always">
             <div class="stat-content">
               <div class="stat-info">
-                <p class="stat-label">今日领退料单据</p>
-                <p class="stat-value">
-                  {{ statisticsData.workshopMaterial.todayCount }}
+                <p class="stat-label">今日车间用料单据</p>
+                <p class="stat-value stat-value--compact">
+                  {{ statisticsData.todayDocuments.workshopPickCount }} /
+                  {{ statisticsData.todayDocuments.workshopReturnCount }} /
+                  {{ statisticsData.todayDocuments.workshopScrapCount }}
                 </p>
-                <el-tag
-                  :type="
-                    statisticsData.workshopMaterial.percentageChange >= 0
-                      ? 'success'
-                      : 'danger'
-                  "
-                  size="small"
-                >
-                  <el-icon class="mr-1"
-                    ><ArrowUp
-                      v-if="
-                        statisticsData.workshopMaterial.percentageChange >= 0
-                      "
-                    /><ArrowDown v-else
-                  /></el-icon>
-                  {{
-                    statisticsData.workshopMaterial.percentageChange >= 0
-                      ? "+"
-                      : ""
-                  }}{{ statisticsData.workshopMaterial.percentageChange }}%
-                  较昨日
-                </el-tag>
+                <p class="stat-breakdown">领料 / 退料 / 报废</p>
               </div>
               <div class="stat-icon bg-warning-light">
                 <el-icon :size="24" color="#E6A23C"><Promotion /></el-icon>
@@ -120,13 +78,17 @@
           <el-card class="stat-card stat-card-error" shadow="always">
             <div class="stat-content">
               <div class="stat-info">
-                <p class="stat-label">在库物料数</p>
+                <p class="stat-label">在库物料品种数</p>
                 <p class="stat-value">
                   {{ statisticsData.inventory.activeMaterialCount }}
                 </p>
-                <el-tag type="info" size="small">
-                  低库存 {{ statisticsData.inventory.lowStockCount }} 项
-                </el-tag>
+                <p class="stat-breakdown">
+                  物料-仓别：正常
+                  {{ statisticsData.inventory.normalStockCount }} · 低库存
+                  {{ statisticsData.inventory.lowStockCount }} · 超上限
+                  {{ statisticsData.inventory.aboveMaxStockCount }} · 未配置
+                  {{ statisticsData.inventory.unconfiguredStockCount }}
+                </p>
               </div>
               <div class="stat-icon bg-error-light">
                 <el-icon :size="24" color="#F56C6C"><Finished /></el-icon>
@@ -142,7 +104,11 @@
           <el-card class="chart-card">
             <template #header>
               <div class="chart-header">
-                <span class="chart-title">业务趋势</span>
+                <span class="chart-title">最近 7 日库存成本趋势</span>
+                <span class="chart-summary">
+                  业务单据 {{ trendSummary.documentCount }} 张 · 库存成本净变动
+                  {{ trendSummary.inventoryCostNetChange }}
+                </span>
               </div>
             </template>
             <div ref="trendChartRef" class="chart-container"></div>
@@ -153,7 +119,8 @@
           <el-card class="chart-card">
             <template #header>
               <div class="chart-header">
-                <span class="chart-title">库存货值分布</span>
+                <span class="chart-title">可追溯来源库存成本 Top 8</span>
+                <span class="chart-summary">占比仅以当前 Top 8 为分母</span>
               </div>
             </template>
             <div ref="distributionChartRef" class="chart-container"></div>
@@ -203,22 +170,29 @@ function setCurrentDate() {
 
 // 统计数据
 const statisticsData = ref({
-  inbound: {
-    todayCount: 0,
-    percentageChange: 0,
-  },
-  outbound: {
-    todayCount: 0,
-    percentageChange: 0,
-  },
-  workshopMaterial: {
-    todayCount: 0,
-    percentageChange: 0,
+  todayDocuments: {
+    acceptanceCount: 0,
+    productionReceiptCount: 0,
+    supplierReturnCount: 0,
+    salesOutboundCount: 0,
+    salesReturnCount: 0,
+    workshopPickCount: 0,
+    workshopReturnCount: 0,
+    workshopScrapCount: 0,
   },
   inventory: {
     activeMaterialCount: 0,
+    inventoryRecordCount: 0,
     lowStockCount: 0,
+    normalStockCount: 0,
+    aboveMaxStockCount: 0,
+    unconfiguredStockCount: 0,
+    totalInventoryValue: "0.0000",
   },
+});
+const trendSummary = ref({
+  documentCount: 0,
+  inventoryCostNetChange: "0.0000",
 });
 
 let trendChart = null;
@@ -236,12 +210,8 @@ function initCharts() {
     const trendOption = {
       tooltip: {
         trigger: "axis",
-        axisPointer: {
-          type: "shadow",
-        },
       },
       legend: {
-        data: ["入库单据", "出库单据", "领退料单据"],
         bottom: 0,
       },
       grid: {
@@ -257,33 +227,9 @@ function initCharts() {
       },
       yAxis: {
         type: "value",
+        name: "库存成本金额",
       },
-      series: [
-        {
-          name: "入库单据",
-          type: "bar",
-          data: [],
-          itemStyle: {
-            color: "#409EFF",
-          },
-        },
-        {
-          name: "出库单据",
-          type: "bar",
-          data: [],
-          itemStyle: {
-            color: "#F56C6C",
-          },
-        },
-        {
-          name: "领退料单据",
-          type: "bar",
-          data: [],
-          itemStyle: {
-            color: "#E6A23C",
-          },
-        },
-      ],
+      series: [],
     };
     trendChart.setOption(trendOption);
   }
@@ -304,7 +250,7 @@ function initCharts() {
       },
       series: [
         {
-          name: "库存货值",
+          name: "可追溯来源库存成本",
           type: "pie",
           radius: ["40%", "70%"],
           center: ["65%", "50%"],
@@ -401,7 +347,7 @@ function updateDistributionChart(categoryData) {
     },
     series: [
       {
-        name: "库存货值",
+        name: "可追溯来源库存成本",
         type: "pie",
         radius: ["40%", "70%"],
         center: ["65%", "50%"],
@@ -433,28 +379,66 @@ function updateDistributionChart(categoryData) {
   distributionChart.setOption(distributionOption, true);
 }
 
-// 更新库存趋势图表
+function formatTrendType(value) {
+  const labelMap = {
+    INBOUND: "入库域净成本流量",
+    SALES: "销售出库成本",
+    WORKSHOP_MATERIAL: "车间净耗用成本",
+    RD_PROJECT: "研发项目净耗用成本",
+    RD_HANDOFF: "RD交接",
+    RD_STOCKTAKE_GAIN: "RD盘盈",
+    RD_STOCKTAKE_LOSS: "RD盘亏",
+  };
+  return labelMap[value] || value;
+}
+
+// 更新最近七日库存成本趋势图表；Number 仅用于图形坐标，不参与权威合计。
 function updateTrendChart(data) {
   if (!trendChart || !data) return;
 
-  // 提取日期作为X轴数据，格式化为MM-DD
-  const dates = data.map((item) => {
-    const date = new Date(item.date);
-    const month = (date.getMonth() + 1).toString().padStart(2, "0");
-    const day = date.getDate().toString().padStart(2, "0");
-    return `${month}-${day}`;
+  const rows = data.items || [];
+  const trendTypes = [
+    "INBOUND",
+    "SALES",
+    "WORKSHOP_MATERIAL",
+    "RD_PROJECT",
+    "RD_HANDOFF",
+    "RD_STOCKTAKE_GAIN",
+    "RD_STOCKTAKE_LOSS",
+  ];
+  const colorMap = {
+    INBOUND: "#409EFF",
+    SALES: "#F56C6C",
+    WORKSHOP_MATERIAL: "#E6A23C",
+    RD_PROJECT: "#8B5CF6",
+    RD_HANDOFF: "#EF4444",
+    RD_STOCKTAKE_GAIN: "#16A34A",
+    RD_STOCKTAKE_LOSS: "#DC2626",
+  };
+  const rowsByDate = new Map();
+
+  rows.forEach((item) => {
+    const current = rowsByDate.get(item.date) || {};
+    current[item.trendType] = Number(item.totalAmount || 0);
+    rowsByDate.set(item.date, current);
   });
 
-  // 更新图表配置
+  const dates = [...rowsByDate.keys()].sort();
+  const activeTrendTypes = trendTypes.filter((trendType) =>
+    dates.some((date) => Number(rowsByDate.get(date)?.[trendType] || 0) !== 0),
+  );
   const trendOption = {
+    color: activeTrendTypes.map((trendType) => colorMap[trendType]),
     tooltip: {
       trigger: "axis",
-      axisPointer: {
-        type: "shadow",
-      },
+      valueFormatter: (value) =>
+        `${Number(value || 0).toLocaleString("zh-CN", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })} 元`,
     },
     legend: {
-      data: ["入库单据", "出库单据", "领退料单据"],
+      data: activeTrendTypes.map(formatTrendType),
       bottom: 0,
     },
     grid: {
@@ -466,37 +450,34 @@ function updateTrendChart(data) {
     },
     xAxis: {
       type: "category",
-      data: dates,
+      boundaryGap: false,
+      data: dates.map((date) => date.slice(5)),
     },
     yAxis: {
       type: "value",
+      name: "库存成本金额",
     },
-    series: [
-      {
-        name: "入库单据",
-        type: "bar",
-        data: data.map((item) => item.inboundCount),
-        itemStyle: {
-          color: "#409EFF",
-        },
-      },
-      {
-        name: "出库单据",
-        type: "bar",
-        data: data.map((item) => item.outboundCount),
-        itemStyle: {
-          color: "#67C23A",
-        },
-      },
-      {
-        name: "领退料单据",
-        type: "bar",
-        data: data.map((item) => item.workshopMaterialCount),
-        itemStyle: {
-          color: "#E6A23C",
-        },
-      },
-    ],
+    graphic: dates.length
+      ? []
+      : [
+          {
+            type: "text",
+            left: "center",
+            top: "middle",
+            style: {
+              text: "暂无趋势数据",
+              fill: "#9CA3AF",
+              fontSize: 14,
+            },
+          },
+        ],
+    series: activeTrendTypes.map((trendType) => ({
+      name: formatTrendType(trendType),
+      type: "line",
+      smooth: true,
+      showSymbol: false,
+      data: dates.map((date) => Number(rowsByDate.get(date)?.[trendType] || 0)),
+    })),
   };
 
   trendChart.setOption(trendOption, true);
@@ -528,7 +509,11 @@ async function loadData(expectedSequence) {
     }
 
     updateDistributionChart(categoryResponse.data || []);
-    updateTrendChart(trendResponse.data || []);
+    trendSummary.value = trendResponse.data?.summary || {
+      documentCount: 0,
+      inventoryCostNetChange: "0.0000",
+    };
+    updateTrendChart(trendResponse.data || {});
   } catch (error) {
     console.error("首页图表数据加载失败:", error);
   }
@@ -676,6 +661,18 @@ onBeforeUnmount(() => {
         font-weight: 600;
         color: #303133;
         margin-bottom: 8px;
+
+        &.stat-value--compact {
+          font-size: 21px;
+        }
+      }
+
+      .stat-breakdown {
+        min-height: 20px;
+        margin: 0;
+        color: #909399;
+        font-size: 12px;
+        line-height: 20px;
       }
     }
     
@@ -714,6 +711,12 @@ onBeforeUnmount(() => {
       font-size: 16px;
       font-weight: 600;
       color: #303133;
+    }
+
+    .chart-summary {
+      color: #909399;
+      font-size: 12px;
+      text-align: right;
     }
     
     .chart-actions {

@@ -1,7 +1,6 @@
 import { normalizeMonthlyReportWorkshopRef } from "./monthly-reporting.formatters";
 import {
   formatMoney,
-  formatQuantity,
   type MonthlyMaterialCategoryEntry,
   sumDecimals,
 } from "./monthly-reporting.shared";
@@ -11,12 +10,10 @@ export interface MonthlyReportMaterialCategoryWorkshopSummaryItem {
   workshopName: string;
   lineCount: number;
   documentCount: number;
-  pickQuantity: string;
-  pickAmount: string;
-  returnQuantity: string;
-  returnAmount: string;
-  netUsedQuantity: string;
-  netUsedAmount: string;
+  pickCostAmount: string;
+  returnCostAmount: string;
+  scrapCostAmount: string;
+  netConsumptionCostAmount: string;
 }
 
 export function buildMonthlyMaterialCategoryWorkshopUsageItems(
@@ -34,7 +31,8 @@ export function buildMonthlyMaterialCategoryWorkshopUsageItems(
   for (const entry of entries) {
     if (
       entry.topicKey !== "WORKSHOP_PICK" &&
-      entry.topicKey !== "WORKSHOP_RETURN"
+      entry.topicKey !== "WORKSHOP_RETURN" &&
+      entry.topicKey !== "WORKSHOP_SCRAP"
     ) {
       continue;
     }
@@ -63,15 +61,17 @@ export function buildMonthlyMaterialCategoryWorkshopUsageItems(
       const returnEntries = item.entries.filter(
         (entry) => entry.topicKey === "WORKSHOP_RETURN",
       );
-      const pickQuantity = sumDecimals(
-        pickEntries.map((entry) => entry.quantity),
+      const scrapEntries = item.entries.filter(
+        (entry) => entry.topicKey === "WORKSHOP_SCRAP",
       );
-      const returnQuantity = sumDecimals(
-        returnEntries.map((entry) => entry.quantity),
+      const pickCostAmount = sumDecimals(
+        pickEntries.map((entry) => entry.cost),
       );
-      const pickAmount = sumDecimals(pickEntries.map((entry) => entry.amount));
-      const returnAmount = sumDecimals(
-        returnEntries.map((entry) => entry.amount),
+      const returnCostAmount = sumDecimals(
+        returnEntries.map((entry) => entry.cost),
+      );
+      const scrapCostAmount = sumDecimals(
+        scrapEntries.map((entry) => entry.cost),
       );
       const documentKeys = new Set(
         item.entries.map(
@@ -83,12 +83,12 @@ export function buildMonthlyMaterialCategoryWorkshopUsageItems(
         workshopName: item.workshopName,
         lineCount: item.entries.length,
         documentCount: documentKeys.size,
-        pickQuantity: formatQuantity(pickQuantity),
-        pickAmount: formatMoney(pickAmount),
-        returnQuantity: formatQuantity(returnQuantity),
-        returnAmount: formatMoney(returnAmount),
-        netUsedQuantity: formatQuantity(pickQuantity.sub(returnQuantity)),
-        netUsedAmount: formatMoney(pickAmount.sub(returnAmount)),
+        pickCostAmount: formatMoney(pickCostAmount),
+        returnCostAmount: formatMoney(returnCostAmount),
+        scrapCostAmount: formatMoney(scrapCostAmount),
+        netConsumptionCostAmount: formatMoney(
+          pickCostAmount.sub(returnCostAmount).add(scrapCostAmount),
+        ),
       };
     })
     .sort((left, right) =>

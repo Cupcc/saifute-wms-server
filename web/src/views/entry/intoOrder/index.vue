@@ -86,12 +86,12 @@
           v-hasPermi="['inbound:into-order:create']"
         >新增</el-button>
       </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="intoOrderList" :column-config="columns" @row-click="handleRowClick">
+    <adaptive-table border stripe v-loading="loading" :data="intoOrderList" column-preferences :default-hidden-columns="['createBy']" @row-click="handleRowClick">
       <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="入库单号" align="center" prop="intoNo" min-width="140" v-if="columns[0].visible">
+      <el-table-column sortable show-overflow-tooltip label="入库单号" align="center" prop="intoNo" min-width="140">
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
             {{ scope.row.intoNo }}
@@ -106,7 +106,6 @@
         prop="intoDate"
         width="200"
         :sort-method="compareIntoDateRows"
-        v-if="columns[1].visible"
       >
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
@@ -119,35 +118,35 @@
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="总金额" align="center" prop="totalAmount" v-if="columns[2].visible" >
+      <el-table-column sortable show-overflow-tooltip label="总金额" align="center" prop="totalAmount" >
 	      <template #default="scope">
 		      <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
 			      {{ scope.row.totalAmount }}
 		      </el-button>
 	      </template>
       </el-table-column>
-	    <el-table-column sortable show-overflow-tooltip label="部门" align="center" prop="workshopName" v-if="columns[3].visible">
+	    <el-table-column sortable show-overflow-tooltip label="部门" align="center" prop="workshopName">
 		    <template #default="scope">
 			    <el-button link type="primary" :underline="false" @click="handleViewWorkshop(scope.row.workshopId)">
 				    {{ scope.row.workshopName }}
 			    </el-button>
 		    </template>
 	    </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="经办人" align="center" prop="attn" v-if="columns[4].visible">
+      <el-table-column sortable show-overflow-tooltip label="经办人" align="center" prop="attn">
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
             {{ scope.row.attn }}
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="创建人" align="center" prop="createBy" v-if="columns[5].visible">
+      <el-table-column sortable show-overflow-tooltip label="创建人" align="center" prop="createBy">
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
             {{ scope.row.createBy }}
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="审核结果" align="center" prop="auditStatus" v-if="columns[6].visible">
+      <el-table-column sortable show-overflow-tooltip label="审核结果" align="center" prop="auditStatus">
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
             <span v-if="scope.row.auditStatus === '0' || scope.row.auditStatus === 0" style="color: #E6A23C;">未审核</span>
@@ -521,17 +520,6 @@ const username = computed(() => userStore.name);
 const operatorNickname = computed(
   () => userStore.nickName || userStore.name || "",
 );
-
-// 添加columns数组定义
-const columns = ref([
-  { key: 0, label: `入库单号`, visible: true },
-  { key: 1, label: `入库日期`, visible: true },
-  { key: 2, label: `总金额`, visible: true },
-  { key: 3, label: `部门`, visible: true },
-  { key: 4, label: `经办人`, visible: true },
-  { key: 5, label: `创建人`, visible: false },
-  { key: 6, label: `审核结果`, visible: true },
-]);
 
 function formatDocumentDate(value) {
   if (!value) {

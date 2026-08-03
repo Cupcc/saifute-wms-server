@@ -54,11 +54,10 @@
       <right-toolbar
         v-model:showSearch="showSearch"
         @queryTable="getList"
-        :columns="columns"
       />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="scrapDetailList" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="scrapDetailList" column-preferences :default-hidden-columns="['scrapNo']">
       <el-table-column type="index" width="60" align="center" />
       <el-table-column
         sortable
@@ -67,7 +66,6 @@
         align="center"
         prop="scrapNo"
         min-width="140"
-        v-if="columns[0].visible"
       />
       <el-table-column
         sortable
@@ -77,7 +75,6 @@
         prop="scrapDate"
         width="200"
         :sort-method="compareScrapDateRows"
-        v-if="columns[1].visible"
       >
         <template #default="scope">
           <span style="display: inline-flex; flex-direction: column; align-items: center; line-height: 1.35;">
@@ -94,7 +91,6 @@
         label="车间"
         align="center"
         prop="workshopName"
-        v-if="columns[2].visible"
       />
       <el-table-column
         sortable
@@ -102,7 +98,6 @@
         label="物料名称"
         align="center"
         prop="materialName"
-        v-if="columns[3].visible"
       />
       <el-table-column
         sortable
@@ -110,7 +105,6 @@
         label="规格型号"
         align="center"
         prop="specification"
-        v-if="columns[4].visible"
       />
       <el-table-column
         sortable
@@ -118,7 +112,6 @@
         label="数量"
         align="center"
         prop="scrapQty"
-        v-if="columns[5].visible"
       />
       <el-table-column
         sortable
@@ -126,7 +119,6 @@
         label="单价"
         align="center"
         prop="unitPrice"
-        v-if="columns[6].visible"
       />
       <el-table-column
         sortable
@@ -134,7 +126,6 @@
         label="金额"
         align="center"
         prop="estimatedLoss"
-        v-if="columns[7].visible"
       >
         <template #default="scope">
           {{ formatLineAmount(scope.row) }}
@@ -146,7 +137,6 @@
         label="备注"
         align="center"
         prop="remark"
-        v-if="columns[8].visible"
       />
     </adaptive-table>
 
@@ -183,18 +173,6 @@ const data = reactive({
 });
 
 const { queryParams } = toRefs(data);
-
-const columns = ref([
-  { key: 0, label: `报废单号`, visible: false },
-  { key: 1, label: `报废日期`, visible: true },
-  { key: 2, label: `车间`, visible: true },
-  { key: 3, label: `物料名称`, visible: true },
-  { key: 4, label: `规格型号`, visible: true },
-  { key: 5, label: `数量`, visible: true },
-  { key: 6, label: `单价`, visible: true },
-  { key: 7, label: `金额`, visible: true },
-  { key: 8, label: `备注`, visible: true },
-]);
 
 function getList() {
   loading.value = true;

@@ -73,17 +73,17 @@
           v-hasPermi="['article:material:remove']"
         >作废</el-button>
       </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="materialList" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="materialList" column-preferences>
       <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="关联ID" align="center" prop="id" key="id" v-if="columns[0].visible"/>
-      <el-table-column sortable show-overflow-tooltip label="关联项目id" align="center" prop="productId" v-if="columns[1].visible" />
-      <el-table-column sortable show-overflow-tooltip label="关联物料id" align="center" prop="materialId" v-if="columns[2].visible" />
-      <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="quantity" v-if="columns[3].visible" />
-      <el-table-column sortable show-overflow-tooltip label="出厂编号" align="center" prop="interval" v-if="columns[4].visible" />
-      <el-table-column sortable show-overflow-tooltip label="备注" align="center" prop="remark" v-if="columns[5].visible" />
+      <el-table-column sortable show-overflow-tooltip label="关联ID" align="center" prop="id" key="id"/>
+      <el-table-column sortable show-overflow-tooltip label="关联项目id" align="center" prop="productId" />
+      <el-table-column sortable show-overflow-tooltip label="关联物料id" align="center" prop="materialId" />
+      <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="quantity" />
+      <el-table-column sortable show-overflow-tooltip label="出厂编号" align="center" prop="interval" />
+      <el-table-column sortable show-overflow-tooltip label="备注" align="center" prop="remark" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['article:material:edit']">修改</el-button>
@@ -164,16 +164,6 @@ const data = reactive({
 });
 
 const { queryParams, form, rules } = toRefs(data);
-
-// 添加columns数组定义
-const columns = ref([
-  { key: 0, label: `关联ID`, visible: true },
-  { key: 1, label: `关联项目id`, visible: true },
-  { key: 2, label: `关联物料id`, visible: true },
-  { key: 3, label: `数量`, visible: true },
-  { key: 4, label: `出厂编号`, visible: true },
-  { key: 5, label: `备注`, visible: true },
-]);
 
 /** 查询复合产品物料关联列表 */
 function getList() {

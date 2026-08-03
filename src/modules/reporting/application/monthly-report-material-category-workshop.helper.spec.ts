@@ -49,7 +49,7 @@ describe("buildMonthlyMaterialCategoryWorkshopUsageItems", () => {
     };
   }
 
-  it("summarizes workshop usage as pick minus return", () => {
+  it("summarizes actual workshop cost as pick minus return plus scrap", () => {
     const result = buildMonthlyMaterialCategoryWorkshopUsageItems([
       createEntry(),
       createEntry({
@@ -64,6 +64,16 @@ describe("buildMonthlyMaterialCategoryWorkshopUsageItems", () => {
         cost: new Prisma.Decimal("5"),
       }),
       createEntry({
+        topicKey: MonthlyReportingTopicKey.WORKSHOP_SCRAP,
+        documentTypeLabel: "报废单",
+        documentId: 103,
+        documentNo: "BF-001",
+        documentLineId: 1003,
+        quantity: new Prisma.Decimal("0.25"),
+        amount: new Prisma.Decimal("4"),
+        cost: new Prisma.Decimal("3"),
+      }),
+      createEntry({
         topicKey: MonthlyReportingTopicKey.SALES_OUTBOUND,
         documentId: 201,
         documentNo: "CK-001",
@@ -74,15 +84,14 @@ describe("buildMonthlyMaterialCategoryWorkshopUsageItems", () => {
       expect.objectContaining({
         workshopId: 192,
         workshopName: "装备车间",
-        lineCount: 2,
-        documentCount: 2,
-        pickQuantity: "2",
-        pickAmount: "20.0000",
-        returnQuantity: "1",
-        returnAmount: "5.0000",
-        netUsedQuantity: "2",
-        netUsedAmount: "15.0000",
+        lineCount: 3,
+        documentCount: 3,
+        pickCostAmount: "20.0000",
+        returnCostAmount: "5.0000",
+        scrapCostAmount: "3.0000",
+        netConsumptionCostAmount: "18.0000",
       }),
     ]);
+    expect(result[0]).not.toHaveProperty("pickQuantity");
   });
 });

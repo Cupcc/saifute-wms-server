@@ -25,7 +25,7 @@
          </el-form-item>
       </el-form>
       <adaptive-table
-         auto-columns
+         column-preferences
          :fit-viewport="false"
          v-loading="loading"
          :data="onlineList.slice((pageNum - 1) * pageSize, pageNum * pageSize)"

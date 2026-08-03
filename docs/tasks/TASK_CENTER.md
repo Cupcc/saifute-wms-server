@@ -23,6 +23,7 @@
 
 | Task 文档 | 状态 | 说明 |
 | --- | --- | --- |
+| `task-20260730-reporting-metric-semantics-alignment.md` | `in-progress` | 主体实现、真实数据核对和浏览器验证已完成：删除净生产/跨物料数量，拆清金额，修正车间、趋势、首页、库存健康、实际成本、Decimal 与数据库日期边界；仅待确认研发两种实际成本来源都缺失时的处理。 |
 | `analysis-20260710-rd-procurement-usability-review.md` | `fixed` | 研发采购全链路可用性专项评审 + 当日全量修复：评审产出 9 条 P0 + P1/P2 清单与 8 个系统性模式；随后前后端并行修复全部条目（后端 5 切片：精确守卫、幂等键 `clientRequestId`、null 清空、409、数值/日期边界、报错人话化、退料作废守卫、单据号接线;前端 5 页：幽灵必填、选中缓存合并防裸 ID、rules 红星、防误关、作废单过滤、枚举中文化、筛选补齐、命名统一、格式化统一、单号穿透）。typecheck / 917 单测 / web build 全绿,dev 库已推 3 列 DDL;**prod 上线需单独执行同款 DDL**;浏览器全链路走查待做。 |
 | `task-20260710-1104-rd-console-default-visibility.md` | `completed` | 承接 `task-20260709-1700` 遗留观察项并已由用户拍板：**保留**采购人员 `rd:workbench:view` / `rd:stocktake-order:*` 权限，把 `RdWorkbench` / `RdStocktakeOrders` 的前端 `visibleInModes` 加上 `DEFAULT`（方案 A，单文件 `web/src/store/modules/permission.js` 两行，后端不动）。2026-07-10 已完成：web build 通过，连 `saifute-wms-dev` 浏览器验收 `[AC-1..4]` 全过（`procurement` 默认控制台可达两页、`operator` 无权限仍不可见且直连 404、`rd-operator` RD 控制台行为不变）。方案 B 结构性收敛（控制台模式退化为纯展示、RBAC 单一访问真源）列为可选后续。 |
 | `task-20260709-1700-rd-procurement-flow-walkthrough-and-fixes.md` | `completed` | 采购员视角走查研发项目全链路并修复 4 个问题：研发项目业务车间固定为"研发技术"（前端只读 + 后端按名称解析，DTO 拒收车间字段）、采购需求新增按钮改为权限判定（原先所有账号均不可见的阻断缺陷）、采购需求必须关联有效研发项目（不再自由文本编码）、交接单头部总金额按 FIFO 结算成本回写；scratch 库 E2E 走通全链路，typecheck / `895` 条单测全绿；遗留观察项：RD 工作台 / 盘点单仅 RD 控制台可见 —— 已由 `task-20260710-1104` 承接确认（保留权限、默认控制台放开）。 |
@@ -41,6 +42,7 @@
 
 | Task 文档 | 状态 | 说明 |
 | --- | --- | --- |
+| `archive/retained-completed/task-20260729-1512-table-preference-architecture-consolidation.md` | `accepted` | 表格偏好架构已收敛：`55` 个浏览型页面文件统一为 `AdaptiveTable column-preferences`，`8` 个固定语义表格显式分类；列定义只有模板真源，月报 `7` 个区块折叠状态按用户/路由持久化，三个标准报表 RBAC 路由恢复；`24` 个偏好/覆盖测试、`8` 个 RBAC 测试、类型检查、前后端构建和真实页面浏览器验收全部通过。 |
 | `archive/retained-completed/task-20260727-1127-route-table-column-preference-coverage.md` | `accepted` | 路由表格列偏好全覆盖已完成：从受支持路由反查补齐 21 个主导航文件与 4 个辅助路由文件，reporting 12 张表全部支持拖动/显隐/持久化；月报 7 类汇总/明细区块可独立折叠。自动模式正确排除选择/序号/展开/操作/固定列并兼容动态列；14 个 focused tests、web production build 和真实 reporting/RD/system/stock 浏览器验收通过。 |
 | `archive/retained-completed/task-20260727-1007-user-table-column-preferences.md` | `accepted` | 业务列表公共列体验切片已完成：29 个既有列配置列表支持直接拖表头、面板拖动/显隐、按账号与路由隔离的浏览器本地偏好及恢复默认；5 个 focused tests、web production build 和真实组件浏览器 light acceptance 全部通过。 |
 | `archive/retained-completed/analysis-20260521-rbac-finance-accountant-role-review.md` | `implemented` | RBAC 财务会计只读角色已完成并归档：新增 `finance-accountant` seed 角色和只读权限 preset；启动修复只补缺失角色，不覆盖已存在运行态角色配置；相关系统管理 / 月报文档已同步，focused RBAC 测试、typecheck、Biome 与 diff 检查通过。 |

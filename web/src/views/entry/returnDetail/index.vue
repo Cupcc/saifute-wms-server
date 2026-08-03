@@ -58,26 +58,26 @@
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns" />
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="returnDetailList" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="returnDetailList" column-preferences>
       <el-table-column type="index" width="60" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="退货单号" align="center" prop="inboundNo" min-width="140" v-if="columns[0].visible" />
-      <el-table-column sortable show-overflow-tooltip label="退货日期" align="center" prop="inboundDate" width="140" v-if="columns[1].visible">
+      <el-table-column sortable show-overflow-tooltip label="退货单号" align="center" prop="inboundNo" min-width="140" />
+      <el-table-column sortable show-overflow-tooltip label="退货日期" align="center" prop="inboundDate" width="140">
         <template #default="scope">
           {{ formatDocumentDate(scope.row.inboundDate) }}
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="物料编码" align="center" prop="material.materialCode" min-width="120" v-if="columns[2].visible" />
-      <el-table-column sortable show-overflow-tooltip label="物料名称" align="center" prop="material.materialName" min-width="160" v-if="columns[3].visible" />
-      <el-table-column sortable show-overflow-tooltip label="规格型号" align="center" prop="material.specification" min-width="140" v-if="columns[4].visible" />
-      <el-table-column sortable show-overflow-tooltip label="来源单价" align="right" prop="unitPrice" width="110" v-if="columns[5].visible" />
-      <el-table-column sortable show-overflow-tooltip label="退货数量" align="right" prop="quantity" width="110" v-if="columns[6].visible" />
-      <el-table-column sortable show-overflow-tooltip label="金额" align="right" prop="amount" width="120" v-if="columns[7].visible" />
-      <el-table-column sortable show-overflow-tooltip label="供应商" align="center" prop="supplierName" min-width="160" v-if="columns[8].visible" />
-      <el-table-column sortable show-overflow-tooltip label="关联部门" align="center" prop="workshopName" width="130" v-if="columns[9].visible" />
-      <el-table-column show-overflow-tooltip label="备注" align="center" prop="remark" min-width="180" v-if="columns[10].visible" />
+      <el-table-column sortable show-overflow-tooltip label="物料编码" align="center" prop="material.materialCode" min-width="120" />
+      <el-table-column sortable show-overflow-tooltip label="物料名称" align="center" prop="material.materialName" min-width="160" />
+      <el-table-column sortable show-overflow-tooltip label="规格型号" align="center" prop="material.specification" min-width="140" />
+      <el-table-column sortable show-overflow-tooltip label="来源单价" align="right" prop="unitPrice" width="110" />
+      <el-table-column sortable show-overflow-tooltip label="退货数量" align="right" prop="quantity" width="110" />
+      <el-table-column sortable show-overflow-tooltip label="金额" align="right" prop="amount" width="120" />
+      <el-table-column sortable show-overflow-tooltip label="供应商" align="center" prop="supplierName" min-width="160" />
+      <el-table-column sortable show-overflow-tooltip label="关联部门" align="center" prop="workshopName" width="130" />
+      <el-table-column show-overflow-tooltip label="备注" align="center" prop="remark" min-width="180" />
     </adaptive-table>
 
     <pagination
@@ -110,20 +110,6 @@ const queryParams = reactive({
   materialName: null,
   specification: null,
 });
-
-const columns = ref([
-  { key: 0, label: "退货单号", visible: true },
-  { key: 1, label: "退货日期", visible: true },
-  { key: 2, label: "物料编码", visible: true },
-  { key: 3, label: "物料名称", visible: true },
-  { key: 4, label: "规格型号", visible: true },
-  { key: 5, label: "来源单价", visible: true },
-  { key: 6, label: "退货数量", visible: true },
-  { key: 7, label: "金额", visible: true },
-  { key: 8, label: "供应商", visible: true },
-  { key: 9, label: "关联部门", visible: true },
-  { key: 10, label: "备注", visible: true },
-]);
 
 function formatDocumentDate(value) {
   return value ? String(value).slice(0, 10) : "-";

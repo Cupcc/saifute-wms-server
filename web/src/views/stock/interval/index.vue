@@ -61,11 +61,10 @@
       <right-toolbar
         v-model:showSearch="showSearch"
         @queryTable="getList"
-        :columns="columns"
       />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="intervalList" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="intervalList" column-preferences>
       <el-table-column type="index" width="50" align="center" />
       <el-table-column
         sortable
@@ -74,7 +73,6 @@
         align="center"
         prop="intervalId"
         key="intervalId"
-        v-if="columns[0].visible"
       />
       <el-table-column
         sortable
@@ -82,7 +80,6 @@
         label="关联单据类型"
         align="center"
         prop="orderType"
-        v-if="columns[1].visible"
       >
         <template #default="scope">
           <dict-tag
@@ -97,7 +94,6 @@
         label="明细id"
         align="center"
         prop="detailId"
-        v-if="columns[2].visible"
       />
       <el-table-column
         sortable
@@ -105,7 +101,6 @@
         label="区间起始编号"
         align="center"
         prop="startNum"
-        v-if="columns[3].visible"
       />
       <el-table-column
         sortable
@@ -113,7 +108,6 @@
         label="区间结束编号"
         align="center"
         prop="endNum"
-        v-if="columns[4].visible"
       />
     </adaptive-table>
 
@@ -150,14 +144,6 @@ const queryParams = ref({
   startNum: null,
   endNum: null,
 });
-
-const columns = ref([
-  { key: 0, label: "主键", visible: true },
-  { key: 1, label: "关联单据类型", visible: true },
-  { key: 2, label: "明细id", visible: true },
-  { key: 3, label: "区间起始编号", visible: true },
-  { key: 4, label: "区间结束编号", visible: true },
-]);
 
 function getList() {
   loading.value = true;

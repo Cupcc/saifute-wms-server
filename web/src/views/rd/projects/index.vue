@@ -57,7 +57,7 @@
       </div>
 
       <adaptive-table
-        auto-columns
+        column-preferences
         :fit-viewport="false"
         :data="rows"
         stripe

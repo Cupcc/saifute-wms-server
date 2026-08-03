@@ -43,43 +43,43 @@
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns" />
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="returnOrderList" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="returnOrderList" column-preferences>
       <el-table-column type="index" width="50" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="退货单号" align="center" prop="inboundNo" min-width="140" v-if="columns[0].visible">
+      <el-table-column sortable show-overflow-tooltip label="退货单号" align="center" prop="inboundNo" min-width="140">
         <template #default="scope">
           <el-button link type="primary" :underline="false" @click.stop="goToDetail(scope.row)">
             {{ scope.row.inboundNo }}
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="退货日期" align="center" prop="inboundDate" width="150" v-if="columns[1].visible">
+      <el-table-column sortable show-overflow-tooltip label="退货日期" align="center" prop="inboundDate" width="150">
         <template #default="scope">
           {{ formatDocumentDate(scope.row.inboundDate) }}
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="供应商" align="center" prop="supplierName" min-width="160" v-if="columns[2].visible" />
-      <el-table-column sortable show-overflow-tooltip label="经办人" align="center" prop="attn" width="120" v-if="columns[3].visible" />
-      <el-table-column sortable show-overflow-tooltip label="关联部门" align="center" prop="workshopName" width="130" v-if="columns[4].visible" />
-      <el-table-column sortable show-overflow-tooltip label="总数量" align="right" prop="totalQty" width="110" v-if="columns[5].visible" />
-      <el-table-column sortable show-overflow-tooltip label="总金额" align="right" prop="totalAmount" width="120" v-if="columns[6].visible" />
-      <el-table-column sortable show-overflow-tooltip label="库存状态" align="center" prop="inventoryEffectStatus" width="120" v-if="columns[7].visible">
+      <el-table-column sortable show-overflow-tooltip label="供应商" align="center" prop="supplierName" min-width="160" />
+      <el-table-column sortable show-overflow-tooltip label="经办人" align="center" prop="attn" width="120" />
+      <el-table-column sortable show-overflow-tooltip label="关联部门" align="center" prop="workshopName" width="130" />
+      <el-table-column sortable show-overflow-tooltip label="总数量" align="right" prop="totalQty" width="110" />
+      <el-table-column sortable show-overflow-tooltip label="总金额" align="right" prop="totalAmount" width="120" />
+      <el-table-column sortable show-overflow-tooltip label="库存状态" align="center" prop="inventoryEffectStatus" width="120">
         <template #default="scope">
           <el-tag :type="inventoryStatusTag(scope.row.inventoryEffectStatus)" effect="plain">
             {{ scope.row.inventoryEffectStatus || "-" }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="单据状态" align="center" prop="lifecycleStatus" width="120" v-if="columns[8].visible">
+      <el-table-column sortable show-overflow-tooltip label="单据状态" align="center" prop="lifecycleStatus" width="120">
         <template #default="scope">
           <el-tag :type="lifecycleStatusTag(scope.row.lifecycleStatus)" effect="plain">
             {{ scope.row.lifecycleStatus || "-" }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column show-overflow-tooltip label="备注" align="center" prop="remark" min-width="180" v-if="columns[9].visible" />
+      <el-table-column show-overflow-tooltip label="备注" align="center" prop="remark" min-width="180" />
       <el-table-column label="操作" align="center" fixed="right" width="140">
         <template #default="scope">
           <el-button link type="primary" @click.stop="goToDetail(scope.row)">明细</el-button>
@@ -123,19 +123,6 @@ const queryParams = reactive({
   attn: null,
   materialName: null,
 });
-
-const columns = ref([
-  { key: 0, label: "退货单号", visible: true },
-  { key: 1, label: "退货日期", visible: true },
-  { key: 2, label: "供应商", visible: true },
-  { key: 3, label: "经办人", visible: true },
-  { key: 4, label: "关联部门", visible: true },
-  { key: 5, label: "总数量", visible: true },
-  { key: 6, label: "总金额", visible: true },
-  { key: 7, label: "库存状态", visible: true },
-  { key: 8, label: "单据状态", visible: true },
-  { key: 9, label: "备注", visible: true },
-]);
 
 function formatDocumentDate(value) {
   return value ? String(value).slice(0, 10) : "-";

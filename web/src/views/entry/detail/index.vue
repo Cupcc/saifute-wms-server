@@ -97,12 +97,12 @@
     </el-form>
 
     <el-row :gutter="10" class="mb8">
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="detailList" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="detailList" column-preferences :default-hidden-columns="['inboundNo']">
       <el-table-column type="index" width="60" align="center" />
-      <el-table-column sortable show-overflow-tooltip label="验收单号" align="center" prop="inboundNo" key="inboundNo" min-width="140" v-if="columns[0].visible"/>
+      <el-table-column sortable show-overflow-tooltip label="验收单号" align="center" prop="inboundNo" key="inboundNo" min-width="140"/>
       <el-table-column
         sortable
         show-overflow-tooltip
@@ -111,7 +111,6 @@
         prop="inboundDate"
         width="200"
         :sort-method="compareInboundDateRows"
-        v-if="columns[1].visible"
       >
         <template #default="scope">
           <span style="display: inline-flex; flex-direction: column; align-items: center; line-height: 1.35;">
@@ -122,14 +121,14 @@
           </span>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="物料名称" align="center" prop="material.materialName" v-if="columns[2].visible" />
-      <el-table-column sortable show-overflow-tooltip label="规格型号" align="center" prop="material.specification" v-if="columns[3].visible" />
-      <el-table-column sortable show-overflow-tooltip label="单价" align="center" prop="unitPrice" v-if="columns[4].visible" />
-      <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="quantity" v-if="columns[5].visible" />
-      <el-table-column sortable show-overflow-tooltip label="金额" align="center" prop="amount" v-if="columns[6].visible" />
-      <el-table-column sortable show-overflow-tooltip label="含税价" align="center" prop="taxPrice" v-if="columns[7].visible" />
-      <el-table-column sortable show-overflow-tooltip label="供应商" align="center" prop="supplierName" v-if="columns[8].visible" />
-	    <el-table-column sortable show-overflow-tooltip label="备注" align="center" prop="remark" v-if="columns[9].visible" />
+      <el-table-column sortable show-overflow-tooltip label="物料名称" align="center" prop="material.materialName" />
+      <el-table-column sortable show-overflow-tooltip label="规格型号" align="center" prop="material.specification" />
+      <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="quantity" />
+      <el-table-column sortable show-overflow-tooltip label="单价" align="center" prop="unitPrice" />
+      <el-table-column sortable show-overflow-tooltip label="金额" align="center" prop="amount" />
+      <el-table-column sortable show-overflow-tooltip label="含税价" align="center" prop="taxPrice" />
+      <el-table-column sortable show-overflow-tooltip label="供应商" align="center" prop="supplierName" />
+	    <el-table-column sortable show-overflow-tooltip label="备注" align="center" prop="remark" />
     </adaptive-table>
 
     <pagination
@@ -231,20 +230,6 @@ const data = reactive({
 });
 
 const { queryParams, form, rules } = toRefs(data);
-
-// 添加columns数组定义
-const columns = ref([
-  { key: 0, label: `验收单号`, visible: false },
-  { key: 1, label: `日期`, visible: true },
-  { key: 2, label: `物料名称`, visible: true },
-  { key: 3, label: `规格型号`, visible: true },
-  { key: 4, label: `数量`, visible: true },
-  { key: 5, label: `单价`, visible: true },
-  { key: 6, label: `金额`, visible: true },
-  { key: 7, label: `含税价`, visible: true },
-  { key: 8, label: `供应商`, visible: true },
-  { key: 9, label: `备注`, visible: true },
-]);
 
 function formatDocumentDate(value) {
   if (!value) {

@@ -26,7 +26,24 @@ export interface InventoryOverviewSummary {
   activeMaterialCount: number;
   inventoryRecordCount: number;
   lowStockCount: number;
+  normalStockCount: number;
+  aboveMaxStockCount: number;
+  unconfiguredStockCount: number;
   totalInventoryValue: string;
+}
+
+export enum InventoryHealthStatus {
+  LOW = "LOW",
+  NORMAL = "NORMAL",
+  ABOVE_MAX = "ABOVE_MAX",
+  UNCONFIGURED = "UNCONFIGURED",
+}
+
+interface InventoryHealthCounts {
+  lowStockCount: number;
+  normalStockCount: number;
+  aboveMaxStockCount: number;
+  unconfiguredStockCount: number;
 }
 
 export interface InventorySummaryItem {
@@ -44,7 +61,9 @@ export interface InventorySummaryItem {
   inventoryValue: string;
   warningMinQty: string | null;
   warningMaxQty: string | null;
-  isBelowMin: boolean;
+  inventoryStatus: InventoryHealthStatus;
+  /** @deprecated 使用 inventoryStatus；仅为旧客户端兼容保留。 */
+  isBelowMin?: boolean;
   updatedAt: string;
 }
 
@@ -75,27 +94,62 @@ export class ReportingService {
         stockScope,
       },
     );
+    const acceptanceAmount = new Prisma.Decimal(metrics.acceptanceTotalAmount);
+    const supplierReturnAmount = new Prisma.Decimal(
+      metrics.supplierReturnTotalAmount,
+    );
+    const salesOutboundAmount = new Prisma.Decimal(
+      metrics.salesOutboundTotalAmount,
+    );
+    const salesReturnAmount = new Prisma.Decimal(
+      metrics.salesReturnTotalAmount,
+    );
+    const workshopPickCost = new Prisma.Decimal(metrics.workshopPickCostAmount);
+    const workshopReturnCost = new Prisma.Decimal(
+      metrics.workshopReturnCostAmount,
+    );
+    const workshopScrapCost = new Prisma.Decimal(
+      metrics.workshopScrapCostAmount,
+    );
 
     return {
       generatedAt: new Date().toISOString(),
       inventory: inventoryProjection.summary,
       todayDocuments: {
-        inboundCount: metrics.inboundTodayCount,
-        outboundCount: metrics.outboundTodayCount,
-        workshopMaterialCount: metrics.workshopMaterialTodayCount,
+        acceptanceCount: metrics.acceptanceTodayCount,
+        productionReceiptCount: metrics.productionReceiptTodayCount,
+        supplierReturnCount: metrics.supplierReturnTodayCount,
+        salesOutboundCount: metrics.salesOutboundTodayCount,
+        salesReturnCount: metrics.salesReturnTodayCount,
+        workshopPickCount: metrics.workshopPickTodayCount,
+        workshopReturnCount: metrics.workshopReturnTodayCount,
+        workshopScrapCount: metrics.workshopScrapTodayCount,
       },
-      cumulativeDocuments: {
+      cumulativeAmounts: {
         inbound: {
-          totalQty: this.toDecimalString(metrics.inboundTotalQty),
-          totalAmount: this.toMoneyString(metrics.inboundTotalAmount),
+          acceptanceAmount: this.toMoneyString(acceptanceAmount),
+          productionReceiptAmount: this.toMoneyString(
+            metrics.productionReceiptTotalAmount,
+          ),
+          supplierReturnAmount: this.toMoneyString(supplierReturnAmount),
+          procurementNetInboundAmount: this.toMoneyString(
+            acceptanceAmount.sub(supplierReturnAmount),
+          ),
         },
-        outbound: {
-          totalQty: this.toDecimalString(metrics.outboundTotalQty),
-          totalAmount: this.toMoneyString(metrics.outboundTotalAmount),
+        sales: {
+          outboundAmount: this.toMoneyString(salesOutboundAmount),
+          returnAmount: this.toMoneyString(salesReturnAmount),
+          netAmount: this.toMoneyString(
+            salesOutboundAmount.sub(salesReturnAmount),
+          ),
         },
-        workshopMaterial: {
-          totalQty: this.toDecimalString(metrics.workshopMaterialTotalQty),
-          totalAmount: this.toMoneyString(metrics.workshopMaterialTotalAmount),
+        workshop: {
+          pickCost: this.toMoneyString(workshopPickCost),
+          returnCost: this.toMoneyString(workshopReturnCost),
+          scrapCost: this.toMoneyString(workshopScrapCost),
+          netConsumptionCost: this.toMoneyString(
+            workshopPickCost.sub(workshopReturnCost).add(workshopScrapCost),
+          ),
         },
       },
     };
@@ -144,6 +198,9 @@ export class ReportingService {
         materialIds: Set<number>;
         inventoryRecordCount: number;
         lowStockCount: number;
+        normalStockCount: number;
+        aboveMaxStockCount: number;
+        unconfiguredStockCount: number;
         totalInventoryValue: Prisma.Decimal;
       }
     >();
@@ -159,17 +216,18 @@ export class ReportingService {
         materialIds: new Set<number>(),
         inventoryRecordCount: 0,
         lowStockCount: 0,
+        normalStockCount: 0,
+        aboveMaxStockCount: 0,
+        unconfiguredStockCount: 0,
         totalInventoryValue: new Prisma.Decimal(0),
       };
 
       current.materialIds.add(snapshot.material.id);
       current.inventoryRecordCount += 1;
-      if (
-        snapshot.material.warningMinQty &&
-        snapshot.quantityOnHand.lt(snapshot.material.warningMinQty)
-      ) {
-        current.lowStockCount += 1;
-      }
+      this.incrementInventoryHealthCount(
+        current,
+        this.classifyInventoryHealth(snapshot),
+      );
       current.totalInventoryValue = current.totalInventoryValue.add(
         inventoryProjection.valuationByBalanceKey.get(
           this.toBalanceKey(snapshot.material.id, snapshot.stockScope?.id),
@@ -186,6 +244,9 @@ export class ReportingService {
         materialCount: item.materialIds.size,
         inventoryRecordCount: item.inventoryRecordCount,
         lowStockCount: item.lowStockCount,
+        normalStockCount: item.normalStockCount,
+        aboveMaxStockCount: item.aboveMaxStockCount,
+        unconfiguredStockCount: item.unconfiguredStockCount,
         totalInventoryValue: item.totalInventoryValue.toFixed(4),
       }))
       .sort((left, right) =>
@@ -223,40 +284,47 @@ export class ReportingService {
       workshopId: query.workshopId,
     });
 
-    const filtered = documents.filter(
-      (item) =>
-        trendType === ReportingTrendType.ALL || item.sourceType === trendType,
+    const filtered = documents.filter((item) =>
+      this.matchesTrendType(item.sourceType, trendType),
     );
     const grouped = new Map<
       string,
       {
         date: string;
         trendType: string;
-        documentCount: number;
-        totalQty: Prisma.Decimal;
+        documentKeys: Set<string>;
         totalAmount: Prisma.Decimal;
       }
     >();
+    const summaryDocumentKeys = new Set<string>();
+    let inventoryCostNetChange = new Prisma.Decimal(0);
 
     for (const item of filtered) {
       const date = toDateOnly(item.bizDate, this.tz);
       const key = `${date}:${item.sourceType}`;
+      const documentKey = `${item.businessDocumentType}:${item.businessDocumentId}`;
       const current = grouped.get(key) ?? {
         date,
         trendType: item.sourceType,
-        documentCount: 0,
-        totalQty: new Prisma.Decimal(0),
+        documentKeys: new Set<string>(),
         totalAmount: new Prisma.Decimal(0),
       };
-      current.documentCount += 1;
-      current.totalQty = current.totalQty.add(item.totalQty);
+      current.documentKeys.add(documentKey);
       current.totalAmount = current.totalAmount.add(item.totalAmount);
       grouped.set(key, current);
+      summaryDocumentKeys.add(documentKey);
+      inventoryCostNetChange = inventoryCostNetChange.add(
+        item.inventoryCostDelta,
+      );
     }
 
     return {
       dateFrom: toDateOnly(dateFrom, this.tz),
       dateTo: toDateOnly(dateTo, this.tz),
+      summary: {
+        documentCount: summaryDocumentKeys.size,
+        inventoryCostNetChange: inventoryCostNetChange.toFixed(4),
+      },
       items: [...grouped.values()]
         .sort((left, right) =>
           left.date === right.date
@@ -266,8 +334,7 @@ export class ReportingService {
         .map((item) => ({
           date: item.date,
           trendType: item.trendType,
-          documentCount: item.documentCount,
-          totalQty: item.totalQty.toFixed(6),
+          documentCount: item.documentKeys.size,
           totalAmount: item.totalAmount.toFixed(4),
         })),
     };
@@ -293,6 +360,7 @@ export class ReportingService {
             "quantityOnHand",
             "unitCode",
             "inventoryValue",
+            "inventoryStatus",
           ],
           result.items,
         );
@@ -312,6 +380,9 @@ export class ReportingService {
             "materialCount",
             "inventoryRecordCount",
             "lowStockCount",
+            "normalStockCount",
+            "aboveMaxStockCount",
+            "unconfiguredStockCount",
             "totalInventoryValue",
           ],
           result.items,
@@ -323,12 +394,13 @@ export class ReportingService {
             trendType: dto.trendType,
             dateFrom: dto.dateFrom,
             dateTo: dto.dateTo,
+            workshopId: dto.workshopId,
           },
           stockScope,
         );
         return this.buildCsvExport(
           dto.reportType,
-          ["date", "trendType", "documentCount", "totalQty", "totalAmount"],
+          ["date", "trendType", "documentCount", "totalAmount"],
           result.items,
         );
       }
@@ -347,6 +419,7 @@ export class ReportingService {
   ): InventorySummaryItem {
     const warningMinQty = item.material.warningMinQty;
     const warningMaxQty = item.material.warningMaxQty;
+    const inventoryStatus = this.classifyInventoryHealth(item);
     return {
       materialId: item.material.id,
       materialCode: item.material.materialCode,
@@ -363,9 +436,8 @@ export class ReportingService {
       inventoryValue: this.toMoneyString(inventoryValue),
       warningMinQty: warningMinQty ? warningMinQty.toFixed(6) : null,
       warningMaxQty: warningMaxQty ? warningMaxQty.toFixed(6) : null,
-      isBelowMin: warningMinQty
-        ? new Prisma.Decimal(item.quantityOnHand).lt(warningMinQty)
-        : false,
+      inventoryStatus,
+      isBelowMin: inventoryStatus === InventoryHealthStatus.LOW,
       updatedAt: item.updatedAt.toISOString(),
     };
   }
@@ -411,19 +483,22 @@ export class ReportingService {
     valuationByBalanceKey: Map<string, Prisma.Decimal>,
   ): InventoryOverviewSummary {
     const materialIdsWithStock = new Set<number>();
-    let lowStockCount = 0;
+    const healthCounts: InventoryHealthCounts = {
+      lowStockCount: 0,
+      normalStockCount: 0,
+      aboveMaxStockCount: 0,
+      unconfiguredStockCount: 0,
+    };
     let totalInventoryValue = new Prisma.Decimal(0);
 
     for (const snapshot of snapshots) {
       if (snapshot.quantityOnHand.gt(0)) {
         materialIdsWithStock.add(snapshot.material.id);
       }
-      if (
-        snapshot.material.warningMinQty &&
-        snapshot.quantityOnHand.lt(snapshot.material.warningMinQty)
-      ) {
-        lowStockCount += 1;
-      }
+      this.incrementInventoryHealthCount(
+        healthCounts,
+        this.classifyInventoryHealth(snapshot),
+      );
       totalInventoryValue = totalInventoryValue.add(
         valuationByBalanceKey.get(
           this.toBalanceKey(snapshot.material.id, snapshot.stockScope?.id),
@@ -434,7 +509,7 @@ export class ReportingService {
     return {
       activeMaterialCount: materialIdsWithStock.size,
       inventoryRecordCount: snapshots.length,
-      lowStockCount,
+      ...healthCounts,
       totalInventoryValue: totalInventoryValue.toFixed(4),
     };
   }
@@ -443,12 +518,60 @@ export class ReportingService {
     return `${materialId}:${stockScopeId ?? "null"}`;
   }
 
-  private toDecimalString(value: Prisma.Decimal | null | undefined) {
-    return new Prisma.Decimal(value ?? 0).toFixed(6);
-  }
-
   private toMoneyString(value: Prisma.Decimal | null | undefined) {
     return new Prisma.Decimal(value ?? 0).toFixed(4);
+  }
+
+  private classifyInventoryHealth(
+    snapshot: Pick<InventoryBalanceSnapshot, "quantityOnHand" | "material">,
+  ): InventoryHealthStatus {
+    const { warningMinQty, warningMaxQty } = snapshot.material;
+    if (warningMinQty === null && warningMaxQty === null) {
+      return InventoryHealthStatus.UNCONFIGURED;
+    }
+    if (warningMinQty !== null && snapshot.quantityOnHand.lt(warningMinQty)) {
+      return InventoryHealthStatus.LOW;
+    }
+    if (warningMaxQty !== null && snapshot.quantityOnHand.gt(warningMaxQty)) {
+      return InventoryHealthStatus.ABOVE_MAX;
+    }
+    return InventoryHealthStatus.NORMAL;
+  }
+
+  private incrementInventoryHealthCount(
+    counts: InventoryHealthCounts,
+    status: InventoryHealthStatus,
+  ) {
+    switch (status) {
+      case InventoryHealthStatus.LOW:
+        counts.lowStockCount += 1;
+        return;
+      case InventoryHealthStatus.NORMAL:
+        counts.normalStockCount += 1;
+        return;
+      case InventoryHealthStatus.ABOVE_MAX:
+        counts.aboveMaxStockCount += 1;
+        return;
+      case InventoryHealthStatus.UNCONFIGURED:
+        counts.unconfiguredStockCount += 1;
+    }
+  }
+
+  private matchesTrendType(
+    sourceType: string,
+    trendType: ReportingTrendType,
+  ): boolean {
+    if (trendType === ReportingTrendType.ALL) {
+      return true;
+    }
+    if (trendType === ReportingTrendType.RD) {
+      return (
+        sourceType === ReportingTrendType.RD_HANDOFF ||
+        sourceType === ReportingTrendType.RD_STOCKTAKE_GAIN ||
+        sourceType === ReportingTrendType.RD_STOCKTAKE_LOSS
+      );
+    }
+    return sourceType === trendType;
   }
 
   private async resolveInventoryStockScopeIds(stockScope?: StockScopeCode) {

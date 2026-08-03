@@ -47,15 +47,13 @@
       </el-col>
       <right-toolbar
         v-model:showSearch="showSearch"
-        :columns="columns"
         @queryTable="getList"
       />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="stockScopeList" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="stockScopeList" column-preferences>
       <el-table-column type="index" width="50" align="center" />
       <el-table-column
-        v-if="columns[0].visible"
         sortable
         show-overflow-tooltip
         label="范围编码"
@@ -63,7 +61,6 @@
         prop="scopeCode"
       />
       <el-table-column
-        v-if="columns[1].visible"
         sortable
         show-overflow-tooltip
         label="范围名称"
@@ -176,11 +173,6 @@ const data = reactive({
 });
 
 const { queryParams, form, rules } = toRefs(data);
-
-const columns = ref([
-  { key: 0, label: "范围编码", visible: true },
-  { key: 1, label: "范围名称", visible: true },
-]);
 
 function getList() {
   loading.value = true;

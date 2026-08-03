@@ -22,6 +22,10 @@ export enum ReportingTrendType {
   SALES = "SALES",
   WORKSHOP_MATERIAL = "WORKSHOP_MATERIAL",
   RD_PROJECT = "RD_PROJECT",
+  RD_HANDOFF = "RD_HANDOFF",
+  RD_STOCKTAKE_GAIN = "RD_STOCKTAKE_GAIN",
+  RD_STOCKTAKE_LOSS = "RD_STOCKTAKE_LOSS",
+  /** @deprecated 兼容旧客户端；查询时展开为全部 RD 协同趋势类型。 */
   RD = "RD",
 }
 

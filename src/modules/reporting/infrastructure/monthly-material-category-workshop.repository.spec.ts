@@ -15,6 +15,9 @@ describe("MonthlyMaterialCategoryWorkshopRepository", () => {
       workshopMaterialOrder: {
         findMany: jest.fn().mockResolvedValue([]),
       },
+      inventoryLog: {
+        groupBy: jest.fn().mockResolvedValue([]),
+      },
     };
 
     return {
@@ -28,9 +31,13 @@ describe("MonthlyMaterialCategoryWorkshopRepository", () => {
     };
   }
 
-  it("maps workshop pick and return lines into material-category facts", async () => {
-    const { repository, workshopMaterialOrderLine, workshopMaterialOrder } =
-      createRepository();
+  it("loads pick, return, and scrap lines into material-category facts", async () => {
+    const {
+      repository,
+      workshopMaterialOrderLine,
+      workshopMaterialOrder,
+      inventoryLog,
+    } = createRepository();
     workshopMaterialOrderLine.findMany.mockResolvedValue([
       {
         id: 1001,
@@ -111,6 +118,12 @@ describe("MonthlyMaterialCategoryWorkshopRepository", () => {
         bizDate: new Date("2026-04-30T00:00:00.000Z"),
       },
     ] as never);
+    inventoryLog.groupBy.mockResolvedValue([
+      {
+        businessDocumentLineId: 1001,
+        _sum: { costAmount: new Prisma.Decimal("21") },
+      },
+    ] as never);
 
     const result = await repository.findWorkshopMaterialCategoryEntries({
       start: new Date("2026-05-01T00:00:00.000Z"),
@@ -123,7 +136,7 @@ describe("MonthlyMaterialCategoryWorkshopRepository", () => {
       expect.objectContaining({
         where: expect.objectContaining({
           order: expect.objectContaining({
-            orderType: { in: ["PICK", "RETURN"] },
+            orderType: { in: ["PICK", "RETURN", "SCRAP"] },
             OR: expect.arrayContaining([{ stockScopeId: null }]),
             workshopId: 192,
           }),
@@ -139,9 +152,9 @@ describe("MonthlyMaterialCategoryWorkshopRepository", () => {
         categoryId: 11,
         categoryCode: "CHEM",
         categoryName: "化工",
-        unitPrice: new Prisma.Decimal("10"),
+        unitPrice: new Prisma.Decimal("10.5"),
         amount: new Prisma.Decimal("20"),
-        cost: new Prisma.Decimal("20"),
+        cost: new Prisma.Decimal("21"),
         salesUnitPrice: null,
         salesAmount: null,
         workshopName: "装备车间",
@@ -156,5 +169,13 @@ describe("MonthlyMaterialCategoryWorkshopRepository", () => {
         sourceDocumentNo: "LL-001",
       }),
     ]);
+    expect(inventoryLog.groupBy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          reversalOfLogId: null,
+          reversedByLogs: { none: {} },
+        }),
+      }),
+    );
   });
 });

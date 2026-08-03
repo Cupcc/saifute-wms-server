@@ -47,15 +47,13 @@
       </el-col>
       <right-toolbar
         v-model:showSearch="showSearch"
-        :columns="columns"
         @queryTable="getList"
       />
     </el-row>
 
-    <adaptive-table border stripe v-loading="loading" :data="categoryList" :column-config="columns">
+    <adaptive-table border stripe v-loading="loading" :data="categoryList" column-preferences>
       <el-table-column type="index" width="50" align="center" />
       <el-table-column
-        v-if="columns[0].visible"
         sortable
         show-overflow-tooltip
         label="分类编码"
@@ -63,7 +61,6 @@
         prop="categoryCode"
       />
       <el-table-column
-        v-if="columns[1].visible"
         sortable
         show-overflow-tooltip
         label="分类名称"
@@ -71,7 +68,6 @@
         prop="categoryName"
       />
       <el-table-column
-        v-if="columns[2].visible"
         sortable
         show-overflow-tooltip
         label="排序"
@@ -188,12 +184,6 @@ const data = reactive({
 });
 
 const { queryParams, form, rules } = toRefs(data);
-
-const columns = ref([
-  { key: 0, label: "分类编码", visible: true },
-  { key: 1, label: "分类名称", visible: true },
-  { key: 2, label: "排序", visible: true },
-]);
 
 function buildKeyword(query) {
   return query.categoryCode || query.categoryName || undefined;

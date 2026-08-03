@@ -81,7 +81,7 @@
           @click="toggleExpandAll"
         >展开/折叠</el-button>
       </el-col>
-      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
+      <right-toolbar v-model:showSearch="showSearch" @queryTable="getList"></right-toolbar>
     </el-row>
 
     <adaptive-table
@@ -90,31 +90,31 @@
       stripe
       v-loading="loading"
       :data="customerList"
-      :column-config="columns"
+      column-preferences
       row-key="customerId"
       :default-expand-all="isExpandAll"
       :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
     >
       <el-table-column type="index" width="50" align="center" />
-	    <el-table-column sortable show-overflow-tooltip label="客户名称" align="center" prop="customerName" v-if="columns[1].visible">
-		    <template #default="scope">
-			    <el-button link type="primary" @click="handleView(scope.row)">{{ scope.row.customerName }}</el-button>
-		    </template>
-	    </el-table-column>
-      <el-table-column sortable :sort-method="compareCustomerCodeRows" show-overflow-tooltip label="客户编码" align="center" prop="customerCode" v-if="columns[0].visible">
+      <el-table-column sortable :sort-method="compareCustomerCodeRows" show-overflow-tooltip label="客户编码" align="center" prop="customerCode">
 	      <template #default="scope">
 		      <el-button link type="primary" @click="handleView(scope.row)">{{ scope.row.customerCode }}</el-button>
 	      </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="客户简称" align="center" prop="customerShortName" v-if="columns[2].visible" />
-      <el-table-column sortable show-overflow-tooltip label="客户类型" align="center" prop="customerType" v-if="columns[3].visible">
+	    <el-table-column sortable show-overflow-tooltip label="客户名称" align="center" prop="customerName">
+		    <template #default="scope">
+			    <el-button link type="primary" @click="handleView(scope.row)">{{ scope.row.customerName }}</el-button>
+		    </template>
+	    </el-table-column>
+      <el-table-column sortable show-overflow-tooltip label="客户简称" align="center" prop="customerShortName" />
+      <el-table-column sortable show-overflow-tooltip label="客户类型" align="center" prop="customerType">
         <template #default="scope">
           <dict-tag :options="saifute_customer_type" :value="scope.row.customerType"/>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="联系人" align="center" prop="contactPerson" v-if="columns[4].visible" />
-      <el-table-column sortable show-overflow-tooltip label="联系方式" align="center" prop="contactPhone" v-if="columns[5].visible" />
-      <el-table-column sortable show-overflow-tooltip label="客户地址" align="center" prop="address" v-if="columns[6].visible" />
+      <el-table-column sortable show-overflow-tooltip label="联系人" align="center" prop="contactPerson" />
+      <el-table-column sortable show-overflow-tooltip label="联系方式" align="center" prop="contactPhone" />
+      <el-table-column sortable show-overflow-tooltip label="客户地址" align="center" prop="address" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template #default="scope">
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)" v-hasPermi="['master:customer:update']">修改</el-button>
@@ -242,17 +242,6 @@ const data = reactive({
 });
 
 const { queryParams, form, rules } = toRefs(data);
-
-// 添加columns数组定义
-const columns = ref([
-  { key: 0, label: `客户编码`, visible: true },
-  { key: 1, label: `客户名称`, visible: true },
-  { key: 2, label: `客户简称`, visible: true },
-  { key: 3, label: `客户类型`, visible: true },
-  { key: 4, label: `联系人`, visible: true },
-  { key: 5, label: `联系方式`, visible: true },
-  { key: 6, label: `客户地址`, visible: true },
-]);
 
 function compareCustomerCodeRows(left, right) {
   return compareNaturalCode(left?.customerCode, right?.customerCode);
