@@ -59,6 +59,8 @@ export interface MonthlyReportMaterialCategoryAmountTotals {
   netSalesCostAmount: string;
   estimatedGrossProfitAmount: string;
   openingCostAmount: string;
+  inboundAmount: string;
+  outboundAmount: string;
   inventoryCostNetChangeAmount: string;
   closingCostAmount: string;
 }
@@ -457,6 +459,8 @@ export class MonthlyReportMaterialCategoryService {
         netSalesAmount.sub(netSalesCostAmount),
       ),
       openingCostAmount: balanceTotals.openingAmount,
+      inboundAmount: balanceTotals.inboundAmount,
+      outboundAmount: balanceTotals.outboundAmount,
       inventoryCostNetChangeAmount: balanceTotals.netAmount,
       closingCostAmount: balanceTotals.closingAmount,
     };

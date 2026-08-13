@@ -336,6 +336,11 @@ const SUPPORTED_BACKEND_ROUTE_META = {
     path: "home",
     component: "reporting/home/index",
   },
+  ReportingTrends: {
+    group: "reporting",
+    path: "trends",
+    component: "reporting/trends/index",
+  },
   MonthlyReporting: {
     group: "reporting",
     path: "monthly-reporting",

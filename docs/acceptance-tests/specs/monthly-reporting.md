@@ -120,7 +120,7 @@
 
 | AC | 描述 | 结论 | 执行面 | 关键证据 | 备注 |
 |----|------|------|--------|----------|------|
-| AC-9.1 | `/reporting/monthly-reporting` 在不替换既有领域视角的前提下，新增 `物料分类视角` 切换，并输出 `验收入库 / 生产入库 / 销售出库 / 销售退货 / 净发生` 金额 | `met` | browser + live API | browser walkthrough 证实默认仍落在领域视角，切换到分类视角后 summary cards、分类汇总和单据行明细正常渲染；live API 返回 `viewMode = MATERIAL_CATEGORY` 与四类金额汇总 | 同页切换成立，旧领域视角未回归 |
+| AC-9.1 | `/reporting/monthly-reporting` 在不替换既有领域视角的前提下，新增 `物料分类视角` 切换，并优先输出 `月初金额 / 入库金额 / 出库金额 / 月末金额` | `met` | browser + live API | browser walkthrough 证实默认仍落在领域视角，切换到分类视角后 summary cards、分类汇总和单据行明细正常渲染；live API 返回 `viewMode = MATERIAL_CATEGORY` 与物料分类金额汇总 | 同页切换成立，旧领域视角未回归 |
 | AC-9.2 | 分类归属使用业务发生时快照，历史行通过 schema/backfill 补齐，不在查询时回读当前主数据重算 | `met` | migration + unit + live API | 本地 `.env.dev` 执行 `migration:monthly-reporting-material-category-snapshot:dry-run/execute` 后，两个行表新增四个快照字段并回填 `5` 行，剩余缺口为 `0`；focused inbound/sales/reporting tests 覆盖写侧快照与读侧解析 | backfill 以本地当前主数据为基线，符合 follow-on 合同 |
 | AC-9.3 | 分类月报基于单据行事实，只按稳定最终分类单层聚合，明细下钻到单据行 | `met` | unit + e2e + browser | service/repository tests 覆盖 `stock_in_order_line` 与 `sales_stock_order_line` 行级事实、单层分类聚合与单据行明细；batch-d e2e 覆盖 category summary/detail/export；browser 页面展示分类汇总表和单据行明细表 | 第一版范围冻结在 `验收入库 / 生产入库 / 销售出库 / 销售退货` |
 | AC-9.4 | 分类视角与导出、筛选、来源追溯合同保持一致 | `met` | browser + live API + e2e | browser walkthrough 在分类视角下把操作过滤到 `销售退货`，页面只保留 `1` 行明细且 UI 导出成功；live API 与 e2e 共同证明分类筛选已切到 leaf-only `categoryNodeKey`，且 Excel 工作表不再输出 `分类路径 / 层级`，同时保留 `sourceBizMonth / sourceDocumentNo` | 导出与页面同口径成立 |

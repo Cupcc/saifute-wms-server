@@ -33,6 +33,20 @@ function readSource(filePath) {
   return fs.readFileSync(filePath, "utf8");
 }
 
+function extractStringArrayConstant(source, constantName) {
+  const escapedName = constantName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = source.match(
+    new RegExp(
+      `const\\s+${escapedName}\\s*=\\s*Object\\.freeze\\(\\[([\\s\\S]*?)\\]\\);`,
+    ),
+  );
+  if (!match) {
+    throw new Error(`无法解析数组常量: ${constantName}`);
+  }
+
+  return [...match[1].matchAll(/"([^"]+)"/g)].map((item) => item[1]);
+}
+
 function resolveViewComponent(component) {
   const basePath = path.join(viewsRoot, component);
   const candidates = [`${basePath}.vue`, path.join(basePath, "index.vue")];
@@ -185,6 +199,48 @@ describe("route table column preference coverage", () => {
         readSource(resolveViewComponent("reporting/trends/index")),
       ),
     ).toBe(true);
+  });
+
+  it("keeps material-category monthly reporting tables compact by default", () => {
+    const monthlySource = readSource(
+      resolveViewComponent("reporting/monthly-reporting/index"),
+    );
+
+    expect(monthlySource).toContain(
+      ':default-hidden-columns="WORKSHOP_USAGE_DEFAULT_HIDDEN_COLUMNS"',
+    );
+    expect(monthlySource).toContain(
+      ':default-hidden-columns="MATERIAL_CATEGORY_SUMMARY_DEFAULT_HIDDEN_COLUMNS"',
+    );
+    expect(monthlySource).toContain(
+      ':default-hidden-columns="MATERIAL_SUMMARY_DEFAULT_HIDDEN_COLUMNS"',
+    );
+    expect(monthlySource).toContain(
+      ':default-hidden-columns="MATERIAL_CATEGORY_DETAILS_DEFAULT_HIDDEN_COLUMNS"',
+    );
+    expect(
+      extractStringArrayConstant(
+        monthlySource,
+        "MATERIAL_CATEGORY_SUMMARY_DEFAULT_HIDDEN_COLUMNS",
+      ),
+    ).toEqual([
+      "acceptanceInboundAmount",
+      "supplierReturnAmount",
+      "purchaseNetInboundAmount",
+      "productionReceiptAmount",
+      "netSalesAmount",
+      "netSalesCostAmount",
+      "workshopNetConsumptionCostAmount",
+    ]);
+    expect(
+      extractStringArrayConstant(
+        monthlySource,
+        "MATERIAL_SUMMARY_DEFAULT_HIDDEN_COLUMNS",
+      ),
+    ).not.toContain("inventoryCostNetChangeAmount");
+    expect(monthlySource).toContain('label="变动金额"');
+    expect(monthlySource).toContain('label: "变动金额"');
+    expect(monthlySource).not.toContain("金额变动");
   });
 
   it("keeps every monthly reporting section independently collapsible", () => {
