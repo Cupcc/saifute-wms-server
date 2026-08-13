@@ -496,6 +496,7 @@
           column-preferences
           :fit-viewport="false"
           :table-key="`${route.path}#workshop-usage-summary`"
+          :default-hidden-columns="WORKSHOP_USAGE_DEFAULT_HIDDEN_COLUMNS"
           :data="workshopRows"
           class="monthly-summary-table"
           stripe
@@ -553,6 +554,7 @@
           column-preferences
           :fit-viewport="false"
           :table-key="`${route.path}#material-category-summary`"
+          :default-hidden-columns="MATERIAL_CATEGORY_SUMMARY_DEFAULT_HIDDEN_COLUMNS"
           :data="categoryRows"
           class="monthly-summary-table"
           stripe
@@ -567,8 +569,23 @@
           <reporting-column prop="categoryName" label="分类名称" />
           <reporting-metric-column
             prop="openingCostAmount"
-            label="月初库存成本"
+            label="月初金额"
             :content="monthlyMetricHelp.balance.openingCostAmount"
+          />
+          <reporting-metric-column
+            prop="inboundAmount"
+            label="入库金额"
+            :content="monthlyMetricHelp.balance.inboundAmount"
+          />
+          <reporting-metric-column
+            prop="outboundAmount"
+            label="出库金额"
+            :content="monthlyMetricHelp.balance.outboundAmount"
+          />
+          <reporting-metric-column
+            prop="closingCostAmount"
+            label="月末金额"
+            :content="monthlyMetricHelp.balance.closingCostAmount"
           />
           <reporting-column
             prop="acceptanceInboundAmount"
@@ -604,13 +621,8 @@
           />
           <reporting-metric-column
             prop="inventoryCostNetChangeAmount"
-            label="库存成本净变动"
+            label="变动金额"
             :content="monthlyMetricHelp.balance.inventoryCostNetChangeAmount"
-          />
-          <reporting-metric-column
-            prop="closingCostAmount"
-            label="月末库存成本"
-            :content="monthlyMetricHelp.balance.closingCostAmount"
           />
         </adaptive-table>
       </el-card>
@@ -649,6 +661,7 @@
             column-preferences
             :fit-viewport="false"
             :table-key="`${route.path}#material-summary`"
+            :default-hidden-columns="MATERIAL_SUMMARY_DEFAULT_HIDDEN_COLUMNS"
             :data="pagedMaterialRows"
             stripe
             row-key="materialKey"
@@ -663,11 +676,13 @@
           <reporting-metric-column prop="lineCount" label="单据行数" :content="monthlyMetricHelp.count.lineCount" />
           <reporting-metric-column prop="documentCount" label="业务单据数" :content="monthlyMetricHelp.count.documentCount" />
           <reporting-metric-column prop="openingQuantity" label="月初数量" :content="monthlyMetricHelp.balance.openingQuantity" />
-          <reporting-metric-column prop="openingCostAmount" label="月初库存成本" :content="monthlyMetricHelp.balance.openingCostAmount" />
+          <reporting-metric-column prop="openingCostAmount" label="月初金额" :content="monthlyMetricHelp.balance.openingCostAmount" />
+          <reporting-metric-column prop="inboundAmount" label="入库金额" :content="monthlyMetricHelp.balance.inboundAmount" />
+          <reporting-metric-column prop="outboundAmount" label="出库金额" :content="monthlyMetricHelp.balance.outboundAmount" />
           <reporting-metric-column prop="inventoryNetChangeQuantity" label="库存净变动数量" :content="monthlyMetricHelp.balance.netQuantity" />
-          <reporting-metric-column prop="inventoryCostNetChangeAmount" label="库存成本净变动" :content="monthlyMetricHelp.balance.inventoryCostNetChangeAmount" />
+          <reporting-metric-column prop="inventoryCostNetChangeAmount" label="变动金额" :content="monthlyMetricHelp.balance.inventoryCostNetChangeAmount" />
           <reporting-metric-column prop="closingQuantity" label="月末数量" :content="monthlyMetricHelp.balance.closingQuantity" />
-          <reporting-metric-column prop="closingCostAmount" label="月末库存成本" :content="monthlyMetricHelp.balance.closingCostAmount" />
+          <reporting-metric-column prop="closingCostAmount" label="月末金额" :content="monthlyMetricHelp.balance.closingCostAmount" />
           <reporting-metric-column prop="inQuantity" label="库存流入数量" :content="monthlyMetricHelp.inbound.inQuantity" />
           <reporting-metric-column prop="outQuantity" label="库存流出数量" :content="monthlyMetricHelp.inbound.outQuantity" />
           <reporting-column prop="acceptanceInboundQuantity" label="验收入库数量" />
@@ -772,6 +787,7 @@
             column-preferences
             :fit-viewport="false"
             :table-key="`${route.path}#material-category-details`"
+            :default-hidden-columns="MATERIAL_CATEGORY_DETAILS_DEFAULT_HIDDEN_COLUMNS"
             :data="detailRows"
             stripe
             v-loading="detailLoading"
@@ -854,6 +870,69 @@ const DEFAULT_SECTION_EXPANDED = Object.freeze({
   materialSummary: true,
   details: true,
 });
+const WORKSHOP_USAGE_DEFAULT_HIDDEN_COLUMNS = Object.freeze([
+  "lineCount",
+  "documentCount",
+]);
+const MATERIAL_CATEGORY_SUMMARY_DEFAULT_HIDDEN_COLUMNS = Object.freeze([
+  "acceptanceInboundAmount",
+  "supplierReturnAmount",
+  "purchaseNetInboundAmount",
+  "productionReceiptAmount",
+  "netSalesAmount",
+  "netSalesCostAmount",
+  "workshopNetConsumptionCostAmount",
+]);
+const MATERIAL_SUMMARY_DEFAULT_HIDDEN_COLUMNS = Object.freeze([
+  "materialSpec",
+  "unitCode",
+  "lineCount",
+  "documentCount",
+  "openingQuantity",
+  "inventoryNetChangeQuantity",
+  "closingQuantity",
+  "inQuantity",
+  "outQuantity",
+  "acceptanceInboundQuantity",
+  "acceptanceInboundAmount",
+  "productionReceiptQuantity",
+  "productionReceiptAmount",
+  "supplierReturnQuantity",
+  "supplierReturnAmount",
+  "purchaseNetInboundAmount",
+  "workshopPickQuantity",
+  "workshopPickCostAmount",
+  "workshopReturnQuantity",
+  "workshopReturnCostAmount",
+  "workshopScrapQuantity",
+  "workshopScrapCostAmount",
+  "workshopNetConsumptionQuantity",
+  "workshopNetConsumptionCostAmount",
+  "salesOutboundQuantity",
+  "salesOutboundSalesAmount",
+  "salesOutboundCostAmount",
+  "salesReturnQuantity",
+  "salesReturnSalesAmount",
+  "salesReturnCostAmount",
+  "netSalesQuantity",
+  "netSalesAmount",
+  "netSalesCostAmount",
+  "estimatedGrossProfitAmount",
+]);
+const MATERIAL_CATEGORY_DETAILS_DEFAULT_HIDDEN_COLUMNS = Object.freeze([
+  "lineNo",
+  "stockScopeName",
+  "workshopName",
+  "materialSpec",
+  "unitCode",
+  "salesProjectCode",
+  "salesProjectName",
+  "unitPrice",
+  "salesUnitPrice",
+  "salesAmount",
+  "sourceBizMonth",
+  "sourceDocumentNo",
+]);
 
 const userStore = useUserStore();
 const route = useRoute();
@@ -990,21 +1069,33 @@ const domainSummaryStats = computed(() => [
 const materialCategorySummaryStats = computed(() => [
   {
     key: "openingCostAmount",
-    label: "月初库存成本",
+    label: "月初金额",
     value: summary.value.openingCostAmount,
     help: monthlyMetricHelp.balance.openingCostAmount,
   },
   {
-    key: "inventoryCostNetChangeAmount",
-    label: "库存成本净变动",
-    value: summary.value.inventoryCostNetChangeAmount,
-    help: monthlyMetricHelp.balance.inventoryCostNetChangeAmount,
+    key: "inboundAmount",
+    label: "入库金额",
+    value: summary.value.inboundAmount,
+    help: monthlyMetricHelp.balance.inboundAmount,
+  },
+  {
+    key: "outboundAmount",
+    label: "出库金额",
+    value: summary.value.outboundAmount,
+    help: monthlyMetricHelp.balance.outboundAmount,
   },
   {
     key: "closingCostAmount",
-    label: "月末库存成本",
+    label: "月末金额",
     value: summary.value.closingCostAmount,
     help: monthlyMetricHelp.balance.closingCostAmount,
+  },
+  {
+    key: "inventoryCostNetChangeAmount",
+    label: "变动金额",
+    value: summary.value.inventoryCostNetChangeAmount,
+    help: monthlyMetricHelp.balance.inventoryCostNetChangeAmount,
   },
   {
     key: "acceptanceInboundAmount",
@@ -1153,7 +1244,7 @@ const pagedMaterialRows = computed(() => {
 });
 const reportingSubtitle = computed(() => {
   if (isMaterialCategoryView.value) {
-    return "物料分类视角按单据行事实统计本月发生，并补充按库存流水回算的月初与月末库存。分类归属使用业务发生时快照，车间领退料按物料当前分类汇总。";
+    return "物料分类视角展示月初金额、入库金额、出库金额和月末金额，并保留各类业务金额用于解释构成。分类归属使用业务发生时快照，车间领退料按物料当前分类汇总。";
   }
 
   if (filters.value.stockScope === "MAIN") {
@@ -1221,7 +1312,7 @@ const detailSectionTitle = computed(() =>
 );
 const materialSectionTip = computed(() => {
   if (!selectedCategoryNodeKey.value) {
-    return "当前显示筛选范围内每个物料的月初、发生、月末数量金额和成本。";
+    return "当前显示筛选范围内每个物料的月初金额、入库金额、出库金额、月末金额及对应数量。";
   }
 
   const current = categoryOptions.value.find(
@@ -1281,6 +1372,8 @@ const MATERIAL_CATEGORY_TOTAL_KEYS = new Set([
   "lineCount",
   "documentCount",
   "openingCostAmount",
+  "inboundAmount",
+  "outboundAmount",
   "inventoryCostNetChangeAmount",
   "closingCostAmount",
   "netSalesAmount",
@@ -1339,6 +1432,8 @@ function createEmptyMaterialCategorySummary() {
     netSalesCostAmount: "0.0000",
     estimatedGrossProfitAmount: "0.0000",
     openingCostAmount: "0.0000",
+    inboundAmount: "0.0000",
+    outboundAmount: "0.0000",
     inventoryCostNetChangeAmount: "0.0000",
     closingCostAmount: "0.0000",
   };

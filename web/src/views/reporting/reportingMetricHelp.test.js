@@ -44,6 +44,8 @@ const derivedColumnPropsByView = {
     "attributedInventoryCostNetChangeAmount",
     "openingQuantity",
     "openingCostAmount",
+    "inboundAmount",
+    "outboundAmount",
     "inventoryNetChangeQuantity",
     "closingQuantity",
     "closingCostAmount",
@@ -133,8 +135,10 @@ describe("reporting derived metric explanations", () => {
     expect(ordinaryColumn).toContain("white-space: nowrap");
     expect(metricColumn).toContain("white-space: nowrap");
     expect(metricLabel).toContain("white-space: nowrap");
-    expect(ordinaryColumn).toContain(':width="resolvedWidth"');
-    expect(metricColumn).toContain(':width="resolvedWidth"');
+    expect(ordinaryColumn).toContain(':min-width="resolvedMinWidth"');
+    expect(metricColumn).toContain(':min-width="resolvedMinWidth"');
+    expect(ordinaryColumn).not.toContain(':width="resolvedWidth"');
+    expect(metricColumn).not.toContain(':width="resolvedWidth"');
   });
 
   it("keeps direct inbound metrics free of tooltip explanations", () => {

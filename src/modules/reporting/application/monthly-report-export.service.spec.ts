@@ -208,6 +208,8 @@ describe("MonthlyReportExportService", () => {
       categoryName: "化工",
       openingQuantity: new Prisma.Decimal("10"),
       openingAmount: new Prisma.Decimal("100"),
+      inboundAmount: new Prisma.Decimal("8"),
+      outboundAmount: new Prisma.Decimal("0"),
       closingQuantity: new Prisma.Decimal("13"),
       closingAmount: new Prisma.Decimal("108"),
       ...overrides,
@@ -313,8 +315,10 @@ describe("MonthlyReportExportService", () => {
     );
     expect(exportResult.content).toContain("化工");
     expect(exportResult.content).toContain("原料 A");
-    expect(exportResult.content).toContain("月初库存成本");
-    expect(exportResult.content).toContain("月末库存成本");
+    expect(exportResult.content).toContain("月初金额");
+    expect(exportResult.content).toContain("入库金额");
+    expect(exportResult.content).toContain("出库金额");
+    expect(exportResult.content).toContain("月末金额");
     expect(exportResult.content).toContain("销售退货数量");
     expect(exportResult.content).toContain("销售出库销售价金额");
     expect(exportResult.content).toContain("销售出库成本");
@@ -322,7 +326,7 @@ describe("MonthlyReportExportService", () => {
     expect(exportResult.content).toContain("销售退货成本");
     expect(exportResult.content).toContain("销售金额");
     expect(exportResult.content).toContain("库存净变动数量");
-    expect(exportResult.content).toContain("库存成本净变动");
+    expect(exportResult.content).toContain("金额变动");
     expect(exportResult.content).toContain("100.00");
     expect(exportResult.content).toContain("108.00");
     expect(exportResult.content).toContain('<Data ss:Type="Number">3</Data>');
@@ -351,7 +355,10 @@ describe("MonthlyReportExportService", () => {
     expect(categorySheet).not.toContain("车间退料数量");
     expect(categorySheet).not.toContain("车间净使用数量");
     expectLabelsInOrder(categorySheet, [
-      "月初库存成本",
+      "月初金额",
+      "入库金额",
+      "出库金额",
+      "月末金额",
       "验收入库计价金额",
       "退厂计价金额",
       "采购净入库金额",
@@ -359,17 +366,18 @@ describe("MonthlyReportExportService", () => {
       "销售净额（WMS 销售价口径）",
       "销售净成本",
       "车间净耗用成本",
-      "库存成本净变动",
-      "月末库存成本",
+      "金额变动",
     ]);
     expectLabelsInOrder(extractWorksheet(exportResult.content, "物料汇总"), [
       "业务单据数",
       "月初数量",
-      "月初库存成本",
+      "月初金额",
+      "入库金额",
+      "出库金额",
       "库存净变动数量",
-      "库存成本净变动",
+      "金额变动",
       "月末数量",
-      "月末库存成本",
+      "月末金额",
       "库存流入数量",
     ]);
     expectLabelsInOrder(extractWorksheet(exportResult.content, "单据行明细"), [

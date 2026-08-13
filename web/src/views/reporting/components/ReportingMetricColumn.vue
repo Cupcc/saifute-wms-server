@@ -3,7 +3,7 @@
     v-bind="$attrs"
     :prop="prop"
     :label="label"
-    :width="resolvedWidth"
+    :min-width="resolvedMinWidth"
     label-class-name="reporting-column-header"
   >
     <template #header>
@@ -41,7 +41,7 @@ const props = defineProps({
   },
 });
 
-const resolvedWidth = computed(() =>
+const resolvedMinWidth = computed(() =>
   resolveReportingColumnWidth(props.label, props.width),
 );
 </script>

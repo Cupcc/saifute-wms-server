@@ -44,6 +44,8 @@ describe("buildMaterialCategoryExportSheets", () => {
     netSalesCostAmount: "0.00",
     estimatedGrossProfitAmount: "0.00",
     openingCostAmount: "100.00",
+    inboundAmount: "80.00",
+    outboundAmount: "30.00",
     inventoryCostNetChangeAmount: "50.00",
     closingCostAmount: "150.00",
   };
@@ -116,6 +118,14 @@ describe("buildMaterialCategoryExportSheets", () => {
     expect(workshopSheet).not.toContain("领料数量");
     expect(workshopSheet).not.toContain("退料数量");
     expect(workshopSheet).not.toContain("净使用");
+    expect(categorySheet).toContain("月初金额");
+    expect(categorySheet).toContain("入库金额");
+    expect(categorySheet).toContain("出库金额");
+    expect(categorySheet).toContain("月末金额");
+    expect(categorySheet).toContain("金额变动");
+    expect(categorySheet).not.toContain("月初库存成本");
+    expect(categorySheet).not.toContain("月末库存成本");
+    expect(categorySheet).not.toContain("库存成本净变动");
     expect(workshopSheet).toContain("车间净耗用成本");
     expect(workshopSheet).toContain("45.00");
   });

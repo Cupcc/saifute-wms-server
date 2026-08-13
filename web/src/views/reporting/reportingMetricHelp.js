@@ -89,9 +89,11 @@ const balanceHelp = Object.freeze({
   netQuantity: "同一物料的库存净变动数量 = 月末数量 - 月初数量。",
   closingQuantity:
     "该物料按不晚于本月末的库存流水回算的月末数量；数量格式本轮保持现状。",
-  openingCostAmount: "当前筛选且本月有发生物料的月初库存来源成本。",
-  inventoryCostNetChangeAmount: "库存成本净变动 = 月末库存成本 - 月初库存成本。",
-  closingCostAmount: "当前筛选且本月有发生物料的月末库存来源成本。",
+  openingCostAmount: "月初金额 = 本月首日前结存金额。",
+  inboundAmount: "入库金额 = 验收入库金额 + 生产入库金额 + 销售退货金额 + 车间退料金额。",
+  outboundAmount: "出库金额 = 退厂金额 + 销售出库金额 + 车间领料金额 + 车间报废金额。",
+  inventoryCostNetChangeAmount: "变动金额 = 入库金额 - 出库金额。",
+  closingCostAmount: "月末金额 = 月初金额 + 入库金额 - 出库金额。",
 });
 
 const inboundHelp = Object.freeze({

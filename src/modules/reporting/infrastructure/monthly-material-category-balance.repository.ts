@@ -15,6 +15,8 @@ interface RawMonthlyMaterialCategoryBalanceSnapshot {
   categoryName: string | null;
   openingQuantity: Prisma.Decimal | string | number | null;
   openingAmount: Prisma.Decimal | string | number | null;
+  inboundAmount: Prisma.Decimal | string | number | null;
+  outboundAmount: Prisma.Decimal | string | number | null;
   closingQuantity: Prisma.Decimal | string | number | null;
   closingAmount: Prisma.Decimal | string | number | null;
 }
@@ -54,6 +56,22 @@ export class MonthlyMaterialCategoryBalanceRepository {
             ELSE 0
           END
         ) AS openingAmount,
+        SUM(
+          CASE
+            WHEN inventory_log.biz_date >= ${params.start}
+              AND inventory_log.direction = ${StockDirection.IN}
+            THEN COALESCE(inventory_log.cost_amount, 0)
+            ELSE 0
+          END
+        ) AS inboundAmount,
+        SUM(
+          CASE
+            WHEN inventory_log.biz_date >= ${params.start}
+              AND inventory_log.direction = ${StockDirection.OUT}
+            THEN COALESCE(inventory_log.cost_amount, 0)
+            ELSE 0
+          END
+        ) AS outboundAmount,
         SUM(${this.signedQuantitySql()}) AS closingQuantity,
         SUM(${this.signedAmountSql()}) AS closingAmount
       FROM inventory_log
@@ -73,6 +91,8 @@ export class MonthlyMaterialCategoryBalanceRepository {
         material_category.category_name
       HAVING openingQuantity <> 0
         OR openingAmount <> 0
+        OR inboundAmount <> 0
+        OR outboundAmount <> 0
         OR closingQuantity <> 0
         OR closingAmount <> 0
     `);
@@ -88,6 +108,8 @@ export class MonthlyMaterialCategoryBalanceRepository {
       categoryName: row.categoryName?.trim() || "未分类",
       openingQuantity: new Prisma.Decimal(row.openingQuantity ?? 0),
       openingAmount: new Prisma.Decimal(row.openingAmount ?? 0),
+      inboundAmount: new Prisma.Decimal(row.inboundAmount ?? 0),
+      outboundAmount: new Prisma.Decimal(row.outboundAmount ?? 0),
       closingQuantity: new Prisma.Decimal(row.closingQuantity ?? 0),
       closingAmount: new Prisma.Decimal(row.closingAmount ?? 0),
     }));

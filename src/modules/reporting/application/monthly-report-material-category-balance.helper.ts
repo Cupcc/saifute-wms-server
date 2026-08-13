@@ -13,6 +13,8 @@ import {
 export interface MonthlyMaterialCategoryBalanceTotals {
   openingQuantity: string;
   openingAmount: string;
+  inboundAmount: string;
+  outboundAmount: string;
   netQuantity: string;
   netAmount: string;
   closingQuantity: string;
@@ -309,6 +311,8 @@ function createEmptyBalanceAccumulator() {
   return {
     openingQuantity: new Prisma.Decimal(0),
     openingAmount: new Prisma.Decimal(0),
+    inboundAmount: new Prisma.Decimal(0),
+    outboundAmount: new Prisma.Decimal(0),
     closingQuantity: new Prisma.Decimal(0),
     closingAmount: new Prisma.Decimal(0),
   };
@@ -324,6 +328,12 @@ function addBalanceSnapshot(
   accumulator.openingAmount = accumulator.openingAmount.add(
     snapshot.openingAmount,
   );
+  accumulator.inboundAmount = accumulator.inboundAmount.add(
+    snapshot.inboundAmount,
+  );
+  accumulator.outboundAmount = accumulator.outboundAmount.add(
+    snapshot.outboundAmount,
+  );
   accumulator.closingQuantity = accumulator.closingQuantity.add(
     snapshot.closingQuantity,
   );
@@ -338,6 +348,8 @@ function formatBalanceAccumulator(
   return {
     openingQuantity: formatQuantity(accumulator.openingQuantity),
     openingAmount: formatMoney(accumulator.openingAmount),
+    inboundAmount: formatMoney(accumulator.inboundAmount),
+    outboundAmount: formatMoney(accumulator.outboundAmount),
     netQuantity: formatQuantity(
       accumulator.closingQuantity.sub(accumulator.openingQuantity),
     ),

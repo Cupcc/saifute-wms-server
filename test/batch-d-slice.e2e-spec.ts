@@ -541,6 +541,8 @@ describe("Batch D slice acceptance (e2e)", () => {
         categoryName: "化工",
         openingQuantity: new Prisma.Decimal("12"),
         openingAmount: new Prisma.Decimal("120"),
+        inboundAmount: new Prisma.Decimal("30"),
+        outboundAmount: new Prisma.Decimal("0"),
         closingQuantity: new Prisma.Decimal("15"),
         closingAmount: new Prisma.Decimal("150"),
       },
@@ -555,6 +557,8 @@ describe("Batch D slice acceptance (e2e)", () => {
         categoryName: "化工",
         openingQuantity: new Prisma.Decimal("2"),
         openingAmount: new Prisma.Decimal("20"),
+        inboundAmount: new Prisma.Decimal("6"),
+        outboundAmount: new Prisma.Decimal("0"),
         closingQuantity: new Prisma.Decimal("3"),
         closingAmount: new Prisma.Decimal("26"),
       },
@@ -577,14 +581,13 @@ describe("Batch D slice acceptance (e2e)", () => {
       summary: {
         categoryCount: 1,
         lineCount: 2,
-        openingAmount: "140.0000",
-        closingAmount: "176.0000",
-        acceptanceInboundQuantity: "3",
+        openingCostAmount: "140.0000",
+        inboundAmount: "36.0000",
+        outboundAmount: "0.0000",
+        closingCostAmount: "176.0000",
         acceptanceInboundAmount: "30.0000",
-        salesReturnQuantity: "1",
-        salesReturnAmount: "8.0000",
-        netQuantity: "4",
-        netAmount: "36.0000",
+        salesReturnSalesAmount: "8.0000",
+        inventoryCostNetChangeAmount: "36.0000",
       },
     });
     expect(summaryResponse.body.data.categories).toEqual([
@@ -593,12 +596,12 @@ describe("Batch D slice acceptance (e2e)", () => {
         categoryId: 11,
         categoryCode: "CHEM",
         categoryName: "化工",
-        openingAmount: "140.0000",
-        closingAmount: "176.0000",
-        acceptanceInboundQuantity: "3",
+        openingCostAmount: "140.0000",
+        inboundAmount: "36.0000",
+        outboundAmount: "0.0000",
+        closingCostAmount: "176.0000",
         acceptanceInboundAmount: "30.0000",
-        salesReturnQuantity: "1",
-        salesReturnAmount: "8.0000",
+        salesReturnSalesAmount: "8.0000",
       }),
     ]);
     expect(summaryResponse.body.data.summary).not.toHaveProperty("totalCost");
@@ -619,11 +622,13 @@ describe("Batch D slice acceptance (e2e)", () => {
         materialCode: "M-RAW-001",
         materialName: "原料 A",
         openingQuantity: "12",
-        openingAmount: "120.0000",
+        openingCostAmount: "120.0000",
+        inboundAmount: "30.0000",
+        outboundAmount: "0.0000",
         inQuantity: "3",
-        netQuantity: "3",
+        inventoryNetChangeQuantity: "3",
         closingQuantity: "15",
-        closingAmount: "150.0000",
+        closingCostAmount: "150.0000",
         acceptanceInboundQuantity: "3",
         acceptanceInboundAmount: "30.0000",
       }),
@@ -632,13 +637,15 @@ describe("Batch D slice acceptance (e2e)", () => {
         materialCode: "M-RAW-002",
         materialName: "原料 B",
         openingQuantity: "2",
-        openingAmount: "20.0000",
+        openingCostAmount: "20.0000",
+        inboundAmount: "6.0000",
+        outboundAmount: "0.0000",
         inQuantity: "1",
-        netQuantity: "1",
+        inventoryNetChangeQuantity: "1",
         closingQuantity: "3",
-        closingAmount: "26.0000",
+        closingCostAmount: "26.0000",
         salesReturnQuantity: "1",
-        salesReturnAmount: "8.0000",
+        salesReturnSalesAmount: "8.0000",
       }),
     ]);
 
@@ -689,12 +696,14 @@ describe("Batch D slice acceptance (e2e)", () => {
     expect(exportResponse.text).toContain('<Worksheet ss:Name="分类汇总">');
     expect(exportResponse.text).toContain('<Worksheet ss:Name="物料汇总">');
     expect(exportResponse.text).toContain('<Worksheet ss:Name="单据行明细">');
-    expect(exportResponse.text).toContain("月初库存金额");
-    expect(exportResponse.text).toContain("库存净发生数量");
-    expect(exportResponse.text).toContain("库存净发生金额");
+    expect(exportResponse.text).toContain("月初金额");
+    expect(exportResponse.text).toContain("入库金额");
+    expect(exportResponse.text).toContain("出库金额");
+    expect(exportResponse.text).toContain("库存净变动数量");
+    expect(exportResponse.text).toContain("金额变动");
     expect(exportResponse.text).toContain("月末金额");
     expect(exportResponse.text).toContain("验收入库数量");
-    expect(exportResponse.text).toContain("验收入库金额");
+    expect(exportResponse.text).toContain("验收入库计价金额");
     expect(exportResponse.text).toContain("销售价");
     expect(exportResponse.text).toContain("销售金额");
     expect(exportResponse.text).toContain("化工");

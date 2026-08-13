@@ -265,6 +265,8 @@ export interface MonthlyMaterialCategoryBalanceSnapshot {
   categoryName: string;
   openingQuantity: Prisma.Decimal;
   openingAmount: Prisma.Decimal;
+  inboundAmount: Prisma.Decimal;
+  outboundAmount: Prisma.Decimal;
   closingQuantity: Prisma.Decimal;
   closingAmount: Prisma.Decimal;
 }
