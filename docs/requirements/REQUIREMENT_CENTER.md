@@ -9,9 +9,9 @@
 
 | 指标     | 数量  |
 | ------ | --- |
-| 总计     | 73  |
+| 总计     | 74  |
 | ✅ 已完成  | 53  |
-| 🔧 进行中 | 6   |
+| 🔧 进行中 | 7   |
 | 📋 未开始 | 14  |
 
 
@@ -73,7 +73,7 @@
 | REQ-025 | F3  | RD 采购需求与研发协同验收联动 | PRD | Phase 3 | ✅ 已完成 | -    |
 | REQ-026 | F4  | RD 物料独立状态链       | PRD | Phase 4 | ✅ 已完成 | -    |
 | REQ-027 | F5  | RD 小仓盘点与库存调整     | PRD | Phase 5 | ✅ 已完成 | -    |
-| REQ-071 | F6  | RD 小仓项目化归属与交接   | PRD | Phase 6 | ✅ 已完成 | `task-20260414-1418` |
+| REQ-071 | F6  | RD 小仓项目化归属与交接   | PRD | Phase 6 | ✅ 已完成 | `-` |
 
 
 ### 研发项目 — `domain/rd-project-management.md`
@@ -85,7 +85,7 @@
 | REQ-066 | F2  | 研发项目 BOM 与缺口 / 补货视图 | PRD | Phase 1 | ✅ 已完成 | `task-20260409-0056` |
 | REQ-067 | F3  | 研发项目物料动作与库存联动       | PRD | Phase 2 | ✅ 已完成 | `task-20260409-0056` |
 | REQ-068 | F4  | 研发项目净耗用与成本台账        | PRD | Phase 2 | ✅ 已完成 | `task-20260409-0056` |
-| REQ-072 | F5  | RD_SUB 二级归属与项目在库视图 | PRD | Phase 3 | ✅ 已完成 | `task-20260414-1418` |
+| REQ-072 | F5  | RD_SUB 二级归属与项目在库视图 | PRD | Phase 3 | ✅ 已完成 | `-` |
 
 
 ### 月度报表 — `domain/monthly-reporting.md`
@@ -99,7 +99,7 @@
 | REQ-032 | F5  | 仓库侧查看与导出   | PRD | Phase 1 | ✅ 已完成  | `task-20260411-0301` |
 | REQ-069 | F6  | 实时月报与次月单次导出归档 | PRD | Phase 1 | ✅ 流程已确认 | `task-20260730-reporting-metric-semantics-alignment` |
 | REQ-070 | F7  | 日期范围报表语义分离 | PRD | Phase 2 | 📋 未开始 | -    |
-| REQ-073 | F8  | RD 小仓项目化口径与视角重算 | PRD | Phase 2 | ✅ 已完成 | `task-20260414-1418` |
+| REQ-073 | F8  | RD 小仓项目化口径与视角重算 | PRD | Phase 2 | ✅ 已完成 | `-` |
 | REQ-074 | F9  | 物料分类分口径月报（分类层无数量） | PRD | Phase 1 | ✅ 已完成 | `task-20260730-reporting-metric-semantics-alignment` |
 
 
@@ -135,6 +135,7 @@
 | REQ-044 | F2  | 主仓库存联动与来源追溯        | PRD | Phase 1 | ✅ 已完成  | `task-20260407-0929` |
 | REQ-045 | F3  | 回冲关系、作废补偿与审核快照协同   | PRD | Phase 2 | ✅ 已完成  | `task-20260407-0929` |
 | REQ-046 | F4  | 车间维度查询、汇总与导出       | PRD | Phase 3 | 📋 未开始 | -                    |
+| REQ-075 | F5  | 领料单操作审计与变更历史       | PRD | Phase 2 follow-on | 🔧 进行中 | `task-20260922-workshop-material-audit-history` |
 
 
 ### 销售项目 — `domain/sales-project-management.md`
@@ -159,7 +160,7 @@
 | REQ-054 | F3  | FIFO 来源追溯与成本桥接          | PRD | Phase 2 | ✅ 已完成  | `task-20260404-1315` |
 | REQ-055 | F4  | 价格层可用库存与调价来源切换          | PRD | Phase 2 | ✅ 已完成  | `task-20260405-2136` |
 | REQ-056 | F5  | V1 预警视图、销售出库编号区间与共享查询合同 | PRD | Phase 3 | 🔧 进行中 | -                    |
-| REQ-074 | F6  | RD_SUB 项目归属事实与同项目来源约束 | PRD | Phase 4 | ✅ 已完成 | `task-20260414-1418` |
+| REQ-074 | F6  | RD_SUB 项目归属事实与同项目来源约束 | PRD | Phase 4 | ✅ 已完成 | `-` |
 
 
 ### 审核 — `domain/approval-module.md`

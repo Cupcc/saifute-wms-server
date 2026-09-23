@@ -5,7 +5,7 @@
 - ID: `domain-approval-module`
 - Status: `confirmed`
 - Scope: `domain-level`
-- 状态说明: `F1/F2/F3` 已按 `docs/tasks/archive/retained-completed/task-20260407-0033-approval-rename-two-phase-plan.md` 完成交付并 accepted；当前待独立规划的仅剩 `F4` 轻量审核适用策略与跨单据边界，不影响 `approval` 作为共享审核真源。
+- 状态说明: `F1/F2/F3` 已按 `-` 完成交付并 accepted；当前待独立规划的仅剩 `F4` 轻量审核适用策略与跨单据边界，不影响 `approval` 作为共享审核真源。
 
 ## 主题定义
 
@@ -16,7 +16,6 @@
 ## 注意（当前未改范围）
 
 - `N1` 历史字段名冻结：分散在各业务单据表、读模型、前端页面 DTO 中的 `auditStatusSnapshot`、`auditStatus`、`auditor`、`auditTime` 等字段名，本轮没有做全库级统一更名；它们当前语义仍指向 `approval` 域，而不是系统审计 `audit-log`。状态：`注意`
-- `N2` Legacy 源库对象冻结：迁移链路中的 `saifute_audit_document` 仍保持旧库历史命名，仅用于读取 legacy 数据来源；它不代表当前运行态仍以 `audit` 作为业务审核 canonical 名称。状态：`注意`
 - `N3` 审批与审计分离：本轮业务语义重命名只针对 `approval` 主题；`audit-log` 及其登录日志、操作日志、审计字段职责不在此范围内。状态：`注意`
 
 ## 承接的项目级能力版图
@@ -63,9 +62,9 @@
 
 | 编号   | 功能项              | 一句话验收标准                           | 所属阶段    | 状态    | 关联任务 |
 | ---- | ---------------- | --------------------------------- | ------- | ----- | ---- |
-| `F1` | 审核投影创建与状态查询      | 单据创建后可生成 / 刷新审核投影，并在系统中统一查询当前审核状态 | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260407-0033-approval-rename-two-phase-plan.md`  |
-| `F2` | 审核通过 / 拒绝 / 重置动作 | 系统支持统一的审核动作接口，并记录审核决策人、时间与原因      | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260407-0033-approval-rename-two-phase-plan.md`  |
-| `F3` | 改单重置与作废前下游依赖校验   | 单据修改后可按业务规则重置审核，作废前可统一校验下游依赖与阻塞原因 | Phase 2 | `已完成` | `docs/tasks/archive/retained-completed/task-20260407-0033-approval-rename-two-phase-plan.md`  |
+| `F1` | 审核投影创建与状态查询      | 单据创建后可生成 / 刷新审核投影，并在系统中统一查询当前审核状态 | Phase 1 | `已完成` | `-`  |
+| `F2` | 审核通过 / 拒绝 / 重置动作 | 系统支持统一的审核动作接口，并记录审核决策人、时间与原因      | Phase 1 | `已完成` | `-`  |
+| `F3` | 改单重置与作废前下游依赖校验   | 单据修改后可按业务规则重置审核，作废前可统一校验下游依赖与阻塞原因 | Phase 2 | `已完成` | `-`  |
 | `F4` | 轻量审核适用策略与跨单据边界   | 不同单据家族的审核适用范围、免审策略与边界口径形成稳定合同     | Phase 3 | `未开始` | `-`  |
 
 

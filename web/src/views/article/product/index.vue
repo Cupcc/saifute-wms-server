@@ -188,14 +188,14 @@
         <el-table-column label="物料名称" prop="materialName" />
         <el-table-column label="规格型号" prop="specification" />
         <el-table-column label="单位" prop="unit" />
-        <el-table-column label="数量" prop="quantity" />
-        <el-table-column label="单价" prop="unitPrice" />
-        <el-table-column label="金额">
+        <el-table-column label="数量" prop="quantity" min-width="130" class-name="numeric-column" />
+        <el-table-column label="单价" prop="unitPrice" min-width="135" class-name="numeric-column" />
+        <el-table-column label="金额" min-width="135" class-name="numeric-column">
           <template #default="scope">
             {{ formatLineAmount(scope.row) }}
           </template>
         </el-table-column>
-        <el-table-column label="含税价" prop="taxIncludedPrice" />
+        <el-table-column label="含税价" prop="taxIncludedPrice" min-width="135" class-name="numeric-column" />
         <el-table-column label="供应商" prop="supplierName" />
         <el-table-column label="计价说明" prop="instruction" />
         <el-table-column label="出厂编号" prop="interval" />
@@ -280,7 +280,7 @@
             </el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="总金额" prop="totalAmount">
+        <el-form-item label="总金额" prop="totalAmount" class="numeric-form-field">
           <el-input v-model="form.totalAmount" placeholder="自动计算" disabled/>
         </el-form-item>
         <el-form-item label="备注" prop="remark">
@@ -341,7 +341,7 @@
               <combo-input v-model="scope.row.unit" scope="material" field="unitCode" placeholder="请选择或输入单位" />
             </template>
           </el-table-column>
-          <el-table-column label="数量" prop="quantity" width="120">
+          <el-table-column label="数量" prop="quantity" width="170" class-name="numeric-column">
             <template #default="scope">
               <el-input-number
                 v-model="scope.row.quantity"
@@ -352,13 +352,13 @@
                 @change="(val) => handleMaterialOrQuantityChange(undefined, val, scope.$index)" />
             </template>
           </el-table-column>
-          <el-table-column label="单价" prop="unitPrice" width="150">
+          <el-table-column label="单价" prop="unitPrice" width="155" class-name="numeric-column">
             <template #default="scope">
               <el-input-number v-model="scope.row.unitPrice" :min="0" placeholder="单价" controls-position="right"
                                style="width: 100%" @change="(val) => handleUnitPriceChange(val, scope.$index)" />
             </template>
           </el-table-column>
-	        <el-table-column label="含税价" prop="taxIncludedPrice" width="150">
+	        <el-table-column label="含税价" prop="taxIncludedPrice" width="155" class-name="numeric-column">
 		        <template #default="scope">
 			        <el-input-number v-model="scope.row.taxIncludedPrice" :min="0" placeholder="含税价" controls-position="right"
 			                         style="width: 100%" />

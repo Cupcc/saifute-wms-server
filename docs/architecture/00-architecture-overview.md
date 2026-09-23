@@ -2,7 +2,7 @@
 
 ## 1. 文档目标
 
-本目录用于承接 `E:/Projects/saifute-wms-server` 到 NestJS 的模块化迁移设计。所有后续实现必须以这里的模块边界、依赖关系、事务约束和测试范围为准，避免 subagents 在实现阶段再次拆分领域。
+本目录定义 NestJS WMS 的模块边界、依赖关系、事务约束和测试范围，所有后续实现均以此基线为准。
 
 便于清晰明确的了解项目架构
 
@@ -13,12 +13,9 @@
 - 如果需要从“需求约束 -> 架构边界 -> 图形化视图”的角度快速 review，请继续阅读 `docs/architecture/10-architecture-views.md`。
 - 若 `10-architecture-views.md` 与本文件、`docs/requirements/**`、`docs/architecture/20-wms-database-tables-and-schema.md` 存在表述冲突，应以前者之外的真源文档为准，并回改 `10-architecture-views.md`。
 
-## 2. 源系统映射
+## 2. 目标模块
 
-- 平台层：`ruoyi-framework`、`ruoyi-system`、`ruoyi-common`、`ruoyi-quartz`、`ruoyi-admin`
-- 业务层：`business/src/main/java/com/saifute/{base,stock,entry,out,take,article,audit,ai}`
-
-## 3. 目标模块
+## 2. 目标模块
 
 ### 业务域模块
 
@@ -61,9 +58,9 @@
 - `file-storage`：本地上传下载、头像、资源映射
 - `scheduler`：数据库驱动的任务定义、调度、执行日志
 
-## 3.1 目标技术栈
+## 2.1 目标技术栈
 
-本节描述的是 NestJS 迁移阶段当前默认采用的技术基线。若历史规划表述与当前仓库实际执行链路冲突，应以仓库当前可执行路径为准；后续模块设计、subagent 实现和代码评审默认都以这套栈为准。
+本节描述当前采用的技术基线。若历史规划表述与当前仓库实际执行链路冲突，应以仓库当前可执行路径为准；后续模块设计、实现和代码评审默认都以这套栈为准。
 
 ### 运行时与语言
 
@@ -166,8 +163,8 @@ modules/<module>/
 - 当 `application`、`infrastructure`、`spec` 文件长期超过阈值时，默认视为职责边界失效信号，优先拆分职责，而不是继续追加新的 public 方法或测试块。
 - `application` 层优先按 use case 拆分；一个 application provider 不应同时承担用例编排、领域规则、数据访问细节、导出格式化等多种变化原因。
 - `infrastructure` 层优先按聚合、读模型来源或持久化适配拆分；repository 不应同时承接跨域汇总查询、表现层格式化和多资源族 CRUD。
-- 新需求默认不得继续追加到现有超长文件；优先新增更小的协作者或 provider，并让旧大类在迁移期只保留 facade / delegation 角色。
-- 重构应先保持 controller、DTO、事务边界和外部合同稳定，再逐步内聚职责；除非用户明确要求，不以“大重写”替代分批迁移。
+- 新需求默认不得继续追加到现有超长文件；优先新增更小的协作者或 provider，并让现有大类只保留 facade / delegation 角色。
+- 重构应先保持 controller、DTO、事务边界和外部合同稳定，再逐步内聚职责；除非用户明确要求，不以“大重写”替代一次性重写。
 - `spec` 文件应跟随生产代码边界收敛；当生产代码被拆成多个 use case 或协作者时，测试也应按相同职责拆分，而不是继续镜像单个巨型 service。
 
 ### 4.2 单一职责量化标准

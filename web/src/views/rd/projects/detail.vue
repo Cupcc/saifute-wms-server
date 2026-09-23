@@ -125,7 +125,7 @@
                 <span class="muted-cell">{{ row.unitCode || "-" }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="计划数量" min-width="130">
+            <el-table-column label="计划数量" min-width="170" class-name="numeric-column">
               <template #default="{ row }">
                 <el-input-number
                   v-model="row.quantity"
@@ -136,7 +136,7 @@
                 />
               </template>
             </el-table-column>
-            <el-table-column label="参考单价" min-width="130">
+            <el-table-column label="参考单价" min-width="155" class-name="numeric-column">
               <template #default="{ row }">
                 <el-input-number
                   v-model="row.unitPrice"
@@ -147,7 +147,7 @@
                 />
               </template>
             </el-table-column>
-            <el-table-column label="计划金额" min-width="130">
+            <el-table-column label="计划金额" min-width="135" class-name="numeric-column">
               <template #default="{ row }">
                 {{ formatAmount(calculateLineAmount(row)) }}
               </template>
@@ -371,7 +371,7 @@
                         <template v-else>{{ formatQty(row.plannedQty) }}</template>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="plannedUnitPrice" label="参考单价" min-width="120">
+                    <el-table-column prop="plannedUnitPrice" label="参考单价" min-width="135" class-name="numeric-column">
                       <template #default="{ row }">
                         <el-input-number
                           v-if="isRowEditing(row)"
@@ -385,27 +385,27 @@
                         <template v-else>{{ formatAmount(row.plannedUnitPrice) }}</template>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="currentAvailableQty" label="当前可用" min-width="110">
+                    <el-table-column prop="currentAvailableQty" label="当前可用" min-width="130" class-name="numeric-column">
                       <template #default="{ row }">
                         {{ formatQty(row.currentAvailableQty) }}
                       </template>
                     </el-table-column>
-                    <el-table-column prop="pickedQty" label="已领" min-width="100">
+                    <el-table-column prop="pickedQty" label="已领" min-width="125" class-name="numeric-column">
                       <template #default="{ row }">
                         {{ formatQty(row.pickedQty) }}
                       </template>
                     </el-table-column>
-                    <el-table-column prop="returnedQty" label="已退" min-width="100">
+                    <el-table-column prop="returnedQty" label="已退" min-width="125" class-name="numeric-column">
                       <template #default="{ row }">
                         {{ formatQty(row.returnedQty) }}
                       </template>
                     </el-table-column>
-                    <el-table-column prop="scrappedQty" label="已报废" min-width="100">
+                    <el-table-column prop="scrappedQty" label="已报废" min-width="125" class-name="numeric-column">
                       <template #default="{ row }">
                         {{ formatQty(row.scrappedQty) }}
                       </template>
                     </el-table-column>
-                    <el-table-column prop="handoffInQty" label="交接入项目" min-width="110">
+                    <el-table-column prop="handoffInQty" label="交接入项目" min-width="130" class-name="numeric-column">
                       <template #default="{ row }">
                         {{ formatQty(row.handoffInQty) }}
                       </template>
@@ -531,22 +531,22 @@
                         <el-table-column prop="lineNo" label="行号" width="70" />
                         <el-table-column prop="materialCodeSnapshot" label="物料编码" min-width="130" />
                         <el-table-column prop="materialNameSnapshot" label="物料名称" min-width="160" />
-                        <el-table-column label="数量" min-width="100">
+                        <el-table-column label="数量" min-width="130" class-name="numeric-column">
                           <template #default="{ row: line }">
                             {{ formatQty(line.quantity) }}
                           </template>
                         </el-table-column>
-                        <el-table-column label="参考金额" min-width="110">
+                        <el-table-column label="参考金额" min-width="135" class-name="numeric-column">
                           <template #default="{ row: line }">
                             {{ formatAmount(line.amount) }}
                           </template>
                         </el-table-column>
-                        <el-table-column label="成本金额" min-width="110">
+                        <el-table-column label="成本金额" min-width="135" class-name="numeric-column">
                           <template #default="{ row: line }">
                             {{ formatAmount(line.costAmount) }}
                           </template>
                         </el-table-column>
-                        <el-table-column label="可退数量" min-width="110">
+                        <el-table-column label="可退数量" min-width="130" class-name="numeric-column">
                           <template #default="{ row: line }">
                             {{ line.availableReturnQty == null ? "-" : formatQty(line.availableReturnQty) }}
                           </template>
@@ -566,12 +566,12 @@
                       {{ formatDateValue(row.bizDate) }}
                     </template>
                   </el-table-column>
-                  <el-table-column label="总数量" min-width="110">
+                  <el-table-column label="总数量" min-width="130" class-name="numeric-column">
                     <template #default="{ row }">
                       {{ formatQty(row.totalQty) }}
                     </template>
                   </el-table-column>
-                  <el-table-column label="总金额" min-width="120">
+                  <el-table-column label="总金额" min-width="135" class-name="numeric-column">
                     <template #default="{ row }">
                       {{ formatAmount(row.totalAmount) }}
                     </template>
@@ -753,7 +753,7 @@
               </el-select>
             </template>
           </el-table-column>
-          <el-table-column label="数量" min-width="130">
+          <el-table-column label="数量" min-width="170" class-name="numeric-column">
             <template #default="{ row }">
               <el-input-number
                 v-model="row.quantity"
@@ -765,7 +765,7 @@
               />
             </template>
           </el-table-column>
-          <el-table-column label="参考单价" min-width="130">
+          <el-table-column label="参考单价" min-width="155" class-name="numeric-column">
             <template #default="{ row }">
               <el-input-number
                 v-model="row.unitPrice"

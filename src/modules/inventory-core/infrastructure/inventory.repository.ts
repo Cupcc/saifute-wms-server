@@ -14,6 +14,7 @@ import {
   type FindPriceLayerSnapshotLogsParams,
   InventoryLogQueryRepository,
 } from "./inventory-log-query.repository";
+import { findInventoryPriceLayerLogPage } from "./inventory-price-layer-log-page.repository";
 
 type InventoryDbClient = Prisma.TransactionClient | PrismaService;
 
@@ -108,6 +109,10 @@ export class InventoryRepository {
     return this.logQueries.findLogs(params);
   }
 
+  async findPriceLayerLogs(params: FindInventoryLogsParams) {
+    return findInventoryPriceLayerLogPage(this.prisma, params);
+  }
+
   async findPriceLayerSnapshotLogs(params: FindPriceLayerSnapshotLogsParams) {
     return this.logQueries.findPriceLayerSnapshotLogs(params);
   }
@@ -196,6 +201,16 @@ export class InventoryRepository {
     });
   }
 
+  async findCostAllocationsForLog(
+    inventoryLogId: number,
+    db: InventoryDbClient = this.prisma,
+  ) {
+    return db.inventoryLogCostAllocation.findMany({
+      where: { inventoryLogId },
+      orderBy: { id: "asc" },
+    });
+  }
+
   async findReversalLogBySourceLogId(
     sourceLogId: number,
     db: InventoryDbClient = this.prisma,
@@ -219,6 +234,7 @@ export class InventoryRepository {
           businessDocumentId: params.businessDocumentId,
           reversalOfLogId: null,
         },
+        include: { costAllocations: { orderBy: { id: "asc" } } },
         orderBy: [{ bizDate: "asc" }, { occurredAt: "asc" }, { id: "asc" }],
       }),
       db.inventoryLog.findMany({

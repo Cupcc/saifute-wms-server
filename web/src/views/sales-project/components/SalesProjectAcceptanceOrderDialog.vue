@@ -158,7 +158,7 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="验收数量" prop="quantity" width="140">
+        <el-table-column label="验收数量" prop="quantity" width="170" class-name="numeric-column">
           <template #default="{ row }">
             <el-input-number
               v-model="row.quantity"
@@ -170,7 +170,7 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="单价" prop="unitPrice" width="130">
+        <el-table-column label="单价" prop="unitPrice" width="155" class-name="numeric-column">
           <template #default="{ row }">
             <el-input-number
               v-model="row.unitPrice"
@@ -182,7 +182,7 @@
             />
           </template>
         </el-table-column>
-        <el-table-column label="金额" prop="amount" width="120" align="right">
+        <el-table-column label="金额" prop="amount" width="135" align="right" class-name="numeric-column">
           <template #default="{ row }">
             {{ formatAmount(row.amount) }}
           </template>

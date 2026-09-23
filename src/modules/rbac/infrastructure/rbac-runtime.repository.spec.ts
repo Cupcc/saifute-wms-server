@@ -257,7 +257,7 @@ describe("RbacRuntimeRepository", () => {
     const user = await repository.findUserById(2);
 
     expect(user?.permissions).toEqual(
-      expect.arrayContaining(["dashboard:view", "rd:procurement-request:list"]),
+      expect.arrayContaining(["dashboard:view", "rd:procurement-demand:list"]),
     );
     expect(user?.permissions).not.toEqual(
       expect.arrayContaining(["inbound:order:list", "sales:order:list"]),

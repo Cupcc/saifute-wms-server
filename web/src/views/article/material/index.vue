@@ -81,7 +81,7 @@
       <el-table-column sortable show-overflow-tooltip label="关联ID" align="center" prop="id" key="id"/>
       <el-table-column sortable show-overflow-tooltip label="关联项目id" align="center" prop="productId" />
       <el-table-column sortable show-overflow-tooltip label="关联物料id" align="center" prop="materialId" />
-      <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="quantity" />
+      <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="quantity" min-width="130" class-name="numeric-column" />
       <el-table-column sortable show-overflow-tooltip label="出厂编号" align="center" prop="interval" />
       <el-table-column sortable show-overflow-tooltip label="备注" align="center" prop="remark" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">

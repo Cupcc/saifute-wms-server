@@ -39,8 +39,10 @@ export function createRepositoryMock() {
     findOrders: jest.fn(),
     createOrder: jest.fn(),
     createOrderLine: jest.fn(),
+    updateOrderLine: jest.fn(),
     updateOrder: jest.fn(),
     deleteOrderLinesByOrderId: jest.fn().mockResolvedValue({ count: 0 }),
+    deleteOrderLine: jest.fn().mockResolvedValue({}),
     updateOrderLineCost: jest.fn().mockResolvedValue({}),
     hasActiveReturnDownstream: jest.fn().mockResolvedValue(false),
     deactivateDocumentRelationsForReturn: jest
@@ -98,6 +100,7 @@ export function createInventoryServiceMock() {
     allocateInventorySource: jest.fn().mockResolvedValue({}),
     releaseInventorySource: jest.fn().mockResolvedValue({}),
     releaseAllSourceUsagesForConsumer: jest.fn().mockResolvedValue(undefined),
+    releaseSourceUsagesForConsumerLine: jest.fn().mockResolvedValue(undefined),
     listSourceUsages: jest.fn().mockResolvedValue({ items: [], total: 0 }),
     listSourceUsagesForConsumerLine: jest.fn().mockResolvedValue([]),
   } as unknown as jest.Mocked<InventoryService>;

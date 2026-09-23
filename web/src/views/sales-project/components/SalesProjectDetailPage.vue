@@ -169,17 +169,17 @@
                 <span v-else>-</span>
               </template>
             </el-table-column>
-            <el-table-column label="成本价层" width="120" align="right">
+            <el-table-column label="成本价层" width="155" align="right" class-name="numeric-column">
               <template #default="{ row }">
                 {{ row.selectedUnitCost || "-" }}
               </template>
             </el-table-column>
-            <el-table-column label="项目库存" width="110" align="right">
+            <el-table-column label="项目库存" width="130" align="right" class-name="numeric-column">
               <template #default="{ row }">
                 {{ formatQty(row.currentInventoryQty) }}
               </template>
             </el-table-column>
-            <el-table-column label="价层可用" width="110" align="right">
+            <el-table-column label="价层可用" width="130" align="right" class-name="numeric-column">
               <template #default="{ row }">
                 {{ formatQty(row.priceLayerAvailableQty) }}
               </template>
@@ -199,7 +199,7 @@
                 {{ formatQty(row.netShipmentQty) }}
               </template>
             </el-table-column>
-            <el-table-column label="草稿数量" width="140">
+            <el-table-column label="草稿数量" width="170" class-name="numeric-column">
               <template #default="{ row }">
                 <el-input
                   v-model="row.draftQty"
@@ -276,14 +276,14 @@
             </el-option>
           </el-select>
         </el-form-item>
-        <el-form-item label="参考数量">
+        <el-form-item label="参考数量" class="numeric-form-field">
           <el-input
             v-model="selectMaterialForm.quantity"
             placeholder="用于项目候选清单，不占用库存"
             @input="normalizeDecimalField(selectMaterialForm, 'quantity', 6)"
           />
         </el-form-item>
-        <el-form-item label="参考单价">
+        <el-form-item label="参考单价" class="numeric-form-field">
           <el-input
             v-model="selectMaterialForm.unitPrice"
             placeholder="0"

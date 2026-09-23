@@ -1,8 +1,8 @@
 # Saifute WMS NestJS
 
-Saifute WMS NestJS 是赛福特仓储管理系统的 NestJS 迁移仓库，当前同时承载后端服务、前端管理端、数据库模型、历史数据迁移脚本、架构文档、需求文档和任务交付记录。
+Saifute WMS NestJS 是赛福特仓储管理系统的独立基线，当前同时承载后端服务、前端管理端、数据库模型、架构文档、需求文档和任务交付记录。
 
-本仓库的核心目标是把旧 Java / RuoYi 系统迁移为 Bun + NestJS + Prisma + MySQL/MariaDB + Redis 的模块化 WMS 服务，并保留可追溯的业务单据、库存价格层、审核、权限和历史数据迁移链路。
+本仓库以 Bun + NestJS + Prisma + MySQL/MariaDB + Redis 构建模块化 WMS 服务，业务单据、库存价格层、审核和权限均以当前代码与 schema 为准。
 
 ## 技术栈
 
@@ -19,8 +19,8 @@ Saifute WMS NestJS 是赛福特仓储管理系统的 NestJS 迁移仓库，当�
 │   ├── modules/                 # 业务模块与平台模块
 │   └── shared/                  # 共享配置、Prisma、Redis、守卫、拦截器等
 ├── prisma/                      # Prisma schema 与种子数据
-├── scripts/                     # 迁移、开发、知识检索等脚本
-├── test/                        # e2e 与迁移相关测试
+├── scripts/                     # 开发与知识检索等脚本
+├── test/                        # e2e 与单元测试
 ├── web/                         # Vue 3 前端工程
 └── docs/                        # 需求、架构、任务、验收、playbook 文档
 ```
@@ -56,8 +56,7 @@ cp .env.example .env.dev
 
 然后按本地环境修改 `.env.dev` 中的连接信息：
 
-- `DATABASE_URL`：NestJS 目标库
-- `LEGACY_DATABASE_URL`：旧系统来源库，仅迁移脚本使用
+- `DATABASE_URL`：应用数据库
 - `REDIS_HOST` / `REDIS_PORT`：Redis 连接
 - `PORT`：后端服务端口，默认 `3000`
 
@@ -121,7 +120,7 @@ bun --cwd web build:prod    # production 构建
 - **单进程同源**：一个 Bun 进程在 `:90` 上同时伏服前端 SPA（`web/dist`）和后端 API（`/api`），无需 Nginx。
 - **独立部署目录**：运行产物放在 `/Users/sft/Projects/saifute-wms-deploy`（不含源码，只含 `dist/`、`generated/`、`node_modules/`、`.env.prod`、`web/dist/`、`storage/`、`logs/`）。
 - **开机自启动**：由 macOS launchd 管理（`~/Library/LaunchAgents/com.saifute.wms.plist`），崩溃自动拉起。
-- **复用现有数据**：当前复用 `.env.dev` 的同一个数据库与 Redis（未做迁移）。
+- **数据服务**：应用使用配置的数据库与 Redis。
 
 > 完整的运维操作（启停/重启、改端口、重新部署、排障、备份）见 **`docs/playbooks/deployment/playbook.md`**（部署目录 `运维手册.md` 有一份随部署同步的拷贝）。本节只给出构建与关键配置约定。
 
@@ -150,7 +149,6 @@ bun --cwd web build:prod    # 前端：vite 构建到 web/dist/
 - `SWAGGER_ENABLED=false`，如需开放文档应只放在可信内网
 - `FILE_STORAGE_ROOT_PATH`、`LOG_DIR`、`DATABASE_BACKUP_DIR` 指向部署目录下的持久化目录
 - 反向代理后面部署时按实际代理层数设置 `HTTP_TRUST_PROXY`
-- `LEGACY_DATABASE_URL` 仅迁移脚本使用，运行时不读，生产可省略
 
 ### 文档检索
 
@@ -183,32 +181,6 @@ dto         -> controllers / application
 
 `application` 层不直接依赖 Prisma Client 或 `PrismaService`；数据访问应通过 `infrastructure` 层 repository 收口。
 
-## 历史数据迁移
-
-迁移脚本统一通过 `.env.dev` 读取数据库连接。常见变量语义：
-
-- `LEGACY_DATABASE_URL`：旧 Java / RuoYi 来源库
-- `DATABASE_URL`：NestJS 目标库
-
-迁移默认先 dry-run，再 execute，最后 validate。不要跳过预演和验证。
-
-```bash
-bun run migration:preflight
-bun run migration:master-data:dry-run
-bun run migration:master-data:execute
-bun run migration:master-data:validate
-```
-
-库存价格层重建使用 inventory replay：
-
-```bash
-bun run migration:inventory-replay:dry-run
-bun run migration:inventory-replay:execute
-bun run migration:inventory-replay:validate
-```
-
-迁移、回填、重放类任务会写入目标库。执行前必须确认 `.env.dev` 指向的是预期目标。
-
 ## 文档入口
 
 建议按下面顺序查阅：
@@ -217,10 +189,9 @@ bun run migration:inventory-replay:validate
 2. `docs/requirements/REQUIREMENT_CENTER.md`：需求条目总览
 3. `docs/architecture/00-architecture-overview.md`：架构总览和模块边界
 4. `docs/architecture/20-wms-database-tables-and-schema.md`：数据库表与业务语义基线
-5. `docs/architecture/30-java-to-nestjs-data-migration-reference.md`：旧系统到 NestJS 的迁移参考
-6. `docs/architecture/40-code-quality-governance.md`：代码治理规则
-7. `docs/tasks/TASK_CENTER.md`：当前任务与历史任务索引
-8. `docs/acceptance-tests/README.md`：验收测试说明
+5. `docs/architecture/40-code-quality-governance.md`：代码治理规则
+6. `docs/tasks/TASK_CENTER.md`：当前任务与历史任务索引
+7. `docs/acceptance-tests/README.md`：验收测试说明
 
 长期业务事实写入 `docs/requirements/**`，稳定架构事实写入 `docs/architecture/**`，单次交付计划和执行记录写入 `docs/tasks/**`。
 
@@ -246,7 +217,5 @@ bun --cwd web build:prod
 ## 安全注意事项
 
 - 不要提交 `.env.dev` 中的真实数据库、Redis、JWT 或第三方密钥
-- 不要直接在生产库上运行迁移 execute 命令
-- 数据修复、库存重放、历史回填必须保留 dry-run 报告和验证结果
 - 库存写入应通过 `inventory-core`，不要在业务模块中绕过库存核心写表
 - 需求、架构和任务文档有明确分层，不要把一次性执行日志写进架构真源

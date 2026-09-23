@@ -16,6 +16,7 @@ import type {
   IncreaseStockCommand,
   ReverseStockCommand,
 } from "./inventory.types";
+import { recordCostAllocations } from "./inventory-cost-allocation";
 import { StockScopeCompatibilityService } from "./stock-scope-compatibility.service";
 
 const INVENTORY_BALANCE_CONFLICT_MESSAGE = "库存余额已被并发更新，请重试";
@@ -101,6 +102,18 @@ export class InventoryStockMutationService {
           }),
         ]);
 
+        if (cmd.costAllocations) {
+          await recordCostAllocations(
+            db,
+            {
+              ...log,
+              direction: StockDirection.IN,
+              changeQty,
+              costAmount: logCostAmount,
+            },
+            cmd.costAllocations,
+          );
+        }
         return log;
       });
     } catch (error) {
@@ -266,6 +279,28 @@ export class InventoryStockMutationService {
             note: cmd.note ?? `逆操作: 原流水 ${sourceLog.id}`,
           },
         });
+
+        // Preserve the original source-layer decomposition on the reversal.
+        // The reversal is a quantity IN, so each copied allocation restores
+        // exactly the source layer and quantity consumed by the original OUT.
+        const sourceAllocations =
+          "inventoryLogCostAllocation" in db && db.inventoryLogCostAllocation
+            ? await db.inventoryLogCostAllocation.findMany({
+                where: { inventoryLogId: sourceLog.id },
+              })
+            : [];
+        if (sourceAllocations.length > 0) {
+          await db.inventoryLogCostAllocation.createMany({
+            data: sourceAllocations.map((allocation) => ({
+              inventoryLogId: log.id,
+              sourceLogId: allocation.sourceLogId,
+              direction: reverseDirection,
+              quantity: allocation.quantity,
+              unitCost: allocation.unitCost,
+              costAmount: allocation.costAmount,
+            })),
+          });
+        }
 
         await this.updateBalanceOptimistically(
           {

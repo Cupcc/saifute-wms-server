@@ -4,15 +4,6 @@
 
 负责销售业务域中的销售出库单、销售退货单及其明细的全生命周期管理。该模块是库存减少和回补并存的单据域，需兼容编号区间、退货约束和下游校验。
 
-## 原 Java 来源与映射范围
-
-- `business/src/main/java/com/saifute/out`
-- `business/src/main/resources/mapper/out`
-
-包含来源：
-
-- `SaifuteOutboundOrder*`
-- `SaifuteSalesReturnOrder*`
 
 ## 领域对象与核心用例
 
@@ -117,6 +108,7 @@
 - 出库按价格层录入：销售出库行使用 `selectedUnitCost` 记录用户选择的库存价格层，`unitPrice` 保持对客户的业务销售单价，不作为库存成本价
 - 出库过账：调用 `inventory-core.settleConsumerOut()`，在选定价格层内 FIFO 分配来源，并写入 `inventory_source_usage`
 - 成本快照：过账后把实际来源分配汇总为 `costUnitPrice` / `costAmount`，固化在出库明细行
+- 多价格层出库：同一单据明细按实际成本价格层各生成一条库存流水；116 元和 117 元必须是两条独立行。每行展示本层数量、金额和层结余，不能把加权平均成本当成价格层
 - 出库成本追溯读模型：串联出库行 → `inventory_source_usage` → 来源流水 → 调价单（如有）→ 原入库单
 
 详见需求：`docs/requirements/domain/sales-business-module.md`（F2/F3）。

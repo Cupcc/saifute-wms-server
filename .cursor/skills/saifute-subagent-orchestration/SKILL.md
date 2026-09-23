@@ -1,6 +1,6 @@
 ---
 name: saifute-subagent-orchestration
-description: Orchestrate non-trivial delivery work in the Saifute NestJS WMS repository with durable handoffs and repo-specific guardrails. Use for migration, backfill, reconciliation, cutover-prep, domain-driven execution, or resume/continue requests where the main agent should autonomously decide whether to use `planner`, `coder`, `code-reviewer`, `acceptance-qa`, and `retrospect`; skip this skill for small, clear, low-risk edits that can be handled directly by the parent.
+description: Orchestrate non-trivial delivery work in the Saifute NestJS WMS repository with durable handoffs and repo-specific guardrails. Use for domain-driven execution or resume/continue requests where the main agent should autonomously decide whether to use `planner`, `coder`, `code-reviewer`, `acceptance-qa`, and `retrospect`; skip this skill for small, clear, low-risk edits that can be handled directly by the parent.
 ---
 
 # Saifute Subagent Orchestration
@@ -25,7 +25,7 @@ Stay on the lightweight direct lane when most of these are true:
 
 - the change is limited to one file or a very small path set
 - no cross-module design choice is needed
-- no migration, backfill, reconciliation, or cutover semantics are involved
+- no cross-module design choice is needed
 - no frozen or shared contract is being rewritten
 - no durable `docs/tasks/*.md` handoff is needed for resume
 - focused local validation is enough
@@ -44,7 +44,7 @@ Use the heavy lane when any of these are true:
 - the task is non-trivial, ambiguous, cross-cutting, or high-risk
 - the user asks to continue, resume, or pick up durable work
 - the task needs a task doc, review loop, or acceptance loop to resume safely later
-- the work touches migration, backfill, reconciliation, staging, or cutover-readiness
+- the work needs explicit subagent ownership boundaries
 - the work needs explicit subagent ownership boundaries
 
 ## Read the minimum source of truth first
@@ -60,11 +60,7 @@ Before delegating, read the smallest relevant source of truth for the task:
 - the files directly related to the task
 - the relevant `docs/playbooks/*/playbook.md` when the task type already has one
 
-For migration, backfill, reconciliation, or cutover-prep work, also read:
-
-- `docs/architecture/30-java-to-nestjs-data-migration-reference.md`
-- `docs/architecture/20-wms-database-tables-and-schema.md` when inventory, workflow, reporting, document relations, reservation semantics, or business-state semantics are affected
-- the relevant `prisma/**`, `scripts/**`, `docs/**`, or module surfaces that define current runtime behavior
+When inventory, workflow, reporting, document relations, reservation semantics, or business-state semantics are affected, also read `docs/architecture/20-wms-database-tables-and-schema.md` and the relevant runtime surfaces.
 
 If the domain capability is unconfirmed, unclear, or missing contract data needed to plan safely, stop and ask the user before planning or coding.
 
@@ -125,17 +121,6 @@ Never let subagents bypass these repository rules:
 
 Keep durable repository rules in `.cursor/rules/*.mdc`. Keep live execution state in `docs/tasks/**`, workspace files, and current handoff artifacts instead of promoting temporary observations into rules.
 
-## Apply migration and backfill guardrails
-
-For migration-style work:
-
-- adapt legacy data to the current runtime and schema unless the user explicitly approves a runtime change
-- isolate uncertain, conflicting, or incomplete records into explicit staging or exclusion paths
-- keep identifiers, ordering, renumbering, derived dates, and mapping outputs deterministic across reruns
-- prefer replay for derived or operational state unless the plan explicitly supports direct copy
-- do not invent relations, audit outcomes, or stock effects from ambiguous legacy signals
-- do not silently drop unmapped legacy fields; archive them, carry them through an explicit schema change, or require explicit sign-off
-- do not call work cutover-ready while unresolved exclusions, relation work, or required business sign-off remain hidden
 
 ## Close the loop before stopping
 

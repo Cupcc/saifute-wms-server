@@ -58,8 +58,8 @@
             {{ formatDate(row.bizDate) }}
           </template>
         </el-table-column>
-        <el-table-column prop="totalBookQty" label="账面总数" min-width="120" />
-        <el-table-column prop="totalCountQty" label="实盘总数" min-width="120" />
+        <el-table-column prop="totalBookQty" label="账面总数" min-width="130" class-name="numeric-column" />
+        <el-table-column prop="totalCountQty" label="实盘总数" min-width="130" class-name="numeric-column" />
         <el-table-column
           prop="totalAdjustmentQty"
           label="调整差异"
@@ -201,12 +201,12 @@
               </el-select>
             </template>
           </el-table-column>
-          <el-table-column label="账面数" min-width="120">
+          <el-table-column label="账面数" min-width="130" class-name="numeric-column">
             <template #default="{ row }">
               <span>{{ formatQty(row.bookQty) }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="实盘数" min-width="140">
+          <el-table-column label="实盘数" min-width="170" class-name="numeric-column">
             <template #default="{ row }">
               <el-input-number
                 v-model="row.countedQty"
@@ -295,8 +295,8 @@
           <el-table-column prop="rdProjectNameSnapshot" label="研发项目名称" min-width="180" />
           <el-table-column prop="materialCodeSnapshot" label="物料编码" min-width="140" />
           <el-table-column prop="materialNameSnapshot" label="物料名称" min-width="180" />
-          <el-table-column prop="bookQty" label="账面数" min-width="110" />
-          <el-table-column prop="countedQty" label="实盘数" min-width="110" />
+          <el-table-column prop="bookQty" label="账面数" min-width="130" class-name="numeric-column" />
+          <el-table-column prop="countedQty" label="实盘数" min-width="130" class-name="numeric-column" />
           <el-table-column prop="adjustmentQty" label="差异" min-width="110" />
           <el-table-column label="库存前后" min-width="180">
             <template #default="{ row }">

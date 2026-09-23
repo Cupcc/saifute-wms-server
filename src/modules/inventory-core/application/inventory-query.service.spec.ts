@@ -312,7 +312,9 @@ describe("InventoryService", () => {
   });
 
   it("passes log filters to repository when listing logs", async () => {
-    const findLogs = jest.fn().mockResolvedValue({ items: [], total: 0 });
+    const findPriceLayerLogs = jest
+      .fn()
+      .mockResolvedValue({ items: [], total: 0, rowKeys: [] });
 
     const moduleRef = await Test.createTestingModule({
       providers: [
@@ -329,7 +331,7 @@ describe("InventoryService", () => {
         {
           provide: InventoryRepository,
           useValue: {
-            findLogs,
+            findPriceLayerLogs,
           },
         },
         {
@@ -359,7 +361,7 @@ describe("InventoryService", () => {
       offset: 0,
     });
 
-    expect(findLogs).toHaveBeenCalledWith({
+    expect(findPriceLayerLogs).toHaveBeenCalledWith({
       materialId: undefined,
       stockScopeIds: [1],
       workshopId: undefined,

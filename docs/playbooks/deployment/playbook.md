@@ -100,8 +100,23 @@ launchctl kickstart -k gui/$(id -u)/com.saifute.wms
 cd /Users/sft/Projects/saifute-wms-deploy && bash redeploy.sh
 ```
 
-脚本流程:在源码工程构建前后端 → rsync 同步 `dist/`、`generated/`、`node_modules/`、`web/dist/` 到部署目录 → 重启 → 健康检查。
+脚本流程:在源码工程构建前后端 → 生成构建清单 → rsync 同步 `dist/`、`generated/`、`node_modules/`、`web/dist/` 到部署目录 → 校验所有产物属于同一次构建 → 重启 → 健康检查。
 **不动** `.env.prod` / `storage/` / `logs/`。改了路径就编辑 `redeploy.sh` 顶部 `SRC` / `DEP`。
+
+### 发布产物一致性门禁（强制）
+
+`redeploy.sh` 会调用 `scripts/check-deploy-artifacts.mjs`：
+
+- 构建后记录 `src`、`web/src`、`prisma/schema.prisma` 和 package 文件的源码指纹。
+- 记录 `dist`、`generated`、`web/dist` 和 `package.json` 的产物指纹。
+- 同步后逐项比较源码指纹、Prisma Client、后端编译产物、前端编译产物和版本号。
+- 任意一项不一致时，在重启服务前失败退出，禁止把混合版本发布到 90 端口。
+
+禁止手动只复制某个后端模块或某个 `generated` 目录到 Deploy。修复代码后必须完整运行：
+
+```bash
+bash /Users/sft/Projects/saifute-wms-deploy/redeploy.sh
+```
 
 ---
 

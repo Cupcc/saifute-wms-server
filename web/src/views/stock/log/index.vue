@@ -117,6 +117,7 @@
       <adaptive-table
         class="stock-log-table"
         :data="rows"
+        row-key="rowKey"
         border
         stripe
         v-loading="loading"
@@ -193,7 +194,38 @@
           align="center"
         >
           <template #default="{ row }">
-            {{ formatOptionalQuantity(row.priceLayerAfterQty) }}
+            <el-tooltip
+              v-if="row.priceLayerAfterQty == null"
+              :content="
+                row.priceLayerStatus === 'SNAPSHOT_UNRESOLVED'
+                  ? '价格层数量已确定，但更早流水的结余仍待核实'
+                  : '缺少单价或数量证据，暂不能计算价格层数量'
+              "
+              placement="top"
+            >
+              <span>
+                {{
+                  row.priceLayerStatus === "SNAPSHOT_UNRESOLVED"
+                    ? "结余待核实"
+                    : "数量待核实"
+                }}
+              </span>
+            </el-tooltip>
+            <el-tooltip
+              v-else-if="Number(row.priceLayerAfterQty) < 0"
+              content="历史价格层结余为负，需核对更早的来源分配或调价记录"
+              placement="top"
+            >
+              <span class="qty-out">{{ formatOptionalQuantity(row.priceLayerAfterQty) }}</span>
+            </el-tooltip>
+            <span v-else>{{ formatOptionalQuantity(row.priceLayerAfterQty) }}</span>
+            <el-tooltip
+              v-if="row.sourceTraceStatus === 'SOURCE_UNRESOLVED'"
+              content="价格层数量已计算，但具体来源流水尚未唯一确认"
+              placement="top"
+            >
+              <span class="source-unresolved-label">来源待核实</span>
+            </el-tooltip>
           </template>
         </el-table-column>
         <el-table-column
@@ -359,12 +391,12 @@
           <el-table-column label="物料编码" prop="materialCode" min-width="120" />
           <el-table-column label="物料名称" prop="materialName" min-width="160" show-overflow-tooltip />
           <el-table-column label="规格型号" prop="specification" min-width="140" show-overflow-tooltip />
-          <el-table-column label="数量" prop="quantity" width="100" align="right">
+          <el-table-column label="数量" prop="quantity" width="130" align="right" class-name="numeric-column">
             <template #default="{ row }">
               {{ formatQty(row.quantity) }}
             </template>
           </el-table-column>
-          <el-table-column label="单价" prop="unitPrice" width="110" align="right">
+          <el-table-column label="单价" prop="unitPrice" width="135" align="right" class-name="numeric-column">
             <template #default="{ row }">
               {{ formatMoney(row.unitPrice) }}
             </template>
@@ -380,7 +412,7 @@
               {{ formatMoney(row.costUnitPrice) }}
             </template>
           </el-table-column>
-          <el-table-column label="金额" prop="amount" width="110" align="right">
+          <el-table-column label="金额" prop="amount" width="135" align="right" class-name="numeric-column">
             <template #default="{ row }">
               {{ formatMoney(row.amount) }}
             </template>
@@ -1325,6 +1357,13 @@ onMounted(() => {
 
 .qty-out {
   color: var(--el-color-danger);
+}
+
+.source-unresolved-label {
+  margin-left: 4px;
+  color: var(--el-color-warning);
+  font-size: 12px;
+  cursor: help;
 }
 
 .pagination-wrap {

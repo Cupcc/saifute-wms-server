@@ -4,15 +4,6 @@
 
 负责本地文件上传、下载、头像管理、资源 URL 生成和静态资源映射，第一阶段保持与原系统一致的本地磁盘方案。
 
-## 原 Java 来源与映射范围
-
-- `ruoyi-admin/.../CommonController.java`
-- `ruoyi-admin/.../SysProfileController.java`
-- `ruoyi-common/.../FileUploadUtils.java`
-- `ruoyi-common/.../FileUtils.java`
-- `ruoyi-common/.../RuoYiConfig.java`
-- `ruoyi-framework/.../ResourcesConfig.java`
-- `ruoyi-framework/.../ServerConfig.java`
 
 ## 领域对象与核心用例
 

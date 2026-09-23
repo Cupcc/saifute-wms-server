@@ -111,6 +111,22 @@
   min-height: 0;
 }
 
+/* Numeric fields need room for the value and Element Plus controls. Keep the
+ * value readable even when a document table is narrower than the viewport. */
+.numeric-column,
+.numeric-column .cell {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.numeric-column .cell {
+  overflow: visible;
+}
+
+.numeric-form-field .el-input__inner {
+  font-variant-numeric: tabular-nums;
+}
+
 .el-table {
   --el-table-header-text-color: var(--el-text-color-primary, #000000) !important;
 

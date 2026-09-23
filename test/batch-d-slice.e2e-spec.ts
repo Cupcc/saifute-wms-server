@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { type INestApplication, ValidationPipe } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
 import { Test } from "@nestjs/testing";
+import { Workbook } from "exceljs";
 import { static as expressStatic } from "express";
 import * as request from "supertest";
 import { Prisma, SalesStockOrderType } from "../generated/prisma/client";
@@ -126,6 +127,21 @@ describe("Batch D slice acceptance (e2e)", () => {
         captchaCode,
       })
       .expect(expectedStatus);
+  }
+
+  async function loadExportWorkbook(response: { body: unknown }) {
+    const workbook = new Workbook();
+    await workbook.xlsx.load(response.body as never);
+    return workbook;
+  }
+
+  function parseBinaryResponse(
+    response: NodeJS.ReadableStream,
+    callback: (error: Error | null, body?: Buffer) => void,
+  ) {
+    const chunks: Buffer[] = [];
+    response.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+    response.on("end", () => callback(null, Buffer.concat(chunks)));
   }
 
   it("should record login success, failure, and logout audit entries", async () => {
@@ -685,31 +701,27 @@ describe("Batch D slice acceptance (e2e)", () => {
         viewMode: "MATERIAL_CATEGORY",
         stockScope: "MAIN",
       })
+      .buffer(true)
+      .parse(parseBinaryResponse as never)
       .expect(201);
 
     expect(exportResponse.headers["content-type"]).toContain(
-      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     expect(exportResponse.headers["content-disposition"]).toContain(
-      "filename*=UTF-8''%E7%89%A9%E6%96%99%E5%88%86%E7%B1%BB%E6%9C%88%E6%8A%A5-2026-04.xls",
+      "filename*=UTF-8''%E7%89%A9%E6%96%99%E5%88%86%E7%B1%BB%E6%9C%88%E6%8A%A5-2026-04.xlsx",
     );
-    expect(exportResponse.text).toContain('<Worksheet ss:Name="分类汇总">');
-    expect(exportResponse.text).toContain('<Worksheet ss:Name="物料汇总">');
-    expect(exportResponse.text).toContain('<Worksheet ss:Name="单据行明细">');
-    expect(exportResponse.text).toContain("月初金额");
-    expect(exportResponse.text).toContain("入库金额");
-    expect(exportResponse.text).toContain("出库金额");
-    expect(exportResponse.text).toContain("库存净变动数量");
-    expect(exportResponse.text).toContain("金额变动");
-    expect(exportResponse.text).toContain("月末金额");
-    expect(exportResponse.text).toContain("验收入库数量");
-    expect(exportResponse.text).toContain("验收入库计价金额");
-    expect(exportResponse.text).toContain("销售价");
-    expect(exportResponse.text).toContain("销售金额");
-    expect(exportResponse.text).toContain("化工");
-    expect(exportResponse.text).not.toContain("总成本");
-    expect(exportResponse.text).not.toContain("分类路径");
-    expect(exportResponse.text).not.toContain("层级");
+    expect(exportResponse.body.subarray(0, 4).toString("hex")).toBe("504b0304");
+    const workbook = await loadExportWorkbook(exportResponse);
+    expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual([
+      "总览",
+      "分类汇总",
+      "物料汇总",
+      "车间使用汇总",
+      "单据行明细",
+    ]);
+    expect(workbook.getWorksheet("分类汇总")?.getCell("B3").value).toBe("化工");
+    expect(workbook.getWorksheet("总览")?.getCell("A3").value).toBe("月初金额");
   });
 
   it("should export monthly reporting data as a downloadable excel file", async () => {
@@ -722,18 +734,24 @@ describe("Batch D slice acceptance (e2e)", () => {
       .post("/api/reporting/monthly-reporting/export")
       .set("Authorization", `Bearer ${token}`)
       .send({ yearMonth: "2026-04" })
+      .buffer(true)
+      .parse(parseBinaryResponse as never)
       .expect(201);
 
     expect(exportResponse.headers["content-type"]).toContain(
-      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
     expect(exportResponse.headers["content-disposition"]).toContain(
       "attachment",
     );
     expect(exportResponse.headers["content-disposition"]).toContain(
-      "filename*=UTF-8''%E6%9C%88%E5%BA%A6%E5%AF%B9%E8%B4%A6%E6%8A%A5%E8%A1%A8-2026-04.xls",
+      "filename*=UTF-8''%E6%9C%88%E5%BA%A6%E5%AF%B9%E8%B4%A6%E6%8A%A5%E8%A1%A8-2026-04.xlsx",
     );
-    expect(exportResponse.text).toContain("<Workbook");
+    expect(exportResponse.body.subarray(0, 4).toString("hex")).toBe("504b0304");
+    const workbook = await loadExportWorkbook(exportResponse);
+    expect(workbook.getWorksheet("总览")?.getCell("A3").value).toBe(
+      "库存成本流入",
+    );
   });
 
   it("should create, run, pause, resume, and list scheduler jobs", async () => {

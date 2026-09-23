@@ -123,10 +123,10 @@
       </el-table-column>
       <el-table-column sortable show-overflow-tooltip label="物料名称" align="center" prop="material.materialName" />
       <el-table-column sortable show-overflow-tooltip label="规格型号" align="center" prop="material.specification" />
-      <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="quantity" />
-      <el-table-column sortable show-overflow-tooltip label="单价" align="center" prop="unitPrice" />
-      <el-table-column sortable show-overflow-tooltip label="金额" align="center" prop="amount" />
-      <el-table-column sortable show-overflow-tooltip label="含税价" align="center" prop="taxPrice" />
+      <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="quantity" min-width="130" class-name="numeric-column" />
+      <el-table-column sortable show-overflow-tooltip label="单价" align="center" prop="unitPrice" min-width="135" class-name="numeric-column" />
+      <el-table-column sortable show-overflow-tooltip label="金额" align="center" prop="amount" min-width="135" class-name="numeric-column" />
+      <el-table-column sortable show-overflow-tooltip label="含税价" align="center" prop="taxPrice" min-width="135" class-name="numeric-column" />
       <el-table-column sortable show-overflow-tooltip label="供应商" align="center" prop="supplierName" />
 	    <el-table-column sortable show-overflow-tooltip label="备注" align="center" prop="remark" />
     </adaptive-table>
@@ -148,13 +148,13 @@
         <el-form-item label="物料id" prop="materialId">
           <el-input v-model="form.materialId" placeholder="请输入物料id" />
         </el-form-item>
-        <el-form-item label="入库数量" prop="quantity">
+        <el-form-item label="入库数量" prop="quantity" class="numeric-form-field">
           <el-input v-model="form.quantity" placeholder="请输入入库数量" />
         </el-form-item>
-        <el-form-item label="单价" prop="unitPrice">
+        <el-form-item label="单价" prop="unitPrice" class="numeric-form-field">
           <el-input v-model="form.unitPrice" placeholder="请输入单价" />
         </el-form-item>
-        <el-form-item label="含税价" prop="taxPrice">
+        <el-form-item label="含税价" prop="taxPrice" class="numeric-form-field">
           <el-input v-model="form.taxPrice" placeholder="请输入含税价" />
         </el-form-item>
         <el-form-item label="明细备注" prop="remark">

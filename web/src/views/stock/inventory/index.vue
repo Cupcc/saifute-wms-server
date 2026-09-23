@@ -263,7 +263,7 @@
               :data="priceLayerRows"
               empty-text="暂无可用价格库存"
             >
-              <el-table-column label="单价" prop="unitCost" align="right">
+              <el-table-column label="单价" prop="unitCost" min-width="135" align="right" class-name="numeric-column">
                 <template #default="{ row }">
                   {{ formatMoneyDisplay(row.unitCost) }}
                 </template>

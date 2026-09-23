@@ -20,7 +20,10 @@ import {
   type MonthlyReportQuery,
   MonthlyReportSourceService,
 } from "./monthly-report-source.service";
-import { buildMonthlyReportExcelXmlWorkbook } from "./monthly-reporting.formatters";
+import {
+  buildMonthlyReportXlsxWorkbook,
+  MONTHLY_REPORT_XLSX_CONTENT_TYPE,
+} from "./monthly-report-xlsx.exporter";
 import {
   type MonthlyReportEntry,
   MonthlyReportingTopicKey,
@@ -30,7 +33,7 @@ import {
 export interface MonthlyReportExportResult {
   fileName: string;
   fallbackFileName: string;
-  content: string;
+  content: Buffer;
   contentType: string;
 }
 
@@ -98,9 +101,9 @@ export class MonthlyReportExportService {
     );
 
     return {
-      fileName: `月度对账报表-${query.yearMonth}.xls`,
-      fallbackFileName: `monthly-reporting-${query.yearMonth}.xls`,
-      content: buildMonthlyReportExcelXmlWorkbook(
+      fileName: `月度对账报表-${query.yearMonth}.xlsx`,
+      fallbackFileName: `monthly-reporting-${query.yearMonth}.xlsx`,
+      content: await buildMonthlyReportXlsxWorkbook(
         this.buildDomainSheets(
           query.yearMonth,
           totals,
@@ -112,7 +115,7 @@ export class MonthlyReportExportService {
           filteredRows,
         ),
       ),
-      contentType: "application/vnd.ms-excel; charset=utf-8",
+      contentType: MONTHLY_REPORT_XLSX_CONTENT_TYPE,
     };
   }
 
@@ -146,9 +149,9 @@ export class MonthlyReportExportService {
     );
 
     return {
-      fileName: `物料分类月报-${query.yearMonth}.xls`,
-      fallbackFileName: `monthly-reporting-material-category-${query.yearMonth}.xls`,
-      content: buildMonthlyReportExcelXmlWorkbook(
+      fileName: `物料分类月报-${query.yearMonth}.xlsx`,
+      fallbackFileName: `monthly-reporting-material-category-${query.yearMonth}.xlsx`,
+      content: await buildMonthlyReportXlsxWorkbook(
         buildMaterialCategoryExportSheets({
           yearMonth: query.yearMonth,
           totals,
@@ -160,7 +163,7 @@ export class MonthlyReportExportService {
           ),
         }),
       ),
-      contentType: "application/vnd.ms-excel; charset=utf-8",
+      contentType: MONTHLY_REPORT_XLSX_CONTENT_TYPE,
     };
   }
 

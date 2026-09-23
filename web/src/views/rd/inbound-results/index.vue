@@ -91,12 +91,12 @@
             {{ formatOrderProjectLabels(row.lines) }}
           </template>
         </el-table-column>
-        <el-table-column label="总数量" min-width="120">
+        <el-table-column label="总数量" min-width="130" class-name="numeric-column">
           <template #default="{ row }">
             {{ formatQty(row.totalQty) }}
           </template>
         </el-table-column>
-        <el-table-column label="总金额（结算）" min-width="130">
+        <el-table-column label="总金额（结算）" min-width="140" class-name="numeric-column">
           <template #default="{ row }">
             {{ formatAmount(row.totalAmount) }}
           </template>
@@ -246,12 +246,12 @@
               {{ row.materialLabel || "-" }}
             </template>
           </el-table-column>
-          <el-table-column label="待交接数量" min-width="120">
+          <el-table-column label="待交接数量" min-width="130" class-name="numeric-column">
             <template #default="{ row }">
               {{ row.sourceDocumentLineId ? formatQty(row.maxQuantity) : "-" }}
             </template>
           </el-table-column>
-          <el-table-column min-width="150">
+          <el-table-column min-width="170" class-name="numeric-column">
             <template #header>
               <span class="required-column-header">交接数量</span>
             </template>
@@ -343,27 +343,27 @@
             <el-table-column prop="materialCodeSnapshot" label="物料编码" min-width="140" />
             <el-table-column prop="materialNameSnapshot" label="物料名称" min-width="180" />
             <el-table-column prop="materialSpecSnapshot" label="规格型号" min-width="140" />
-            <el-table-column prop="quantity" label="数量" min-width="100">
+            <el-table-column prop="quantity" label="数量" min-width="130" class-name="numeric-column">
               <template #default="{ row }">
                 {{ formatQty(row.quantity) }}
               </template>
             </el-table-column>
-            <el-table-column prop="unitPrice" label="单价（录入）" min-width="110">
+            <el-table-column prop="unitPrice" label="单价（录入）" min-width="135" class-name="numeric-column">
               <template #default="{ row }">
                 {{ formatAmount(row.unitPrice) }}
               </template>
             </el-table-column>
-            <el-table-column prop="amount" label="金额（录入）" min-width="110">
+            <el-table-column prop="amount" label="金额（录入）" min-width="135" class-name="numeric-column">
               <template #default="{ row }">
                 {{ formatAmount(row.amount) }}
               </template>
             </el-table-column>
-            <el-table-column prop="costUnitPrice" label="结算单价" min-width="110">
+            <el-table-column prop="costUnitPrice" label="结算单价" min-width="135" class-name="numeric-column">
               <template #default="{ row }">
                 {{ formatAmount(row.costUnitPrice) }}
               </template>
             </el-table-column>
-            <el-table-column prop="costAmount" label="结算金额" min-width="110">
+            <el-table-column prop="costAmount" label="结算金额" min-width="135" class-name="numeric-column">
               <template #default="{ row }">
                 {{ formatAmount(row.costAmount) }}
               </template>

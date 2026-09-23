@@ -18,6 +18,7 @@ import {
   createWithGeneratedDocumentNo,
 } from "../../../shared/common/document-number.util";
 import { BusinessDocumentType } from "../../../shared/domain/business-document-type";
+import type { FifoAllocationPiece } from "../../inventory-core/application/inventory.types";
 import { SalesProjectService } from "../../sales-project/application/sales-project.service";
 import type { CreateSalesReturnDto } from "../dto/create-sales-return.dto";
 import type { QuerySalesReturnDto } from "../dto/query-sales-return.dto";
@@ -303,6 +304,7 @@ export class SalesReturnService {
         for (const line of order.lines) {
           let returnCostUnitPrice: Prisma.Decimal | null = null;
           let returnCostAmount: Prisma.Decimal | null = null;
+          let returnAllocations: FifoAllocationPiece[] | undefined;
           if (sourceOutboundOrderId && line.sourceDocumentLineId) {
             const releaseResult =
               await this.returnSource.releaseOutboundSourceForReturn(
@@ -314,6 +316,7 @@ export class SalesReturnService {
               );
             returnCostUnitPrice = releaseResult.releasedUnitCost;
             returnCostAmount = releaseResult.releasedCostAmount;
+            returnAllocations = releaseResult.allocations;
           }
 
           await this.shared.inventoryService.increaseStock(
@@ -330,6 +333,7 @@ export class SalesReturnService {
               businessDocumentLineId: line.id,
               unitCost: returnCostUnitPrice ?? line.costUnitPrice ?? undefined,
               costAmount: returnCostAmount ?? line.costAmount ?? undefined,
+              costAllocations: returnAllocations,
               projectTargetId:
                 projectTargetByLineNo.get(line.lineNo) ?? undefined,
               operatorId: createdBy,
@@ -406,6 +410,10 @@ export class SalesReturnService {
     }
 
     return this.repository.runInTransaction(async (tx) => {
+      const returnLogs = await this.shared.inventoryService.getLogsForDocument(
+        { businessDocumentType: DOCUMENT_TYPE, businessDocumentId: id },
+        tx,
+      );
       for (const line of order.lines) {
         if (
           line.sourceDocumentLineId != null &&
@@ -417,6 +425,8 @@ export class SalesReturnService {
             new Prisma.Decimal(line.quantity),
             voidedBy,
             tx,
+            returnLogs.find((log) => log.businessDocumentLineId === line.id)
+              ?.costAllocations,
           );
         }
       }

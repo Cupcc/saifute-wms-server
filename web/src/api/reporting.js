@@ -53,7 +53,7 @@ export function exportMonthlyReporting(data = {}) {
   const yearMonth = data.yearMonth || new Date().toISOString().slice(0, 7);
   const fileName =
     data.viewMode === "MATERIAL_CATEGORY"
-      ? `物料分类月报-${yearMonth}.xls`
-      : `月度对账报表-${yearMonth}.xls`;
+      ? `物料分类月报-${yearMonth}.xlsx`
+      : `月度对账报表-${yearMonth}.xlsx`;
   return download("/api/reporting/monthly-reporting/export", data, fileName);
 }

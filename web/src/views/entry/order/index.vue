@@ -121,7 +121,7 @@
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="总金额" align="center" min-width="100" prop="totalAmount" >
+      <el-table-column sortable show-overflow-tooltip label="总金额" align="center" min-width="135" prop="totalAmount" class-name="numeric-column" >
 	      <template #default="scope">
 		      <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
 			      {{ scope.row.totalAmount }}
@@ -361,17 +361,17 @@
               />
             </template>
           </el-table-column>
-          <el-table-column label="验收数量" prop="quantity">
+          <el-table-column label="验收数量" prop="quantity" min-width="170" class-name="numeric-column">
             <template #default="scope">
               <el-input-number v-model="scope.row.quantity" placeholder="验收数量" controls-position="right" :disabled="isView" style="width: 100%" @change="calculateTotalAmount" />
             </template>
           </el-table-column>
-          <el-table-column label="单价" prop="unitPrice">
+          <el-table-column label="单价" prop="unitPrice" min-width="155" class-name="numeric-column">
             <template #default="scope">
               <el-input-number v-model="scope.row.unitPrice" :min="0" :precision="MONEY_PRECISION" placeholder="单价" controls-position="right" style="width: 100%" @change="calculateTotalAmount" />
             </template>
           </el-table-column>
-          <el-table-column label="含税价" prop="taxPrice">
+          <el-table-column label="含税价" prop="taxPrice" min-width="155" class-name="numeric-column">
             <template #default="scope">
               <el-input-number v-model="scope.row.taxPrice" :min="0" :precision="MONEY_PRECISION" placeholder="含税价" controls-position="right" style="width: 100%" @change="calculateTotalAmount" />
             </template>
@@ -448,9 +448,9 @@
               <el-table-column label="物料编码" prop="material.materialCode" />
               <el-table-column label="物料名称" prop="material.materialName" />
               <el-table-column label="规格型号" prop="material.specification" />
-              <el-table-column label="验收数量" prop="quantity" />
-              <el-table-column label="单价" prop="unitPrice" />
-              <el-table-column label="含税价" prop="taxPrice" />
+              <el-table-column label="验收数量" prop="quantity" min-width="130" class-name="numeric-column" />
+              <el-table-column label="单价" prop="unitPrice" min-width="130" class-name="numeric-column" />
+              <el-table-column label="含税价" prop="taxPrice" min-width="130" class-name="numeric-column" />
               <el-table-column label="备注" prop="remark" />
             </el-table>
             <div style="margin-top: 10px; text-align: right; padding-right: 20px">
@@ -524,16 +524,16 @@
         <el-table-column label="物料编码" prop="materialCode" min-width="80" show-overflow-tooltip />
         <el-table-column label="物料名称" prop="materialName" min-width="150" show-overflow-tooltip />
         <el-table-column label="规格型号" prop="specification" min-width="120" show-overflow-tooltip />
-        <el-table-column label="验收数量" prop="sourceQuantity" width="80" align="right">
+        <el-table-column label="验收数量" prop="sourceQuantity" width="125" align="right" class-name="numeric-column">
           <template #default="scope">
             {{ formatQty(scope.row.sourceQuantity) }}
           </template>
         </el-table-column>
-        <el-table-column label="已退数量" prop="activeReturnedQty" width="80" align="right" />
-        <el-table-column label="来源可用" prop="sourceAvailableQty" width="80" align="right" />
-        <el-table-column label="可退数量" prop="availableQty" width="80" align="right" />
-        <el-table-column label="进货单价" prop="unitPrice" width="80" align="right" />
-        <el-table-column label="本次退货数量" prop="quantity" width="140">
+        <el-table-column label="已退数量" prop="activeReturnedQty" width="125" align="right" class-name="numeric-column" />
+        <el-table-column label="来源可用" prop="sourceAvailableQty" width="125" align="right" class-name="numeric-column" />
+        <el-table-column label="可退数量" prop="availableQty" width="125" align="right" class-name="numeric-column" />
+        <el-table-column label="进货单价" prop="unitPrice" width="130" align="right" class-name="numeric-column" />
+        <el-table-column label="本次退货数量" prop="quantity" width="170" class-name="numeric-column">
           <template #default="scope">
             <el-input-number
               v-model="scope.row.quantity"

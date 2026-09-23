@@ -4,20 +4,6 @@
 
 负责登录、登出、验证码、登录前置校验、密码重试限制和认证事件发布。`auth` 只处理认证入口，不直接承载 Redis 会话存储细节。
 
-## 原 Java 来源与映射范围
-
-- `ruoyi-admin/.../SysLoginController.java`
-- `ruoyi-admin/.../CaptchaController.java`
-- `ruoyi-framework/.../SysLoginService.java`
-- `ruoyi-framework/.../UserDetailsServiceImpl.java`
-- `ruoyi-framework/.../SysPasswordService.java`
-- `ruoyi-framework/.../SecurityConfig.java`
-
-映射规则：
-
-- Java `SysLoginController + CaptchaController + SysLoginService` -> NestJS `auth`
-- 用户快照与会话恢复职责下沉到 `session`
-- 菜单、权限、路由树查询下沉到 `rbac`
 
 ## 领域对象与核心用例
 

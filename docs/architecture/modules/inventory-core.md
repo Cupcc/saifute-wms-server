@@ -6,11 +6,6 @@
 
 当前已确认的 `F5` 第一版范围：预警只保留只读视图 / 报表提示；出厂编号区间能力只服务 `sales` 出库链路，不扩成多业务家族统一平台。
 
-## 原 Java 来源与映射范围
-
-- `business/src/main/java/com/saifute/stock`
-- `business/src/main/resources/mapper/stock`
-- 被 `entry`、`out`、`take`、`article` 广泛调用的库存副作用逻辑
 
 ## 领域对象与核心用例
 
@@ -34,6 +29,8 @@
 - `reserveFactoryNumberInterval()`
 - `listPriceLayerAvailability()` — 按 `物料 + 库存范围 + unitCost` 聚合可用来源层，供销售出库价格层选择
 - `settleConsumerOut()` — 扣减库存并结算消费来源；传入 `selectedUnitCost` 时只在指定价格层内按 FIFO 分配来源
+- 出库价格层流水 — 每个单据明细按实际成本价格层生成一行库存流水；同一物料同时消耗多个价格层时生成多行，价格层查询不得使用加权平均 `unitCost` 作为层键
+- 出库成本分配明细 — 每个价格层流水可继续保留不可变的来源成本分解，用于追溯到具体入库来源；来源明细不再承担把一条总量流水展开成用户可见流水的职责
 
 ## Controller 接口草案
 
@@ -107,6 +104,7 @@
 - 第一阶段库存唯一维度固定为 `materialId + stockScopeId`，其中真实库存范围仅包含 `MAIN` 与 `RD_SUB`
 - `workshop` 只承担主仓领退料归属与成本核算，不参与库存余额唯一键
 - 同一物料不同入库批次可存在不同成本层；出库、领料、退料的成本必须通过来源分配传递
+- 出库流水的 `unitCost`、`changeQty`、`costAmount` 直接表示该行价格层；单据总成本由同一过账组的价格层流水求和得到，不能把平均成本当作价格层行
 - `inventory_warning` 收敛为只读视图 `vw_inventory_warning`，不单独落交易表
 - `inventory_warning` 第一版只承担读模型 / 报表提示职责，不派生独立预警处理流
 - 单据模块必须通过 `businessDocumentType`、`businessDocumentId`、`businessDocumentLineId` 向库存中心传递来源语义

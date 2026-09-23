@@ -226,9 +226,8 @@ describe("WorkshopMaterialPickService", () => {
     });
 
     it("should reverse and replay pick inventory effects on revise", async () => {
-      const recreatedPickLine = {
+      const updatedPickLine = {
         ...mockPickOrder.lines[0],
-        id: 12,
         quantity: new Prisma.Decimal(40),
         amount: new Prisma.Decimal(400),
       };
@@ -238,15 +237,15 @@ describe("WorkshopMaterialPickService", () => {
         revisionNo: 2,
         totalQty: new Prisma.Decimal(40),
         totalAmount: new Prisma.Decimal(400),
-        lines: [recreatedPickLine],
+        lines: [updatedPickLine],
       };
 
       (mocks.repository.findOrderById as jest.Mock)
         .mockResolvedValueOnce(mockPickOrder)
         .mockResolvedValueOnce(mockPickOrder)
         .mockResolvedValueOnce(revisedPickOrder);
-      (mocks.repository.createOrderLine as jest.Mock).mockResolvedValue(
-        recreatedPickLine,
+      (mocks.repository.updateOrderLine as jest.Mock).mockResolvedValue(
+        updatedPickLine,
       );
       (mocks.repository.updateOrder as jest.Mock).mockResolvedValue(
         revisedPickOrder,
@@ -270,17 +269,25 @@ describe("WorkshopMaterialPickService", () => {
           orderType: WorkshopMaterialOrderType.PICK,
           bizDate: "2025-03-15",
           workshopId: 1,
-          lines: [{ materialId: 100, quantity: "40", selectedUnitCost: "10" }],
+          lines: [
+            {
+              id: 1,
+              materialId: 100,
+              quantity: "40",
+              selectedUnitCost: "10",
+            },
+          ],
         },
         "1",
       );
 
       expect(
-        mocks.inventoryService.releaseAllSourceUsagesForConsumer,
+        mocks.inventoryService.releaseSourceUsagesForConsumerLine,
       ).toHaveBeenCalledWith(
         expect.objectContaining({
           consumerDocumentType: "WorkshopMaterialOrder",
           consumerDocumentId: 1,
+          consumerLineId: 1,
           operatorId: "1",
         }),
         expect.anything(),
@@ -288,21 +295,17 @@ describe("WorkshopMaterialPickService", () => {
       expect(mocks.inventoryService.reverseStock).toHaveBeenCalledWith(
         expect.objectContaining({
           logIdToReverse: 5,
-          idempotencyKey: "WorkshopMaterialOrder:rev:1:r2:log:5",
+          idempotencyKey: "WorkshopMaterialOrder:1:rev:2:replace:1",
         }),
-        expect.anything(),
-      );
-      expect(mocks.repository.deleteOrderLinesByOrderId).toHaveBeenCalledWith(
-        1,
         expect.anything(),
       );
       expect(mocks.inventoryService.settleConsumerOut).toHaveBeenCalledWith(
         expect.objectContaining({
           businessDocumentId: 1,
-          businessDocumentLineId: 12,
+          businessDocumentLineId: 1,
           quantity: new Prisma.Decimal(40),
           operationType: "PICK_OUT",
-          idempotencyKey: "WorkshopMaterialOrder:1:rev:2:line:12",
+          idempotencyKey: "WorkshopMaterialOrder:1:rev:2:line:1",
         }),
         expect.anything(),
       );
@@ -330,6 +333,181 @@ describe("WorkshopMaterialPickService", () => {
         mocks.approvalService.markApprovalNotRequired,
       ).not.toHaveBeenCalled();
       expect(result).toEqual(revisedPickOrder);
+    });
+
+    it("should preserve inventory history for a line whose inventory fields did not change", async () => {
+      const revisedPickOrder = {
+        ...mockPickOrder,
+        revisionNo: 2,
+        remark: "header changed",
+      };
+      (mocks.repository.findOrderById as jest.Mock)
+        .mockResolvedValueOnce(mockPickOrder)
+        .mockResolvedValueOnce(mockPickOrder)
+        .mockResolvedValueOnce(revisedPickOrder);
+      (
+        mocks.inventoryService.getLogsForDocument as jest.Mock
+      ).mockResolvedValue([{ id: 5, businessDocumentLineId: 1 }]);
+      (mocks.repository.updateOrder as jest.Mock).mockResolvedValue(
+        revisedPickOrder,
+      );
+
+      await service.updatePickOrder(
+        1,
+        {
+          documentNo: "WM-PICK-001",
+          orderType: WorkshopMaterialOrderType.PICK,
+          bizDate: "2025-03-14",
+          workshopId: 1,
+          remark: "header changed",
+          lines: [
+            {
+              id: 1,
+              materialId: 100,
+              quantity: "50",
+              selectedUnitCost: "10",
+              remark: "line note changed",
+            },
+          ],
+        },
+        "1",
+      );
+
+      expect(
+        mocks.inventoryService.releaseSourceUsagesForConsumerLine,
+      ).not.toHaveBeenCalled();
+      expect(mocks.inventoryService.reverseStock).not.toHaveBeenCalled();
+      expect(mocks.inventoryService.settleConsumerOut).not.toHaveBeenCalled();
+      expect(mocks.repository.updateOrderLine).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          lineNo: 1,
+          remark: "line note changed",
+        }),
+        expect.anything(),
+      );
+      expect(mocks.repository.updateOrder).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          totalQty: new Prisma.Decimal(50),
+          totalAmount: new Prisma.Decimal(500),
+        }),
+        expect.anything(),
+      );
+    });
+
+    it("should treat an identical revise request as a no-op", async () => {
+      (mocks.repository.findOrderById as jest.Mock)
+        .mockResolvedValueOnce(mockPickOrder)
+        .mockResolvedValueOnce(mockPickOrder);
+
+      const result = await service.updatePickOrder(
+        1,
+        {
+          documentNo: "WM-PICK-001",
+          orderType: WorkshopMaterialOrderType.PICK,
+          bizDate: "2025-03-14",
+          workshopId: 1,
+          lines: [
+            {
+              id: 1,
+              materialId: 100,
+              quantity: "50",
+              selectedUnitCost: "10",
+            },
+          ],
+        },
+        "1",
+      );
+
+      expect(result).toBe(mockPickOrder);
+      expect(mocks.repository.updateOrder).not.toHaveBeenCalled();
+      expect(mocks.repository.updateOrderLine).not.toHaveBeenCalled();
+      expect(mocks.inventoryService.getLogsForDocument).not.toHaveBeenCalled();
+      expect(mocks.inventoryService.reverseStock).not.toHaveBeenCalled();
+      expect(mocks.inventoryService.settleConsumerOut).not.toHaveBeenCalled();
+      expect(
+        mocks.approvalService.createOrRefreshApprovalDocument,
+      ).not.toHaveBeenCalled();
+    });
+
+    it("should reverse only a deleted line", async () => {
+      const deletedLine = {
+        ...mockPickOrder.lines[0],
+        id: 2,
+        lineNo: 2,
+        materialId: 101,
+        materialCodeSnapshot: "MAT002",
+        quantity: new Prisma.Decimal(1),
+        unitPrice: new Prisma.Decimal(5),
+        amount: new Prisma.Decimal(5),
+        costUnitPrice: new Prisma.Decimal(5),
+        costAmount: new Prisma.Decimal(5),
+      };
+      const currentOrder = {
+        ...mockPickOrder,
+        totalQty: new Prisma.Decimal(51),
+        totalAmount: new Prisma.Decimal(505),
+        lines: [...mockPickOrder.lines, deletedLine],
+      };
+      const revisedPickOrder = {
+        ...mockPickOrder,
+        revisionNo: 2,
+      };
+      (mocks.repository.findOrderById as jest.Mock)
+        .mockResolvedValueOnce(currentOrder)
+        .mockResolvedValueOnce(currentOrder)
+        .mockResolvedValueOnce(revisedPickOrder);
+      (
+        mocks.inventoryService.getLogsForDocument as jest.Mock
+      ).mockResolvedValue([
+        { id: 5, businessDocumentLineId: 1 },
+        { id: 6, businessDocumentLineId: 2 },
+      ]);
+      (mocks.repository.updateOrder as jest.Mock).mockResolvedValue(
+        revisedPickOrder,
+      );
+
+      await service.updatePickOrder(
+        1,
+        {
+          documentNo: "WM-PICK-001",
+          orderType: WorkshopMaterialOrderType.PICK,
+          bizDate: "2025-03-14",
+          workshopId: 1,
+          lines: [
+            {
+              id: 1,
+              materialId: 100,
+              quantity: "50",
+              selectedUnitCost: "10",
+            },
+          ],
+        },
+        "1",
+      );
+
+      expect(
+        mocks.inventoryService.releaseSourceUsagesForConsumerLine,
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        mocks.inventoryService.releaseSourceUsagesForConsumerLine,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({ consumerLineId: 2 }),
+        expect.anything(),
+      );
+      expect(mocks.inventoryService.reverseStock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          logIdToReverse: 6,
+          idempotencyKey: "WorkshopMaterialOrder:1:rev:2:delete:2",
+        }),
+        expect.anything(),
+      );
+      expect(mocks.repository.deleteOrderLine).toHaveBeenCalledWith(
+        2,
+        expect.anything(),
+      );
+      expect(mocks.inventoryService.settleConsumerOut).not.toHaveBeenCalled();
     });
 
     it("should reject pick order revise without a selected price layer", async () => {

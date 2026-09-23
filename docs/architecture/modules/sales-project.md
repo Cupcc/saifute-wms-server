@@ -23,12 +23,6 @@
 
 目标范围下，销售项目本身不直接过账库存；项目归属实际库存由绑定销售项目的 `inbound` 入库 / 验收、`sales` 出库 / 退货和后续明确的库存归属调整沉淀。项目页上的出库快捷动作应沉淀为 `sales` 草稿，不能绕过 `sales` / `inventory-core` 直接扣库存。
 
-## 原 Java 来源与映射范围
-
-- `business/src/main/java/com/saifute/article`
-- `business/src/main/resources/mapper/article`
-
-> 注意：旧 `article -> project` 的迁移映射主要承接的是历史内部研发项目实现，不应继续反向定义新的销售项目领域边界。
 
 ## 领域对象与核心用例
 

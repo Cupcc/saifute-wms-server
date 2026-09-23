@@ -236,7 +236,7 @@
                 </el-select>
               </template>
             </el-table-column>
-            <el-table-column label="报废数量" prop="scrapQty">
+            <el-table-column label="报废数量" prop="scrapQty" min-width="170" class-name="numeric-column">
               <template #default="scope">
                 <el-input-number v-model="scope.row.scrapQty" placeholder="报废数量" :min="0" controls-position="right" style="width: 100%" :disabled="isView" />
               </template>
@@ -258,7 +258,7 @@
                 </el-select>
               </template>
             </el-table-column>
-            <el-table-column label="预估损失" prop="estimatedLoss">
+            <el-table-column label="预估损失" prop="estimatedLoss" min-width="155" class-name="numeric-column">
               <template #default="scope">
                 <el-input-number v-model="scope.row.estimatedLoss" :precision="4" placeholder="预估损失" :min="0" controls-position="right" style="width: 100%" :disabled="isView" />
               </template>
@@ -306,7 +306,7 @@
             <el-table-column label="物料编码" prop="material.materialCode" />
             <el-table-column label="物料名称" prop="material.materialName" />
             <el-table-column label="规格型号" prop="material.specification" />
-            <el-table-column label="报废数量" prop="scrapQty" />
+            <el-table-column label="报废数量" prop="scrapQty" min-width="130" class-name="numeric-column" />
             <el-table-column label="单位" prop="unit" />
             <el-table-column label="报废原因">
               <template #default="scope">

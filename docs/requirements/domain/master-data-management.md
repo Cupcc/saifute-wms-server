@@ -195,7 +195,6 @@
 
 | 编号    | 能力           | 验收口径                                  | 阶段      | 状态    | 关联任务                                                                                                                        |
 | ----- | ------------ | ------------------------------------- | ------- | ----- | --------------------------------------------------------------------------------------------------------------------------- |
-| `F1`  | 物料分类 CRUD    | 支持新增、修改、停用、单层查询，停用时校验引用物料             | Phase 1 | `已完成` | `docs/tasks/task-20260417-1702-material-category-single-level-system-unification.md`                                         |
 | `F2`  | 物料 CRUD      | 支持新增、修改、停用，停用时校验库存余额与未完成引用            | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md`                                 |
 | `F3`  | 客户 CRUD      | 支持新增、修改、停用、树形查询                       | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1802-master-data-phase1-completion.md`                                 |
 | `F4`  | 供应商 CRUD     | 支持新增、修改、停用、列表查询                       | Phase 1 | `已完成` | `docs/tasks/archive/retained-completed/task-20260402-1758-master-data-f4-supplier-crud.md`；Phase 1 收口见 `task-20260402-1802` |

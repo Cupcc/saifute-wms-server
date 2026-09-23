@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>研发物料流程 · 离线编辑器</title>
+  <style>/*__STYLES__*/</style>
+</head>
+<body>
+  <header>
+    <div class="brand" aria-hidden="true">流</div>
+    <div class="heading"><input id="document-title" aria-label="文档名称" maxlength="100" value="研发物料管理 · 业务流程"><div class="subtitle">AntV X6 <span>·</span> 独立离线编辑器 <span>·</span> 无需登录</div></div>
+    <span class="offline">● 仅保存在本机</span>
+    <button id="help">使用说明</button>
+    <button id="export-html" class="primary">↓ 下载当前 HTML</button>
+  </header>
+  <div class="toolbar" aria-label="编辑工具">
+    <div class="tool-group"><button id="add-process">＋ 步骤</button><button id="add-decision">◇ 判断</button><button id="add-note">▤ 说明卡</button><button id="connect">↗ 连线</button><button id="scene-toggle" aria-pressed="false">▦ 3D 场景</button></div>
+    <div class="tool-group"><button id="undo" title="撤销 · Ctrl/⌘ Z">↶ 撤销</button><button id="redo" title="重做 · Ctrl/⌘ Shift Z">↷ 重做</button><button id="duplicate">复制</button><button id="delete">删除</button></div>
+    <div class="tool-group"><button id="save">保存草稿</button><button id="export-json">导出 JSON</button><button id="import-json">导入 JSON</button><button id="export-png">导出 PNG</button><button id="export-svg">SVG</button></div>
+  </div>
+  <nav id="tabs" aria-label="流程页面"></nav>
+  <main>
+    <section class="workspace" aria-label="流程图画布">
+      <div id="graph" tabindex="0" aria-label="流程图；拖动节点，双击文字编辑"></div>
+      <section id="scene" class="scene-view" aria-label="研发物料立体办公场景" hidden>
+        <div class="scene-heading"><div><span class="scene-eyebrow">MATERIAL FLOW / 办公场景</span><h2 id="scene-page-name">采购与交接</h2></div><div class="scene-heading-actions"><span class="scene-badge">离线模拟 · 非实时业务</span><button id="scene-close">← 返回编辑</button></div></div>
+        <div class="scene-viewport"><canvas id="scene-canvas" aria-label="倾斜俯视的立体办公区；使用右侧步骤列表浏览流程">请使用支持 Canvas 的浏览器；原流程编辑功能仍可使用。</canvas></div>
+        <div class="scene-controls">
+          <button id="scene-play" class="primary">▶ 播放</button><button id="scene-next">下一步 →</button><button id="scene-restart" title="回到流程起点">↺ 重播</button>
+          <label>速度<select id="scene-speed" aria-label="演示速度"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option></select></label>
+          <label class="scene-angle">俯视角<input id="scene-angle" type="range" min="25" max="65" value="38" aria-label="俯视角度"><output id="scene-angle-value">38°</output></label>
+        </div>
+        <div class="scene-caption"><span><i></i>小人演示单据 / 物料交接，工位人物表示当前负责人</span><span>实线：常规 · 虚线：异常</span></div>
+      </section>
+      <div class="canvas-hint" id="canvas-hint">拖动节点 · 双击改字 · 从圆点拖出连线 · 拖动空白平移</div>
+      <div class="zoom-controls"><button id="zoom-out" aria-label="缩小">−</button><output id="zoom-value">100%</output><button id="zoom-in" aria-label="放大">＋</button><button id="fit">全图</button><button id="actual">100%</button></div>
+    </section>
+    <aside id="editor-aside">
+      <div class="panel-heading"><h2 id="panel-title">流程导航</h2><span id="selection-kind">未选中</span></div>
+      <section id="empty-panel"><p>点击节点或连线，在这里修改内容。也可以双击节点打开文字编辑。</p><label>定位到步骤<select id="jump"><option value="">选择一个节点…</option></select></label><div class="notice"><strong>保存 ≠ 改写原文件</strong><p>草稿只保存在当前浏览器。修改完成后，请下载当前 HTML 或导出 JSON 备份。</p></div><div class="notice"><strong>图例</strong><p>蓝色：主流程<br>绿色：到货 / 库存事实<br>红色虚线：异常分支</p></div></section>
+      <form id="properties" hidden>
+        <div id="node-fields"><label>步骤名称<input id="node-title" maxlength="100"></label><label>负责人 / 角色<input id="node-owner" maxlength="100"></label><label>业务说明<textarea id="node-detail" rows="7" maxlength="2000"></textarea></label><div class="dimensions"><label>宽度<input id="node-width" type="number" min="180" max="1800" step="10"></label><label>高度<input id="node-height" type="number" min="100" max="1200" step="10"></label></div></div>
+        <div id="edge-fields" hidden><label>连线说明<input id="edge-label" maxlength="120"></label><label class="check"><input id="edge-dashed" type="checkbox">使用虚线（异常 / 退回）</label><p class="muted">选中连线后，可拖动折点和两端箭头；双击连线修改说明。</p></div>
+        <label>主题色<select id="element-color"><option value="#2563eb">蓝 · 主流程 / 研发</option><option value="#16a34a">绿 · 到货 / 库存</option><option value="#9333ea">紫 · 采购</option><option value="#0f766e">青 · 仓库交接</option><option value="#dc2626">红 · 异常</option><option value="#d97706">橙 · 判断 / 盘点</option><option value="#475569">灰 · 说明</option></select></label>
+        <button type="submit" class="primary wide">应用修改</button><p class="muted">文字较多时，可增大宽度或高度。节点与连线可以撤销。</p>
+      </form>
+      <div class="aside-bottom"><button id="reset">恢复预置流程…</button><p>依据两份 2026-09-12 业务文档。<br>本页面不操作任何 WMS 数据。</p></div>
+    </aside>
+    <aside id="scene-aside" hidden aria-label="场景流程导航">
+      <div class="scene-panel-heading"><span class="scene-eyebrow">流程演示</span><output id="scene-progress">待开始</output></div>
+      <section class="scene-current" aria-live="polite"><span id="scene-state">准备就绪</span><h2 id="scene-step-title"></h2><strong id="scene-step-owner"></strong><p id="scene-step-detail"></p></section>
+      <label id="scene-branch-label" hidden>下一条流转<select id="scene-branch" aria-label="选择下一条流转"></select></label>
+      <p class="scene-boundary">场景按当前页面连线演示，不执行审批、采购或库存操作。演示结束后不会自动重开。</p>
+      <h3 class="scene-list-heading">步骤 / 职责 <small>点击定位并暂停</small></h3>
+      <ol id="scene-steps" class="scene-steps"></ol>
+      <button id="scene-edit" class="wide">返回流程图编辑</button>
+    </aside>
+  </main>
+  <footer><span id="status" role="status">正在加载本地编辑器…</span><span id="counts"></span></footer>
+  <div id="toast" role="status" hidden></div>
+  <dialog id="text-dialog"><form id="text-form"><h2>编辑文字</h2><label>名称 / 连线说明<input id="edit-title" maxlength="120" required></label><div id="edit-node-extra"><label>负责人 / 角色<input id="edit-owner" maxlength="100"></label><label>业务说明<textarea id="edit-detail" rows="7" maxlength="2000"></textarea></label></div><div class="dialog-actions"><button type="button" id="cancel-edit">取消</button><button type="submit" class="primary">保存修改</button></div></form></dialog>
+  <dialog id="confirm-dialog"><h2 id="confirm-title">确认操作</h2><p id="confirm-message"></p><div class="dialog-actions"><button id="cancel-confirm">取消</button><button id="accept-confirm" class="primary">确认</button></div></dialog>
+  <dialog id="help-dialog"><h2>像编辑白板一样调整流程</h2><ol><li>拖动节点改变位置；从边缘圆点拖出连线。</li><li>双击节点 / 连线改字；选中后也可在右侧编辑。</li><li>点“连线”，再依次点起点和终点；Esc 取消。</li><li>选中连线拖动折点；Delete 删除，⌘/Ctrl Z 撤销。</li><li>拖动空白平移；滚轮缩放；“全图”查看全部。</li><li>点击“3D 场景”可从倾斜俯视角观看办公区与小人流转。</li><li>保存草稿：同浏览器、同文件位置下继续；不可代替备份。</li><li>下载当前 HTML：生成包含最新内容的独立离线编辑器。</li><li>导出 JSON：备份全部三个画布；导出 PNG / SVG：仅当前画布。</li></ol><p>离线文件不上传数据，不接入 WMS，不支持多人实时协同。浏览器隐私模式或清理缓存可能丢失草稿，请下载文件留存。</p><p class="muted">AntV X6 2.18.1 · MIT License，许可文本保留在 HTML 源码内。</p><button id="close-help" class="primary wide">开始编辑</button></dialog>
+  <input id="import-file" type="file" accept=".json,application/json" hidden>
+  <!-- AntV X6 license:
+__X6_LICENSE__
+  -->
+  <script id="embedded-document" type="application/json">null</script>
+  <script id="application">/*__APPLICATION__*/</script>
+</body>
+</html>

@@ -283,6 +283,17 @@ export class WorkshopMaterialRepository {
     });
   }
 
+  async updateOrderLine(
+    id: number,
+    data: Prisma.WorkshopMaterialOrderLineUncheckedUpdateInput,
+    db?: DbClient,
+  ) {
+    return this.db(db).workshopMaterialOrderLine.update({
+      where: { id },
+      data,
+    });
+  }
+
   /** Check if pick order has active return orders downstream (blocks void). */
   async hasActiveReturnDownstream(pickOrderId: number, db?: DbClient) {
     const client = this.db(db);

@@ -1,0 +1,14 @@
+{
+  "name": "rd-material-offline-flow-editor",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test model.test.mjs"
+  },
+  "devDependencies": {
+    "@antv/x6": "2.18.1",
+    "jsdom": "26.1.0"
+  }
+}

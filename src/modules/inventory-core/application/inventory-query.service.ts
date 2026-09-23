@@ -190,7 +190,7 @@ export class InventoryQueryService {
     const limit = Math.min(params.limit ?? 50, 100);
     const offset = params.offset ?? 0;
     const stockScopeIds = await this.resolveInventoryStockScopeIds(params);
-    const result = await this.repository.findLogs({
+    const result = await this.repository.findPriceLayerLogs({
       materialId: params.materialId,
       stockScopeIds,
       workshopId: params.workshopId,
@@ -212,10 +212,15 @@ export class InventoryQueryService {
       result.items,
       this.repository,
     );
+    const itemsByRowKey = new Map(items.map((item) => [item.rowKey, item]));
 
     return {
       total: result.total,
-      items: items.map((item) => this.withStockScope(item)),
+      items: result.rowKeys.map((rowKey) => {
+        const item = itemsByRowKey.get(rowKey);
+        if (!item) throw new Error(`库存价格层行缺失: ${rowKey}`);
+        return this.withStockScope(item);
+      }),
     };
   }
 

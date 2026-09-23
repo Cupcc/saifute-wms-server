@@ -5,7 +5,7 @@ Use this file as a pointer sheet, not as a second source of truth.
 ## Lane reminder
 
 - `direct lane`: tiny, clear, low-risk work; parent reads the smallest relevant files, edits directly, runs focused validation, and stops
-- `heavy lane`: non-trivial, ambiguous, cross-cutting, high-risk, resumable, or migration-style work; use durable task state and explicit subagent boundaries
+- `heavy lane`: non-trivial, ambiguous, cross-cutting, high-risk, resumable,  work; use durable task state and explicit subagent boundaries
 
 For the actual lane-selection rule, follow [SKILL.md](SKILL.md).
 
@@ -39,7 +39,7 @@ Typical parent-owned shared surfaces include:
 - `src/app.module.ts`, `src/main.ts`, and broad `src/shared/**` surfaces
 - `prisma/schema.prisma`
 - route registries, permission registries, shared contracts, and active `docs/tasks/*.md`
-- shared staging schemas, reconciliation outputs, cutover evidence, and cross-module tests
+- cross-module tests and shared contracts
 
 ## Knowledge map
 

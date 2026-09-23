@@ -373,7 +373,7 @@ export class AuthController {
 - 对 path 参数补 `@ApiParam({ name, description })`。
 - 对逗号分隔 ID 参数单独说明格式。
 
-### P2: 部分 Ruoyi 兼容接口使用 `Record<string, unknown>`，Swagger 无法生成请求体
+### P2: 部分兼容接口使用 `Record<string, unknown>`，Swagger 无法生成请求体
 
 证据：
 
@@ -514,7 +514,7 @@ export class AuthController {
 
 - 新增统一 helper：`ApiEnvelopeOkResponse`、`ApiEnvelopeCreatedResponse`、`ApiEnvelopeArrayResponse`、`ApiPaginatedEnvelopeResponse`、`ApiFileResponse`、`ApiMultipartFile`、`ApiErrorResponses`。
 - 优先补关键模块响应 DTO：认证、当前用户、基础资料、入库、销售出库、车间领料、研发项目、报表。
-- 对 Ruoyi 兼容接口补 controller 层最小 DTO，底层 service 可继续接收现有 `Record` 入参。
+- 对兼容接口补 controller 层最小 DTO，底层 service 可继续接收现有 `Record` 入参。
 - 对 Prisma enum / generated enum 参数补显式 Swagger enum metadata，消除空 `Object` schema。
 
 退出标准：
@@ -588,7 +588,7 @@ export class AuthController {
 | PR 1 | OpenAPI 基线审计 | `openapi-contract-audit` 脚本、当前统计快照、具体 path + method 输出 | 大量 controller 注解修改 |
 | PR 2 | 契约内核与全局策略 | 共享 helper 目录、公开接口 / no-envelope metadata 驱动、文件响应 helper、错误响应 DTO | 批量补所有业务模块 DTO |
 | PR 3 | 关键模块响应 DTO | 认证、当前用户、基础资料、入库、出库、报表等关键模块的响应 DTO 和 helper 应用 | 修改业务返回语义 |
-| PR 4 | Ruoyi 兼容接口边界 DTO | 系统管理接口最小请求/响应 DTO，替代 controller 边界 `Record` | 重写底层 service 业务逻辑 |
+| PR 4 | 兼容接口边界 DTO | 系统管理接口最小请求/响应 DTO，替代 controller 边界 `Record` | 重写底层 service 业务逻辑 |
 | PR 5 | 可读性补齐 | 业务 tags、summary、path/query 参数说明、导出/审核/作废副作用说明 | 新增另一套 Swagger helper |
 | PR 6 | 门禁接入 | 阈值策略、CI / pre-push 接入、趋势记录更新 | 一次性把所有历史 P2 问题设为阻断 |
 

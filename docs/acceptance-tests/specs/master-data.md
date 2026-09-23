@@ -117,7 +117,6 @@
 
 ## F1 物料分类 CRUD
 
-> 关联任务：`task-20260417-1702-material-category-single-level-system-unification.md`  
 > Browser QA 补充证据：`docs/acceptance-tests/runs/run-20260406-0124-master-data-f1-f2-browser-alignment.md`
 
 ### 验收矩阵
@@ -143,7 +142,6 @@
 - `src/modules/master-data/application/master-data.service.spec.ts`
 - `src/modules/master-data/infrastructure/master-data.repository.spec.ts`
 - `src/modules/master-data/controllers/master-data.controller.spec.ts`
-- `docs/tasks/task-20260417-1702-material-category-single-level-system-unification.md`
 - `docs/acceptance-tests/runs/run-20260406-0124-master-data-f1-f2-browser-alignment.md`
 
 

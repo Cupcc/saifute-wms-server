@@ -4,16 +4,6 @@
 
 负责登录日志、操作日志和统一审计字段处理，兼容原系统 `@Log + AOP + 异步落库` 的行为语义。
 
-## 原 Java 来源与映射范围
-
-- `ruoyi-framework/.../LogAspect.java`
-- `ruoyi-common/.../annotation/Log.java`
-- `ruoyi-framework/.../AsyncFactory.java`
-- `ruoyi-framework/.../AsyncManager.java`
-- `ruoyi-system/.../SysOperLogServiceImpl.java`
-- `ruoyi-system/.../SysLogininforServiceImpl.java`
-- `ruoyi-framework/.../SysLoginService.java`
-- `ruoyi-framework/.../LogoutSuccessHandlerImpl.java`
 
 ## 领域对象与核心用例
 
@@ -71,6 +61,13 @@
 
 - 审计写入默认异步，不纳入主事务
 - 关键业务即使日志写入失败也不能回滚主事务
+
+## 与单据变更历史的边界
+
+- `sys_oper_log` 是接口操作日志，负责回答“谁在什么时间调用了哪个接口、结果如何”，保留现有敏感字段脱敏、深度和长度保护；车间领料单的 create / update / void 通过 `@AuditLog` 显式接入。
+- 领料单完整前后快照、逐字段差异、稳定明细映射和库存流水关联属于业务一致性数据，写入 `document_change_log` 及其关联表，不依赖操作日志的嵌套参数序列化。
+- 单据变更历史在改单事务内同步写入；若历史写入失败，改单与库存副作用一并回滚。操作日志仍按成功 / 失败路径异步记录，不能用其替代业务历史。
+- 两类记录共享 request ID、操作账号、时间和 IP 以便联查，但不得把“领料人 / 经办人”误当成实际操作账号。
 
 ## 权限点、数据权限、审计要求
 
