@@ -55,7 +55,7 @@ If the parent handoff or task doc conflicts with the requirement, architecture, 
 
 - Never run bare `prisma db push`. Use the repo's collation-safe wrapper (`bun run prisma:push`, which rebuilds collation) — see `.cursor/rules/prisma-push-collation.mdc`.
 - After schema edits run `bun run prisma:validate` + `bun run prisma:generate` + `bun run typecheck`.
-- Do not run `migration:*:execute` or any irreversible/destructive DB operation. Prepare and dry-run only; leave execution to the human gate.
+- Do not run irreversible or destructive database operations; leave execution to the human gate.
 
 ## Output Format
 

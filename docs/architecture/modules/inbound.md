@@ -6,15 +6,6 @@
 
 **口径**：成品入库（生产完工入库）统一由本模块承接（`/inbound/into-orders`），与验收单（`/inbound/orders`）同属入库家族、共用 `stock_in_order` 主从表。
 
-## 原 Java 来源与映射范围
-
-- `business/src/main/java/com/saifute/entry`
-- `business/src/main/resources/mapper/entry`
-
-包含来源：
-
-- `SaifuteInboundOrder*`
-- `SaifuteIntoOrder*`
 
 ## 领域对象与核心用例
 

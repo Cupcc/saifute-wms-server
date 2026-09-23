@@ -23,6 +23,7 @@ export interface IncreaseStockCommand {
   note?: string;
   unitCost?: Prisma.Decimal | number | string | null;
   costAmount?: Prisma.Decimal | number | string | null;
+  costAllocations?: FifoAllocationPiece[];
 }
 
 export interface DecreaseStockCommand {
@@ -84,6 +85,8 @@ export interface AllocateInventorySourceCommand {
   consumerDocumentId: number;
   consumerLineId: number;
   targetAllocatedQty: Prisma.Decimal | number | string;
+  /** New posting may replace a fully released allocation from a prior revision. */
+  replaceReleasedAllocation?: boolean;
   operatorId?: string;
 }
 

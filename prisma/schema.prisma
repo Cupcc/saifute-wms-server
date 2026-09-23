@@ -447,6 +447,8 @@ model InventoryLog {
   reversalOfLog              InventoryLog?                    @relation("InventoryLogReversal", fields: [reversalOfLogId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   reversedByLogs             InventoryLog[]                   @relation("InventoryLogReversal")
   allocatedSourceUsages      InventorySourceUsage[]
+  costAllocations             InventoryLogCostAllocation[]      @relation("InventoryLogCostAllocations")
+  sourceCostAllocations       InventoryLogCostAllocation[]      @relation("InventoryLogSourceCostAllocations")
   sourcePriceCorrectionLine  StockInPriceCorrectionOrderLine? @relation("PriceCorrectionSourceInventoryLog")
   generatedOutCorrectionLine StockInPriceCorrectionOrderLine? @relation("PriceCorrectionGeneratedOutLog")
   generatedInCorrectionLine  StockInPriceCorrectionOrderLine? @relation("PriceCorrectionGeneratedInLog")
@@ -464,6 +466,53 @@ model InventoryLog {
   @@index([stockScopeId, bizDate])
   @@index([workshopId, operationType, bizDate])
   @@map("inventory_log")
+}
+
+/// Immutable decomposition of one price-layer inventory row by source layer.
+/// `inventoryLog` is the posted document price-layer row; `sourceLog` is the
+/// FIFO source that supplied the cost. A price-layer row can use multiple
+/// sources, but a document's different price layers are separate inventoryLog
+/// rows. The document-level average cost is only a summary and must never be
+/// used as a price-layer key.
+model InventoryLogCostAllocation {
+  id            Int          @id @default(autoincrement())
+  inventoryLogId Int         @map("inventory_log_id")
+  sourceLogId   Int          @map("source_log_id")
+  direction     StockDirection
+  quantity      Decimal      @db.Decimal(18, 6)
+  unitCost      Decimal      @map("unit_cost") @db.Decimal(18, 4)
+  costAmount    Decimal      @map("cost_amount") @db.Decimal(18, 4)
+  createdAt     DateTime     @default(now()) @map("created_at")
+  inventoryLog  InventoryLog @relation("InventoryLogCostAllocations", fields: [inventoryLogId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  sourceLog     InventoryLog @relation("InventoryLogSourceCostAllocations", fields: [sourceLogId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([inventoryLogId, sourceLogId])
+  @@index([sourceLogId])
+  @@index([inventoryLogId, direction])
+  @@map("inventory_log_cost_allocation")
+}
+
+/// Auditable historical cost reclassification. This records a corrected cost
+/// snapshot without deleting the original inventory log fact.
+model InventoryLogCostReclassification {
+  id                   BigInt   @id @default(autoincrement())
+  inventoryLogId       Int      @map("inventory_log_id")
+  businessDocumentType String?  @map("business_document_type") @db.VarChar(64)
+  businessDocumentId   Int?     @map("business_document_id")
+  businessDocumentLineId Int?   @map("business_document_line_id")
+  oldUnitCost          Decimal  @map("old_unit_cost") @db.Decimal(18, 4)
+  oldCostAmount        Decimal  @map("old_cost_amount") @db.Decimal(18, 4)
+  newUnitCost          Decimal  @map("new_unit_cost") @db.Decimal(18, 4)
+  newCostAmount        Decimal  @map("new_cost_amount") @db.Decimal(18, 4)
+  sourceLogId          Int?     @map("source_log_id")
+  reason               String   @db.VarChar(500)
+  executionId          String   @map("execution_id") @db.VarChar(128)
+  createdAt            DateTime @default(now()) @map("created_at") @db.DateTime(6)
+
+  @@unique([executionId, inventoryLogId])
+  @@index([inventoryLogId])
+  @@index([sourceLogId])
+  @@map("inventory_log_cost_reclassification")
 }
 
 model InventorySourceUsage {
@@ -974,6 +1023,7 @@ model RdProject {
   materialActions       RdProjectMaterialAction[]
   handoffLines          RdHandoffOrderLine[]
   stocktakeLines        RdStocktakeOrderLine[]
+  procurementDemands    RdProcurementDemand[]
   changeLogs            RdProjectChangeLog[]
 
   @@index([bizDate])
@@ -1235,6 +1285,43 @@ model RdProcurementRequest {
   @@index([stockScopeId])
   @@index([workshopId])
   @@map("rd_procurement_request")
+}
+
+model RdProcurementDemand {
+  id                    Int       @id @default(autoincrement())
+  applicantUserId       Int       @map("applicant_user_id")
+  applicantUsername     String    @map("applicant_username") @db.VarChar(64)
+  applicantName         String    @map("applicant_name") @db.VarChar(128)
+  departmentId          Int?      @map("department_id")
+  departmentName        String?   @map("department_name") @db.VarChar(128)
+  needDate              DateTime  @map("need_date") @db.Date
+  rdProjectId           Int       @map("rd_project_id")
+  projectCodeSnapshot   String    @map("project_code_snapshot") @db.VarChar(64)
+  projectNameSnapshot   String    @map("project_name_snapshot") @db.VarChar(128)
+  materialName          String    @map("material_name") @db.VarChar(128)
+  specification         String    @db.VarChar(256)
+  unit                  String    @db.VarChar(32)
+  quantity              Decimal   @db.Decimal(18, 6)
+  supplierText          String?   @map("supplier_text") @db.VarChar(256)
+  purchaseUrl           String?   @map("purchase_url") @db.VarChar(1000)
+  noteText              String?   @map("note_text") @db.VarChar(2000)
+  imageMetadata         Json?     @map("image_metadata")
+  lineNo                Int       @map("line_no")
+  clientRequestId       String?   @map("client_request_id") @db.VarChar(64)
+  deletedAt             DateTime? @map("deleted_at")
+  deletedBy             String?   @map("deleted_by") @db.VarChar(64)
+  createdBy             String?   @map("created_by") @db.VarChar(64)
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedBy             String?   @map("updated_by") @db.VarChar(64)
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  rdProject             RdProject @relation(fields: [rdProjectId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([clientRequestId, lineNo])
+  @@index([applicantUserId, deletedAt])
+  @@index([needDate])
+  @@index([rdProjectId])
+  @@index([projectCodeSnapshot])
+  @@map("rd_procurement_demand")
 }
 
 model RdProcurementRequestLine {

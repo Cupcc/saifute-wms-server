@@ -17,6 +17,7 @@ import type {
   SettleConsumerOutCommand,
   SettleConsumerOutResult,
 } from "./inventory.types";
+import { recordCostAllocations } from "./inventory-cost-allocation";
 import { InventorySourceUsageService } from "./inventory-source-usage.service";
 import { StockScopeCompatibilityService } from "./stock-scope-compatibility.service";
 
@@ -89,10 +90,9 @@ export class InventorySettlementService {
             db,
           );
         }
-        const settledCostAmount = allocations.reduce(
-          (s, a) => s.add(a.costAmount),
-          new Prisma.Decimal(0),
-        );
+        const settledCostAmount = allocations
+          .reduce((s, a) => s.add(a.costAmount), new Prisma.Decimal(0))
+          .toDecimalPlaces(4);
         const settledUnitCost = changeQty.gt(0)
           ? settledCostAmount.div(changeQty)
           : new Prisma.Decimal(0);
@@ -141,6 +141,16 @@ export class InventorySettlementService {
             note: cmd.note,
           },
         });
+        await recordCostAllocations(
+          db,
+          {
+            ...outLog,
+            direction: StockDirection.OUT,
+            changeQty,
+            costAmount: settledCostAmount,
+          },
+          allocations,
+        );
         await this.updateBalanceOptimistically(
           {
             balanceId: balance.id,
@@ -180,6 +190,23 @@ export class InventorySettlementService {
     cmd: SettleConsumerOutCommand,
     tx?: Prisma.TransactionClient,
   ): Promise<SettleConsumerOutResult> {
+    const frozen =
+      "findCostAllocationsForLog" in this.repository
+        ? await this.repository.findCostAllocationsForLog(outLog.id, tx)
+        : [];
+    if (frozen.length) {
+      return {
+        outLog,
+        settledUnitCost: new Prisma.Decimal(outLog.unitCost ?? 0),
+        settledCostAmount: new Prisma.Decimal(outLog.costAmount ?? 0),
+        allocations: frozen.map((a) => ({
+          sourceLogId: a.sourceLogId,
+          allocatedQty: new Prisma.Decimal(a.quantity),
+          unitCost: new Prisma.Decimal(a.unitCost),
+          costAmount: new Prisma.Decimal(a.costAmount),
+        })),
+      };
+    }
     const lineUsages = await this.repository.findSourceUsagesForConsumerLine(
       {
         consumerDocumentType: cmd.businessDocumentType,
@@ -295,6 +322,7 @@ export class InventorySettlementService {
         consumerDocumentId,
         consumerLineId,
         targetAllocatedQty: qty,
+        replaceReleasedAllocation: true,
         operatorId,
       },
       db,
@@ -353,6 +381,7 @@ export class InventorySettlementService {
           consumerDocumentId,
           consumerLineId,
           targetAllocatedQty: toAllocate,
+          replaceReleasedAllocation: true,
           operatorId,
         },
         db,

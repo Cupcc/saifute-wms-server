@@ -55,10 +55,6 @@ docs/playbooks/
 ├── browser/
 │   ├── playbook.md
 │   └── ...
-├── migration/
-│   ├── playbook.md                    # 经验条目
-│   ├── check-idempotency.ts           # 复用脚本示例
-│   └── ...
 └── <domain>/
     ├── playbook.md
     └── ...
@@ -100,7 +96,7 @@ Playbook 条目默认使用中文。命令、路径、代码标识和外部系�
 
 - 脚本放在所属主题的 `playbook.md` 同目录下。
 - 它们是辅助工具，不是项目运行时依赖；`docs/playbooks/` 不应进入应用的 import graph。
-- 文件开头加一行使用说明，例如：`// Usage: npx tsx docs/playbooks/migration/check-foo.ts [args]`
+- 文件开头加一行使用说明，例如：`// Usage: npx tsx docs/playbooks/<domain>/check-foo.ts [args]`
 - 尽量保持自包含，减少对 `src/` 的直接依赖。
 
 ## 生命周期 (lifecycle)
@@ -129,7 +125,6 @@ Playbook 条目默认使用中文。命令、路径、代码标识和外部系�
 - 一个不明显的模式导致了成功或失败
 - 同一个根因触发了 2 次以上评审到修复 (review → fix) 循环
 - 很晚才暴露出验证缺口
-- migration、backfill 或 reconciliation 遇到了意料之外的边界情况
 - 编排或子代理协作 (subagent coordination) 问题被真正解决了
 
 下面这些情况不要写进 Playbook：

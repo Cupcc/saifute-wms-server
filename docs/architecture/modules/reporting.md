@@ -10,11 +10,6 @@
 
 **目标范围**（见 `docs/requirements/PROJECT_REQUIREMENTS.md` 4.2.1 节及第 5 节）：报表目标还包括月度自动汇总（公司整体、按生产车间、按销售域、按销售项目、按 `RD` 小仓协同），以及按销售项目查看发货 / 退货 / 净发货汇总明细和项目维度的金额 / 成本相关报表。该部分均属 `reporting` 的只读聚合职责，目前尚未实现。
 
-## 原 Java 来源与映射范围
-
-- `business/src/main/java/com/saifute/base` 中 `HomeStatistics*`、`Report*`
-- `business/src/main/resources/mapper/stock` 中统计查询
-- 统计口径依赖 `entry`、`out`、`take`、`stock`
 
 ## 领域对象与核心用例
 

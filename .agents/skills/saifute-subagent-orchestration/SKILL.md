@@ -1,6 +1,6 @@
 ---
 name: saifute-subagent-orchestration
-description: Orchestrate non-trivial delivery work in the Saifute NestJS WMS repository with Codex-style subagents and durable handoffs. Use when work is ambiguous, cross-cutting, high-risk, resumable, migration-style, or when the user explicitly wants delegation, parallel agent work, or subagents. Skip this skill for tiny, clear, low-risk edits that can be handled directly in the parent.
+description: Orchestrate non-trivial delivery work in the Saifute NestJS WMS repository with Codex-style subagents and durable handoffs. Use when work is ambiguous, cross-cutting, high-risk, resumable, or when the user explicitly wants delegation, parallel agent work, or subagents. Skip this skill for tiny, clear, low-risk edits that can be handled directly in the parent.
 ---
 
 # Saifute Subagent Orchestration
@@ -62,7 +62,7 @@ Stay on the lightweight direct lane when most of these are true:
 
 - the change is limited to one file or a very small path set
 - no cross-module design choice is needed
-- no migration, backfill, reconciliation, or cutover semantics are involved
+- no cross-module design choice is needed
 - no frozen or shared contract is being rewritten
 - no durable `docs/tasks/*.md` handoff is needed for resume
 - focused local validation is enough
@@ -72,7 +72,7 @@ Use the heavy lane when any of these are true:
 - the task is non-trivial, ambiguous, cross-cutting, or high-risk
 - the user asks to continue, resume, or pick up durable work
 - the task needs a task doc, review loop, or acceptance loop
-- the work touches migration, backfill, reconciliation, staging, or cutover readiness
+- the work is cross-cutting or high-risk
 - the user explicitly asks for delegation, subagents, or parallel agent work
 
 ## Read the minimum source of truth first
@@ -87,10 +87,7 @@ Before delegating, read only the smallest relevant set:
 - relevant module docs under `docs/architecture/modules/**`
 - directly related code, schema, scripts, config, or tests
 
-For migration, backfill, reconciliation, or cutover-prep work, also read:
-
-- `docs/architecture/30-java-to-nestjs-data-migration-reference.md`
-- `docs/architecture/20-wms-database-tables-and-schema.md` when inventory, workflow, reporting, reservation, or business-state semantics are affected
+When inventory, workflow, reporting, reservation, or business-state semantics are affected, also read `docs/architecture/20-wms-database-tables-and-schema.md`
 
 ## Heavy-lane shape
 

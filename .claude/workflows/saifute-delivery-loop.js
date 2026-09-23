@@ -161,7 +161,7 @@ Requirement: ${j(plan.requirement_path)}
 Owned scope: ${j(plan.impacted_scope)}
 Planned validation: ${j(plan.validation)}
 
-Implement the scoped change. Run the narrowest useful validation (bun run verify is the composite gate; add bun run test:e2e / bun run lint per risk surface). After any schema edit: bun run prisma:validate + prisma:generate + typecheck. Do NOT run migration:*:execute or prisma:push or any irreversible DB op — that is a human gate.`
+Implement the scoped change. Run the narrowest useful validation (bun run verify is the composite gate; add bun run test:e2e / bun run lint per risk surface). After any schema edit: bun run prisma:validate + prisma:generate + typecheck. Do NOT run prisma:push or any irreversible database operation — that is a human gate.`
 
 const fixPrompt = (coder, review) => `FIX step. Edit only owned paths; docs/tasks/** is read-only.
 
@@ -255,5 +255,5 @@ return {
   task_doc: plan.task_doc_path,
   fix_rounds: round,
   acceptance: accept,
-  next: 'human gate: commit / migration:*:execute / prisma:push / release remain manual',
+  next: 'human gate: commit / prisma:push / release remain manual',
 }

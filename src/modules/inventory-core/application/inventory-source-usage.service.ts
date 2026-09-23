@@ -69,20 +69,42 @@ export class InventorySourceUsageService {
         ? new Prisma.Decimal(existingUsage.releasedQty)
         : new Prisma.Decimal(0);
 
-      if (targetAllocatedQty.lt(currentAllocatedQty)) {
+      if (
+        cmd.replaceReleasedAllocation &&
+        existingUsage &&
+        !releasedQty.eq(currentAllocatedQty)
+      ) {
+        throw new BadRequestException("重过账前必须完整释放原来源占用");
+      }
+      if (
+        !cmd.replaceReleasedAllocation &&
+        targetAllocatedQty.lt(currentAllocatedQty)
+      ) {
         throw new BadRequestException(
           `目标分配数量不能小于当前已分配总量: 当前=${currentAllocatedQty.toString()}, 目标=${targetAllocatedQty.toString()}`,
         );
       }
 
       const deltaQty = targetAllocatedQty.sub(currentAllocatedQty);
-      if (deltaQty.eq(0) && existingUsage) {
+      if (deltaQty.eq(0) && existingUsage && releasedQty.eq(0)) {
         return existingUsage;
       }
 
-      if (deltaQty.gt(availableQty)) {
+      // A repost after reversing an OUT log can reuse the same source-usage
+      // row and request the same cumulative allocation. In that case the
+      // previous release belongs to the reversed OUT log and must be restored
+      // before the new OUT log is posted.
+      const nextReleasedQty =
+        cmd.replaceReleasedAllocation || deltaQty.eq(0)
+          ? new Prisma.Decimal(0)
+          : releasedQty;
+
+      const requiredQty = targetAllocatedQty
+        .sub(nextReleasedQty)
+        .sub(currentAllocatedQty.sub(releasedQty));
+      if (requiredQty.gt(availableQty)) {
         throw new BadRequestException(
-          `来源库存不足: 可分配=${availableQty.toString()}, 新增需求=${deltaQty.toString()}`,
+          `来源库存不足: 可分配=${availableQty.toString()}, 新增需求=${requiredQty.toString()}`,
         );
       }
 
@@ -108,7 +130,8 @@ export class InventorySourceUsageService {
         existingUsage.id,
         {
           allocatedQty: targetAllocatedQty,
-          status: this.toSourceUsageStatus(targetAllocatedQty, releasedQty),
+          releasedQty: nextReleasedQty,
+          status: this.toSourceUsageStatus(targetAllocatedQty, nextReleasedQty),
           updatedBy: cmd.operatorId,
         },
         db,
@@ -154,6 +177,45 @@ export class InventorySourceUsageService {
 
       if (targetReleasedQty.eq(currentReleasedQty)) {
         return usage;
+      }
+
+      if (targetReleasedQty.lt(currentReleasedQty)) {
+        const findLogById = (this.repository as Partial<InventoryRepository>)
+          .findLogById;
+        if (!findLogById) {
+          return this.repository.updateSourceUsage(
+            usage.id,
+            {
+              releasedQty: targetReleasedQty,
+              status: this.toSourceUsageStatus(allocatedQty, targetReleasedQty),
+              updatedBy: cmd.operatorId,
+            },
+            db,
+          );
+        }
+        const [source, totals] = await Promise.all([
+          this.repository.findLogById(cmd.sourceLogId, db),
+          this.repository.getSourceUsageTotals(cmd.sourceLogId, db),
+        ]);
+        if (!source) {
+          return this.repository.updateSourceUsage(
+            usage.id,
+            {
+              releasedQty: targetReleasedQty,
+              status: this.toSourceUsageStatus(allocatedQty, targetReleasedQty),
+              updatedBy: cmd.operatorId,
+            },
+            db,
+          );
+        }
+        const available = new Prisma.Decimal(source.changeQty).sub(
+          totals.allocatedQty.sub(totals.releasedQty),
+        );
+        if (currentReleasedQty.sub(targetReleasedQty).gt(available)) {
+          throw new BadRequestException(
+            "来源库存已被其他单据使用，不能恢复占用",
+          );
+        }
       }
 
       return this.repository.updateSourceUsage(

@@ -263,7 +263,7 @@
                 </el-select>
               </template>
             </el-table-column>
-            <el-table-column label="领料数量" prop="quantity" width="160">
+            <el-table-column label="领料数量" prop="quantity" width="170" class-name="numeric-column">
               <template #default="scope">
                 <el-input-number
                   v-model="scope.row.quantity"
@@ -276,7 +276,7 @@
                   @change="(val) => handleMaterialOrQuantityChange(undefined, val, scope.$index)" />
               </template>
             </el-table-column>
-            <el-table-column label="金额" prop="amount" width="140" align="right">
+            <el-table-column label="金额" prop="amount" width="135" align="right" class-name="numeric-column">
               <template #default="scope">
                 <span>{{ formatMoneyDisplay(scope.row.amount) }}</span>
               </template>
@@ -356,17 +356,17 @@
                 <el-table-column label="物料编码" prop="materialCode" />
                 <el-table-column label="物料名称" prop="materialName" />
                 <el-table-column label="规格型号" prop="specification" />
-                <el-table-column label="成本价层" prop="rawUnitPrice">
+            <el-table-column label="成本价层" prop="rawUnitPrice" min-width="135" class-name="numeric-column">
                   <template #default="scope">
                     {{ formatMoneyDisplay(scope.row.rawUnitPrice) }}
                   </template>
                 </el-table-column>
-                <el-table-column label="领料数量" prop="quantity">
+                <el-table-column label="领料数量" prop="quantity" min-width="130" class-name="numeric-column">
                   <template #default="scope">
                     {{ formatQty(scope.row.quantity) }}
                   </template>
                 </el-table-column>
-                <el-table-column label="金额" prop="amount" />
+                <el-table-column label="金额" prop="amount" min-width="135" class-name="numeric-column" />
                 <el-table-column label="备注" prop="remark" />
               </el-table>
             </div>

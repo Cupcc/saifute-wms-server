@@ -210,7 +210,8 @@
       <el-table-column
         label="数量"
         prop="quantity"
-        width="90"
+        width="130"
+        class-name="numeric-column"
         align="right"
       >
         <template #default="scope">
@@ -220,7 +221,8 @@
       <el-table-column
         label="金额"
         prop="amount"
-        width="110"
+        width="135"
+        class-name="numeric-column"
         align="right"
       >
         <template #default="scope">

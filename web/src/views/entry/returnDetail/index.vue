@@ -72,9 +72,9 @@
       <el-table-column sortable show-overflow-tooltip label="物料编码" align="center" prop="material.materialCode" min-width="120" />
       <el-table-column sortable show-overflow-tooltip label="物料名称" align="center" prop="material.materialName" min-width="160" />
       <el-table-column sortable show-overflow-tooltip label="规格型号" align="center" prop="material.specification" min-width="140" />
-      <el-table-column sortable show-overflow-tooltip label="来源单价" align="right" prop="unitPrice" width="110" />
-      <el-table-column sortable show-overflow-tooltip label="退货数量" align="right" prop="quantity" width="110" />
-      <el-table-column sortable show-overflow-tooltip label="金额" align="right" prop="amount" width="120" />
+      <el-table-column sortable show-overflow-tooltip label="来源单价" align="right" prop="unitPrice" width="135" class-name="numeric-column" />
+      <el-table-column sortable show-overflow-tooltip label="退货数量" align="right" prop="quantity" width="130" class-name="numeric-column" />
+      <el-table-column sortable show-overflow-tooltip label="金额" align="right" prop="amount" width="135" class-name="numeric-column" />
       <el-table-column sortable show-overflow-tooltip label="供应商" align="center" prop="supplierName" min-width="160" />
       <el-table-column sortable show-overflow-tooltip label="关联部门" align="center" prop="workshopName" width="130" />
       <el-table-column show-overflow-tooltip label="备注" align="center" prop="remark" min-width="180" />

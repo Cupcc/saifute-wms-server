@@ -162,7 +162,7 @@
 			<el-table-column sortable show-overflow-tooltip label="领料单号" align="center" prop="pickNo" min-width="140" />
 			<el-table-column sortable show-overflow-tooltip label="退料人" align="center" prop="returnBy" />
 			<el-table-column sortable show-overflow-tooltip label="创建人" align="center" prop="createBy" />
-			<el-table-column sortable show-overflow-tooltip label="总金额" align="center" prop="totalAmount" />
+			<el-table-column sortable show-overflow-tooltip label="总金额" align="center" prop="totalAmount" min-width="135" class-name="numeric-column" />
 			<el-table-column sortable show-overflow-tooltip label="审核结果" align="center" prop="auditStatus">
 				<template #default="scope">
 					<el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
@@ -303,17 +303,17 @@
 							</el-select>
 						</template>
 					</el-table-column>
-					<el-table-column label="退料数量" prop="returnQty">
+					<el-table-column label="退料数量" prop="returnQty" min-width="170" class-name="numeric-column">
 						<template #default="scope">
 							<el-input-number v-model="scope.row.returnQty" placeholder="退料数量" :min="0" controls-position="right" :disabled="isView" style="width: 100%" @change="calculateTotalAmount" />
 						</template>
 					</el-table-column>
-					<el-table-column label="单价" prop="unitPrice">
+					<el-table-column label="单价" prop="unitPrice" min-width="155" class-name="numeric-column">
 						<template #default="scope">
 							<el-input-number v-model="scope.row.unitPrice" :min="0" :precision="4" placeholder="单价" controls-position="right" :disabled="isView" style="width: 100%" @change="calculateTotalAmount" />
 						</template>
 					</el-table-column>
-					<el-table-column label="金额" prop="amount">
+					<el-table-column label="金额" prop="amount" min-width="135" class-name="numeric-column">
 						<template #default="scope">
 							{{ formatLineAmount(scope.row) }}
 						</template>
@@ -392,9 +392,9 @@
 								<el-table-column label="物料编码" prop="material.materialCode" />
 								<el-table-column label="物料名称" prop="material.materialName" />
 								<el-table-column label="规格型号" prop="material.specification" />
-								<el-table-column label="退料数量" prop="returnQty" />
-								<el-table-column label="单价" prop="unitPrice" />
-								<el-table-column label="金额" prop="amount">
+								<el-table-column label="退料数量" prop="returnQty" min-width="130" class-name="numeric-column" />
+								<el-table-column label="单价" prop="unitPrice" min-width="135" class-name="numeric-column" />
+								<el-table-column label="金额" prop="amount" min-width="135" class-name="numeric-column">
 									<template #default="scope">
 										{{ formatLineAmount(scope.row) }}
 									</template>

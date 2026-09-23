@@ -360,7 +360,7 @@ export class RbacRoutesRepository {
           name: "RdProcurementRequests",
           path: "/rd/procurement-requests",
           component: "rd/procurement-requests/index",
-          permissions: ["rd:procurement-request:list"],
+          permissions: ["rd:procurement-demand:list"],
         },
         {
           name: "RdInventorySummary",

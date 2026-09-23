@@ -86,12 +86,12 @@
           label="来源车间"
           min-width="140"
         />
-        <el-table-column label="总数量" min-width="120">
+        <el-table-column label="总数量" min-width="130" class-name="numeric-column">
           <template #default="{ row }">
             {{ formatQty(row.totalQty) }}
           </template>
         </el-table-column>
-        <el-table-column label="总金额" min-width="120">
+        <el-table-column label="总金额" min-width="135" class-name="numeric-column">
           <template #default="{ row }">
             {{ formatAmount(row.totalAmount) }}
           </template>

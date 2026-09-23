@@ -51,7 +51,6 @@ Keep business rules out of controllers and Prisma-specific details out of domain
   - `bun run prisma:generate`
   - `bun run typecheck`
 - Do not run destructive database operations unless explicitly requested.
-- Prefer dry-run migration scripts before execute scripts.
 
 ## Validation Commands
 
@@ -62,7 +61,6 @@ Use the narrowest useful validation first:
 - E2E tests: `bun run test:e2e`
 - Lint/check: `bun run lint`
 - Full verification: `bun run verify`
-- Migration type check: `bun run migration:typecheck`
 
 When changing frontend code under `web/`, use the workspace’s own scripts from `web/package.json`.
 
@@ -89,5 +87,4 @@ Use these docs before making broad architectural changes:
 
 - Never expose or commit secrets from `.env*` files.
 - Do not modify generated files unless the project convention requires it.
-- Do not perform production/staging data migrations without explicit user approval.
 - Do not silence TypeScript, lint, or test failures with broad ignores.

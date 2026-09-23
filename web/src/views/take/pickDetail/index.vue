@@ -123,13 +123,13 @@
       <el-table-column sortable show-overflow-tooltip label="车间" align="center" prop="workshopName" />
       <el-table-column sortable show-overflow-tooltip label="物料名称" align="center" prop="materialName" />
       <el-table-column sortable show-overflow-tooltip label="规格型号" align="center" prop="specification" />
-      <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="quantity">
+      <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="quantity" min-width="130" class-name="numeric-column">
         <template #default="scope">
           {{ formatQty(scope.row.quantity) }}
         </template>
       </el-table-column>
       <el-table-column sortable show-overflow-tooltip label="成本价层" align="center" prop="rawUnitPrice" />
-      <el-table-column sortable show-overflow-tooltip label="金额" align="center" prop="amount" />
+      <el-table-column sortable show-overflow-tooltip label="金额" align="center" prop="amount" min-width="135" class-name="numeric-column" />
       <el-table-column sortable show-overflow-tooltip label="备注" align="center" prop="remark" />
     </adaptive-table>
     <span style="font-size: 16px; font-weight: bold; color: #f56c6c;text-align: right;">合计金额：{{ totalMoney }}</span>

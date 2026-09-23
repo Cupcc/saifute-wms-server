@@ -63,8 +63,8 @@
       <el-table-column sortable show-overflow-tooltip label="供应商" align="center" prop="supplierName" min-width="160" />
       <el-table-column sortable show-overflow-tooltip label="经办人" align="center" prop="attn" width="120" />
       <el-table-column sortable show-overflow-tooltip label="关联部门" align="center" prop="workshopName" width="130" />
-      <el-table-column sortable show-overflow-tooltip label="总数量" align="right" prop="totalQty" width="110" />
-      <el-table-column sortable show-overflow-tooltip label="总金额" align="right" prop="totalAmount" width="120" />
+      <el-table-column sortable show-overflow-tooltip label="总数量" align="right" prop="totalQty" width="130" class-name="numeric-column" />
+      <el-table-column sortable show-overflow-tooltip label="总金额" align="right" prop="totalAmount" width="135" class-name="numeric-column" />
       <el-table-column sortable show-overflow-tooltip label="库存状态" align="center" prop="inventoryEffectStatus" width="120">
         <template #default="scope">
           <el-tag :type="inventoryStatusTag(scope.row.inventoryEffectStatus)" effect="plain">

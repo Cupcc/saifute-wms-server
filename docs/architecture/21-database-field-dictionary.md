@@ -225,11 +225,11 @@
 | `businessDocumentId`     | INT               | 是   | —       | —   | 来源单据主表 ID；与 `businessDocumentType` 共同定位单据 |
 | `businessDocumentNumber` | VARCHAR(64)       | 是   | —       | —   | 来源单据编号快照；用于展示 / 搜索，不作真实关联键 |
 | `businessDocumentLineId` | INT               | 否   | —       | —   | 来源单据明细行 ID；存在时用于行级追溯，字段可空且不保证唯一 |
-| `changeQty`              | DECIMAL(18,6)     | 是   | —       | —   | 变动数量（始终为正值，方向由 `direction` 决定）     |
-| `beforeQty`              | DECIMAL(18,6)     | 是   | —       | —   | 变动前库存数量                            |
-| `afterQty`               | DECIMAL(18,6)     | 是   | —       | —   | 变动后库存数量                            |
-| `unitCost`               | DECIMAL(18,2)     | 否   | —       | —   | 单位成本；入库方向来源流水的价格层真源，价格层查询按该字段聚合可用来源 |
-| `costAmount`             | DECIMAL(18,2)     | 否   | —       | —   | 成本金额                               |
+| `changeQty`              | DECIMAL(18,6)     | 是   | —       | —   | 本价格层流水行的变动数量（始终为正值，方向由 `direction` 决定）     |
+| `beforeQty`              | DECIMAL(18,6)     | 是   | —       | —   | 所属原子过账组的变动前总库存快照；同一过账组的价格层行可共享       |
+| `afterQty`               | DECIMAL(18,6)     | 是   | —       | —   | 所属原子过账组的变动后总库存快照；同一过账组的价格层行可共享       |
+| `unitCost`               | DECIMAL(18,2)     | 否   | —       | —   | 本价格层流水行的成本单价；不能使用单据加权平均价替代 |
+| `costAmount`             | DECIMAL(18,2)     | 否   | —       | —   | 本价格层流水行的成本金额                               |
 | `operatorId`             | VARCHAR(64)       | 否   | —       | —   | 操作人标识                              |
 | `occurredAt`             | DATETIME          | 是   | `now()` | —   | 流水实际落库时间戳；当前实现通常等同写入时间 |
 | `reversalOfLogId`        | INT               | 否   | —       | 是   | 所冲销的原始流水 ID；一条原流水最多对应一条逆操作，自关联 `id` |
@@ -1014,7 +1014,7 @@
 
 ## 14. `system-management` 系统管理表
 
-> 说明：系统管理表来自兼容若依（RuoYi）框架的设计，Prisma 字段通过 `@map` 映射为下划线风格的数据库列名。以下均使用实际数据库列名。
+> 说明：系统管理表按当前平台模型设计，Prisma 字段通过 `@map` 映射为下划线风格的数据库列名。以下均使用实际数据库列名。
 
 ### 14.1 `sys_dept` — 部门
 

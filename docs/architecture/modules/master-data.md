@@ -10,17 +10,6 @@
 
 当前代码已实现物料（`material`）的新增、修改、作废和查询路径。客户、供应商、人员、车间目前以列表和只读查询为主，完整写路径（新增、修改、作废）属于目标范围，尚未全部落地。此差距不影响模块边界归属：这些实体的写路径仍由 `master-data` 拥有，不应移交给其他模块。
 
-## 原 Java 来源与映射范围
-
-- `business/src/main/java/com/saifute/base`
-- `business/src/main/resources/mapper/base`
-- 与项目强耦合但应拆出的部分来源于 `business/src/main/java/com/saifute/article`
-
-映射规则：
-
-- `base` 中纯主数据能力 -> `master-data`
-- `article` 中历史研发项目 / BOM 相关能力 -> `rd-project`
-- 对外销售项目物料计划与项目视图能力 -> `sales-project`
 
 ## 领域对象与核心用例
 

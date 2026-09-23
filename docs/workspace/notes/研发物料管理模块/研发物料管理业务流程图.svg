@@ -1,0 +1,211 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 1900" width="1500" height="1900">
+  <style>
+    text { font-family: 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', 'Microsoft JhengHei', 'SimHei', sans-serif; }
+    .title { font-size: 30px; font-weight: 700; fill: #111827; }
+    .subtitle { font-size: 15px; fill: #6b7280; }
+    .section { font-size: 18px; font-weight: 700; fill: #111827; }
+    .card-title { font-size: 19px; font-weight: 700; fill: #111827; }
+    .card-body { font-size: 14px; fill: #4b5563; }
+    .pill { font-size: 13px; font-weight: 600; }
+    .small { font-size: 13px; fill: #6b7280; }
+    .side-title { font-size: 17px; font-weight: 700; fill: #111827; }
+    .side-body { font-size: 13px; fill: #374151; }
+  </style>
+  <defs>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#2563eb"/></marker>
+    <marker id="arrow-red" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#dc2626"/></marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#16a34a"/></marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#111827" flood-opacity="0.10"/></filter>
+  </defs>
+
+  <rect data-graph-role="background" width="1500" height="1900" fill="#ffffff"/>
+  <text x="70" y="62" class="title">研发物料管理模块｜端到端业务流程</text>
+  <text x="70" y="91" class="subtitle">从项目计划、采购申请到两仓交接、项目耗用与成本追溯（依据 2026-09-12 立项申请及补充说明）</text>
+
+  <rect data-graph-role="container" x="55" y="125" width="940" height="1570" rx="16" fill="#f8fafc" stroke="#dbe3ef" stroke-width="1.5"/>
+  <text x="82" y="163" class="section">主流程（按时间顺序）</text>
+  <rect data-graph-role="container" x="1025" y="125" width="420" height="1570" rx="16" fill="#fbfdff" stroke="#dbe3ef" stroke-width="1.5"/>
+  <text x="1052" y="163" class="section">角色职责与权限</text>
+
+  <!-- main flow cards -->
+  <g id="step-1" data-graph-role="node">
+    <rect x="125" y="190" width="800" height="100" rx="12" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+    <circle cx="167" cy="240" r="22" fill="#2563eb"/><text x="167" y="247" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">1</text>
+    <text x="205" y="225" class="card-title">维护项目与 BOM 计划</text>
+    <text x="205" y="251" class="card-body">维护项目、计划数量、参考成本、厂家/链接；结合可用库存、实际耗用和在途量识别缺口</text>
+    <rect x="735" y="214" width="155" height="30" rx="15" fill="#dbeafe"/><text x="812" y="235" text-anchor="middle" class="pill" fill="#1d4ed8">曹艳｜研发仓库管理员</text>
+    <text x="205" y="273" class="small">BOM 只表达计划，不直接改变库存</text>
+  </g>
+  <path data-graph-role="edge" d="M525 290 V315" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#arrow-blue)"/>
+
+  <g id="step-2" data-graph-role="node">
+    <rect x="125" y="315" width="800" height="100" rx="12" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5" filter="url(#shadow)"/>
+    <circle cx="167" cy="365" r="22" fill="#2563eb"/><text x="167" y="372" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">2</text>
+    <text x="205" y="350" class="card-title">填写采购申请草稿</text>
+    <text x="205" y="376" class="card-body">申请人、项目、物料规格、数量、需求日期、用途等字段；可保存并修改本人/授权范围内草稿</text>
+    <rect x="780" y="339" width="110" height="30" rx="15" fill="#e0f2fe"/><text x="835" y="360" text-anchor="middle" class="pill" fill="#0369a1">研发人员</text>
+  </g>
+  <path data-graph-role="edge" d="M525 415 V440" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#arrow-blue)"/>
+
+  <g id="step-3" data-graph-role="node">
+    <rect x="125" y="440" width="800" height="100" rx="12" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+    <circle cx="167" cy="490" r="22" fill="#2563eb"/><text x="167" y="497" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">3</text>
+    <text x="205" y="475" class="card-title">复核、修改采购需求</text>
+    <text x="205" y="501" class="card-body">核对项目关联、物料与数量；补充或修正后进入确认判断</text>
+    <rect x="735" y="464" width="155" height="30" rx="15" fill="#dbeafe"/><text x="812" y="485" text-anchor="middle" class="pill" fill="#1d4ed8">曹艳｜复核提交</text>
+  </g>
+  <path data-graph-role="edge" d="M525 540 V570" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#arrow-blue)"/>
+
+  <g id="decision" data-graph-role="node">
+    <polygon points="525,570 625,625 525,680 425,625" fill="#fff7ed" stroke="#fb923c" stroke-width="1.8"/>
+    <text x="525" y="620" text-anchor="middle" class="card-title" font-size="17">复核通过？</text>
+    <text x="525" y="643" text-anchor="middle" class="small">必填项与项目有效</text>
+  </g>
+  <path data-graph-role="edge" d="M525 680 V710" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#arrow-blue)"/>
+  <text x="545" y="702" class="small" fill="#16a34a">是</text>
+  <path data-graph-role="edge" d="M425 625 H100 V365 H125" stroke="#dc2626" stroke-width="2" stroke-dasharray="7 6" fill="none" marker-end="url(#arrow-red)"/>
+  <text x="112" y="612" class="small" fill="#dc2626">否：退回研发人员修改</text>
+
+  <g id="step-5" data-graph-role="node">
+    <rect x="125" y="710" width="800" height="100" rx="12" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+    <circle cx="167" cy="760" r="22" fill="#2563eb"/><text x="167" y="767" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">5</text>
+    <text x="205" y="745" class="card-title">确认提交采购申请</text>
+    <text x="205" y="771" class="card-body">提交后保留“申请人”和“提交人”；直接进入采购状态跟踪，不设置系统审批节点</text>
+    <rect x="735" y="734" width="155" height="30" rx="15" fill="#dbeafe"/><text x="812" y="755" text-anchor="middle" class="pill" fill="#1d4ed8">曹艳｜确认提交</text>
+  </g>
+  <path data-graph-role="edge" d="M525 810 V840" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#arrow-blue)"/>
+
+  <g id="step-6" data-graph-role="node">
+    <rect x="125" y="840" width="800" height="100" rx="12" fill="#faf5ff" stroke="#d8b4fe" stroke-width="1.5" filter="url(#shadow)"/>
+    <circle cx="167" cy="890" r="22" fill="#9333ea"/><text x="167" y="897" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">6</text>
+    <text x="205" y="875" class="card-title">采购执行与进度跟踪</text>
+    <text x="205" y="901" class="card-body">维护供应商、采购数量、单价/金额、计划到货日、实际到货量、剩余量和延期备注</text>
+    <rect x="790" y="864" width="100" height="30" rx="15" fill="#ede9fe"/><text x="840" y="885" text-anchor="middle" class="pill" fill="#7e22ce">徐文静｜采购</text>
+  </g>
+  <path data-graph-role="edge" d="M525 940 V970" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#arrow-blue)"/>
+  <path data-graph-role="edge" d="M925 890 H970 V365 H925" stroke="#dc2626" stroke-width="2" stroke-dasharray="7 6" fill="none" marker-end="url(#arrow-red)"/>
+  <text x="900" y="620" text-anchor="end" class="small" fill="#dc2626">驳回：退回草稿，保留原因</text>
+
+  <g id="step-7" data-graph-role="node">
+    <rect x="125" y="970" width="800" height="100" rx="12" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5" filter="url(#shadow)"/>
+    <circle cx="167" cy="1020" r="22" fill="#16a34a"/><text x="167" y="1027" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">7</text>
+    <text x="205" y="1005" class="card-title">供应商分批送货</text>
+    <text x="205" y="1031" class="card-body">每批到货均关联原采购申请和物料行，累计已到货量与未到货量</text>
+    <rect x="805" y="994" width="85" height="30" rx="15" fill="#dcfce7"/><text x="847" y="1015" text-anchor="middle" class="pill" fill="#15803d">供应商</text>
+  </g>
+  <path data-graph-role="edge" d="M525 1070 V1100" stroke="#16a34a" stroke-width="2.5" fill="none" marker-end="url(#arrow-green)"/>
+
+  <g id="step-8" data-graph-role="node">
+    <rect x="125" y="1100" width="800" height="100" rx="12" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5" filter="url(#shadow)"/>
+    <circle cx="167" cy="1150" r="22" fill="#16a34a"/><text x="167" y="1157" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">8</text>
+    <text x="205" y="1135" class="card-title">主仓办理入库</text>
+    <text x="205" y="1161" class="card-body">按实际到货办理主仓入库；系统禁止重复提交造成重复入库</text>
+    <rect x="790" y="1124" width="100" height="30" rx="15" fill="#dcfce7"/><text x="840" y="1145" text-anchor="middle" class="pill" fill="#15803d">田晓晶｜主仓</text>
+  </g>
+  <path data-graph-role="edge" d="M525 1200 V1230" stroke="#16a34a" stroke-width="2.5" fill="none" marker-end="url(#arrow-green)"/>
+
+  <g id="step-9" data-graph-role="node">
+    <rect x="125" y="1230" width="800" height="100" rx="12" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+    <circle cx="167" cy="1280" r="22" fill="#2563eb"/><text x="167" y="1287" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">9</text>
+    <text x="205" y="1265" class="card-title">领料核对</text>
+    <text x="205" y="1291" class="card-body">曹艳从主仓领取，核对品类、规格和数量后发起调入研发</text>
+    <rect x="735" y="1254" width="155" height="30" rx="15" fill="#dbeafe"/><text x="812" y="1275" text-anchor="middle" class="pill" fill="#1d4ed8">曹艳｜领料核对</text>
+  </g>
+  <path data-graph-role="edge" d="M525 1330 V1360" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#arrow-blue)"/>
+
+  <g id="step-10" data-graph-role="node">
+    <rect x="125" y="1360" width="800" height="115" rx="12" fill="#ecfeff" stroke="#99f6e4" stroke-width="1.5" filter="url(#shadow)"/>
+    <circle cx="167" cy="1417" r="22" fill="#0f766e"/><text x="167" y="1424" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">10</text>
+    <text x="205" y="1395" class="card-title">调入研发（一次业务动作）</text>
+    <text x="205" y="1421" class="card-body">田晓晶点击“调入研发”后，系统同时完成主仓减少 + 研发仓库增加</text>
+    <text x="205" y="1447" class="small">留痕：交接人员、时间、物料、数量、来源关系；研发仓库无需二次确认收货</text>
+    <rect x="790" y="1390" width="100" height="30" rx="15" fill="#ccfbf1"/><text x="840" y="1411" text-anchor="middle" class="pill" fill="#0f766e">田晓晶｜调入</text>
+  </g>
+  <path data-graph-role="edge" d="M525 1475 V1505" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#arrow-blue)"/>
+
+  <g id="step-11" data-graph-role="node">
+    <rect x="125" y="1505" width="800" height="115" rx="12" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5" filter="url(#shadow)"/>
+    <circle cx="167" cy="1562" r="22" fill="#2563eb"/><text x="167" y="1569" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">11</text>
+    <text x="205" y="1540" class="card-title">研发仓库项目管理</text>
+    <text x="205" y="1566" class="card-body">按项目办理领用、退料、报废、盘点和库存调整；所有动作绑定项目并可追溯</text>
+    <text x="205" y="1592" class="small">退回主仓/公司级退货由主仓人员操作，保留原因、经办人、时间和反向流水</text>
+    <rect x="735" y="1535" width="155" height="30" rx="15" fill="#dbeafe"/><text x="812" y="1556" text-anchor="middle" class="pill" fill="#1d4ed8">曹艳｜研发仓库</text>
+  </g>
+  <path data-graph-role="edge" d="M525 1620 V1650" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#arrow-blue)"/>
+
+  <g id="step-12" data-graph-role="node">
+    <rect x="125" y="1650" width="800" height="100" rx="12" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5" filter="url(#shadow)"/>
+    <circle cx="167" cy="1700" r="22" fill="#16a34a"/><text x="167" y="1707" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">12</text>
+    <text x="205" y="1685" class="card-title">项目库存、耗用与成本查询</text>
+    <text x="205" y="1711" class="card-body">对照 BOM：当前在库、已领、已退、已报废、净耗用及成本；内部调拨、盘点差异单独展示</text>
+    <rect x="780" y="1674" width="110" height="30" rx="15" fill="#dcfce7"/><text x="835" y="1695" text-anchor="middle" class="pill" fill="#15803d">授权人员查询</text>
+  </g>
+
+  <!-- responsibilities -->
+  <g id="role-rd" data-graph-role="node">
+    <rect x="1052" y="190" width="365" height="170" rx="12" fill="#e0f2fe" stroke="#bae6fd"/>
+    <text x="1078" y="222" class="side-title">研发人员（申请人）</text>
+    <text x="1078" y="251" class="side-body">• 提出物料需求、填写/保存采购草稿</text>
+    <text x="1078" y="276" class="side-body">• 可修改本人或授权范围内草稿</text>
+    <text x="1078" y="301" class="side-body">• 查询授权项目、采购进度、库存与成本</text>
+    <text x="1078" y="332" class="small">无复核提交、项目/BOM维护和库存操作权限</text>
+  </g>
+  <g id="role-cao" data-graph-role="node">
+    <rect x="1052" y="385" width="365" height="255" rx="12" fill="#eff6ff" stroke="#bfdbfe"/>
+    <text x="1078" y="417" class="side-title">曹艳｜研发仓库管理员</text>
+    <text x="1078" y="446" class="side-body">• 维护项目主档、BOM、参考成本</text>
+    <text x="1078" y="471" class="side-body">• 复核、修改并确认提交采购申请</text>
+    <text x="1078" y="496" class="side-body">• 领料核对；统一管理研发仓库</text>
+    <text x="1078" y="521" class="side-body">• 按项目领用、退料、报废、盘点、调整</text>
+    <text x="1078" y="546" class="side-body">• 查询缺口、余料和项目成本台账</text>
+    <text x="1078" y="594" class="small">“申请人”仍是实际提出需求的研发人员</text>
+  </g>
+  <g id="role-buy" data-graph-role="node">
+    <rect x="1052" y="665" width="365" height="170" rx="12" fill="#faf5ff" stroke="#d8b4fe"/>
+    <text x="1078" y="697" class="side-title">徐文静｜采购负责人</text>
+    <text x="1078" y="726" class="side-body">• 查看已提交申请并维护采购状态</text>
+    <text x="1078" y="751" class="side-body">• 驳回或置为采购中，更新执行信息</text>
+    <text x="1078" y="776" class="side-body">• 维护供应商、到货计划、数量、金额和备注</text>
+  </g>
+  <g id="role-main" data-graph-role="node">
+    <rect x="1052" y="860" width="365" height="220" rx="12" fill="#f0fdf4" stroke="#bbf7d0"/>
+    <text x="1078" y="892" class="side-title">田晓晶｜主仓负责人</text>
+    <text x="1078" y="921" class="side-body">• 按实际到货办理主仓入库</text>
+    <text x="1078" y="946" class="side-body">• 与曹艳完成领料交接</text>
+    <text x="1078" y="971" class="side-body">• 点击“调入研发”，完成两仓原子过账</text>
+    <text x="1078" y="996" class="side-body">• 办理退回主仓和公司级退货</text>
+    <text x="1078" y="1040" class="small">退回/退货必须记录原因与反向库存流水</text>
+  </g>
+  <g id="role-admin" data-graph-role="node">
+    <rect x="1052" y="1105" width="365" height="150" rx="12" fill="#f9fafb" stroke="#d1d5db"/>
+    <text x="1078" y="1137" class="side-title">系统管理员</text>
+    <text x="1078" y="1166" class="side-body">• 配置权限、排障和审计</text>
+    <text x="1078" y="1191" class="side-body">• 拒绝越权修改并保留操作留痕</text>
+    <text x="1078" y="1221" class="small">库存变化统一通过现有库存核心写入</text>
+  </g>
+
+  <g id="principles" data-graph-role="node">
+    <rect x="1052" y="1280" width="365" height="285" rx="12" fill="#fff7ed" stroke="#fed7aa"/>
+    <text x="1078" y="1312" class="side-title">关键控制点</text>
+    <text x="1078" y="1343" class="side-body">1. 无系统审批流：提交后直接进入采购跟踪</text>
+    <text x="1078" y="1371" class="side-body">2. 分批到货：累计已到货/未到货，防重复入库</text>
+    <text x="1078" y="1399" class="side-body">3. 调入研发：主仓减少与研发仓增加同一动作</text>
+    <text x="1078" y="1427" class="side-body">4. 项目不是物理库存池，实际库存仅两仓</text>
+    <text x="1078" y="1455" class="side-body">5. 已发生库存事实不得静默覆盖</text>
+    <text x="1078" y="1503" class="small">状态：驳回｜采购中｜到货推进｜退回/更正</text>
+  </g>
+
+  <g id="boundary" data-graph-role="node">
+    <rect x="1052" y="1590" width="365" height="80" rx="12" fill="#fef2f2" stroke="#fecaca"/>
+    <text x="1078" y="1622" class="side-title" fill="#991b1b">本期不包含</text>
+    <text x="1078" y="1649" class="side-body" fill="#991b1b">付款/发票/报销、线上审批接口、生产车间、多仓库位和复杂调度</text>
+  </g>
+
+  <g id="legend" data-graph-role="legend">
+    <rect x="70" y="1780" width="1375" height="72" rx="10" fill="#f9fafb" stroke="#e5e7eb"/>
+    <line x1="95" y1="1810" x2="145" y2="1810" stroke="#2563eb" stroke-width="2.5" marker-end="url(#arrow-blue)"/><text x="158" y="1815" class="small">主流程</text>
+    <line x1="255" y1="1810" x2="305" y2="1810" stroke="#16a34a" stroke-width="2.5" marker-end="url(#arrow-green)"/><text x="318" y="1815" class="small">库存/到货事实</text>
+    <line x1="460" y1="1810" x2="510" y2="1810" stroke="#dc2626" stroke-width="2" stroke-dasharray="7 6" marker-end="url(#arrow-red)"/><text x="523" y="1815" class="small">退回/驳回分支</text>
+    <text x="700" y="1815" class="small">金额按申请/采购/入库阶段区分，不等同于实际付款金额；所有数量和费用可追溯</text>
+  </g>
+</svg>

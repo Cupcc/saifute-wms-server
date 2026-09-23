@@ -81,12 +81,12 @@
             {{ row.bomLineCount || row.bomLines?.length || 0 }}
           </template>
         </el-table-column>
-        <el-table-column label="计划数量" min-width="120">
+        <el-table-column label="计划数量" min-width="130" class-name="numeric-column">
           <template #default="{ row }">
             {{ formatQty(row.totalQty) }}
           </template>
         </el-table-column>
-        <el-table-column label="计划金额" min-width="120">
+        <el-table-column label="计划金额" min-width="135" class-name="numeric-column">
           <template #default="{ row }">
             {{ formatAmount(row.totalAmount) }}
           </template>

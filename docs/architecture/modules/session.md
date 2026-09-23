@@ -4,18 +4,6 @@
 
 负责“JWT 票据 + Redis 会话”的登录态管理，包括会话创建、恢复、滑动续期、在线用户查询、强制下线和注销失效。
 
-## 原 Java 来源与映射范围
-
-- `ruoyi-framework/.../TokenService.java`
-- `ruoyi-framework/.../JwtAuthenticationTokenFilter.java`
-- `ruoyi-common/.../LoginUser.java`
-- `ruoyi-admin/.../SysUserOnlineController.java`
-- `ruoyi-system/.../SysUserOnlineServiceImpl.java`
-- `ruoyi-admin/src/main/resources/application.yml`
-
-映射规则：
-
-- Java `TokenService + JwtAuthenticationTokenFilter + OnlineUser` -> NestJS `session`
 
 ## 领域对象与核心用例
 

@@ -47,8 +47,8 @@
             {{ formatDate(row.bizDate) }}
           </template>
         </el-table-column>
-        <el-table-column prop="totalQty" label="总数量" min-width="120" />
-        <el-table-column prop="totalAmount" label="总金额" min-width="120" />
+        <el-table-column prop="totalQty" label="总数量" min-width="130" class-name="numeric-column" />
+        <el-table-column prop="totalAmount" label="总金额" min-width="135" class-name="numeric-column" />
         <el-table-column label="物料行数" min-width="100">
           <template #default="{ row }">
             {{ row.lines?.length || 0 }}
@@ -159,7 +159,7 @@
               </el-select>
             </template>
           </el-table-column>
-          <el-table-column label="数量" min-width="140">
+          <el-table-column label="数量" min-width="170" class-name="numeric-column">
             <template #default="{ row }">
               <el-input-number
                 v-model="row.quantity"
@@ -170,7 +170,7 @@
               />
             </template>
           </el-table-column>
-          <el-table-column label="单价" min-width="140">
+          <el-table-column label="单价" min-width="155" class-name="numeric-column">
             <template #default="{ row }">
               <el-input-number
                 v-model="row.unitPrice"
@@ -181,7 +181,7 @@
               />
             </template>
           </el-table-column>
-          <el-table-column label="金额" min-width="140">
+          <el-table-column label="金额" min-width="135" class-name="numeric-column">
             <template #default="{ row }">
               {{ calculateLineAmount(row) }}
             </template>
@@ -243,9 +243,9 @@
           <el-table-column prop="materialCodeSnapshot" label="物料编码" min-width="140" />
           <el-table-column prop="materialNameSnapshot" label="物料名称" min-width="180" />
           <el-table-column prop="materialSpecSnapshot" label="规格型号" min-width="140" />
-          <el-table-column prop="quantity" label="数量" min-width="100" />
-          <el-table-column prop="unitPrice" label="单价" min-width="100" />
-          <el-table-column prop="amount" label="金额" min-width="100" />
+          <el-table-column prop="quantity" label="数量" min-width="130" class-name="numeric-column" />
+          <el-table-column prop="unitPrice" label="单价" min-width="135" class-name="numeric-column" />
+          <el-table-column prop="amount" label="金额" min-width="135" class-name="numeric-column" />
           <el-table-column prop="remark" label="备注" min-width="160" />
         </el-table>
       </template>

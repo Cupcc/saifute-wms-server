@@ -100,7 +100,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="changeQty" label="变动数量" min-width="120">
+        <el-table-column prop="changeQty" label="变动数量" min-width="130" class-name="numeric-column">
           <template #default="{ row }">
             <span :class="row.direction === 'IN' ? 'qty-in' : 'qty-out'">
               {{ formatSignedChangeQty(row) }}

@@ -86,27 +86,27 @@
             }}
           </template>
         </el-table-column>
-        <el-table-column label="成本价层" prop="selectedUnitCost" width="110" align="right">
+        <el-table-column label="成本价层" prop="selectedUnitCost" width="155" align="right" class-name="numeric-column">
           <template #default="scope">
             {{ formatCostAmount(scope.row.selectedUnitCost) }}
           </template>
         </el-table-column>
-        <el-table-column label="数量" prop="quantity" width="100" align="right">
+        <el-table-column label="数量" prop="quantity" width="130" align="right" class-name="numeric-column">
           <template #default="scope">
             {{ formatQty(scope.row.quantity) }}
           </template>
         </el-table-column>
-        <el-table-column label="销售单价" prop="unitPrice" width="110" align="right">
+        <el-table-column label="销售单价" prop="unitPrice" width="135" align="right" class-name="numeric-column">
           <template #default="scope">
             {{ formatAmount(scope.row.unitPrice) }}
           </template>
         </el-table-column>
-        <el-table-column label="金额" prop="amount" width="110" align="right">
+        <el-table-column label="金额" prop="amount" width="135" align="right" class-name="numeric-column">
           <template #default="scope">
             {{ formatAmount(scope.row.amount) }}
           </template>
         </el-table-column>
-        <el-table-column label="成本金额" prop="costAmount" width="110" align="right">
+        <el-table-column label="成本金额" prop="costAmount" width="135" align="right" class-name="numeric-column">
           <template #default="scope">
             {{ formatCostAmount(scope.row.costAmount) }}
           </template>

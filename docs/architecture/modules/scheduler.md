@@ -2,18 +2,8 @@
 
 ## 模块目标与职责
 
-负责数据库驱动的任务定义、任务注册、暂停恢复、立即执行和执行日志，兼容原 `ruoyi-quartz` 的产品形态。
+负责数据库驱动的任务定义、任务注册、暂停恢复、立即执行和执行日志，提供完整的任务定义、调度和执行能力。
 
-## 原 Java 来源与映射范围
-
-- `ruoyi-quartz/.../SysJobController.java`
-- `ruoyi-quartz/.../SysJobLogController.java`
-- `ruoyi-quartz/.../SysJobServiceImpl.java`
-- `ruoyi-quartz/.../ScheduleUtils.java`
-- `ruoyi-quartz/.../AbstractQuartzJob.java`
-- `ruoyi-quartz/.../QuartzJobExecution.java`
-- `ruoyi-quartz/.../JobInvokeUtil.java`
-- `ruoyi-quartz/.../CronUtils.java`
 
 ## 领域对象与核心用例
 
@@ -54,7 +44,7 @@
 
 - 任务定义以数据库为准，进程重启后必须重建调度器状态
 - `invokeTarget` 协议第一阶段保持兼容，不随意改格式
-- 并发执行策略、misfire 策略、状态值要兼容旧系统
+- 并发执行策略、misfire 策略和状态值保持当前系统一致
 - 任务执行异常必须写日志，不能静默吞掉
 
 ## Infrastructure 设计

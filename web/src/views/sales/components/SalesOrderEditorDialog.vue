@@ -325,7 +325,8 @@
           <el-table-column
             v-else-if="isStandaloneSalesReturnMode"
             label="成本价"
-            width="130"
+            width="155"
+            class-name="numeric-column"
           >
             <template #default="{ row }">
               <el-input
@@ -336,7 +337,7 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="数量" width="150">
+          <el-table-column label="数量" width="170" class-name="numeric-column">
             <template #default="{ row }">
               <el-input-number
                 v-model="row.quantity"
@@ -353,7 +354,7 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="销售单价" width="130">
+          <el-table-column label="销售单价" width="155" class-name="numeric-column">
             <template #default="{ row }">
               <el-input
                 v-model="row.unitPrice"
@@ -377,7 +378,7 @@
             </template>
           </el-table-column>
 
-          <el-table-column label="金额" width="120" align="right">
+          <el-table-column label="金额" width="135" align="right" class-name="numeric-column">
             <template #default="{ row }">
               {{ formatAmount(computeLineAmount(row)) }}
             </template>

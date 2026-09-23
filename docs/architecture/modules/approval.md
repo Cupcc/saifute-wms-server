@@ -4,11 +4,6 @@
 
 当前作为“轻量审核域”而不是 BPM 引擎，统一收口 `approval_document` 模式下的审核记录、审核状态查询和改单重置逻辑。当前运行态只保留 `approval` 模块、`/approval/documents/**` 路由、`approval:document:*` 权限和 `approval_document` 持久化表。
 
-## 原 Java 来源与映射范围
-
-- `business/src/main/java/com/saifute/audit`
-- `business/src/main/resources/mapper/audit`
-- 各单据 XML 中对 `saifute_audit_document` 的联表查询
 
 ## 领域对象与核心用例
 

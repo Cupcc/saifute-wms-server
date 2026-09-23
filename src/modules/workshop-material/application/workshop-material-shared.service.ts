@@ -27,6 +27,7 @@ import type { CreateWorkshopMaterialOrderDto } from "../dto/create-workshop-mate
 import type { CreateWorkshopMaterialOrderLineDto } from "../dto/create-workshop-material-order-line.dto";
 import type { QueryWorkshopMaterialOrderDto } from "../dto/query-workshop-material-order.dto";
 import type { UpdateWorkshopMaterialOrderDto } from "../dto/update-workshop-material-order.dto";
+import type { UpdateWorkshopMaterialOrderLineDto } from "../dto/update-workshop-material-order-line.dto";
 import { WorkshopMaterialRepository } from "../infrastructure/workshop-material.repository";
 import { WorkshopMaterialDocumentNumberRepository } from "../infrastructure/workshop-material-document-number.repository";
 
@@ -265,7 +266,10 @@ export class WorkshopMaterialSharedService {
   toEffectiveUpdateDto(
     existing: WorkshopMaterialOrderEntity,
     dto: UpdateWorkshopMaterialOrderDto & { stockScope?: StockScopeCode },
-  ): CreateWorkshopMaterialOrderDto & { stockScope?: StockScopeCode } {
+  ): Omit<CreateWorkshopMaterialOrderDto, "lines"> & {
+    stockScope?: StockScopeCode;
+    lines: UpdateWorkshopMaterialOrderLineDto[];
+  } {
     return {
       documentNo: existing.documentNo,
       orderType: existing.orderType,

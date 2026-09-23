@@ -101,9 +101,9 @@
       <el-table-column sortable show-overflow-tooltip label="车间" align="center" prop="workshopName" />
       <el-table-column sortable show-overflow-tooltip label="物料名称" align="center" prop="materialName" />
       <el-table-column sortable show-overflow-tooltip label="规格型号" align="center" prop="specification" />
-      <el-table-column sortable show-overflow-tooltip label="单价" align="center" prop="unitPrice" />
-      <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="returnQty" />
-      <el-table-column sortable show-overflow-tooltip label="金额" align="center" prop="amount">
+      <el-table-column sortable show-overflow-tooltip label="单价" align="center" prop="unitPrice" min-width="135" class-name="numeric-column" />
+      <el-table-column sortable show-overflow-tooltip label="数量" align="center" prop="returnQty" min-width="130" class-name="numeric-column" />
+      <el-table-column sortable show-overflow-tooltip label="金额" align="center" prop="amount" min-width="135" class-name="numeric-column">
         <template #default="scope">
           {{ formatLineAmount(scope.row) }}
         </template>

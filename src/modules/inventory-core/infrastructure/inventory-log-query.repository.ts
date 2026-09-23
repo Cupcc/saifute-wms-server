@@ -52,13 +52,11 @@ export class InventoryLogQueryRepository {
       return [];
     }
 
-    const unitCosts = this.uniqueUnitCosts(params.layerKeys);
     const scopePredicates = this.uniqueScopePredicates(params.layerKeys);
 
-    return this.prisma.inventoryLog.findMany({
+    const logs = await this.prisma.inventoryLog.findMany({
       where: {
         id: { lte: params.maxLogId },
-        unitCost: { in: unitCosts },
         OR: scopePredicates,
       },
       select: {
@@ -69,9 +67,60 @@ export class InventoryLogQueryRepository {
         direction: true,
         changeQty: true,
         unitCost: true,
+        costAmount: true,
+        operationType: true,
+        reversalOfLogId: true,
+        note: true,
+        reversalOfLog: {
+          select: {
+            direction: true,
+            operationType: true,
+            note: true,
+            costAllocations: {
+              orderBy: { sourceLogId: "asc" },
+              select: {
+                sourceLogId: true,
+                direction: true,
+                quantity: true,
+                unitCost: true,
+                costAmount: true,
+                sourceLog: {
+                  select: {
+                    materialId: true,
+                    stockScopeId: true,
+                    projectTargetId: true,
+                    businessDocumentNumber: true,
+                    businessDocumentLineId: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        costAllocations: {
+          orderBy: { sourceLogId: "asc" },
+          select: {
+            sourceLogId: true,
+            direction: true,
+            quantity: true,
+            unitCost: true,
+            costAmount: true,
+            sourceLog: {
+              select: {
+                materialId: true,
+                stockScopeId: true,
+                projectTargetId: true,
+                businessDocumentNumber: true,
+                businessDocumentLineId: true,
+              },
+            },
+          },
+        },
       },
       orderBy: { id: "asc" },
     });
+
+    return logs;
   }
 
   private buildInventoryLogWhere(
@@ -113,29 +162,16 @@ export class InventoryLogQueryRepository {
     return where;
   }
 
-  private uniqueUnitCosts(layerKeys: PriceLayerSnapshotLogKey[]) {
-    return [
-      ...new Map(
-        layerKeys.map((key) => [key.unitCost.toString(), key.unitCost]),
-      ).values(),
-    ];
-  }
-
   private uniqueScopePredicates(
     layerKeys: PriceLayerSnapshotLogKey[],
   ): Prisma.InventoryLogWhereInput[] {
     return [
       ...new Map(
         layerKeys.map((key) => [
-          [
-            key.materialId,
-            key.stockScopeId ?? "null",
-            key.projectTargetId ?? "null",
-          ].join(":"),
+          [key.materialId, key.stockScopeId ?? "null"].join(":"),
           {
             materialId: key.materialId,
             stockScopeId: key.stockScopeId,
-            projectTargetId: key.projectTargetId,
           },
         ]),
       ).values(),

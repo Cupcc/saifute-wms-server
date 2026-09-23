@@ -22,7 +22,7 @@
 
 ## 数据与部署安全
 
-- 本次没有 Prisma schema 变更，不需要数据库迁移、停写或数据回填。
+- 本次没有 Prisma schema 变更，不需要停写或数据回填。
 - `.env.prod` 权限在发布前后均为 `600`。
 - 部署脚本只同步 `dist/`、`generated/`、`node_modules/`、`web/dist/` 与根 `package.json`；没有修改 `.env.prod`、`storage/` 或 `logs/`。
 - 发布前运行时快照：`/Users/sft/Projects/saifute-wms-deploy/rollback/pre-deploy-20260813T073943Z/`。

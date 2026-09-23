@@ -28,9 +28,7 @@
 执行顺序：
 
 1. 卸载应用并确认 90 端口释放。
-2. 执行 `scripts/migration/sql/20260712-rd-procurement-free-text-binding.sql`；NULL/孤儿引用前置门禁和后置校验均为 0。
 3. 执行 Prisma 对生产库生成的剩余 additive DDL（可空列、索引、`rd_project_change_log` 表和外键）。没有 `DROP`、`TRUNCATE` 或 `DELETE`。
-4. `prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script` 返回 empty migration。
 5. 将停写备份恢复到临时验证库，关键表行数、ID 范围/总和/校验值与生产库完全一致；临时库已删除。
 
 ## 发布后验收

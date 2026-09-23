@@ -81,7 +81,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="需求数量" min-width="140">
+      <el-table-column label="需求数量" min-width="170" class-name="numeric-column">
         <template #header>
           <span class="required-column-header">需求数量</span>
         </template>
@@ -96,7 +96,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="参考单价" min-width="140">
+      <el-table-column label="参考单价" min-width="155" class-name="numeric-column">
         <template #default="{ row }">
           <el-input-number
             v-model="row.unitPrice"
@@ -108,7 +108,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="金额" min-width="130">
+      <el-table-column label="金额" min-width="135" class-name="numeric-column">
         <template #default="{ row }">{{ calculateLineAmount(row) }}</template>
       </el-table-column>
 

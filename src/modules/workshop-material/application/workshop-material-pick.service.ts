@@ -10,20 +10,13 @@ import {
   Prisma,
   WorkshopMaterialOrderType,
 } from "../../../../generated/prisma/client";
-import {
-  FIFO_SOURCE_OPERATION_TYPES,
-  InventoryService,
-} from "../../inventory-core/application/inventory.service";
-import { type StockScopeCode } from "../../session/domain/user-session";
-import { toOperationType } from "../domain/workshop-material-order-type.helper";
 import type { CreateWorkshopMaterialOrderDto } from "../dto/create-workshop-material-order.dto";
 import type { CreateWorkshopMaterialOrderLineDto } from "../dto/create-workshop-material-order-line.dto";
 import type { QueryWorkshopMaterialOrderDto } from "../dto/query-workshop-material-order.dto";
 import type { UpdateWorkshopMaterialOrderDto } from "../dto/update-workshop-material-order.dto";
+import { WorkshopMaterialPickRevisionHelpers } from "./workshop-material-pick-revision.helpers";
 import {
-  WORKSHOP_MATERIAL_BUSINESS_MODULE,
   WORKSHOP_MATERIAL_DOCUMENT_TYPE,
-  type WorkshopMaterialLineWriteData,
   type WorkshopMaterialOrderLineEntity,
   WorkshopMaterialSharedService,
 } from "./workshop-material-shared.service";
@@ -36,8 +29,11 @@ import {
 @Injectable()
 export class WorkshopMaterialPickService {
   private readonly orderType = WorkshopMaterialOrderType.PICK;
+  private readonly revisionHelpers: WorkshopMaterialPickRevisionHelpers;
 
-  constructor(private readonly shared: WorkshopMaterialSharedService) {}
+  constructor(private readonly shared: WorkshopMaterialSharedService) {
+    this.revisionHelpers = new WorkshopMaterialPickRevisionHelpers(shared);
+  }
 
   // ─── Reads ────────────────────────────────────────────────────────────────
 
@@ -126,17 +122,18 @@ export class WorkshopMaterialPickService {
           tx,
         );
 
-        const settledTotalAmount = await this.settleConsumerOutForLines({
-          orderId: order.id,
-          documentNo: order.documentNo,
-          inventoryStockScope,
-          bizDate,
-          lines: order.lines,
-          inputLines: dto.lines,
-          idempotencyPrefix: `${WORKSHOP_MATERIAL_DOCUMENT_TYPE}:${order.id}`,
-          operatorId: createdBy,
-          tx,
-        });
+        const settledTotalAmount =
+          await this.revisionHelpers.settleConsumerOutForLines({
+            orderId: order.id,
+            documentNo: order.documentNo,
+            inventoryStockScope,
+            bizDate,
+            lines: order.lines,
+            inputLines: dto.lines,
+            idempotencyPrefix: `${WORKSHOP_MATERIAL_DOCUMENT_TYPE}:${order.id}`,
+            operatorId: createdBy,
+            tx,
+          });
 
         const settledOrder = await this.shared.repository.updateOrder(
           order.id,
@@ -210,8 +207,6 @@ export class WorkshopMaterialPickService {
       }
       this.shared.assertOrderMutable(currentOrder);
 
-      const nextRevision = currentOrder.revisionNo + 1;
-
       const hasReturn = await this.shared.repository.hasActiveReturnDownstream(
         id,
         tx,
@@ -220,39 +215,261 @@ export class WorkshopMaterialPickService {
         throw new BadRequestException("存在未作废的退料单下游，不能修改领料单");
       }
 
-      await this.shared.releaseAllSourceUsages(id, updatedBy, tx);
+      const businessDateChanged = !this.revisionHelpers.sameCalendarDate(
+        currentOrder.bizDate,
+        bizDate,
+      );
+      const currentLinesById = new Map(
+        currentOrder.lines.map((line) => [line.id, line]),
+      );
+      const seenLineIds = new Set<number>();
+      let hasActualChange =
+        businessDateChanged ||
+        currentOrder.handlerPersonnelId !==
+          (effectiveDto.handlerPersonnelId ?? null) ||
+        currentOrder.workshopId !== workshopId ||
+        (currentOrder.remark ?? null) !== (effectiveDto.remark ?? null);
 
-      await this.shared.reverseAllLogsForOrder(
+      for (let index = 0; index < effectiveDto.lines.length; index++) {
+        const incomingLine = effectiveDto.lines[index];
+        if (!incomingLine.id) {
+          hasActualChange = true;
+          continue;
+        }
+        if (seenLineIds.has(incomingLine.id)) {
+          throw new BadRequestException(`重复的明细 ID: ${incomingLine.id}`);
+        }
+        const currentLine = currentLinesById.get(incomingLine.id);
+        if (!currentLine) {
+          throw new BadRequestException(`明细不存在: ${incomingLine.id}`);
+        }
+        seenLineIds.add(incomingLine.id);
+        const lineData = linesWithSnapshots[index];
+        const inventoryNeedsRepost =
+          businessDateChanged ||
+          currentLine.materialId !== lineData.materialId ||
+          !new Prisma.Decimal(currentLine.quantity).eq(lineData.quantity) ||
+          !this.revisionHelpers.currentCostMatchesSelection(
+            currentLine,
+            incomingLine,
+          ) ||
+          (await this.revisionHelpers.manualSourceNeedsRepost(
+            id,
+            currentLine.id,
+            incomingLine.sourceLogId,
+            tx,
+          ));
+        if (
+          inventoryNeedsRepost ||
+          this.revisionHelpers.lineNeedsDataUpdate(
+            currentLine,
+            lineData,
+            incomingLine,
+          )
+        ) {
+          hasActualChange = true;
+        }
+      }
+
+      if (
+        currentOrder.lines.some(
+          (currentLine) => !seenLineIds.has(currentLine.id),
+        )
+      ) {
+        hasActualChange = true;
+      }
+      if (!hasActualChange) {
+        return currentOrder;
+      }
+
+      const nextRevision = currentOrder.revisionNo + 1;
+
+      const logs = await this.shared.inventoryService.getLogsForDocument(
         {
-          orderId: id,
-          documentNo: currentOrder.documentNo,
-          keySuffix: `rev:${id}:r${nextRevision}`,
-          note: `改单重算冲回: ${currentOrder.documentNo}`,
+          businessDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
+          businessDocumentId: id,
         },
         tx,
       );
-
-      await this.shared.repository.deleteOrderLinesByOrderId(id, tx);
-
-      const recreatedLines = await this.recreateLines(
-        id,
-        linesWithSnapshots,
-        effectiveDto.lines,
-        updatedBy,
-        tx,
+      const logByLineId = new Map(
+        logs
+          .filter((log) => log.businessDocumentLineId !== null)
+          .map((log) => [log.businessDocumentLineId as number, log]),
       );
+      // Removed lines are the only lines that need to be reversed for a
+      // deletion. Unchanged lines keep their original inventory history.
+      for (const currentLine of currentOrder.lines) {
+        if (seenLineIds.has(currentLine.id)) continue;
 
-      const settledTotalAmount = await this.settleConsumerOutForLines({
-        orderId: id,
-        documentNo: currentOrder.documentNo,
-        inventoryStockScope,
-        bizDate,
-        lines: recreatedLines,
-        inputLines: effectiveDto.lines,
-        idempotencyPrefix: `${WORKSHOP_MATERIAL_DOCUMENT_TYPE}:${id}:rev:${nextRevision}`,
-        operatorId: updatedBy,
-        tx,
-      });
+        const currentLog = logByLineId.get(currentLine.id);
+        if (!currentLog) {
+          throw new BadRequestException(
+            `未找到明细对应的库存流水: lineId=${currentLine.id}`,
+          );
+        }
+
+        await this.shared.inventoryService.releaseSourceUsagesForConsumerLine(
+          {
+            consumerDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
+            consumerDocumentId: id,
+            consumerLineId: currentLine.id,
+            operatorId: updatedBy,
+          },
+          tx,
+        );
+        await this.shared.inventoryService.reverseStock(
+          {
+            logIdToReverse: currentLog.id,
+            idempotencyKey: `${WORKSHOP_MATERIAL_DOCUMENT_TYPE}:${id}:rev:${nextRevision}:delete:${currentLine.id}`,
+            note: `改单删除明细冲回: ${currentOrder.documentNo}`,
+          },
+          tx,
+        );
+        await this.shared.repository.deleteOrderLine(currentLine.id, tx);
+      }
+
+      const lineNoChanges: Array<{
+        currentLine: WorkshopMaterialOrderLineEntity;
+        lineNo: number;
+      }> = [];
+      for (let index = 0; index < effectiveDto.lines.length; index++) {
+        const incomingLine = effectiveDto.lines[index];
+        if (!incomingLine.id) continue;
+        const currentLine = currentLinesById.get(incomingLine.id);
+        if (
+          currentLine &&
+          currentLine.lineNo !== linesWithSnapshots[index].lineNo
+        ) {
+          lineNoChanges.push({
+            currentLine,
+            lineNo: linesWithSnapshots[index].lineNo,
+          });
+        }
+      }
+      if (lineNoChanges.length > 1) {
+        // Free the unique (order_id, line_no) slots before applying a reorder.
+        // This only touches rows whose display order changed; it has no
+        // inventory effect.
+        for (const { currentLine } of lineNoChanges) {
+          await this.shared.repository.updateOrderLine(
+            currentLine.id,
+            { lineNo: -currentLine.id, updatedBy },
+            tx,
+          );
+        }
+      }
+
+      let settledTotalAmount = new Prisma.Decimal(0);
+      for (let index = 0; index < effectiveDto.lines.length; index++) {
+        const incomingLine = effectiveDto.lines[index];
+        const lineData = linesWithSnapshots[index];
+
+        if (incomingLine.id) {
+          const currentLine = currentLinesById.get(incomingLine.id);
+          if (!currentLine) {
+            throw new BadRequestException(`明细不存在: ${incomingLine.id}`);
+          }
+
+          const inventoryNeedsRepost =
+            businessDateChanged ||
+            currentLine.materialId !== lineData.materialId ||
+            !new Prisma.Decimal(currentLine.quantity).eq(lineData.quantity) ||
+            !this.revisionHelpers.currentCostMatchesSelection(
+              currentLine,
+              incomingLine,
+            ) ||
+            (await this.revisionHelpers.manualSourceNeedsRepost(
+              id,
+              currentLine.id,
+              incomingLine.sourceLogId,
+              tx,
+            ));
+
+          if (inventoryNeedsRepost) {
+            const currentLog = logByLineId.get(currentLine.id);
+            if (!currentLog) {
+              throw new BadRequestException(
+                `未找到明细对应的库存流水: lineId=${currentLine.id}`,
+              );
+            }
+
+            await this.shared.inventoryService.releaseSourceUsagesForConsumerLine(
+              {
+                consumerDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
+                consumerDocumentId: id,
+                consumerLineId: currentLine.id,
+                operatorId: updatedBy,
+              },
+              tx,
+            );
+            await this.shared.inventoryService.reverseStock(
+              {
+                logIdToReverse: currentLog.id,
+                idempotencyKey: `${WORKSHOP_MATERIAL_DOCUMENT_TYPE}:${id}:rev:${nextRevision}:replace:${currentLine.id}`,
+                note: `改单重算明细冲回: ${currentOrder.documentNo}`,
+              },
+              tx,
+            );
+          }
+
+          const updatedLine = await this.revisionHelpers.updateExistingLine(
+            currentLine,
+            lineData,
+            incomingLine,
+            inventoryNeedsRepost,
+            updatedBy,
+            tx,
+          );
+
+          if (inventoryNeedsRepost) {
+            settledTotalAmount = settledTotalAmount.add(
+              await this.revisionHelpers.settleConsumerOutForLine({
+                orderId: id,
+                documentNo: currentOrder.documentNo,
+                inventoryStockScope,
+                bizDate,
+                line: updatedLine,
+                inputLine: incomingLine,
+                idempotencyKey: `${WORKSHOP_MATERIAL_DOCUMENT_TYPE}:${id}:rev:${nextRevision}:line:${updatedLine.id}`,
+                operatorId: updatedBy,
+                tx,
+              }),
+            );
+          } else {
+            settledTotalAmount = settledTotalAmount.add(
+              this.revisionHelpers.lineAmount(currentLine),
+            );
+          }
+          continue;
+        }
+
+        const createdLine = await this.shared.repository.createOrderLine(
+          {
+            orderId: id,
+            ...lineData,
+            sourceDocumentType: incomingLine.sourceDocumentType,
+            sourceDocumentId: incomingLine.sourceDocumentId ?? undefined,
+            sourceDocumentLineId:
+              incomingLine.sourceDocumentLineId ?? undefined,
+            createdBy: updatedBy,
+            updatedBy,
+          },
+          tx,
+        );
+        settledTotalAmount = settledTotalAmount.add(
+          await this.revisionHelpers.settleConsumerOutForLine({
+            orderId: id,
+            documentNo: currentOrder.documentNo,
+            inventoryStockScope,
+            bizDate,
+            line: createdLine,
+            inputLine: incomingLine,
+            idempotencyKey: `${WORKSHOP_MATERIAL_DOCUMENT_TYPE}:${id}:rev:${nextRevision}:line:${createdLine.id}`,
+            operatorId: updatedBy,
+            tx,
+          }),
+        );
+      }
 
       await this.shared.repository.updateOrder(
         id,
@@ -368,90 +585,5 @@ export class WorkshopMaterialPickService {
       },
       lineNo,
     );
-  }
-
-  private async recreateLines(
-    orderId: number,
-    linesWithSnapshots: WorkshopMaterialLineWriteData[],
-    inputLines: CreateWorkshopMaterialOrderLineDto[],
-    operatorId: string | undefined,
-    tx: Prisma.TransactionClient,
-  ): Promise<WorkshopMaterialOrderLineEntity[]> {
-    const created: WorkshopMaterialOrderLineEntity[] = [];
-    for (let idx = 0; idx < linesWithSnapshots.length; idx++) {
-      const lineData = linesWithSnapshots[idx];
-      const inputLine = inputLines[idx];
-      const createdLine = await this.shared.repository.createOrderLine(
-        {
-          orderId,
-          ...lineData,
-          sourceDocumentType: inputLine?.sourceDocumentType,
-          sourceDocumentId: inputLine?.sourceDocumentId ?? undefined,
-          sourceDocumentLineId: inputLine?.sourceDocumentLineId ?? undefined,
-          createdBy: operatorId,
-          updatedBy: operatorId,
-        },
-        tx,
-      );
-      created.push(createdLine);
-    }
-    return created;
-  }
-
-  private async settleConsumerOutForLines(params: {
-    orderId: number;
-    documentNo: string;
-    inventoryStockScope: StockScopeCode;
-    bizDate: Date;
-    lines: WorkshopMaterialOrderLineEntity[];
-    inputLines: CreateWorkshopMaterialOrderLineDto[];
-    idempotencyPrefix: string;
-    operatorId?: string;
-    tx: Prisma.TransactionClient;
-  }): Promise<Prisma.Decimal> {
-    const operationType = toOperationType(this.orderType);
-    const sourceTypes = FIFO_SOURCE_OPERATION_TYPES.filter(
-      (t) => t !== "RD_HANDOFF_IN",
-    );
-    let settledTotalAmount = new Prisma.Decimal(0);
-
-    for (const line of params.lines) {
-      const lineDto = params.inputLines[line.lineNo - 1];
-      const settlement = await (
-        this.shared.inventoryService as InventoryService
-      ).settleConsumerOut(
-        {
-          materialId: line.materialId,
-          stockScope: params.inventoryStockScope,
-          bizDate: params.bizDate,
-          quantity: line.quantity,
-          operationType,
-          businessModule: WORKSHOP_MATERIAL_BUSINESS_MODULE,
-          businessDocumentType: WORKSHOP_MATERIAL_DOCUMENT_TYPE,
-          businessDocumentId: params.orderId,
-          businessDocumentNumber: params.documentNo,
-          businessDocumentLineId: line.id,
-          operatorId: params.operatorId,
-          idempotencyKey: `${params.idempotencyPrefix}:line:${line.id}`,
-          consumerLineId: line.id,
-          sourceLogId: lineDto?.sourceLogId ?? undefined,
-          selectedUnitCost: lineDto?.selectedUnitCost ?? undefined,
-          sourceOperationTypes: sourceTypes,
-        },
-        params.tx,
-      );
-      await this.shared.repository.updateOrderLineCost(
-        line.id,
-        {
-          costUnitPrice: settlement.settledUnitCost,
-          costAmount: settlement.settledCostAmount,
-          unitPrice: settlement.settledUnitCost,
-          amount: settlement.settledCostAmount,
-        },
-        params.tx,
-      );
-      settledTotalAmount = settledTotalAmount.add(settlement.settledCostAmount);
-    }
-    return settledTotalAmount;
   }
 }

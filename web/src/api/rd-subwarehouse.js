@@ -119,6 +119,44 @@ export function reverseRdProcurementStatusAction(requestId, historyId, data) {
   });
 }
 
+export function listRdProcurementDemands(params = {}) {
+  return request({
+    url: "/api/rd-subwarehouse/procurement-demand",
+    method: "get",
+    params,
+  });
+}
+
+export function getRdProcurementDemand(demandId) {
+  return request({
+    url: `/api/rd-subwarehouse/procurement-demand/${demandId}`,
+    method: "get",
+  });
+}
+
+export function createRdProcurementDemands(data) {
+  return request({
+    url: "/api/rd-subwarehouse/procurement-demand",
+    method: "post",
+    data,
+  });
+}
+
+export function updateRdProcurementDemand(demandId, data) {
+  return request({
+    url: `/api/rd-subwarehouse/procurement-demand/${demandId}`,
+    method: "patch",
+    data,
+  });
+}
+
+export function deleteRdProcurementDemand(demandId) {
+  return request({
+    url: `/api/rd-subwarehouse/procurement-demand/${demandId}`,
+    method: "delete",
+  });
+}
+
 export function listRdProjects(params = {}) {
   return request({
     url: "/api/rd-projects",

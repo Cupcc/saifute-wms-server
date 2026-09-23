@@ -10,7 +10,7 @@
 - 这些表背后的关键业务流程与状态语义
 - `Prisma` 模型与数据结构映射口径
 
-该文档解决的问题是：原 Java 设计可能把主数据、库存副作用、审核状态、单据字段混杂在一起，导致模块职责和表职责不清。NestJS 版本统一按领域重构，不直接照搬旧表。
+该文档冻结当前系统的表职责、领域边界和业务语义，NestJS 版本统一按领域组织。
 
 范围说明：
 
@@ -99,7 +99,7 @@ flowchart TD
 
 - 因此本文第 `5.1` 节“入库家族”就是当前 NestJS 的 `inbound` 模块设计口径，不是遗漏。
 - **成品入库**（生产完工入库）统一走 `inbound`（生产入库单），与验收单共表；产品「生产车间」页面与业务划分应基于 `master-data.workshop`，而不是系统管理中的 `department`。`workshop` 主档仍表示归属/核算维度，与 `workshop-material`（领退料报废）边界分离。
-- NestJS 按“模块聚合 + 家族共表”组织接口，而不是按 Java 的“每类单据一套 controller + 一套表”复刻。
+- NestJS 按“模块聚合 + 家族共表”组织接口，保持领域边界与数据职责清晰。
 
 ## 4. 共享核心业务流程
 
@@ -226,11 +226,12 @@ NestJS `sales` 模块映射补充：
 - 销售出库行使用 `selectedUnitCost` 记录用户选定的库存价格层；`unitPrice` 保持对客户的业务销售单价口径，不是库存成本价，也不承载库存成本层语义
 - 系统在用户选定的价格层内部自动按 FIFO 分配到具体来源，写入 `inventory_source_usage`
 - 出库过账后将实际来源分配汇总为 `costUnitPrice` / `costAmount`，作为该出库行的历史成本快照
+- 多价格层出库时，`inventory_log` 按单据明细的实际成本价格层各写一行；同一物料的 116 元和 117 元必须是两条独立流水。每行保存该层数量、单价和金额；同一层内部如消耗多个来源，再通过不可变成本分配明细记录（出库流水、来源流水、方向、数量、单价、金额）。库存余额在同一过账事务中按这些层行数量合计只更新一次，不能再把加权平均 `unitCost` 作为价格层键。
 
 历史数据兼容补充：
 
 - 在线运行时仍可保持“销售退货创建时优先校验来源出库关系”的策略。
-- 历史迁移数据在无法证明上游关系时，行内 `sourceDocumentType/sourceDocumentId/sourceDocumentLineId` 可为空。
+- 历史数据在无法证明上游关系时，行内 `sourceDocumentType/sourceDocumentId/sourceDocumentLineId` 可为空。
 
 ### 5.3 车间物料家族
 
@@ -252,7 +253,7 @@ NestJS `sales` 模块映射补充：
 
 历史数据兼容补充：
 
-- 历史迁移数据在无法证明上游领料关系时，行内 `sourceDocumentType/sourceDocumentId/sourceDocumentLineId` 可为空。
+- 历史数据在无法证明上游领料关系时，行内 `sourceDocumentType/sourceDocumentId/sourceDocumentLineId` 可为空。
 
 审核策略补充：
 
@@ -326,6 +327,9 @@ NestJS `rd-project` / `reporting` 模块映射补充：
 | `cross-document`    | `document_line_relation`       | 表   | 行级上下游关系            |
 | `audit-log`         | `sys_logininfor`               | 表   | 登录日志               |
 | `audit-log`         | `sys_oper_log`                 | 表   | 操作日志               |
+| `audit-log`         | `document_change_log`          | 表   | 单据前后版本、完整快照与逐字段差异（领料审计历史，计划中） |
+| `audit-log`         | `document_change_line_map`     | 表   | 变更历史旧行到新行的稳定映射（计划中） |
+| `audit-log`         | `document_change_inventory_link` | 表 | 变更历史与冲回 / 出库库存流水关联（计划中） |
 | `scheduler`         | `sys_job`                      | 表   | 定时任务定义             |
 | `scheduler`         | `sys_job_log`                  | 表   | 定时任务执行日志           |
 | `reporting`         | `vw_inventory_warning`         | 视图  | 库存预警读模型            |
@@ -372,7 +376,7 @@ NestJS `rd-project` / `reporting` 模块映射补充：
 - 对历史上无法明确判定库存范围的数据，默认归到 `MAIN`；确需留痕时使用受控历史兜底范围，而不是默认车间
 - `inventory_balance` 仅以 `stockScopeId` 作为真实库存维度，`workshop` 归属直接落在 `inventory_log.workshopId` 与关联单据字段中
 - `inventory_log` 强制记录 `bizDate`（业务日期），月度出入库统计与跨模块时段分析必须以此为准
-- `projectId` 只用于研发项目逻辑模型，不直接等同库存池；当前仍映射 legacy `projectId` 物理列
+- `projectId` 只用于研发项目逻辑模型，不直接等同库存池；当前使用 `projectId` 物理列
 - 未来若落地销售项目，销售出库 / 退货侧应显式使用 `salesProjectId` 及对应项目快照字段，不与 `rd_project*` 复用同名字段
 - 同一物料不同来源批次允许不同成本层；入库类成本写入 `inventory_log.unitCost` / `costAmount`，出库类成本由 `inventory_source_usage.sourceLogId` 回连来源流水后汇总
 - `inventory_warning` 不落交易表，改为读模型视图 `vw_inventory_warning`
@@ -388,7 +392,7 @@ NestJS `rd-project` / `reporting` 模块映射补充：
 - 审核表只保存当前有效审核状态
 - 审核动作的细粒度日志继续落 `audit-log`
 - `approval` 不和单据表建立多态外键，避免跨模块强耦合
-- 数据库 cutover 后只保留 `approval_document` 作为当前审核投影真源；历史 SQL / migration 需同步改到 canonical 名称
+- 当前只保留 `approval_document` 作为审核投影真源
 
 ## 6.5 `inbound` 表
 
@@ -432,22 +436,24 @@ NestJS `rd-project` / `reporting` 模块映射补充：
 - 销售退货与出库的主关系优先通过关系表表达，不在主表持续堆砌特化字段
 - `unitPrice` / `amount` 是业务销售金额；`selectedUnitCost` 是用户选中的库存价格层；`costUnitPrice` / `costAmount` 是过账后固化的成本快照
 - 第一阶段销售出库与销售退货默认作用于主仓 `MAIN`
-- 对历史迁移数据，行级 `sourceDocument*` 可作为可空增强字段
+- 对历史数据，行级 `sourceDocument*` 可作为可空增强字段
 
 ## 6.7 `workshop-material` 表
 
 | 表名                             | 说明         | 关键字段                                                                           | 关键约束                  |
 | ------------------------------ | ---------- | ------------------------------------------------------------------------------ | --------------------- |
 | `workshop_material_order`      | 领料、退料、报废主表 | `documentNo`、`orderType`、`stockScopeId`、`workshopId`、`handlerPersonnelId`、三轴状态 | `documentNo` 唯一       |
-| `workshop_material_order_line` | 车间物料明细     | `orderId`、`lineNo`、`materialId`、`quantity`、`unitPrice`、`amount`                | `orderId + lineNo` 唯一 |
+| `workshop_material_order_line` | 车间物料明细     | `orderId`、`lineKey`、`lineNo`、`materialId`、`quantity`、`unitPrice`、`amount` | `orderId + lineNo` 唯一；`orderId + lineKey` 唯一 |
 
 补充说明：
 
 - `WorkshopMaterialOrderType.PICK`、`RETURN`、`SCRAP` 共用同一套主从表
-- 退料与领料的回冲关系优先通过关系表表达，不继续复制 Java 的零散关系设计
+- 退料与领料的回冲关系优先通过关系表表达，不复制分散的关系设计
 - `SCRAP` 在统计和库存语义上属于独立真实事务，不默认视为 `PICK` 的附属结果
 - 第一阶段 `workshop-material` 的 `stockScopeId` 固定为主仓 `MAIN`；`workshopId` 只用于归属与成本核算，不代表车间库存
-- 对历史迁移数据，行级 `sourceDocument*` 可作为可空增强字段
+- 对历史数据，行级 `sourceDocument*` 可作为可空增强字段
+
+领料单审计历史使用 `document_change_log` 记录 `create / update / void` 的前后版本和完整 JSON 快照，使用 `document_change_line_map` 保存旧行到新行的 `lineKey` / 数据库 ID 映射，使用 `document_change_inventory_link` 关联旧出库逆流水、冲回流水、新出库流水及来源使用记录。历史表只追加不修改、不删除；改单写历史与库存补偿必须在同一事务内完成。历史数据重建时只能标注“依据库存流水重建”。
 
 ## 6.8 `rd-project` 逻辑模型 / `rd_project*` 物理表
 

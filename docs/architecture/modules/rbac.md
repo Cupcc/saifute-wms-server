@@ -18,18 +18,6 @@
 - `system-management` 主题可以继续复用 `rbac` 的管理面与仓储实现，但不能在前后端额外复制第二套权限 / 路由 / 数据权限真源。
 - `岗位 / 字典 / 参数 / 通知` 即使物理上继续与 `rbac` 共置实现，也应被视为 `system-management` 主题下的平台辅助对象，而不是授权真源的中心定义。
 
-## 原 Java 来源与映射范围
-
-- `ruoyi-framework/.../PermissionService.java`
-- `ruoyi-framework/.../SysPermissionService.java`
-- `ruoyi-framework/.../PermissionContextHolder.java`
-- `ruoyi-framework/.../DataScopeAspect.java`
-- `ruoyi-common/.../annotation/DataScope.java`
-- `ruoyi-system/.../SysUserServiceImpl.java`
-- `ruoyi-system/.../SysRoleServiceImpl.java`
-- `ruoyi-system/.../SysMenuServiceImpl.java`
-- `ruoyi-system/.../SysDeptServiceImpl.java`
-- `ruoyi-system/resources/mapper/system/*.xml`
 
 ## 领域对象与核心用例
 

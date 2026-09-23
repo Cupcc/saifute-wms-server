@@ -1,4 +1,5 @@
 import { Test } from "@nestjs/testing";
+import { Workbook } from "exceljs";
 import { Prisma } from "../../../../generated/prisma/client";
 import { AppConfigService } from "../../../shared/config/app-config.service";
 import { MonthlyMaterialCategoryRepository } from "../infrastructure/monthly-material-category.repository";
@@ -216,11 +217,44 @@ describe("MonthlyReportExportService", () => {
     };
   }
 
+  async function stringifyWorkbook(content: Uint8Array): Promise<string> {
+    const workbook = new Workbook();
+    await workbook.xlsx.load(Buffer.from(content) as never);
+
+    return workbook.worksheets
+      .map((worksheet) => {
+        const rows: string[] = [`<Worksheet ss:Name="${worksheet.name}">`];
+        worksheet.eachRow((row) => {
+          row.eachCell({ includeEmpty: false }, (cell) => {
+            const value = cell.value;
+            const unwrappedValue =
+              value && typeof value === "object" && "result" in value
+                ? value.result
+                : value;
+            if (
+              unwrappedValue === null ||
+              typeof unwrappedValue === "undefined"
+            ) {
+              return;
+            }
+            const dataType =
+              typeof unwrappedValue === "number" ? "Number" : "String";
+            rows.push(
+              `<Data ss:Type="${dataType}">${String(unwrappedValue)}</Data>`,
+            );
+          });
+        });
+        return rows.join("");
+      })
+      .join("");
+  }
+
   function extractWorksheet(content: string, sheetName: string): string {
-    const startIndex = content.indexOf(`<Worksheet ss:Name="${sheetName}">`);
+    const text = content;
+    const startIndex = text.indexOf(`<Worksheet ss:Name="${sheetName}">`);
     expect(startIndex).toBeGreaterThanOrEqual(0);
 
-    const worksheetContent = content.slice(startIndex);
+    const worksheetContent = text.slice(startIndex);
     const nextWorksheetIndex = worksheetContent.indexOf(
       '<Worksheet ss:Name="',
       1,
@@ -293,56 +327,51 @@ describe("MonthlyReportExportService", () => {
       materialId: 501,
     });
 
-    expect(exportResult.fileName).toBe("物料分类月报-2026-03.xls");
+    expect(exportResult.fileName).toBe("物料分类月报-2026-03.xlsx");
     expect(exportResult.fallbackFileName).toBe(
-      "monthly-reporting-material-category-2026-03.xls",
+      "monthly-reporting-material-category-2026-03.xlsx",
     );
-    expect(exportResult.content).toContain('<Worksheet ss:Name="分类汇总">');
-    expect(exportResult.content).toContain('<Worksheet ss:Name="物料汇总">');
-    expect(exportResult.content).toContain('<Worksheet ss:Name="单据行明细">');
-    expect(exportResult.content).toContain("2026-03 物料分类月报 - 分类汇总");
-    expect(exportResult.content).toContain("2026-03 物料分类月报 - 物料汇总");
-    expect(exportResult.content).toContain(
-      "2026-03 物料分类月报 - 车间使用汇总",
+    expect(exportResult.content.subarray(0, 4).toString("hex")).toBe(
+      "504b0304",
     );
-    expect(exportResult.content).toContain("2026-03 物料分类月报 - 单据行明细");
-    expect(exportResult.content).toContain('<Style ss:ID="Title">');
-    expect(exportResult.content).toContain(
-      'ss:MergeAcross="20" ss:StyleID="Title"><Data ss:Type="String">2026-03 物料分类月报 - 单据行明细',
-    );
-    expect(exportResult.content).toContain(
-      '<Column ss:Width="160" /><Column ss:Width="100" />',
-    );
-    expect(exportResult.content).toContain("化工");
-    expect(exportResult.content).toContain("原料 A");
-    expect(exportResult.content).toContain("月初金额");
-    expect(exportResult.content).toContain("入库金额");
-    expect(exportResult.content).toContain("出库金额");
-    expect(exportResult.content).toContain("月末金额");
-    expect(exportResult.content).toContain("销售退货数量");
-    expect(exportResult.content).toContain("销售出库销售价金额");
-    expect(exportResult.content).toContain("销售出库成本");
-    expect(exportResult.content).toContain("销售退货销售价金额");
-    expect(exportResult.content).toContain("销售退货成本");
-    expect(exportResult.content).toContain("销售金额");
-    expect(exportResult.content).toContain("库存净变动数量");
-    expect(exportResult.content).toContain("金额变动");
-    expect(exportResult.content).toContain("100.00");
-    expect(exportResult.content).toContain("108.00");
-    expect(exportResult.content).toContain('<Data ss:Type="Number">3</Data>');
-    expect(exportResult.content).not.toContain("3.000000");
-    expect(exportResult.content).not.toContain("总成本");
-    expect(exportResult.content).not.toContain("分类路径");
-    expect(exportResult.content).not.toContain("层级");
-    expect(exportResult.content).toContain("来源月份");
-    expect(exportResult.content).toContain("来源单据");
-    expect(exportResult.content).not.toContain("异常单据数");
-    expect(exportResult.content).not.toContain("异常标识");
-    expect(exportResult.content).toContain("XSTH-001");
-    expect(exportResult.content).not.toContain("FILTERED-OUT-001");
-    expect(exportResult.content).not.toContain("不应导出的物料 B");
+    const workbookText = await stringifyWorkbook(exportResult.content);
+    expect(workbookText).toContain('<Worksheet ss:Name="分类汇总">');
+    expect(workbookText).toContain('<Worksheet ss:Name="物料汇总">');
+    expect(workbookText).toContain('<Worksheet ss:Name="单据行明细">');
+    expect(workbookText).toContain("2026-03 物料分类月报 - 分类汇总");
+    expect(workbookText).toContain("2026-03 物料分类月报 - 物料汇总");
+    expect(workbookText).toContain("2026-03 物料分类月报 - 车间使用汇总");
+    expect(workbookText).toContain("2026-03 物料分类月报 - 单据行明细");
+    expect(workbookText).toContain("化工");
+    expect(workbookText).toContain("原料 A");
+    expect(workbookText).toContain("月初金额");
+    expect(workbookText).toContain("入库金额");
+    expect(workbookText).toContain("出库金额");
+    expect(workbookText).toContain("月末金额");
+    expect(workbookText).toContain("销售退货数量");
+    expect(workbookText).toContain("销售出库销售价金额");
+    expect(workbookText).toContain("销售出库成本");
+    expect(workbookText).toContain("销售退货销售价金额");
+    expect(workbookText).toContain("销售退货成本");
+    expect(workbookText).toContain("销售金额");
+    expect(workbookText).toContain("库存净变动数量");
+    expect(workbookText).toContain("金额变动");
+    expect(workbookText).toContain("100");
+    expect(workbookText).toContain("108");
+    expect(workbookText).toContain('<Data ss:Type="Number">3</Data>');
+    expect(workbookText).not.toContain("3.000000");
+    expect(workbookText).not.toContain("总成本");
+    expect(workbookText).not.toContain("分类路径");
+    expect(workbookText).not.toContain("层级");
+    expect(workbookText).toContain("来源月份");
+    expect(workbookText).toContain("来源单据");
+    expect(workbookText).not.toContain("异常单据数");
+    expect(workbookText).not.toContain("异常标识");
+    expect(workbookText).toContain("XSTH-001");
+    expect(workbookText).not.toContain("FILTERED-OUT-001");
+    expect(workbookText).not.toContain("不应导出的物料 B");
 
-    const categorySheet = extractWorksheet(exportResult.content, "分类汇总");
+    const categorySheet = extractWorksheet(workbookText, "分类汇总");
     expect(categorySheet).not.toContain("单据行数");
     expect(categorySheet).not.toContain("单据数");
     expect(categorySheet).not.toContain("验收入库数量");
@@ -368,7 +397,7 @@ describe("MonthlyReportExportService", () => {
       "车间净耗用成本",
       "金额变动",
     ]);
-    expectLabelsInOrder(extractWorksheet(exportResult.content, "物料汇总"), [
+    expectLabelsInOrder(extractWorksheet(workbookText, "物料汇总"), [
       "业务单据数",
       "月初数量",
       "月初金额",
@@ -380,7 +409,7 @@ describe("MonthlyReportExportService", () => {
       "月末金额",
       "库存流入数量",
     ]);
-    expectLabelsInOrder(extractWorksheet(exportResult.content, "单据行明细"), [
+    expectLabelsInOrder(extractWorksheet(workbookText, "单据行明细"), [
       "数量",
       "成本单价",
       "成本金额",
@@ -413,11 +442,12 @@ describe("MonthlyReportExportService", () => {
       viewMode: MonthlyReportingViewMode.MATERIAL_CATEGORY,
     });
 
-    expect(exportResult.content).toContain("原料 A");
-    expect(exportResult.content).not.toContain("M-BALANCE-ONLY");
-    expect(exportResult.content).not.toContain("无本月发生物料");
-    expect(exportResult.content).not.toContain("98765.43");
-    expect(exportResult.content).not.toContain("87654.32");
+    const workbookText = await stringifyWorkbook(exportResult.content);
+    expect(workbookText).toContain("原料 A");
+    expect(workbookText).not.toContain("M-BALANCE-ONLY");
+    expect(workbookText).not.toContain("无本月发生物料");
+    expect(workbookText).not.toContain("98765.43");
+    expect(workbookText).not.toContain("87654.32");
   });
 
   it("should export excel content using the same filtered contract", async () => {
@@ -456,29 +486,27 @@ describe("MonthlyReportExportService", () => {
       keyword: "RDH-002",
     });
 
-    expect(result.fileName).toBe("月度对账报表-2026-03.xls");
-    expect(result.fallbackFileName).toBe("monthly-reporting-2026-03.xls");
-    expect(result.contentType).toContain("application/vnd.ms-excel");
-    expect(result.content).toContain('<Worksheet ss:Name="单据类型汇总">');
-    expect(result.content).toContain("2026-03 月度对账报表 - 总览");
-    expect(result.content).toContain("2026-03 月度对账报表 - 单据类型汇总");
-    expect(result.content).toContain("2026-03 月度对账报表 - 单据头明细");
-    expect(result.content).toContain(
-      'ss:MergeAcross="17" ss:StyleID="Title"><Data ss:Type="String">2026-03 月度对账报表 - 单据头明细',
+    expect(result.fileName).toBe("月度对账报表-2026-03.xlsx");
+    expect(result.fallbackFileName).toBe("monthly-reporting-2026-03.xlsx");
+    expect(result.contentType).toBe(
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     );
-    expect(result.content).toContain(
-      '<Column ss:Width="160" /><Column ss:Width="100" />',
-    );
-    expect(result.content).toContain("RD 交接单");
-    expect(result.content).toContain("RDH-002");
-    expect(result.content).not.toContain("项目交接入数量");
-    expect(result.content).toContain("项目交接入成本");
-    expect(result.content).toContain('<Data ss:Type="Number">18.0000</Data>');
-    expect(result.content).not.toContain("交接金额");
-    expect(result.content).not.toContain("主仓到RD交接汇总");
-    expect(result.content).not.toContain("异常单据数");
-    expect(result.content).not.toContain("异常标识");
-    expect(result.content).not.toContain("SO-001");
+    expect(result.content.subarray(0, 4).toString("hex")).toBe("504b0304");
+    const workbookText = await stringifyWorkbook(result.content);
+    expect(workbookText).toContain('<Worksheet ss:Name="单据类型汇总">');
+    expect(workbookText).toContain("2026-03 月度对账报表 - 总览");
+    expect(workbookText).toContain("2026-03 月度对账报表 - 单据类型汇总");
+    expect(workbookText).toContain("2026-03 月度对账报表 - 单据头明细");
+    expect(workbookText).toContain("RD 交接单");
+    expect(workbookText).toContain("RDH-002");
+    expect(workbookText).not.toContain("项目交接入数量");
+    expect(workbookText).toContain("项目交接入成本");
+    expect(workbookText).toContain("18");
+    expect(workbookText).not.toContain("交接金额");
+    expect(workbookText).not.toContain("主仓到RD交接汇总");
+    expect(workbookText).not.toContain("异常单据数");
+    expect(workbookText).not.toContain("异常标识");
+    expect(workbookText).not.toContain("SO-001");
   });
 
   it("should export the selected sales return zero row when the month only has outbound rows", async () => {
@@ -490,7 +518,8 @@ describe("MonthlyReportExportService", () => {
       domainKey: MonthlyReportingDomainKey.SALES,
       topicKey: MonthlyReportingTopicKey.SALES_RETURN,
     });
-    const documentTypeSheet = extractWorksheet(result.content, "单据类型汇总");
+    const workbookText = await stringifyWorkbook(result.content);
+    const documentTypeSheet = extractWorksheet(workbookText, "单据类型汇总");
 
     expect(documentTypeSheet).toContain("销售退货单");
     expect(documentTypeSheet).toContain('<Data ss:Type="Number">0</Data>');
@@ -528,10 +557,11 @@ describe("MonthlyReportExportService", () => {
       yearMonth: "2026-03",
       domainKey: MonthlyReportingDomainKey.SALES,
     });
-    const domainSheet = extractWorksheet(result.content, "领域汇总");
-    const salesProjectSheet = extractWorksheet(result.content, "销售项目汇总");
+    const workbookText = await stringifyWorkbook(result.content);
+    const domainSheet = extractWorksheet(workbookText, "领域汇总");
+    const salesProjectSheet = extractWorksheet(workbookText, "销售项目汇总");
 
-    expect(result.content).not.toContain("总成本");
+    expect(workbookText).not.toContain("总成本");
     expectLabelsInOrder(domainSheet, [
       "销售净额（WMS 销售价口径）",
       "销售净成本",
@@ -550,14 +580,10 @@ describe("MonthlyReportExportService", () => {
       "WMS 商品毛利估算",
     ]);
     expect(salesProjectSheet).toContain("销售项目 A");
-    expect(domainSheet).toContain('<Data ss:Type="Number">80.0000</Data>');
-    expect(domainSheet).toContain('<Data ss:Type="Number">56.0000</Data>');
-    expect(domainSheet).toContain('<Data ss:Type="Number">24.0000</Data>');
-    expect(salesProjectSheet).toContain(
-      '<Data ss:Type="Number">80.0000</Data>',
-    );
-    expect(salesProjectSheet).toContain(
-      '<Data ss:Type="Number">56.0000</Data>',
-    );
+    expect(domainSheet).toContain('<Data ss:Type="Number">80</Data>');
+    expect(domainSheet).toContain('<Data ss:Type="Number">56</Data>');
+    expect(domainSheet).toContain('<Data ss:Type="Number">24</Data>');
+    expect(salesProjectSheet).toContain('<Data ss:Type="Number">80</Data>');
+    expect(salesProjectSheet).toContain('<Data ss:Type="Number">56</Data>');
   });
 });

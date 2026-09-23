@@ -4,10 +4,6 @@
 
 负责 AI 对话、SSE 流式输出、工具调用编排、页面跳转和表单预填。该模块是对业务查询与动作建议的编排层，不直接承载核心领域规则。
 
-## 原 Java 来源与映射范围
-
-- `business/src/main/java/com/saifute/ai`
-- 依赖 `stock`、`base`、`entry`、`out`、`take` 的查询服务
 
 ## 领域对象与核心用例
 

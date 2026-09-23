@@ -1,6 +1,6 @@
 ---
 name: saifute-delivery
-description: Entry point for this repo's heavy delivery lane and the requirement→acceptance closed-loop workflow. Use when work is non-trivial, ambiguous, cross-cutting, high-risk, resumable, or migration-style; when the user wants delegation / subagents / parallel agent work; or when the user asks to run the automated build loop. Skip for tiny, clear, low-risk edits handled directly.
+description: Entry point for this repo's heavy delivery lane and the requirement→acceptance closed-loop workflow. Use when work is non-trivial, ambiguous, cross-cutting, high-risk, resumable, or cross-cutting; when the user wants delegation / subagents / parallel agent work; or when the user asks to run the automated build loop. Skip for tiny, clear, low-risk edits handled directly.
 ---
 
 # Saifute Delivery (Claude Code)
@@ -38,7 +38,7 @@ Add `--surface <path>` for any already-known changed path. Open only the top 1�
 
 ## Choose the lane
 
-Stay on the **direct lane** for one-file / small-path, no cross-module design, no migration/backfill/cutover, no frozen-contract rewrite, no durable handoff needed.
+Stay on the **direct lane** for one-file / small-path, no cross-module design, no cross-module design, no frozen-contract rewrite, no durable handoff needed.
 
 Use the **heavy lane** (roles above, or the workflow below) when the task is non-trivial/ambiguous/cross-cutting/high-risk, the user asks to resume durable work, a task/review/acceptance loop is needed, or the work touches migration/backfill/reconciliation/staging/cutover.
 
@@ -57,4 +57,4 @@ Stages: discovery → planner → coder → code-reviewer (fix loop ≤2) → ac
 **Two human gates remain (everything else is automatic):**
 
 1. **Requirement confirmation** — a new requirement defaults to `needs-confirmation`; only the user promotes it to `confirmed` (`requirements-first-orchestration.mdc`). The loop pauses after discovery if the requirement is not confirmed.
-2. **Irreversible ops** — `migration:*:execute`, `prisma:push`, `commit`, and release stay human. The loop runs dry-run/validate + acceptance judgment, then stops with a recommendation.
+2. **Irreversible ops** — database writes, `prisma:push`, `commit`, and release stay human. The loop validates the change and stops with a recommendation before those operations.

@@ -118,7 +118,7 @@
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column sortable show-overflow-tooltip label="总金额" align="center" prop="totalAmount" >
+      <el-table-column sortable show-overflow-tooltip label="总金额" align="center" prop="totalAmount" min-width="135" class-name="numeric-column" >
 	      <template #default="scope">
 		      <el-button link type="primary" :underline="false" @click.stop="handleDetail(scope.row)">
 			      {{ scope.row.totalAmount }}
@@ -280,12 +280,12 @@
 			        />
 		        </template>
 	        </el-table-column>
-          <el-table-column label="入库数量" prop="quantity">
+          <el-table-column label="入库数量" prop="quantity" min-width="170" class-name="numeric-column">
             <template #default="scope">
               <el-input-number v-model="scope.row.quantity" placeholder="入库数量" controls-position="right" :disabled="isView" style="width: 100%" @change="calculateTotalAmount" />
             </template>
           </el-table-column>
-          <el-table-column label="单价" prop="unitPrice">
+          <el-table-column label="单价" prop="unitPrice" min-width="155" class-name="numeric-column">
             <template #default="scope">
               <el-input-number v-model="scope.row.unitPrice" :min="0" :precision="MONEY_PRECISION" placeholder="单价" controls-position="right" style="width: 100%" @change="calculateTotalAmount" />
             </template>
@@ -359,8 +359,8 @@
 				      <el-table-column label="物料编码" prop="material.materialCode" />
 				      <el-table-column label="物料名称" prop="material.materialName" />
 				      <el-table-column label="规格型号" prop="material.specification" />
-				      <el-table-column label="入库数量" prop="quantity" />
-				      <el-table-column label="单价" prop="unitPrice" />
+              <el-table-column label="入库数量" prop="quantity" min-width="130" class-name="numeric-column" />
+              <el-table-column label="单价" prop="unitPrice" min-width="130" class-name="numeric-column" />
 				      <el-table-column show-overflow-tooltip label="生产编号" prop="interval" />
 				      <el-table-column label="备注" prop="remark" />
 			      </el-table>

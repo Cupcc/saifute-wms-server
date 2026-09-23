@@ -14,6 +14,7 @@ import { Permissions } from "../../../shared/decorators/permissions.decorator";
 import { AuditLog } from "../../audit-log/decorators/audit-log.decorator";
 import { WorkshopScopeService } from "../../rbac/application/workshop-scope.service";
 import type { SessionUserSnapshot } from "../../session/domain/user-session";
+import { MONTHLY_REPORT_XLSX_CONTENT_TYPE } from "../application/monthly-report-xlsx.exporter";
 import { MonthlyReportingService } from "../application/monthly-reporting.service";
 import { ReportingService } from "../application/reporting.service";
 import {
@@ -183,7 +184,10 @@ export class ReportingController {
 
   @Permissions("reporting:export")
   @AuditLog({ title: "导出月度对账报表", action: "EXPORT_MONTHLY_REPORTING" })
-  @ApiFileResponse({ description: "导出月度对账报表文件" })
+  @ApiFileResponse({
+    contentType: MONTHLY_REPORT_XLSX_CONTENT_TYPE,
+    description: "导出月度对账报表文件",
+  })
   @Post("monthly-reporting/export")
   async exportMonthlyReporting(
     @Body() query: ExportMonthlyReportingDto,
@@ -207,7 +211,7 @@ export class ReportingController {
         workshopId,
       },
     );
-    return new StreamableFile(Buffer.from(exportResult.content, "utf8"), {
+    return new StreamableFile(exportResult.content, {
       disposition: buildAttachmentDisposition(
         exportResult.fileName,
         exportResult.fallbackFileName,

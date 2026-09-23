@@ -229,140 +229,8 @@ data: {"message": "服务暂时不可用"}
 
 ---
 
-## 五、后端需要做的适配
 
-### 5.1 接收 formSchemas 字段
-
-在请求 DTO 中新增 `formSchemas` 字段：
-
-```java
-public class AiChatRequest {
-    private String systemPrompt;
-    private String pageContext;
-    private String message;
-    private List<ChatMessage> history;
-    private Map<String, Object> formSchemas;  // ← 新增
-}
-```
-
-### 5.2 将 formSchemas 注入 AI Prompt
-
-后端收到 `formSchemas` 后，需要将其拼接到发给 AI 大模型的 prompt 中。建议在 `systemPrompt` 之后追加一段：
-
-```java
-String schemaPrompt = buildSchemaPrompt(request.getFormSchemas());
-String fullPrompt = request.getSystemPrompt() + "\n\n" + schemaPrompt;
-```
-
-`buildSchemaPrompt` 的参考实现：
-
-```java
-private String buildSchemaPrompt(Map<String, Object> formSchemas) {
-    if (formSchemas == null || formSchemas.isEmpty()) {
-        return "";
-    }
-
-    StringBuilder sb = new StringBuilder();
-    sb.append("## 操作指令（action）规范：\n\n");
-    sb.append("当用户要求创建单据时，你需要在回复文本之后推送一个 action 事件。\n");
-    sb.append("action 必须包含 type、path、label、formData 四个字段。\n\n");
-    sb.append("### 可用的表单及其字段结构：\n\n");
-
-    // 将 formSchemas 序列化为 JSON 并嵌入
-    try {
-        String schemasJson = objectMapper.writerWithDefaultPrettyPrinter()
-            .writeValueAsString(formSchemas);
-        sb.append("```json\n").append(schemasJson).append("\n```\n\n");
-    } catch (Exception e) {
-        // fallback
-    }
-
-    sb.append("### 重要规则：\n");
-    sb.append("1. formData 中主表字段放顶层，明细放 formData.details 数组\n");
-    sb.append("2. 每条明细至少包含 materialName（string）和 quantity（number）\n");
-    sb.append("3. quantity 必须是数字类型，不要加引号\n");
-    sb.append("4. 用户没提到的字段不要编造，留空即可\n");
-    sb.append("5. 如果用户只是问问题，不需要创建单据，则不推送 action\n\n");
-
-    sb.append("### action 示例：\n");
-    sb.append("用户说：\"帮我创建一个验收单，100个靴子\"\n");
-    sb.append("```json\n");
-    sb.append("{\"type\":\"openForm\",\"path\":\"/entry/order\",");
-    sb.append("\"label\":\"去创建验收单（预填：靴子×100）\",");
-    sb.append("\"formData\":{\"details\":[{\"materialName\":\"靴子\",\"quantity\":100}]}}\n");
-    sb.append("```\n\n");
-
-    sb.append("用户说：\"从华东皮革进200双靴子和50件大衣，经办人张三\"\n");
-    sb.append("```json\n");
-    sb.append("{\"type\":\"openForm\",\"path\":\"/entry/order\",");
-    sb.append("\"label\":\"去创建验收单（预填：靴子×200, 大衣×50）\",");
-    sb.append("\"formData\":{\"supplierName\":\"华东皮革\",\"attn\":\"张三\",");
-    sb.append("\"details\":[{\"materialName\":\"靴子\",\"quantity\":200},");
-    sb.append("{\"materialName\":\"大衣\",\"quantity\":50}]}}\n");
-    sb.append("```\n");
-
-    return sb.toString();
-}
-```
-
-### 5.3 SSE 推送 action 事件
-
-确保 action 事件的 `data` 是**完整的 JSON 对象**，且必须包含 `formData` 字段：
-
-```java
-// ✅ 正确 — 包含 formData
-sseEmitter.send(SseEmitter.event()
-    .name("action")
-    .data("{\"type\":\"openForm\",\"path\":\"/entry/order\",\"label\":\"去创建验收单\",\"formData\":{\"details\":[{\"materialName\":\"靴子\",\"quantity\":100}]}}"));
-
-// ❌ 错误 — 缺少 formData，前端无法预填
-sseEmitter.send(SseEmitter.event()
-    .name("action")
-    .data("{\"type\":\"openForm\",\"path\":\"/entry/order\",\"label\":\"去创建验收单\"}"));
-```
-
-### 5.4 如果使用 Function Calling / Tool Use
-
-如果后端通过 AI 的 Function Calling 机制来生成 action，`open_form` 工具的参数定义可以直接复用前端传来的 `formSchemas`：
-
-```json
-{
-  "name": "open_form",
-  "description": "打开表单并预填数据",
-  "parameters": {
-    "type": "object",
-    "properties": {
-      "path": { "type": "string", "description": "目标路由" },
-      "label": { "type": "string", "description": "按钮显示文字" },
-      "formData": {
-        "type": "object",
-        "description": "表单预填数据，结构参考 formSchemas",
-        "properties": {
-          "supplierName": { "type": "string" },
-          "details": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "materialName": { "type": "string" },
-                "quantity": { "type": "number" }
-              },
-              "required": ["materialName", "quantity"]
-            }
-          }
-        }
-      }
-    },
-    "required": ["path", "label", "formData"]
-  }
-}
-```
-
-关键点：**将前端 formSchemas 动态转换为工具参数的 JSON Schema**，而不是硬编码。这样前端新增表单字段后，工具定义自动同步。
-
----
-
-## 六、前端处理流程
+## 五、前端处理流程
 
 ```
 用户输入
@@ -429,7 +297,7 @@ AiChatPanel                   aiActionStore                   业务页面
 
 ---
 
-## 七、完整交互示例
+## 六、完整交互示例
 
 ### 示例 1：用户说"创建验收单，100个靴子"
 
@@ -493,7 +361,7 @@ data: {}
 
 ---
 
-## 八、后端适配清单
+## 七、接口接入清单
 
 | # | 事项 | 优先级 | 说明 |
 |---|------|--------|------|
@@ -507,7 +375,7 @@ data: {}
 
 ---
 
-## 九、前端文件结构
+## 八、前端文件结构
 
 ```
 src/

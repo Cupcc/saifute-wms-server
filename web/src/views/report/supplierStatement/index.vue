@@ -334,10 +334,10 @@ function handleExport() {
               {{ scope.row.material?.specification || scope.row.specification }}
             </template>
           </el-table-column>
-          <el-table-column prop="quantity" label="数量" align="center" width="100" />
-          <el-table-column prop="unitPrice" label="单价" align="center" width="100" />
-          <el-table-column prop="taxPrice" label="含税价" align="center" width="100" />
-          <el-table-column prop="amount" label="金额" align="center" width="120" />
+          <el-table-column prop="quantity" label="数量" align="center" width="130" class-name="numeric-column" />
+          <el-table-column prop="unitPrice" label="单价" align="center" width="135" class-name="numeric-column" />
+          <el-table-column prop="taxPrice" label="含税价" align="center" width="135" class-name="numeric-column" />
+          <el-table-column prop="amount" label="金额" align="center" width="135" class-name="numeric-column" />
           <el-table-column prop="remark" label="备注" align="center" show-overflow-tooltip />
         </adaptive-table>
         <el-empty v-if="!loading && entryDetailList.length === 0" description="暂无验收单数据" />
@@ -360,9 +360,9 @@ function handleExport() {
           <el-table-column prop="materialName" label="物料名称" align="center" show-overflow-tooltip />
           <el-table-column prop="specification" label="规格型号" align="center" show-overflow-tooltip />
           <el-table-column prop="unit" label="单位" align="center" width="80" />
-          <el-table-column prop="quantity" label="数量" align="center" width="100" />
-          <el-table-column prop="unitPrice" label="单价" align="center" width="100" />
-          <el-table-column prop="amount" label="金额" align="center" width="120" />
+          <el-table-column prop="quantity" label="数量" align="center" width="130" class-name="numeric-column" />
+          <el-table-column prop="unitPrice" label="单价" align="center" width="135" class-name="numeric-column" />
+          <el-table-column prop="amount" label="金额" align="center" width="135" class-name="numeric-column" />
           <el-table-column prop="instruction" label="计价说明" align="center" show-overflow-tooltip />
         </adaptive-table>
         <el-empty v-if="!loading && projectMaterialList.length === 0" description="暂无项目直入数据" />

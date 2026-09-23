@@ -45,17 +45,17 @@
         <el-table-column label="物料名称" prop="materialName" min-width="150" />
         <el-table-column label="规格型号" prop="specModel" min-width="130" />
         <el-table-column label="单位" prop="unitCode" width="80" />
-        <el-table-column label="验收数量" prop="quantity" width="110" align="right">
+        <el-table-column label="验收数量" prop="quantity" width="130" align="right" class-name="numeric-column">
           <template #default="{ row }">
             {{ formatQty(row.quantity) }}
           </template>
         </el-table-column>
-        <el-table-column label="单价" prop="unitPrice" width="100" align="right">
+        <el-table-column label="单价" prop="unitPrice" width="135" align="right" class-name="numeric-column">
           <template #default="{ row }">
             {{ formatAmount(row.unitPrice) }}
           </template>
         </el-table-column>
-        <el-table-column label="金额" prop="amount" width="110" align="right">
+        <el-table-column label="金额" prop="amount" width="135" align="right" class-name="numeric-column">
           <template #default="{ row }">
             {{ formatAmount(row.amount) }}
           </template>
